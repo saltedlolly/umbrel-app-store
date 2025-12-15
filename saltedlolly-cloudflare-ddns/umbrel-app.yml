@@ -35,6 +35,10 @@ repo: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddn
 support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery: []
 releaseNotes: >-
+  v1.0.3:
+
+  - Fix notifier URLs not being saved when toggles were off
+
 
   - Add IPv4/IPv6 support toggles in UI
 

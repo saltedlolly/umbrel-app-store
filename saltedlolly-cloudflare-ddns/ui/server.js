@@ -172,9 +172,10 @@ app.post('/api/config', async (req, res) => {
     // Use DOMAINS as the single authoritative list
     const DOMAINS = (DOMAINS_IN || '').split(',').map(s => s.trim()).filter(Boolean).join(',');
     const shout = (SHOUTRRR || '').split('\n').map(s => s.trim()).filter(Boolean).join(',');
-    const hc_enabled = (HEALTHCHECKS_ENABLED === 'true');
-    const uk_enabled = (UPTIMEKUMA_ENABLED === 'true');
-    const sr_enabled = (SHOUTRRR_ENABLED === 'true');
+    // Auto-enable notifiers when URLs are provided; respect explicit disable via toggle
+    const hc_enabled = (HEALTHCHECKS && HEALTHCHECKS.trim()) ? (HEALTHCHECKS_ENABLED !== 'false') : (HEALTHCHECKS_ENABLED === 'true');
+    const uk_enabled = (UPTIMEKUMA && UPTIMEKUMA.trim()) ? (UPTIMEKUMA_ENABLED !== 'false') : (UPTIMEKUMA_ENABLED === 'true');
+    const sr_enabled = (shout) ? (SHOUTRRR_ENABLED !== 'false') : (SHOUTRRR_ENABLED === 'true');
     const existing = readEnv();
     const token = (CLOUDFLARE_API_TOKEN === '***') ? existing.CLOUDFLARE_API_TOKEN : CLOUDFLARE_API_TOKEN;
     const lines = [
