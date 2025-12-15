@@ -1,11 +1,4 @@
 services:
-  app_proxy:
-    image: alpine:3.18
-    restart: unless-stopped
-    environment:
-      APP_HOST: ui
-      APP_PORT: 3000
-
   ui:
     image: saltedlolly/cloudflare-ddns-ui@sha256:7b050c38cb49c4ce9e04e25cc4b74780c5e4100d629645f820c5b9082a1b4486
     container_name: saltedlolly-cloudflare-ddns_ui_1
