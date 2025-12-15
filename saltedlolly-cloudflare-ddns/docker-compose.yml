@@ -9,7 +9,7 @@ services:
   ui:
     build:
       context: .
-      dockerfile: ./Dockerfile.ui
+      dockerfile: Dockerfile.ui
     container_name: saltedlolly-cloudflare-ddns_ui_1
     hostname: saltedlolly-cloudflare-ddns_ui_1
     restart: unless-stopped
@@ -27,7 +27,7 @@ services:
   cloudflare-ddns:
     build: 
       context: .
-      dockerfile: ./Dockerfile.ddns
+      dockerfile: Dockerfile.ddns
     container_name: saltedlolly-cloudflare-ddns_cloudflare-ddns_1
     hostname: saltedlolly-cloudflare-ddns_cloudflare-ddns_1
     restart: unless-stopped
