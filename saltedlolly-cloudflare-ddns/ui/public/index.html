@@ -758,11 +758,8 @@
                         for (const line of srLines) { if (!isValidUrl(line)) { showTempMessage('notifiersMainSaveMsg', 'One or more Shoutrrr URLs are invalid.', false); return; } }
                         const payload = Object.assign({}, cur, {
                             HEALTHCHECKS: hc || '',
-                            HEALTHCHECKS_ENABLED: cur.HEALTHCHECKS_ENABLED === 'true' ? 'true' : 'false',
                             UPTIMEKUMA: uk || '',
-                            UPTIMEKUMA_ENABLED: cur.UPTIMEKUMA_ENABLED === 'true' ? 'true' : 'false',
-                            SHOUTRRR: srLines.length ? srLines.join(',') : '',
-                            SHOUTRRR_ENABLED: cur.SHOUTRRR_ENABLED === 'true' ? 'true' : 'false'
+                            SHOUTRRR: srLines.length ? srLines.join(',') : ''
                         });
                         await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                         // refresh
