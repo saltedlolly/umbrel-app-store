@@ -1,4 +1,10 @@
 services:
+  app_proxy:
+    environment:
+      # The format here is: <app-id>_<docker-service-name>_1
+      APP_HOST: saltedlolly-cloudflare-ddns_ui_1
+      APP_PORT: 3000
+
   ui:
     image: saltedlolly/cloudflare-ddns-ui@sha256:7b050c38cb49c4ce9e04e25cc4b74780c5e4100d629645f820c5b9082a1b4486
     container_name: saltedlolly-cloudflare-ddns_ui_1
