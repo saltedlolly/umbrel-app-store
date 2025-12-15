@@ -215,6 +215,7 @@ ensure_buildx
 echo "Building UI multi-arch: saltedlolly/cloudflare-ddns-ui:${target_v}"
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
+  --build-arg VERSION="${target_v}" \
   -t "saltedlolly/cloudflare-ddns-ui:${target_v}" \
   -f ui/Dockerfile \
   --push "$APP_ROOT"

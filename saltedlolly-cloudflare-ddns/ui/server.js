@@ -21,17 +21,14 @@ app.use(express.static('public'));
 // Health endpoint used by container healthchecks
 app.get('/health', (req, res) => res.sendStatus(200));
 
-// Version endpoint - reads from umbrel-app.yml
+// Version endpoint - reads from version.json (baked in at build time)
 app.get('/api/version', (req, res) => {
     try {
-        const umbrelAppPath = path.join(__dirname, '..', 'umbrel-app.yml');
-        const yamlContent = fs.readFileSync(umbrelAppPath, 'utf8');
-        // Extract version from YAML - simple regex match for version: "x.y.z"
-        const versionMatch = yamlContent.match(/^version:\s*["']?([0-9]+\.[0-9]+\.[0-9]+)["']?/m);
-        const version = versionMatch ? versionMatch[1] : 'unknown';
-        res.json({ version });
+        const versionPath = path.join(__dirname, 'version.json');
+        const versionData = JSON.parse(fs.readFileSync(versionPath, 'utf8'));
+        res.json({ version: versionData.version || 'unknown' });
     } catch (e) {
-        console.error('Failed to read version from umbrel-app.yml:', e);
+        console.error('Failed to read version from version.json:', e);
         res.json({ version: 'unknown' });
     }
 });
