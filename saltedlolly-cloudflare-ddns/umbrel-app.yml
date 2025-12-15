@@ -29,14 +29,23 @@ repo: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddn
 support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery: []
 releaseNotes: >-
-  - Fix config save reliability by aligning container user to 1000:1000
+  v0.0.11:
+
+  - Fix volume permissions by removing user directive (containers now run as root)
+
+  - Move log files to /data root to avoid subdirectory permission issues
+
+  - Add extensive debug logging to diagnose config save issues
+
+  - Rebuild images with proper LF line endings for shell scripts
+
+  
+  Previous:
 
   - Use Umbrel app_proxy pattern with required `_1` suffix
 
   - Add `init: true` for clean shutdown and zombie reaping
 
   - Keep UI on internal port 3000; proxy via Umbrel on port 4100
-  
-  - Minor stability and logging improvements
 dependencies: []
 path: ""
