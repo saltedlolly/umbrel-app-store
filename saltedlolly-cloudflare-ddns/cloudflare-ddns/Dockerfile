@@ -10,7 +10,7 @@ RUN apk add --no-cache coreutils
 # Copy the favonia ddns binary from the base image into the Alpine image
 COPY --from=favonia /bin/ddns /bin/ddns
 
-COPY entrypoint.sh /entrypoint.sh
+COPY cloudflare-ddns/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
