@@ -29,6 +29,10 @@ repo: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddn
 support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery: []
 releaseNotes: >-
+  v0.0.15:
+
+  - Add IPv4/IPv6 support toggles in UI
+
   v0.0.14:
 
   - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility

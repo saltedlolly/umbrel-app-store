@@ -167,6 +167,22 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="mb-2 row align-items-center">
+                                <div class="col-7 small">🌐 IPv4 Support</div>
+                                <div class="col-5 text-end">
+                                    <div class="form-check form-switch d-inline-flex align-items-center justify-content-end">
+                                        <input class="form-check-input" type="checkbox" id="ipv4MainSwitch">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-2 row align-items-center">
+                                <div class="col-7 small">🌐 IPv6 Support</div>
+                                <div class="col-5 text-end">
+                                    <div class="form-check form-switch d-inline-flex align-items-center justify-content-end">
+                                        <input class="form-check-input" type="checkbox" id="ipv6MainSwitch">
+                                    </div>
+                                </div>
+                            </div>
                             <div class="mt-2 d-flex justify-content-between align-items-center">
                                 <div></div>
                                 <div class="d-flex align-items-center gap-2">
@@ -213,6 +229,24 @@
                                         non-HTTP traffic). If you are running an email server, you should keep this
                                         disabled.
                                     </div>
+                                </div>
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <label class="form-label small mb-0" for="edit_IPV4_SUPPORT">🌐 IPv4 Support</label>
+                                        <div class="form-check form-switch">
+                                            <input id="edit_IPV4_SUPPORT" class="form-check-input" type="checkbox">
+                                        </div>
+                                    </div>
+                                    <div class="small text-muted mt-1 w-100">In most cases, there should be no need to turn this off, except for the rare situation where your network only uses IPv6.</div>
+                                </div>
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <label class="form-label small mb-0" for="edit_IPV6_SUPPORT">🌐 IPv6 Support</label>
+                                        <div class="form-check form-switch">
+                                            <input id="edit_IPV6_SUPPORT" class="form-check-input" type="checkbox">
+                                        </div>
+                                    </div>
+                                    <div class="small text-muted mt-1 w-100">There is no harm leaving this on, even if your network does not support IPv6, but if you want to avoid seeing the errors in the logs can turn it off.</div>
                                 </div>
                                 <div class="d-flex gap-2 justify-content-end mt-2 w-100">
                                     <button id="saveConfigBtn" class="btn btn-primary btn-sm">Save</button>
@@ -321,12 +355,16 @@
                     const cfgTokenStatus = document.getElementById('cfgTokenStatus');
                     const cfgDomainsStatus = document.getElementById('cfgDomainsStatus');
                     const proxiedMainSwitch = document.getElementById('proxiedMainSwitch');
+                    const ipv4MainSwitch = document.getElementById('ipv4MainSwitch');
+                    const ipv6MainSwitch = document.getElementById('ipv6MainSwitch');
                     const editConfigBtn = document.getElementById('editConfigBtn');
                     const configMainView = document.getElementById('configMainView');
                     const configEditView = document.getElementById('configEditView');
                     const editTokenField = document.getElementById('edit_CLOUDFLARE_API_TOKEN');
                     const editDomainsField = document.getElementById('edit_DOMAINS');
                     const editProxiedField = document.getElementById('edit_PROXIED');
+                    const editIPv4Switch = document.getElementById('edit_IPV4_SUPPORT');
+                    const editIPv6Switch = document.getElementById('edit_IPV6_SUPPORT');
                     const saveConfigBtn = document.getElementById('saveConfigBtn');
                     const cancelConfigBtn = document.getElementById('cancelConfigBtn');
 
@@ -472,6 +510,12 @@
 
                         // set main proxied switch
                         proxiedMainSwitch.checked = (cfg && (cfg.PROXIED === 'true' || cfg.PROXIED === true)) || false;
+
+                        // IPv4/IPv6 support switches (default ON if unset)
+                        const v4On = !cfg || cfg.IP4_PROVIDER === undefined || cfg.IP4_PROVIDER === '' ? true : (cfg.IP4_PROVIDER !== 'none');
+                        const v6On = !cfg || cfg.IP6_PROVIDER === undefined || cfg.IP6_PROVIDER === '' ? true : (cfg.IP6_PROVIDER !== 'node' && cfg.IP6_PROVIDER !== 'none');
+                        ipv4MainSwitch.checked = !!v4On;
+                        ipv6MainSwitch.checked = !!v6On;
                     }
 
                     async function toggleProxied(enabled) {
@@ -495,6 +539,19 @@
                         editTokenField.value = cfg.CLOUDFLARE_API_TOKEN || '';
                         editDomainsField.value = cfg.DOMAINS || '';
                         editProxiedField.checked = cfg.PROXIED === 'true' || cfg.PROXIED === true;
+                        // IPv4/IPv6 default ON
+                        editIPv4Switch.checked = (cfg.IP4_PROVIDER === undefined || cfg.IP4_PROVIDER === '' || cfg.IP4_PROVIDER !== 'none');
+                        editIPv6Switch.checked = (cfg.IP6_PROVIDER === undefined || cfg.IP6_PROVIDER === '' || (cfg.IP6_PROVIDER !== 'node' && cfg.IP6_PROVIDER !== 'none'));
+                        // ensure constraint: at least one must be on when toggling
+                        const enforceAtLeastOne = (changed) => {
+                            const v4 = editIPv4Switch.checked;
+                            const v6 = editIPv6Switch.checked;
+                            if (!v4 && !v6) {
+                                if (changed === 'v4') editIPv6Switch.checked = true; else editIPv4Switch.checked = true;
+                            }
+                        };
+                        editIPv4Switch.onchange = () => enforceAtLeastOne('v4');
+                        editIPv6Switch.onchange = () => enforceAtLeastOne('v6');
                         configMainView.style.display = 'none';
                         configEditView.style.display = '';
                     });
@@ -506,14 +563,23 @@
                         const token = editTokenField.value.trim();
                         const domains = editDomainsField.value.trim();
                         const proxied = editProxiedField.checked;
+                        const v4On = editIPv4Switch.checked;
+                        const v6On = editIPv6Switch.checked;
                         const dv = validateDomains(domains);
                         if (dv.reason === 'invalid') { showTempMessage('configMainSaveMsg', 'Domains are invalid. Please enter comma-separated valid domain names.', false); return; }
+                        // enforce at least one of IPv4/IPv6 on
+                        if (!v4On && !v6On) {
+                            showTempMessage('configMainSaveMsg', 'At least one of IPv4 or IPv6 must be enabled.', false);
+                            return;
+                        }
                         try {
                             const cur = await (await fetch('/api/config')).json();
                             const payload = Object.assign({}, cur, {
                                 CLOUDFLARE_API_TOKEN: token || '',
                                 DOMAINS: domains || '',
-                                PROXIED: proxied ? 'true' : 'false'
+                                PROXIED: proxied ? 'true' : 'false',
+                                IP4_PROVIDER: v4On ? 'cloudflare.trace' : 'none',
+                                IP6_PROVIDER: v6On ? 'cloudflare.trace' : 'node'
                             });
                             await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                             // refresh UI
@@ -526,6 +592,35 @@
                     });
 
                     proxiedMainSwitch.addEventListener('change', async () => { await toggleProxied(proxiedMainSwitch.checked); });
+
+                    async function toggleIPSupport(kind, enabled) {
+                        try {
+                            const cur = await (await fetch('/api/config')).json();
+                            // Determine current states with defaults ON when unset
+                            let v4On = !cur || cur.IP4_PROVIDER === undefined || cur.IP4_PROVIDER === '' ? true : (cur.IP4_PROVIDER !== 'none');
+                            let v6On = !cur || cur.IP6_PROVIDER === undefined || cur.IP6_PROVIDER === '' ? true : (cur.IP6_PROVIDER !== 'node' && cur.IP6_PROVIDER !== 'none');
+                            if (kind === 'v4') v4On = enabled; else v6On = enabled;
+                            // enforce at least one ON by auto-enabling the other if needed
+                            if (!v4On && !v6On) {
+                                if (kind === 'v4') { v6On = true; ipv6MainSwitch.checked = true; }
+                                else { v4On = true; ipv4MainSwitch.checked = true; }
+                            }
+                            const payload = Object.assign({}, cur, {
+                                IP4_PROVIDER: v4On ? 'cloudflare.trace' : 'none',
+                                IP6_PROVIDER: v6On ? 'cloudflare.trace' : 'node'
+                            });
+                            await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                            await updateStatus();
+                            await load();
+                            showTempMessage('configMainSaveMsg', `${kind === 'v4' ? 'IPv4' : 'IPv6'} ${enabled ? 'enabled' : 'disabled'}.`, true);
+                        } catch (e) {
+                            console.error('Failed to toggle IP support', e);
+                            showTempMessage('configMainSaveMsg', 'Failed to update IP support setting.', false);
+                        }
+                    }
+
+                    ipv4MainSwitch.addEventListener('change', async () => { await toggleIPSupport('v4', ipv4MainSwitch.checked); });
+                    ipv6MainSwitch.addEventListener('change', async () => { await toggleIPSupport('v6', ipv6MainSwitch.checked); });
 
                     async function load() {
                         const r = await fetch('/api/config');
@@ -566,6 +661,8 @@
                         editTokenField.value = data.CLOUDFLARE_API_TOKEN || '';
                         editDomainsField.value = data.DOMAINS || '';
                         editProxiedField.checked = data.PROXIED === 'true' || data.PROXIED === true;
+                        editIPv4Switch.checked = (data.IP4_PROVIDER === undefined || data.IP4_PROVIDER === '' || data.IP4_PROVIDER !== 'none');
+                        editIPv6Switch.checked = (data.IP6_PROVIDER === undefined || data.IP6_PROVIDER === '' || (data.IP6_PROVIDER !== 'node' && data.IP6_PROVIDER !== 'none'));
                         // Ensure start button only enabled when token is present
                         startBtn.disabled = !(data && (data.CLOUDFLARE_API_TOKEN || data.API_KEY)) || !!(data && data.ENABLED && data.ENABLED === 'true');
                         // Render notifiers view
