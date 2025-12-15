@@ -345,8 +345,8 @@
                 <footer class="page-footer">
                     <div class="container d-flex justify-content-between align-items-center">
                         <div class="small text-muted">Cloudflare DDNS Updater for Umbrel by Olly Stedall. Powered by <a
-                                href="https://github.com/favonia/cloudflare-ddns" target="_blank">cloudflare-ddns</a>. 
-                                <span class="badge bg-secondary ms-2">v1.0.9</span>
+                                href="https://github.com/favonia/cloudflare-ddns" target="_blank">cloudflare-ddns</a>.
+                            <span id="versionBadge" class="badge bg-secondary ms-2">v...</span>
                         </div>
                         <div class="small text-muted text-end">Please Sponsor Olly on GitHub Sponsors:&nbsp;<iframe
                                 src="https://github.com/sponsors/saltedlolly/button" title="Sponsor saltedlolly"
@@ -358,6 +358,17 @@
                     const socket = io();
                     const logsEl = document.getElementById('logs');
                     socket.on('log', (data) => { logsEl.textContent = data; logsEl.scrollTop = logsEl.scrollHeight; });
+                    
+                    // Load version dynamically
+                    (async () => {
+                        try {
+                            const versionResp = await fetch('/api/version');
+                            const versionData = await versionResp.json();
+                            document.getElementById('versionBadge').textContent = 'v' + versionData.version;
+                        } catch (e) {
+                            console.error('Failed to load version:', e);
+                        }
+                    })();
                     (async () => { try { const r = await fetch('/api/logs'); const t = await r.text(); logsEl.textContent = t; logsEl.scrollTop = logsEl.scrollHeight; } catch (e) { } })();
 
                     const configEditForm = document.getElementById('configEdit');
@@ -733,42 +744,98 @@
                         if (elSR) elSR.value = (cfg.SHOUTRRR || '').replace(/,/g, '\n');
                     }
 
-                    editNotifiersBtn.addEventListener('click', (e) => {
+                    editNotifiersBtn.addEventListener('click', async (e) => {
                         e.preventDefault();
+                        // Load current values when entering edit mode
+                        const cfg = await (await fetch('/api/config')).json();
+                        const hcUrl = cfg.HEALTHCHECKS || '';
+                        const ukUrl = cfg.UPTIMEKUMA || '';
+                        const srUrls = (cfg.SHOUTRRR || '').replace(/,/g, '\n');
+                        document.getElementById('edit_HEALTHCHECKS').value = hcUrl;
+                        document.getElementById('edit_UPTIMEKUMA').value = ukUrl;
+                        document.getElementById('edit_SHOUTRRR').value = srUrls;
+                        // Clear any previous error styling
+                        document.getElementById('edit_HEALTHCHECKS').classList.remove('is-invalid');
+                        document.getElementById('edit_UPTIMEKUMA').classList.remove('is-invalid');
+                        document.getElementById('edit_SHOUTRRR').classList.remove('is-invalid');
                         notifiersView.style.display = 'none';
                         notifiersEdit.style.display = '';
                     });
 
-                    cancelNotifiersBtn.addEventListener('click', (e) => {
+                    cancelNotifiersBtn.addEventListener('click', async (e) => {
                         e.preventDefault();
+                        // Reload current values from server to discard changes
+                        const cfg = await (await fetch('/api/config')).json();
+                        const hcUrl = cfg.HEALTHCHECKS || '';
+                        const ukUrl = cfg.UPTIMEKUMA || '';
+                        const srUrls = (cfg.SHOUTRRR || '').replace(/,/g, '\n');
+                        document.getElementById('edit_HEALTHCHECKS').value = hcUrl;
+                        document.getElementById('edit_UPTIMEKUMA').value = ukUrl;
+                        document.getElementById('edit_SHOUTRRR').value = srUrls;
+                        // Clear any error styling
+                        document.getElementById('edit_HEALTHCHECKS').classList.remove('is-invalid');
+                        document.getElementById('edit_UPTIMEKUMA').classList.remove('is-invalid');
+                        document.getElementById('edit_SHOUTRRR').classList.remove('is-invalid');
                         notifiersEdit.style.display = 'none';
                         notifiersView.style.display = '';
                     });
 
                     saveNotifiersBtn.addEventListener('click', async (e) => {
                         e.preventDefault();
-                        // merge with existing config
-                        const cur = await (await fetch('/api/config')).json();
-                        const hc = document.getElementById('edit_HEALTHCHECKS').value.trim();
-                        const uk = document.getElementById('edit_UPTIMEKUMA').value.trim();
-                        const sr = document.getElementById('edit_SHOUTRRR').value.trim();
+                        
+                        // Clear previous error styling
+                        const hcField = document.getElementById('edit_HEALTHCHECKS');
+                        const ukField = document.getElementById('edit_UPTIMEKUMA');
+                        const srField = document.getElementById('edit_SHOUTRRR');
+                        hcField.classList.remove('is-invalid');
+                        ukField.classList.remove('is-invalid');
+                        srField.classList.remove('is-invalid');
+                        
+                        // Get values
+                        const hc = hcField.value.trim();
+                        const uk = ukField.value.trim();
+                        const sr = srField.value.trim();
+                        
                         // Validate URLs
-                        if (hc && !isValidUrl(hc)) { showTempMessage('notifiersMainSaveMsg', 'Healthchecks URL appears invalid.', false); return; }
-                        if (uk && !isValidUrl(uk)) { showTempMessage('notifiersMainSaveMsg', 'Uptime Kuma URL appears invalid.', false); return; }
+                        if (hc && !isValidUrl(hc)) {
+                            hcField.classList.add('is-invalid');
+                            showTempMessage('notifiersMainSaveMsg', 'Invalid URL!', false);
+                            return;
+                        }
+                        if (uk && !isValidUrl(uk)) {
+                            ukField.classList.add('is-invalid');
+                            showTempMessage('notifiersMainSaveMsg', 'Invalid URL!', false);
+                            return;
+                        }
+                        
                         const srLines = sr ? sr.split('\n').map(s => s.trim()).filter(Boolean) : [];
-                        for (const line of srLines) { if (!isValidUrl(line)) { showTempMessage('notifiersMainSaveMsg', 'One or more Shoutrrr URLs are invalid.', false); return; } }
-                        const payload = Object.assign({}, cur, {
-                            HEALTHCHECKS: hc || '',
-                            UPTIMEKUMA: uk || '',
-                            SHOUTRRR: srLines.length ? srLines.join(',') : ''
-                        });
-                        await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                        // refresh
-                        const refreshed = await (await fetch('/api/config')).json();
-                        renderNotifiers(refreshed);
-                        notifiersEdit.style.display = 'none';
-                        notifiersView.style.display = '';
-                        showTempMessage('notifiersMainSaveMsg', 'Settings saved.', true);
+                        for (const line of srLines) {
+                            if (!isValidUrl(line)) {
+                                srField.classList.add('is-invalid');
+                                showTempMessage('notifiersMainSaveMsg', 'Invalid URL!', false);
+                                return;
+                            }
+                        }
+                        
+                        try {
+                            // merge with existing config
+                            const cur = await (await fetch('/api/config')).json();
+                            const payload = Object.assign({}, cur, {
+                                HEALTHCHECKS: hc || '',
+                                UPTIMEKUMA: uk || '',
+                                SHOUTRRR: srLines.length ? srLines.join(',') : ''
+                            });
+                            await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                            
+                            // refresh UI
+                            const refreshed = await (await fetch('/api/config')).json();
+                            renderNotifiers(refreshed);
+                            notifiersEdit.style.display = 'none';
+                            notifiersView.style.display = '';
+                            showTempMessage('notifiersMainSaveMsg', 'Settings saved.', true);
+                        } catch (e) {
+                            showTempMessage('notifiersMainSaveMsg', 'Save failed: ' + String(e), false);
+                        }
                     });
 
                     // Toggle handlers: update only the enabled flag without altering other fields

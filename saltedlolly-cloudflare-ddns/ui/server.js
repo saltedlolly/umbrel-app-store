@@ -21,6 +21,16 @@ app.use(express.static('public'));
 // Health endpoint used by container healthchecks
 app.get('/health', (req, res) => res.sendStatus(200));
 
+// Version endpoint - reads from package.json
+app.get('/api/version', (req, res) => {
+    try {
+        const packageJson = require('./package.json');
+        res.json({ version: packageJson.version || '0.0.0' });
+    } catch (e) {
+        res.json({ version: 'unknown' });
+    }
+});
+
 // Note: Umbrel handles authentication at the proxy level, no need for custom auth middleware
 
 function ensureDirs() {
