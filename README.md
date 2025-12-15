@@ -6,10 +6,10 @@ This is my Umbrel Community App Store, containing apps mostly built for my own b
 
 ## Adding This App Store to Umbrel
 
-1. Open Umbrel and go to the **App Store**.
-2. Click the **+** button or look for "Add Custom App Store".
-3. Paste the URL: `https://github.com/saltedlolly/umbrel-app-store`
-4. The apps from this store will appear in your app list.
+1. Open the Umbrel Dashboard and go to the **App Store**.
+2. Click the **•••** button in the top right, and click "Community App Stores".
+3. Paste the URL `https://github.com/saltedlolly/umbrel-app-store` and click 'Add'.
+4. Click 'Open' next to "Olly's Umbrel Community App Store".
 
 ## Apps
 
