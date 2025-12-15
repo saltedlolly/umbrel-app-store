@@ -4,7 +4,7 @@ name: Cloudflare DDNS Client
 tagline: Dynamic DNS client for Cloudflare to keep your domain updated with your changing IP address.
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/refs/heads/master/saltedlolly-cloudflare-ddns/logo.png
 category: Networking
-version: "1.0.5"
+version: "1.0.6"
 port: 4100
 description: >-
   Dynamic DDNS client for Cloudflare to keep your domain or sub-domain updated with your current public IP address.
