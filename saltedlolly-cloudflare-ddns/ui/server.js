@@ -11,7 +11,7 @@ const io = new Server(server);
 
 const DATA_DIR = process.env.APP_DATA_DIR || '/data';
 const ENV_FILE = path.join(DATA_DIR, 'cloudflare-ddns.env');
-const LOG_FILE = path.join(DATA_DIR, 'logs', 'cloudflare-ddns.log');
+const LOG_FILE = path.join(DATA_DIR, 'cloudflare-ddns.log');
 const STATUS_FILE = path.join(DATA_DIR, 'status.json');
 const https = require('https');
 
@@ -36,13 +36,6 @@ function ensureDirs() {
         console.log(`[ensureDirs] Created DATA_DIR: ${DATA_DIR}`);
     } catch (e) { 
         console.error(`[ensureDirs] Failed to create DATA_DIR: ${e.message}`);
-    }
-    try { 
-        const logDir = path.dirname(LOG_FILE);
-        fs.mkdirSync(logDir, { recursive: true }); 
-        console.log(`[ensureDirs] Created LOG_DIR: ${logDir}`);
-    } catch (e) { 
-        console.error(`[ensureDirs] Failed to create LOG_DIR: ${e.message}`);
     }
 }
 

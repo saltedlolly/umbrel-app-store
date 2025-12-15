@@ -4,15 +4,13 @@ set -e
 # Simple wrapper that loads config from /data/cloudflare-ddns.env and restarts
 # the the underlying command whenever the file changes. This avoids the need
 # for the UI to control Docker via the host's docker.sock. The wrapper logs
-# lifecycle events to /data/logs/cloudflare-ddns.log
+# lifecycle events to /data/cloudflare-ddns.log
 
-LOGFILE=/data/logs/cloudflare-ddns.log
+LOGFILE=/data/cloudflare-ddns.log
 ENVFILE=/data/cloudflare-ddns.env
 STATUSFILE=/data/status.json
 ERROR_MSG=
 LAST_SUCCESSFUL_UPDATE=
-
-mkdir -p $(dirname "$LOGFILE")
 
 log() {
   echo "$(date --iso-8601=seconds) $*" >> "$LOGFILE" 2>/dev/null || true
