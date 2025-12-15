@@ -21,14 +21,7 @@ app.use(express.static('public'));
 // Health endpoint used by container healthchecks
 app.get('/health', (req, res) => res.sendStatus(200));
 
-// Umbrel SSO middleware (verify that a Umbrel forward header is present)
-app.use((req, res, next) => {
-    if (process.env.NODE_ENV !== 'production') return next();
-    // Umbrel forwards user/session headers; allow if any exist
-    const hasSession = req.headers['x-umbrel-session'] || req.headers['x-umbrel-user'] || req.headers['x-umbrel-session-token'] || req.headers['x-umbrel-username'];
-    if (!hasSession) return res.status(401).json({ error: 'Unauthenticated' });
-    next();
-});
+// Note: Umbrel handles authentication at the proxy level, no need for custom auth middleware
 
 function ensureDirs() {
     try { 
