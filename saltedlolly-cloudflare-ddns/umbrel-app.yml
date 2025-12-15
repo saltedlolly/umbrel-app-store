@@ -9,17 +9,23 @@ port: 4100
 description: >-
   Dynamic DDNS client for Cloudflare to keep your domain or sub-domain updated with your current public IP address.
 
+
   Features:
 
-  - Runs the favonia/cloudflare-ddns client in a Docker container.
 
   - Includes a simple web UI for managing and monitoring the status of the DDNS client, secured by Umbrel SSO.
 
+
   - Makes it easy to enter your Cloudflare API token and the domains or subdomains you wish to keep updated.
+
 
   - Lets you view live logs and the last IP update directly from the web UI.
 
+
   - Enable/disable the DDNS client from the UI. Toggle IPv4 and/or IPv6 updates. Toggle Proxied mode for your DNS records.
+
+
+  - Powered by the favonia/cloudflare-ddns client.
   
 developer: saltedlolly
 website: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddns
@@ -29,7 +35,7 @@ repo: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddn
 support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery: []
 releaseNotes: >-
-  v1.0.2 - 2025-12-15:
+  v1.0.2:
 
   - Add IPv4/IPv6 support toggles in UI
   - Tweaks and bug fixes
