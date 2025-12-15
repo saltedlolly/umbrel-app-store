@@ -1,22 +1,21 @@
-# build-and-pin.sh
+# build.sh
 
 Automated multi-arch Docker build and digest pinning for Umbrel app releases.
 
-## Location Requirements
+## Location
 
-**Important:** You can run this script from anywhere, but it expects specific folder structure:
+The script is located in the app root directory:
 
 ```
 saltedlolly-cloudflare-ddns/
-├── tools/
-│   └── build-and-pin.sh          ← The script
+├── build.sh                      ← The build script (you are here)
 ├── ui/                            ← UI container source
 ├── cloudflare-ddns/              ← DDNS wrapper source
 ├── docker-compose.yml            ← Will be updated with digests
 └── umbrel-app.yml                ← Version source of truth
 ```
 
-The script automatically finds the app root from its own location, so you can run it from any directory.
+Run it from the app root directory for easiest usage.
 
 ## What It Does
 
@@ -39,34 +38,40 @@ The script automatically finds the app root from its own location, so you can ru
 
 ## Syntax
 
+### Show Help
+```bash
+./build.sh --help
+./build.sh -h
+```
+
 ### Basic Usage (Patch Bump)
 ```bash
-tools/build-and-pin.sh
+./build.sh
 ```
 Bumps patch version (1.0.12 → 1.0.13), builds both images, pins digests.
 
 ### Explicit Version
 ```bash
-tools/build-and-pin.sh --version 2.0.0
+./build.sh --version 2.0.0
 ```
 Sets exact version instead of auto-bumping.
 
 ### Version Bump Types
 ```bash
-tools/build-and-pin.sh --bump minor    # 1.0.12 → 1.1.0
-tools/build-and-pin.sh --bump major    # 1.0.12 → 2.0.0
-tools/build-and-pin.sh --bump patch    # 1.0.12 → 1.0.13 (default)
+./build.sh --bump minor    # 1.0.12 → 1.1.0
+./build.sh --bump major    # 1.0.12 → 2.0.0
+./build.sh --bump patch    # 1.0.12 → 1.0.13 (default)
 ```
 
 ### Custom Release Notes
 ```bash
-tools/build-and-pin.sh --notes "Add IPv6 support and health check notifications"
+./build.sh --notes "Add IPv6 support and health check notifications"
 ```
 Prepends custom notes to `releaseNotes` in umbrel-app.yml.
 
 ### Combined Options
 ```bash
-tools/build-and-pin.sh --bump minor --notes "Major UI redesign with dark mode"
+./build.sh --bump minor --notes "Major UI redesign with dark mode"
 ```
 
 ## Requirements

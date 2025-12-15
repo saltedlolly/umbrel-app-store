@@ -11,20 +11,20 @@ set -euo pipefail
 # - Local git repos for UI and DDNS within the app folder
 #
 # Usage examples:
-#   tools/build-and-pin.sh
+#   ./build.sh
 #     # Defaults: bump patch version, auto-build/push both images, pin digests
 #
-#   tools/build-and-pin.sh --version 0.0.15
+#   ./build.sh --version 0.0.15
 #     # Use explicit version instead of bumping
 #
-#   tools/build-and-pin.sh --bump minor
+#   ./build.sh --bump minor
 #     # Bump minor version instead of patch
 #
-#   tools/build-and-pin.sh --notes "Upgrade upstream favonia/cloudflare-ddns"
+#   ./build.sh --notes "Upgrade upstream favonia/cloudflare-ddns"
 #     # Custom release notes
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-APP_ROOT="$(dirname "$SCRIPT_DIR")"
+APP_ROOT="$SCRIPT_DIR"
 
 # Default repo paths (within the app folder)
 UI_REPO="$APP_ROOT/ui"
@@ -41,16 +41,17 @@ if [[ "${OSTYPE:-}" == darwin* ]]; then is_macos=true; fi
 
 usage() {
   cat >&2 <<EOF
-Usage: $0 [--version <x.y.z> | --bump patch|minor|major] [--notes <text>]
+Usage: $0 [OPTIONS]
+
+Options:
+  -h, --help           : Show this help message
+  --version <x.y.z>    : Set explicit version (otherwise auto-bump)
+  --bump patch|minor|major : Choose bump type (default: patch)
+  --notes <text>       : Custom release notes
 
 Default repo paths (within the app folder):
   UI_REPO:   $UI_REPO
   DDNS_REPO: $DDNS_REPO
-
-Options:
-  --version <x.y.z>    : Set explicit version (otherwise auto-bump)
-  --bump patch|minor|major : Choose bump type (default: patch)
-  --notes <text>       : Custom release notes
 EOF
 }
 
@@ -170,6 +171,7 @@ update_compose_digest() {
 ########################################
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --help|-h) usage; exit 0 ;;
     --version) SET_VERSION="$2"; shift 2 ;;
     --bump) BUMP_KIND="$2"; shift 2 ;;
     --notes) RELEASE_NOTES="$2"; shift 2 ;;
