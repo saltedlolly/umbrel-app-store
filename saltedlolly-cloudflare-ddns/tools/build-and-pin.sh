@@ -81,6 +81,17 @@ set_version_in_app_yml() {
   fi
 }
 
+set_version_in_package_json() {
+  local newv="$1"
+  local package_json="ui/package.json"
+  # Update version in package.json for consistency
+  if $is_macos; then
+    sed -E -i '' "s/\"version\":[[:space:]]*\"[0-9]+\.[0-9]+\.[0-9]+\"/\"version\": \"${newv}\"/" "$package_json"
+  else
+    sed -E -i "s/\"version\":[[:space:]]*\"[0-9]+\.[0-9]+\.[0-9]+\"/\"version\": \"${newv}\"/" "$package_json"
+  fi
+}
+
 prepend_release_notes() {
   local newv="$1" notes="$2"
   # Insert new section right after the 'releaseNotes: >-' line
@@ -198,11 +209,14 @@ echo "Target app version:  $target_v"
 echo
 
 ########################################
-# Update umbrel-app.yml (version + release notes)
+# Update umbrel-app.yml and package.json
 ########################################
 echo "Updating umbrel-app.yml version and release notes..."
 set_version_in_app_yml "$target_v"
 prepend_release_notes "$target_v" "$RELEASE_NOTES"
+
+echo "Updating package.json version..."
+set_version_in_package_json "$target_v"
 
 ########################################
 # Buildx setup
