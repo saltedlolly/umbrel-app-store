@@ -31,8 +31,19 @@ app.use((req, res, next) => {
 });
 
 function ensureDirs() {
-    try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch (e) { }
-    try { fs.mkdirSync(path.dirname(LOG_FILE), { recursive: true }); } catch (e) { }
+    try { 
+        fs.mkdirSync(DATA_DIR, { recursive: true }); 
+        console.log(`[ensureDirs] Created DATA_DIR: ${DATA_DIR}`);
+    } catch (e) { 
+        console.error(`[ensureDirs] Failed to create DATA_DIR: ${e.message}`);
+    }
+    try { 
+        const logDir = path.dirname(LOG_FILE);
+        fs.mkdirSync(logDir, { recursive: true }); 
+        console.log(`[ensureDirs] Created LOG_DIR: ${logDir}`);
+    } catch (e) { 
+        console.error(`[ensureDirs] Failed to create LOG_DIR: ${e.message}`);
+    }
 }
 
 ensureDirs();
@@ -194,12 +205,25 @@ app.post('/api/config', async (req, res) => {
         `SHOUTRRR_ENABLED=${sr_enabled ? 'true' : 'false'}`
     ];
     try {
+        // Ensure directories exist before writing
+        ensureDirs();
+        
         // preserve `ENABLED` flag if present
         const existing = readEnv();
         if (existing.ENABLED !== undefined) {
             lines.push(`ENABLED=${existing.ENABLED}`);
         }
+        
+        console.log(`[POST /api/config] Writing ENV to: ${ENV_FILE}`);
+        console.log(`[POST /api/config] ENV_FILE exists before write: ${fs.existsSync(ENV_FILE)}`);
+        console.log(`[POST /api/config] DATA_DIR exists: ${fs.existsSync(DATA_DIR)}`);
+        console.log(`[POST /api/config] DATA_DIR stats:`, fs.statSync(DATA_DIR));
+        
         fs.writeFileSync(ENV_FILE, lines.join('\n'));
+        
+        console.log(`[POST /api/config] Write successful. ENV_FILE exists after write: ${fs.existsSync(ENV_FILE)}`);
+        console.log(`[POST /api/config] ENV_FILE size: ${fs.statSync(ENV_FILE).size}`);
+        
         appendLog(`Config updated via UI by ${req.headers['x-umbrel-username'] || 'local'}`);
         // Force immediate config reload by killing the running ddns child (if any)
         // The wrapper will detect the death and restart with new config
@@ -222,7 +246,12 @@ app.post('/api/config', async (req, res) => {
             setEnabled(false);
         }
         res.json({ success: true });
-    } catch (e) { appendLog(`Config update failed: ${String(e)}`); res.status(500).json({ error: String(e) }); }
+    } catch (e) { 
+        console.error(`[POST /api/config] ERROR: ${String(e)}`);
+        console.error(`[POST /api/config] Stack:`, e.stack);
+        appendLog(`Config update failed: ${String(e)}`); 
+        res.status(500).json({ error: String(e) }); 
+    }
 });
 
 function appendLog(message) {

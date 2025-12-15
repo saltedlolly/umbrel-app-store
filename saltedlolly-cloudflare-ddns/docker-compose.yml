@@ -6,7 +6,7 @@ services:
       APP_PORT: 3000
 
   ui:
-    image: saltedlolly/cloudflare-ddns-ui@sha256:be54f9d21e91e560f5cb78f845d406cd8a1ebc96a304deb91675c75dd02c51c7
+    image: saltedlolly/cloudflare-ddns-ui@sha256:abf9b0e04ef3620d5c54c9b67d36f410b18e12292187fceaed0ecf0ceaf40653
     user: "1000:1000"
     container_name: saltedlolly-cloudflare-ddns_ui_1
     hostname: saltedlolly-cloudflare-ddns_ui_1
