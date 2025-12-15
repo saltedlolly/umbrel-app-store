@@ -29,42 +29,10 @@ repo: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddn
 support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery: []
 releaseNotes: >-
-  v0.0.16:
+  v0.0.16 - 2025-12-15:
 
-  - Fix IPv6 OFF mapping to IP6_PROVIDER=none
-
-  v0.0.15:
-
-  - Add IPv4/IPv6 support toggles in UI
-
-  v0.0.14:
-
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
-  - Add automated build script with version bumping and digest pinning
+- Add IPv4/IPv6 support toggles in UI
 
 
-  v0.0.13:
-
-  - Initial multi-arch foundation (version mismatch with images)
-
-
-  v0.0.12:
-
-  - Fix 401 authentication errors by removing custom auth middleware (Umbrel handles auth at proxy level)
-
-
-  v0.0.11:
-
-  - Fix volume permissions by removing user directive (containers now run as root)
-  - Move log files to /data root to avoid subdirectory permission issues
-  - Add extensive debug logging to diagnose config save issues
-  - Rebuild images with proper LF line endings for shell scripts
-
-  
-  Previous:
-
-  - Use Umbrel app_proxy pattern with required `_1` suffix
-  - Add `init: true` for clean shutdown and zombie reaping
-  - Keep UI on internal port 3000; proxy via Umbrel on port 4100
 dependencies: []
 path: ""
