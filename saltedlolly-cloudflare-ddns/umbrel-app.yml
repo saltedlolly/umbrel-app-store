@@ -29,6 +29,10 @@ repo: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddn
 support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery: []
 releaseNotes: >-
+  v0.0.17:
+
+  - Make IPv4/IPv6 toggles match Proxied toggle size
+
   v0.0.16 - 2025-12-15:
 
 - Add IPv4/IPv6 support toggles in UI
