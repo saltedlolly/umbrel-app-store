@@ -73,10 +73,11 @@ read_current_version() {
 
 set_version_in_app_yml() {
   local newv="$1"
+  # Use [[:space:]] instead of \s for BSD sed (macOS) compatibility
   if $is_macos; then
-    sed -E -i '' "s/^(version:\s*)\"[0-9]+\.[0-9]+\.[0-9]+\"/\\1\"${newv}\"/" "$APP_YML_FILE"
+    sed -E -i '' "s/^(version:[[:space:]]*)\"[0-9]+\.[0-9]+\.[0-9]+\"/\\1\"${newv}\"/" "$APP_YML_FILE"
   else
-    sed -E -i "s/^(version:\s*)\"[0-9]+\.[0-9]+\.[0-9]+\"/\\1\"${newv}\"/" "$APP_YML_FILE"
+    sed -E -i "s/^(version:[[:space:]]*)\"[0-9]+\.[0-9]+\.[0-9]+\"/\\1\"${newv}\"/" "$APP_YML_FILE"
   fi
 }
 
