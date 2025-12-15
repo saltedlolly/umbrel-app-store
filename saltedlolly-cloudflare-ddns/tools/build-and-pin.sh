@@ -106,10 +106,13 @@ ensure_buildx() {
   
   # List all builders and find one with docker-container driver and both platforms
   local container_builder=$(docker buildx ls 2>/dev/null | awk '$2 ~ /docker-container/ && $4 ~ /linux\/amd64/ && $4 ~ /linux\/arm64/ {print $1; exit}')
+  # Strip trailing '*' that marks the current builder in `docker buildx ls`
+  container_builder="${container_builder%\*}"
   
   if [[ -z "$container_builder" ]]; then
     # Try to find any docker-container builder
     container_builder=$(docker buildx ls 2>/dev/null | awk '$2 ~ /docker-container/ {print $1; exit}')
+    container_builder="${container_builder%\*}"
     
     if [[ -z "$container_builder" ]]; then
       # Create a new multiarch builder

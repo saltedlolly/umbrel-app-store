@@ -513,7 +513,7 @@
 
                         // IPv4/IPv6 support switches (default ON if unset)
                         const v4On = !cfg || cfg.IP4_PROVIDER === undefined || cfg.IP4_PROVIDER === '' ? true : (cfg.IP4_PROVIDER !== 'none');
-                        const v6On = !cfg || cfg.IP6_PROVIDER === undefined || cfg.IP6_PROVIDER === '' ? true : (cfg.IP6_PROVIDER !== 'node' && cfg.IP6_PROVIDER !== 'none');
+                        const v6On = !cfg || cfg.IP6_PROVIDER === undefined || cfg.IP6_PROVIDER === '' ? true : (cfg.IP6_PROVIDER !== 'none');
                         ipv4MainSwitch.checked = !!v4On;
                         ipv6MainSwitch.checked = !!v6On;
                     }
@@ -541,7 +541,7 @@
                         editProxiedField.checked = cfg.PROXIED === 'true' || cfg.PROXIED === true;
                         // IPv4/IPv6 default ON
                         editIPv4Switch.checked = (cfg.IP4_PROVIDER === undefined || cfg.IP4_PROVIDER === '' || cfg.IP4_PROVIDER !== 'none');
-                        editIPv6Switch.checked = (cfg.IP6_PROVIDER === undefined || cfg.IP6_PROVIDER === '' || (cfg.IP6_PROVIDER !== 'node' && cfg.IP6_PROVIDER !== 'none'));
+                        editIPv6Switch.checked = (cfg.IP6_PROVIDER === undefined || cfg.IP6_PROVIDER === '' || (cfg.IP6_PROVIDER !== 'none'));
                         // ensure constraint: at least one must be on when toggling
                         const enforceAtLeastOne = (changed) => {
                             const v4 = editIPv4Switch.checked;
@@ -579,7 +579,7 @@
                                 DOMAINS: domains || '',
                                 PROXIED: proxied ? 'true' : 'false',
                                 IP4_PROVIDER: v4On ? 'cloudflare.trace' : 'none',
-                                IP6_PROVIDER: v6On ? 'cloudflare.trace' : 'node'
+                                IP6_PROVIDER: v6On ? 'cloudflare.trace' : 'none'
                             });
                             await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                             // refresh UI
@@ -598,7 +598,7 @@
                             const cur = await (await fetch('/api/config')).json();
                             // Determine current states with defaults ON when unset
                             let v4On = !cur || cur.IP4_PROVIDER === undefined || cur.IP4_PROVIDER === '' ? true : (cur.IP4_PROVIDER !== 'none');
-                            let v6On = !cur || cur.IP6_PROVIDER === undefined || cur.IP6_PROVIDER === '' ? true : (cur.IP6_PROVIDER !== 'node' && cur.IP6_PROVIDER !== 'none');
+                            let v6On = !cur || cur.IP6_PROVIDER === undefined || cur.IP6_PROVIDER === '' ? true : (cur.IP6_PROVIDER !== 'none');
                             if (kind === 'v4') v4On = enabled; else v6On = enabled;
                             // enforce at least one ON by auto-enabling the other if needed
                             if (!v4On && !v6On) {
@@ -607,7 +607,7 @@
                             }
                             const payload = Object.assign({}, cur, {
                                 IP4_PROVIDER: v4On ? 'cloudflare.trace' : 'none',
-                                IP6_PROVIDER: v6On ? 'cloudflare.trace' : 'node'
+                                IP6_PROVIDER: v6On ? 'cloudflare.trace' : 'none'
                             });
                             await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                             await updateStatus();
@@ -662,7 +662,7 @@
                         editDomainsField.value = data.DOMAINS || '';
                         editProxiedField.checked = data.PROXIED === 'true' || data.PROXIED === true;
                         editIPv4Switch.checked = (data.IP4_PROVIDER === undefined || data.IP4_PROVIDER === '' || data.IP4_PROVIDER !== 'none');
-                        editIPv6Switch.checked = (data.IP6_PROVIDER === undefined || data.IP6_PROVIDER === '' || (data.IP6_PROVIDER !== 'node' && data.IP6_PROVIDER !== 'none'));
+                        editIPv6Switch.checked = (data.IP6_PROVIDER === undefined || data.IP6_PROVIDER === '' || (data.IP6_PROVIDER !== 'none'));
                         // Ensure start button only enabled when token is present
                         startBtn.disabled = !(data && (data.CLOUDFLARE_API_TOKEN || data.API_KEY)) || !!(data && data.ENABLED && data.ENABLED === 'true');
                         // Render notifiers view
