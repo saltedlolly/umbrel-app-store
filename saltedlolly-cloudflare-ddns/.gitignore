@@ -1,0 +1,20 @@
+# Ignore runtime data and secrets
+/data/
+
+# Node/npm artifacts
+ui/node_modules/
+ui/npm-debug.log*
+
+# Logs
+*.log
+/data/logs/
+
+# Environment files (tokens)
+cloudflare-ddns.env
+/data/cloudflare-ddns.env
+
+# Build outputs
+ui/build/
+
+# Personal docs
+README.md

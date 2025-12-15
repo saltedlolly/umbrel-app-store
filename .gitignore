@@ -1,1 +1,22 @@
+# Global ignores for all apps in this store
+
+# Runtime data and secrets
+**/data/
+**/data/logs/
+**/cloudflare-ddns.env
+**/.env
+
+# Node and frontend artifacts
+**/node_modules/
+**/npm-debug.log*
+**/build/
+**/dist/
+
+# Logs
+*.log
+
+# Personal docs (per-app)
+**/README.md
+
+# macOS junk
 .DS_Store
