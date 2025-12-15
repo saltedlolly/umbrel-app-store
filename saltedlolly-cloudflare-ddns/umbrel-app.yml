@@ -4,7 +4,7 @@ name: Cloudflare DDNS Client
 tagline: Dynamic DNS client for Cloudflare to keep your domain updated with your changing IP address.
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/refs/heads/master/saltedlolly-cloudflare-ddns/logo.png
 category: Networking
-version: "0.0.16"
+version: "1.0.1"
 port: 4100
 description: >-
   Dynamic DDNS client for Cloudflare to keep your domain or sub-domain updated with your current public IP address.
@@ -19,7 +19,7 @@ description: >-
 
   - Lets you view live logs and the last IP update directly from the web UI.
 
-  - Enable/disable the DDNS client from the UI.
+  - Enable/disable the DDNS client from the UI. Toggle IPv4 and/or IPv6 updates. Toggle Proxied mode for your DNS records.
   
 developer: saltedlolly
 website: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddns
@@ -29,13 +29,9 @@ repo: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddn
 support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery: []
 releaseNotes: >-
-  v0.0.17:
+  v1.0.1 - 2025-12-15:
 
-  - Make IPv4/IPv6 toggles match Proxied toggle size
-
-  v0.0.16 - 2025-12-15:
-
-- Add IPv4/IPv6 support toggles in UI
+  - Add IPv4/IPv6 support toggles in UI
 
 
 dependencies: []
