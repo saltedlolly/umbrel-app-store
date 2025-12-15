@@ -34,9 +34,9 @@ description: >-
 
   The full list of NPMplus features can be found [here](https://github.com/ZoeyVid/NPMplus).
 
-  ### Upgrading from NPM to NPMplus
+  ### Upgrading from NPM to NPMplus?
 
-  💥 The NPMplus ports are chosen to avoid conflicts with the NPM app available in the Umbrel app store, which uses ports 40080 (http) and 40443 (https).
+  💥 The NPMplus ports are chosen to prevent conflicts with the NPM app available from the Umbrel App Store which uses ports 40080 (http) and 40443 (https).
   This makes it possible to run both side by side, while switching over. However, NPM proxy host configurations are not shared with NPMplus - these will need to be copied over manually.
   When you are ready to switch, simply update port forwarding on your router to point to the NPMplus ports.
 

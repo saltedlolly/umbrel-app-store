@@ -1,14 +1,26 @@
 version: "3.7"
 
 services:
-
   app_proxy:
     environment:
-      # The format here is: <app-id>_<docker-service-name>_1
-      APP_HOST: sparkles-hello-world_server_1
-      APP_PORT: 3000
-    
-  server:
-    image: getumbrel/community-app-store-hello-world:latest
-    user: "1000:1000"
-    init: true
+      APP_HOST: nginx-proxy-manager_web_1
+      APP_PORT: 81
+      
+  web:
+    image: jc21/nginx-proxy-manager:2.13.5@sha256:cd9eba29ca132cb006729f2cb2660126453f84818c2f7d75963ad7b61ef696bd
+    hostname: nginx-proxy-manager_web_1
+    restart: on-failure
+    ports:
+      - 40080:80
+      - 40443:443
+    volumes:
+      - ${APP_DATA_DIR}/data/npm-data:/data
+      - ${APP_DATA_DIR}/data/letsencrypt:/etc/letsencrypt
+  
+  docker-host:
+    image: qoomon/docker-host:3.3.1@sha256:ec9d214d7fa88932e9186ca2f4419d44661376929931248525b08e7fa9e270f7
+    hostname: $DEVICE_DOMAIN_NAME
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    restart: on-failure
