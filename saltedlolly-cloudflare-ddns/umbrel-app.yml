@@ -37,12 +37,7 @@ gallery: []
 releaseNotes: >-
   v1.0.7:
 
-  - Fix notifier URLs not saving by removing explicit _ENABLED flag preservation in UI
-
-
   - Fix notifier URLs not being saved
-
-  Previously
 
   - Add IPv4/IPv6 support toggles in UI
 
