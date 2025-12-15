@@ -143,7 +143,8 @@ ensure_buildx() {
 
 update_compose_digest() {
   local image_prefix="$1" digest="$2"
-  local pattern="^(\s*image:\s*${image_prefix}@sha256:)[a-f0-9]+"
+  # Use [[:space:]] instead of \s for compatibility with BSD sed (macOS)
+  local pattern="^([[:space:]]*image:[[:space:]]*${image_prefix}@sha256:)[a-f0-9]+"
   
   if $is_macos; then
     sed -E -i '' "s|$pattern|\\1${digest#sha256:}|" "$COMPOSE_FILE"
