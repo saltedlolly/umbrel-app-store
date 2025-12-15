@@ -35,9 +35,9 @@ repo: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddn
 support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery: []
 releaseNotes: >-
-  v1.0.2:
 
   - Add IPv4/IPv6 support toggles in UI
+  
   - Tweaks and bug fixes
 
 dependencies: []
