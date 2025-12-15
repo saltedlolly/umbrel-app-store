@@ -7,9 +7,7 @@ services:
       APP_PORT: 3000
 
   ui:
-    build:
-      context: .
-      dockerfile: Dockerfile.ui
+    image: saltedlolly/cloudflare-ddns-ui@sha256:7c4e0626465dcdf3f23a74bfb6b0e3da84c2b56f5ef318f7809a9567dca3199f
     container_name: saltedlolly-cloudflare-ddns_ui_1
     hostname: saltedlolly-cloudflare-ddns_ui_1
     restart: unless-stopped
@@ -25,9 +23,7 @@ services:
       retries: 5
 
   cloudflare-ddns:
-    build: 
-      context: .
-      dockerfile: Dockerfile.ddns
+    image: saltedlolly/cloudflare-ddns@sha256:1cffd89a35efbafa09ea662d67ba5a9de8b2b19504368f916f9069892d0ca34c
     container_name: saltedlolly-cloudflare-ddns_cloudflare-ddns_1
     hostname: saltedlolly-cloudflare-ddns_cloudflare-ddns_1
     restart: unless-stopped
