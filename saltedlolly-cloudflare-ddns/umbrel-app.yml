@@ -1,0 +1,33 @@
+manifestVersion: 1
+id: saltedlolly-cloudflare-ddns
+name: Cloudflare DDNS Client
+tagline: Dynamic DNS client for Cloudflare to keep your domain updated with your changing IP address.
+icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/refs/heads/master/saltedlolly-cloudflare-ddns/logo.png
+category: Networking
+version: "0.0.1"
+port: 4100
+description: >-
+  Dynamic DDNS client for Cloudflare to keep your domain or sub-domain updated with your current public IP address.
+
+  Features:
+
+  - Runs the favonia/cloudflare-ddns client in a Docker container.
+
+  - Includes a simple web UI for managing and monitoring the status of the DDNS client, secured by Umbrel SSO.
+
+  - Makes it easy to enter your Cloudflare API token and the domains or subdomains you wish to keep updated.
+
+  - Lets you view live logs and the last IP update directly from the web UI.
+
+  - Enable/disable the DDNS client from the UI.
+  
+developer: saltedlolly
+website: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddns
+submitter: saltedlolly
+submission: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddns
+repo: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddns
+support: https://github.com/saltedlolly/umbrel-app-store/issues
+gallery: []
+releaseNotes: ""
+dependencies: []
+path: ""

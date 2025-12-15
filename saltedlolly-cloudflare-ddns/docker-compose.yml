@@ -1,0 +1,45 @@
+services:
+  app_proxy:
+    image: alpine:3.18
+    environment:
+      # The format: <app-id>_<service>_1
+      APP_HOST: saltedlolly-cloudflare-ddns_ui_1
+      APP_PORT: 3000
+
+  ui:
+    build:
+      context: .
+      dockerfile: ui/Dockerfile
+    container_name: saltedlolly-cloudflare-ddns_ui_1
+    hostname: saltedlolly-cloudflare-ddns_ui_1
+    restart: unless-stopped
+    environment:
+      - APP_DATA_DIR=/data
+      - NODE_ENV=production
+    volumes:
+      - cloudflare-ddns-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  cloudflare-ddns:
+    build: ./cloudflare-ddns
+    container_name: saltedlolly-cloudflare-ddns_cloudflare-ddns_1
+    hostname: saltedlolly-cloudflare-ddns_cloudflare-ddns_1
+    restart: unless-stopped
+    environment:
+      - APP_DATA_DIR=/data
+    volumes:
+      - cloudflare-ddns-data:/data
+    healthcheck:
+      test: ["CMD", "sh", "-c", "test -f /data/status.json && grep -q '\"status\": \"running\"' /data/status.json || exit 1"]
+      interval: 1m
+      timeout: 20s
+      retries: 6
+    depends_on:
+      - ui
+
+volumes:
+  cloudflare-ddns-data:
