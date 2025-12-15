@@ -7,8 +7,10 @@ services:
 
   ui:
     image: saltedlolly/cloudflare-ddns-ui@sha256:7b050c38cb49c4ce9e04e25cc4b74780c5e4100d629645f820c5b9082a1b4486
+    user: "1000:1000"
     container_name: saltedlolly-cloudflare-ddns_ui_1
     hostname: saltedlolly-cloudflare-ddns_ui_1
+    init: true
     restart: unless-stopped
     environment:
       - APP_DATA_DIR=/data
@@ -23,8 +25,10 @@ services:
 
   cloudflare-ddns:
     image: saltedlolly/cloudflare-ddns@sha256:eab3c8eb82929dcf58fa25177b3a9e9fe405177b48a5a230b2047b6b339c0389
+    user: "1000:1000"
     container_name: saltedlolly-cloudflare-ddns_cloudflare-ddns_1
     hostname: saltedlolly-cloudflare-ddns_cloudflare-ddns_1
+    init: true
     restart: unless-stopped
     environment:
       - APP_DATA_DIR=/data
