@@ -7,7 +7,6 @@ services:
 
   ui:
     image: saltedlolly/cloudflare-ddns-ui@sha256:a2396e7f9c79789f96d14fbb16923181d8c47756e84d85ab89e30c910bed0058
-    user: "1000:1000"
     container_name: saltedlolly-cloudflare-ddns_ui_1
     hostname: saltedlolly-cloudflare-ddns_ui_1
     init: true
@@ -25,7 +24,6 @@ services:
 
   cloudflare-ddns:
     image: saltedlolly/cloudflare-ddns@sha256:9e186d52b7d21ed7155f2980ca98b4b071bc216dba33410958b855ccfb60d8ca
-    user: "1000:1000"
     container_name: saltedlolly-cloudflare-ddns_cloudflare-ddns_1
     hostname: saltedlolly-cloudflare-ddns_cloudflare-ddns_1
     init: true
