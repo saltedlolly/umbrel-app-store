@@ -35,6 +35,10 @@ repo: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddn
 support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery: []
 releaseNotes: >-
+  v1.0.8:
+
+  - Add version badge to footer for debugging; confirm notifier save fix
+
   v1.0.7:
 
   - Fix notifier URLs not being saved
