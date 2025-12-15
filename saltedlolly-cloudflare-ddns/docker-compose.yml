@@ -1,13 +1,16 @@
 services:
   app_proxy:
     image: alpine:3.18
+    restart: unless-stopped
     environment:
-      # The format: <app-id>_<service>_1
-      APP_HOST: saltedlolly-cloudflare-ddns_ui_1
+      APP_HOST: ui
       APP_PORT: 3000
 
   ui:
-    image: saltedlolly/cloudflare-ddns-ui@sha256:7b050c38cb49c4ce9e04e25cc4b74780c5e4100d629645f820c5b9082a1b4486
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    image: saltedlolly/cloudflare-ddns-ui:latest
     container_name: saltedlolly-cloudflare-ddns_ui_1
     hostname: saltedlolly-cloudflare-ddns_ui_1
     restart: unless-stopped
@@ -23,7 +26,10 @@ services:
       retries: 5
 
   cloudflare-ddns:
-    image: saltedlolly/cloudflare-ddns@sha256:eab3c8eb82929dcf58fa25177b3a9e9fe405177b48a5a230b2047b6b339c0389
+    build:
+      context: ./cloudflare-ddns
+      dockerfile: Dockerfile
+    image: saltedlolly/cloudflare-ddns:latest
     container_name: saltedlolly-cloudflare-ddns_cloudflare-ddns_1
     hostname: saltedlolly-cloudflare-ddns_cloudflare-ddns_1
     restart: unless-stopped
