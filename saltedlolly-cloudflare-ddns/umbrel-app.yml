@@ -30,9 +30,13 @@ support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery: []
 releaseNotes: >-
   - Fix config save reliability by aligning container user to 1000:1000
+
   - Use Umbrel app_proxy pattern with required `_1` suffix
+
   - Add `init: true` for clean shutdown and zombie reaping
+
   - Keep UI on internal port 3000; proxy via Umbrel on port 4100
+  
   - Minor stability and logging improvements
 dependencies: []
 path: ""
