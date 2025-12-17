@@ -4,8 +4,6 @@ services:
       # The format here is: <app-id>_<docker-service-name>_1
       APP_HOST: saltedlolly-cloudflare-ddns_ui_1
       APP_PORT: 3000
-      # Disable SSO for local testing
-      PROXY_AUTH_ADD: "false"
 
   ui:
     image: saltedlolly/cloudflare-ddns-ui@sha256:61215dc9f200755c1a3a9765c21a73f06182dcf488df5355cab85b0f8a484aed
