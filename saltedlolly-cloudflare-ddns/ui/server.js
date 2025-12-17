@@ -184,10 +184,13 @@ app.post('/api/config', async (req, res) => {
     // Use DOMAINS as the single authoritative list
     const DOMAINS = (DOMAINS_IN || '').split(',').map(s => s.trim()).filter(Boolean).join(',');
     const shout = (SHOUTRRR || '').split('\n').map(s => s.trim()).filter(Boolean).join(',');
-    // Auto-enable notifiers when URLs are provided; respect explicit disable via toggle
+    
+    // Always save URLs, regardless of enabled state
+    // Auto-enable when URLs are provided (unless explicitly disabled)
     const hc_enabled = (HEALTHCHECKS && HEALTHCHECKS.trim()) ? (HEALTHCHECKS_ENABLED !== 'false') : (HEALTHCHECKS_ENABLED === 'true');
     const uk_enabled = (UPTIMEKUMA && UPTIMEKUMA.trim()) ? (UPTIMEKUMA_ENABLED !== 'false') : (UPTIMEKUMA_ENABLED === 'true');
     const sr_enabled = (shout) ? (SHOUTRRR_ENABLED !== 'false') : (SHOUTRRR_ENABLED === 'true');
+    
     const existing = readEnv();
     const token = (CLOUDFLARE_API_TOKEN === '***') ? existing.CLOUDFLARE_API_TOKEN : CLOUDFLARE_API_TOKEN;
     const lines = [
@@ -196,11 +199,11 @@ app.post('/api/config', async (req, res) => {
         `PROXIED=${PROXIED || 'true'}`,
         `IP4_PROVIDER=${IP4_PROVIDER || ''}`,
         `IP6_PROVIDER=${IP6_PROVIDER || ''}`,
-        `HEALTHCHECKS=${hc_enabled ? HEALTHCHECKS || '' : ''}`,
+        `HEALTHCHECKS=${HEALTHCHECKS || ''}`,
         `HEALTHCHECKS_ENABLED=${hc_enabled ? 'true' : 'false'}`,
-        `UPTIMEKUMA=${uk_enabled ? UPTIMEKUMA || '' : ''}`,
+        `UPTIMEKUMA=${UPTIMEKUMA || ''}`,
         `UPTIMEKUMA_ENABLED=${uk_enabled ? 'true' : 'false'}`,
-        `SHOUTRRR=${sr_enabled ? shout : ''}`,
+        `SHOUTRRR=${shout}`,
         `SHOUTRRR_ENABLED=${sr_enabled ? 'true' : 'false'}`
     ];
     try {
