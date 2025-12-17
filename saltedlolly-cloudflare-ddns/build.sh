@@ -36,6 +36,7 @@ RELEASE_NOTES="Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel 
 COMPOSE_FILE="$APP_ROOT/docker-compose.yml"
 APP_YML_FILE="$APP_ROOT/umbrel-app.yml"
 LOCAL_TEST=false
+PUBLISH_TO_GITHUB=false
 UMBREL_DEV_HOST="192.168.215.2"
 
 is_macos=false
@@ -51,6 +52,7 @@ Options:
   --bump patch|minor|major : Choose bump type (default: patch)
   --notes <text>       : Custom release notes
   --localtest          : Build and deploy to local umbrel-dev ($UMBREL_DEV_HOST)
+  --publish            : Build and push to GitHub (prompts for version and notes if not provided)
 
 Default repo paths (within the app folder):
   UI_REPO:   $UI_REPO
@@ -179,9 +181,63 @@ while [[ $# -gt 0 ]]; do
     --bump) BUMP_KIND="$2"; shift 2 ;;
     --notes) RELEASE_NOTES="$2"; shift 2 ;;
     --localtest) LOCAL_TEST=true; shift ;;
+    --publish) PUBLISH_TO_GITHUB=true; shift ;;
     *) usage; exit 1 ;;
   esac
 done
+
+########################################
+# Interactive prompts for --publish mode
+########################################
+if [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
+  current_v=$(read_current_version)
+  if [[ -z "$current_v" ]]; then
+    echo "Error: Could not read current version from $APP_YML_FILE" >&2
+    exit 1
+  fi
+  
+  # Prompt for version if not specified
+  if [[ -z "$SET_VERSION" ]]; then
+    echo "Current version: $current_v"
+    echo
+    patch_v=$(semver_bump "$current_v" "patch")
+    minor_v=$(semver_bump "$current_v" "minor")
+    major_v=$(semver_bump "$current_v" "major")
+    
+    echo "Select version bump:"
+    echo "  1) Patch: $patch_v (bug fixes, minor changes)"
+    echo "  2) Minor: $minor_v (new features, backwards compatible)"
+    echo "  3) Major: $major_v (breaking changes)"
+    echo "  4) Cancel"
+    echo
+    read -p "Enter choice (1-4): " -n 1 -r
+    echo
+    
+    case "$REPLY" in
+      1) SET_VERSION="$patch_v"; BUMP_KIND="patch" ;;
+      2) SET_VERSION="$minor_v"; BUMP_KIND="minor" ;;
+      3) SET_VERSION="$major_v"; BUMP_KIND="major" ;;
+      4) echo "Cancelled."; exit 0 ;;
+      *) echo "Invalid choice. Cancelled."; exit 1 ;;
+    esac
+    
+    echo "Selected version: $SET_VERSION"
+    echo
+  fi
+  
+  # Prompt for release notes if not specified
+  if [[ "$RELEASE_NOTES" == "Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility" ]]; then
+    echo "Enter release notes (used for commit message and umbrel-app.yml):"
+    read -r RELEASE_NOTES
+    
+    if [[ -z "$RELEASE_NOTES" ]]; then
+      echo "Error: Release notes cannot be empty" >&2
+      exit 1
+    fi
+    
+    echo
+  fi
+fi
 
 ########################################
 # Validate repos exist
@@ -391,6 +447,27 @@ if [[ "$LOCAL_TEST" == "true" ]]; then
   echo "  2. TEST the app:"
   echo "     • Access at: http://$UMBREL_DEV_HOST:4100/"
   echo "     • Version badge should show: v$target_v"
+  echo
+  echo "Built images on Docker Hub:"
+  echo "  • UI:   saltedlolly/cloudflare-ddns-ui:$target_v@$UI_DIGEST"
+  echo "  • DDNS: saltedlolly/cloudflare-ddns:$target_v@$DDNS_DIGEST"
+  echo
+elif [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
+  echo "========================================" 
+  echo "PUBLISHING TO GITHUB"
+  echo "========================================" 
+  echo
+  
+  # Commit and push to GitHub
+  echo "Committing changes..."
+  git add -A
+  git commit -m "release: v${target_v} - ${RELEASE_NOTES}"
+  
+  echo "Pushing to GitHub..."
+  git push
+  
+  echo
+  echo "✓ Successfully published v${target_v} to GitHub"
   echo
   echo "Built images on Docker Hub:"
   echo "  • UI:   saltedlolly/cloudflare-ddns-ui:$target_v@$UI_DIGEST"
