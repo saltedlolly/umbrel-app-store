@@ -65,16 +65,16 @@ app.get('/api/config', (req, res) => {
     const hcEnabled = obj.HEALTHCHECKS_ENABLED === 'yes';
     const ukEnabled = obj.UPTIMEKUMA_ENABLED === 'yes';
     const srEnabled = obj.SHOUTRRR_ENABLED === 'yes';
-    
+
     obj.HEALTHCHECKS = hcEnabled ? (obj.HEALTHCHECKS || '') : (obj.HEALTHCHECKS_DISABLED || '');
     obj.UPTIMEKUMA = ukEnabled ? (obj.UPTIMEKUMA || '') : (obj.UPTIMEKUMA_DISABLED || '');
     obj.SHOUTRRR = srEnabled ? (obj.SHOUTRRR || '') : (obj.SHOUTRRR_DISABLED || '');
-    
+
     // Default _ENABLED to 'yes' if URL exists
     if (obj.HEALTHCHECKS_ENABLED === undefined && (obj.HEALTHCHECKS || obj.HEALTHCHECKS_DISABLED)) obj.HEALTHCHECKS_ENABLED = 'yes';
     if (obj.UPTIMEKUMA_ENABLED === undefined && (obj.UPTIMEKUMA || obj.UPTIMEKUMA_DISABLED)) obj.UPTIMEKUMA_ENABLED = 'yes';
     if (obj.SHOUTRRR_ENABLED === undefined && (obj.SHOUTRRR || obj.SHOUTRRR_DISABLED)) obj.SHOUTRRR_ENABLED = 'yes';
-    
+
     res.json(obj);
 });
 
@@ -196,14 +196,14 @@ app.post('/api/config', async (req, res) => {
     // Use DOMAINS as the single authoritative list
     const DOMAINS = (DOMAINS_IN || '').split(',').map(s => s.trim()).filter(Boolean).join(',');
     const shout = (SHOUTRRR || '').split('\n').map(s => s.trim()).filter(Boolean).join(',');
-    
+
     // New approach: Save URLs to HEALTHCHECKS or HEALTHCHECKS_DISABLED based on toggle
     // When toggle ON (HEALTHCHECKS_ENABLED='yes'): save to HEALTHCHECKS, clear HEALTHCHECKS_DISABLED
     // When toggle OFF (HEALTHCHECKS_ENABLED='no'): save to HEALTHCHECKS_DISABLED, clear HEALTHCHECKS
     const hc_enabled = HEALTHCHECKS_ENABLED === 'yes';
     const uk_enabled = UPTIMEKUMA_ENABLED === 'yes';
     const sr_enabled = SHOUTRRR_ENABLED === 'yes';
-    
+
     const existing = readEnv();
     const token = (CLOUDFLARE_API_TOKEN === '***') ? existing.CLOUDFLARE_API_TOKEN : CLOUDFLARE_API_TOKEN;
     const lines = [
