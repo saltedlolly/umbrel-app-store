@@ -126,3 +126,34 @@ Footer displays version badge
 ```
 
 This ensures the version displayed always matches the actual running container.
+
+## Development Mode (Disable SSO)
+
+During local development, you can disable Umbrel SSO to access the UI directly at `http://192.168.x.x:4100/` without authentication.
+
+**To disable SSO for local testing:**
+
+Edit `umbrel-app.yml` and change:
+```yaml
+path: ""
+```
+
+To:
+```yaml
+path: "/"
+```
+
+This bypasses Umbrel's app_proxy and gives you direct access to the UI.
+
+**The build script automatically re-enables SSO:**
+
+When you run `./build.sh`, it automatically detects if SSO is disabled and re-enables it before building. This ensures you never accidentally publish a version without SSO protection.
+
+**Workflow:**
+1. Disable SSO: Change `path: ""` to `path: "/"` in umbrel-app.yml
+2. Develop and test locally without authentication
+3. Run `./build.sh` when ready to publish
+4. Script automatically restores `path: ""`
+5. Build proceeds with SSO properly configured
+6. Commit includes the SSO-enabled version
+

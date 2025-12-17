@@ -211,6 +211,24 @@ echo "Target app version:  $target_v"
 echo
 
 ########################################
+# Ensure SSO is enabled for production
+########################################
+echo "Checking Umbrel SSO configuration..."
+sso_path=$(grep '^path:' "$APP_YML_FILE" | awk '{print $2}' | tr -d '"')
+if [[ "$sso_path" != "" ]]; then
+  echo "⚠️  SSO is currently disabled (path: '$sso_path')"
+  echo "✓ Re-enabling Umbrel SSO for production build (path: \"\")"
+  if $is_macos; then
+    sed -i '' 's/^path:.*/path: ""/' "$APP_YML_FILE"
+  else
+    sed -i 's/^path:.*/path: ""/' "$APP_YML_FILE"
+  fi
+else
+  echo "✓ SSO already enabled (path: \"\")"
+fi
+echo
+
+########################################
 # Update umbrel-app.yml and package.json
 ########################################
 echo "Updating umbrel-app.yml version and release notes..."
