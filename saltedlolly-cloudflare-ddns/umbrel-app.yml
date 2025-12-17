@@ -4,7 +4,7 @@ name: Cloudflare DDNS Client
 tagline: Dynamic DNS client for Cloudflare to keep your domain updated with your changing IP address.
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/refs/heads/master/saltedlolly-cloudflare-ddns/logo.png
 category: Networking
-version: "1.1.0"
+version: "1.2.0"
 port: 4100
 description: >-
   Dynamic DDNS client for Cloudflare to keep your domain or sub-domain updated with your current public IP address.
@@ -35,61 +35,17 @@ repo: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddn
 support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery: []
 releaseNotes: >-
+  v1.2.0:
+
+  - Add support for detecting IPv6 addresses, if the system supports it. Required the container to use `network_mode: host`.
+
   v1.1.0:
 
   - Fix Notifier section - URLs now save correctly. Hopefully Notifiers should now be working.
 
-  v1.0.22:
-
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
-
-  v1.0.21:
-
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
-
-  v1.0.20:
-
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
-
-  v1.0.19:
-
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
-
-  v1.0.18:
-
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
-
-  v1.0.17:
-
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
-
-  v1.0.16:
-
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
-
-  v1.0.15:
-
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
-
-  v1.0.14:
-
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
-
-  v1.0.13:
-
-  - Bump to version 1.0.13
-
-  v1.0.12:
-
-  - Bake version into container at build time for accurate version display
-
-  v1.0.11:
-
-  - Fix version display to read from umbrel-app.yml automatically
-
   v1.0.8:
 
-  - Add version badge to footer for debugging; confirm notifier save fix
+  - Add version badge in footer for easier debugging; gets baked into the image at build time.
 
   v1.0.7:
 
