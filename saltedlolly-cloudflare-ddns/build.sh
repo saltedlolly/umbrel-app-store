@@ -347,9 +347,18 @@ if [[ "$LOCAL_TEST" == "true" ]]; then
   
   # Copy app files to umbrel-dev  
   echo "Copying app files to umbrel-dev..."
-  TEMP_DIR=$(mktemp -d)
   
-  # Copy only the necessary files (exclude .git, data, tools, etc.)
+  # Find the existing app store directory
+  EXISTING_STORE=$(ssh "$UMBREL_USER@$UMBREL_DEV_HOST" "ls -1 /home/umbrel/umbrel/app-stores/ | grep 'getumbrel-umbrel-apps-github' | head -1")
+  
+  if [[ -z "$EXISTING_STORE" ]]; then
+    echo "❌ Error: Could not find existing app store directory"
+    exit 1
+  fi
+  
+  echo "Using app store: $EXISTING_STORE"
+  
+  # Copy to umbrel-dev using the correct path structure
   rsync -av --exclude=".git" \
             --exclude=".gitignore" \
             --exclude=".gitkeep" \
@@ -358,33 +367,38 @@ if [[ "$LOCAL_TEST" == "true" ]]; then
             --exclude="build.sh" \
             --exclude="ui/node_modules" \
             --exclude="ui/.npm" \
-            "$APP_ROOT/" "$TEMP_DIR/$APP_ID/"
-  
-  # Create the getumbrel app store directory structure on umbrel-dev
-  ssh "$UMBREL_USER@$UMBREL_DEV_HOST" "mkdir -p ~/umbrel/app-stores/getumbrel-umbrel-apps-github-test/"
-  
-  # Copy to umbrel-dev
-  rsync -av --delete "$TEMP_DIR/$APP_ID/" \
-    "$UMBREL_USER@$UMBREL_DEV_HOST:~/umbrel/app-stores/getumbrel-umbrel-apps-github-test/$APP_ID/"
-  
-  rm -rf "$TEMP_DIR"
+            "$APP_ROOT/" \
+            "$UMBREL_USER@$UMBREL_DEV_HOST:/home/umbrel/umbrel/app-stores/$EXISTING_STORE/$APP_ID/"
   
   echo "✓ App files copied"
   echo
   echo "========================================" 
-  echo "INSTALL THE APP"
+  echo "NEXT STEPS - IMPORTANT!"
   echo "========================================" 
   echo
-  echo "The app files are now on umbrel-dev. To install:"
+  echo "The NEW version (v$target_v) is now on umbrel-dev with updated Docker images."
   echo
-  echo "  1. Via Web UI:"
-  echo "     Go to App Store and find '$APP_ID'"
-  echo "     Click Install"
+  echo "⚠️  CRITICAL: Umbrel only reads app files during installation!"
+  echo "   You MUST uninstall and reinstall for changes to take effect."
   echo
-  echo "  2. Via SSH:"
-  echo "     ssh $UMBREL_USER@$UMBREL_DEV_HOST 'umbreld client apps.install.mutate --appId $APP_ID'"
+  echo "Steps to test:"
   echo
-  echo "After installing, access at: http://$UMBREL_DEV_HOST:4100/"
+  echo "  1. UNINSTALL current version:"
+  echo "     • Via Web UI: Right-click app icon → Uninstall"
+  echo "     • Wait for uninstall to complete"
+  echo
+  echo "  2. REINSTALL from App Store:"
+  echo "     • Go to App Store → Find 'Cloudflare DDNS Client'"
+  echo "     • Click Install"
+  echo "     • This will pull the NEW images from Docker Hub"
+  echo
+  echo "  3. TEST the app:"
+  echo "     • Access at: http://$UMBREL_DEV_HOST:4100/"
+  echo "     • Version badge should show: v$target_v"
+  echo
+  echo "Built images on Docker Hub:"
+  echo "  • UI:   saltedlolly/cloudflare-ddns-ui:$target_v@$UI_DIGEST"
+  echo "  • DDNS: saltedlolly/cloudflare-ddns:$target_v@$DDNS_DIGEST"
   echo
 else
   echo "Next steps:"
@@ -392,4 +406,3 @@ else
   echo "  2. Commit: git add -A && git commit -m 'chore: bump to v${target_v}, build multi-arch and pin digests'"
   echo "  3. Push: git push"
 fi
-echo "  4. Reinstall app from Umbrel community app store"
