@@ -271,20 +271,68 @@ echo "Target app version:  $target_v"
 echo
 
 ########################################
-# Ensure SSO is enabled for production
+# Manage SSO configuration
 ########################################
 echo "Checking Umbrel SSO configuration..."
+
+# Handle umbrel-app.yml path setting
 sso_path=$(grep '^path:' "$APP_YML_FILE" | awk '{print $2}' | tr -d '"')
-if [[ "$sso_path" != "" ]]; then
-  echo "⚠️  SSO is currently disabled (path: '$sso_path')"
-  echo "✓ Re-enabling Umbrel SSO for production build (path: \"\")"
-  if $is_macos; then
-    sed -i '' 's/^path:.*/path: ""/' "$APP_YML_FILE"
+if [[ "$LOCAL_TEST" == "true" ]]; then
+  # For local testing, SSO can be disabled if desired (no change needed)
+  if [[ "$sso_path" != "" ]]; then
+    echo "ℹ️  SSO disabled for local testing (path: '$sso_path')"
   else
-    sed -i 's/^path:.*/path: ""/' "$APP_YML_FILE"
+    echo "ℹ️  SSO enabled (can be manually disabled by setting path: '/' for local testing)"
   fi
 else
-  echo "✓ SSO already enabled (path: \"\")"
+  # For production builds, ensure SSO is enabled
+  if [[ "$sso_path" != "" ]]; then
+    echo "⚠️  SSO is currently disabled (path: '$sso_path')"
+    echo "✓ Re-enabling Umbrel SSO for production build (path: \"\")"
+    if $is_macos; then
+      sed -i '' 's/^path:.*/path: ""/' "$APP_YML_FILE"
+    else
+      sed -i 's/^path:.*/path: ""/' "$APP_YML_FILE"
+    fi
+  else
+    echo "✓ SSO already enabled (path: \"\")"
+  fi
+fi
+
+# Handle docker-compose.yml PROXY_AUTH_ADD setting
+proxy_auth_line=$(grep -n "PROXY_AUTH_ADD" "$COMPOSE_FILE" | head -1)
+if [[ "$LOCAL_TEST" == "true" ]]; then
+  # For local testing, ensure PROXY_AUTH_ADD is set to "false" to bypass SSO
+  if [[ -z "$proxy_auth_line" ]]; then
+    echo "✓ Adding PROXY_AUTH_ADD: \"false\" for local testing"
+    # Insert after APP_PORT line in app_proxy environment section
+    if $is_macos; then
+      sed -i '' '/APP_PORT: 3000/a\
+      # Disable SSO for local testing\
+      PROXY_AUTH_ADD: "false"
+' "$COMPOSE_FILE"
+    else
+      sed -i '/APP_PORT: 3000/a\      # Disable SSO for local testing\n      PROXY_AUTH_ADD: "false"' "$COMPOSE_FILE"
+    fi
+  else
+    echo "✓ PROXY_AUTH_ADD already set for local testing"
+  fi
+else
+  # For production builds, ensure PROXY_AUTH_ADD is removed (SSO enabled)
+  if [[ -n "$proxy_auth_line" ]]; then
+    echo "⚠️  PROXY_AUTH_ADD found in docker-compose.yml"
+    echo "✓ Removing PROXY_AUTH_ADD to enable SSO for production"
+    # Remove the PROXY_AUTH_ADD line and the comment above it
+    if $is_macos; then
+      sed -i '' '/# Disable SSO for local testing/d' "$COMPOSE_FILE"
+      sed -i '' '/PROXY_AUTH_ADD/d' "$COMPOSE_FILE"
+    else
+      sed -i '/# Disable SSO for local testing/d' "$COMPOSE_FILE"
+      sed -i '/PROXY_AUTH_ADD/d' "$COMPOSE_FILE"
+    fi
+  else
+    echo "✓ PROXY_AUTH_ADD not present (SSO enabled)"
+  fi
 fi
 echo
 
