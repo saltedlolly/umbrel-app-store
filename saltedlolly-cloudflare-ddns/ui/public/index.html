@@ -320,15 +320,30 @@
                         </div>
                         <div id="notifiersEdit" style="display:none">
                             <div class="mb-2">
-                                <label class="form-label small">Healthchecks URL</label>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label small mb-0">Healthchecks URL</label>
+                                    <div class="form-check form-switch">
+                                        <input id="edit_HEALTHCHECKS_ENABLED" class="form-check-input proxied-toggle" type="checkbox">
+                                    </div>
+                                </div>
                                 <input id="edit_HEALTHCHECKS" class="form-control form-control-sm" />
                             </div>
                             <div class="mb-2">
-                                <label class="form-label small">Uptime Kuma Push URL</label>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label small mb-0">Uptime Kuma Push URL</label>
+                                    <div class="form-check form-switch">
+                                        <input id="edit_UPTIMEKUMA_ENABLED" class="form-check-input proxied-toggle" type="checkbox">
+                                    </div>
+                                </div>
                                 <input id="edit_UPTIMEKUMA" class="form-control form-control-sm" />
                             </div>
                             <div class="mb-2">
-                                <label class="form-label small">Shoutrrr URLs (newline separated)</label>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label small mb-0">Shoutrrr URLs (newline separated)</label>
+                                    <div class="form-check form-switch">
+                                        <input id="edit_SHOUTRRR_ENABLED" class="form-check-input proxied-toggle" type="checkbox">
+                                    </div>
+                                </div>
                                 <textarea id="edit_SHOUTRRR" class="form-control form-control-sm" rows="3"></textarea>
                             </div>
                             <div class="d-flex gap-2 justify-content-end w-100">
@@ -725,11 +740,11 @@
                         const hcUrl = cfg.HEALTHCHECKS || '';
                         const ukUrl = cfg.UPTIMEKUMA || '';
                         const srUrl = cfg.SHOUTRRR || '';
-                        notifyHealthchecksSwitch.checked = cfg.HEALTHCHECKS_ENABLED === 'true' || false;
+                        notifyHealthchecksSwitch.checked = cfg.HEALTHCHECKS_ENABLED === 'yes' || false;
                         notifyHealthchecksSwitch.disabled = !hcUrl;
-                        notifyUptimeSwitch.checked = cfg.UPTIMEKUMA_ENABLED === 'true' || false;
+                        notifyUptimeSwitch.checked = cfg.UPTIMEKUMA_ENABLED === 'yes' || false;
                         notifyUptimeSwitch.disabled = !ukUrl;
-                        notifyShoutrrrSwitch.checked = cfg.SHOUTRRR_ENABLED === 'true' || false;
+                        notifyShoutrrrSwitch.checked = cfg.SHOUTRRR_ENABLED === 'yes' || false;
                         notifyShoutrrrSwitch.disabled = !srUrl;
                         // clear warnings
                         notifyHealthchecksWarn.style.display = 'none';
@@ -739,9 +754,15 @@
                         const elHC = document.getElementById('edit_HEALTHCHECKS');
                         const elUK = document.getElementById('edit_UPTIMEKUMA');
                         const elSR = document.getElementById('edit_SHOUTRRR');
+                        const elHC_EN = document.getElementById('edit_HEALTHCHECKS_ENABLED');
+                        const elUK_EN = document.getElementById('edit_UPTIMEKUMA_ENABLED');
+                        const elSR_EN = document.getElementById('edit_SHOUTRRR_ENABLED');
                         if (elHC) elHC.value = hcUrl || '';
                         if (elUK) elUK.value = ukUrl || '';
                         if (elSR) elSR.value = (cfg.SHOUTRRR || '').replace(/,/g, '\n');
+                        if (elHC_EN) elHC_EN.checked = cfg.HEALTHCHECKS_ENABLED === 'yes';
+                        if (elUK_EN) elUK_EN.checked = cfg.UPTIMEKUMA_ENABLED === 'yes';
+                        if (elSR_EN) elSR_EN.checked = cfg.SHOUTRRR_ENABLED === 'yes';
                     }
 
                     editNotifiersBtn.addEventListener('click', async (e) => {
@@ -754,6 +775,9 @@
                         document.getElementById('edit_HEALTHCHECKS').value = hcUrl;
                         document.getElementById('edit_UPTIMEKUMA').value = ukUrl;
                         document.getElementById('edit_SHOUTRRR').value = srUrls;
+                        document.getElementById('edit_HEALTHCHECKS_ENABLED').checked = cfg.HEALTHCHECKS_ENABLED === 'yes';
+                        document.getElementById('edit_UPTIMEKUMA_ENABLED').checked = cfg.UPTIMEKUMA_ENABLED === 'yes';
+                        document.getElementById('edit_SHOUTRRR_ENABLED').checked = cfg.SHOUTRRR_ENABLED === 'yes';
                         // Clear any previous error styling
                         document.getElementById('edit_HEALTHCHECKS').classList.remove('is-invalid');
                         document.getElementById('edit_UPTIMEKUMA').classList.remove('is-invalid');
@@ -772,6 +796,9 @@
                         document.getElementById('edit_HEALTHCHECKS').value = hcUrl;
                         document.getElementById('edit_UPTIMEKUMA').value = ukUrl;
                         document.getElementById('edit_SHOUTRRR').value = srUrls;
+                        document.getElementById('edit_HEALTHCHECKS_ENABLED').checked = cfg.HEALTHCHECKS_ENABLED === 'yes';
+                        document.getElementById('edit_UPTIMEKUMA_ENABLED').checked = cfg.UPTIMEKUMA_ENABLED === 'yes';
+                        document.getElementById('edit_SHOUTRRR_ENABLED').checked = cfg.SHOUTRRR_ENABLED === 'yes';
                         // Clear any error styling
                         document.getElementById('edit_HEALTHCHECKS').classList.remove('is-invalid');
                         document.getElementById('edit_UPTIMEKUMA').classList.remove('is-invalid');
@@ -791,10 +818,13 @@
                         ukField.classList.remove('is-invalid');
                         srField.classList.remove('is-invalid');
                         
-                        // Get values
+                        // Get values and toggle states
                         const hc = hcField.value.trim();
                         const uk = ukField.value.trim();
                         const sr = srField.value.trim();
+                        const hcEnabled = document.getElementById('edit_HEALTHCHECKS_ENABLED').checked ? 'yes' : 'no';
+                        const ukEnabled = document.getElementById('edit_UPTIMEKUMA_ENABLED').checked ? 'yes' : 'no';
+                        const srEnabled = document.getElementById('edit_SHOUTRRR_ENABLED').checked ? 'yes' : 'no';
                         
                         // Validate URLs
                         if (hc && !isValidUrl(hc)) {
@@ -822,8 +852,11 @@
                             const cur = await (await fetch('/api/config')).json();
                             const payload = Object.assign({}, cur, {
                                 HEALTHCHECKS: hc || '',
+                                HEALTHCHECKS_ENABLED: hcEnabled,
                                 UPTIMEKUMA: uk || '',
-                                SHOUTRRR: srLines.length ? srLines.join(',') : ''
+                                UPTIMEKUMA_ENABLED: ukEnabled,
+                                SHOUTRRR: srLines.length ? srLines.join(',') : '',
+                                SHOUTRRR_ENABLED: srEnabled
                             });
                             await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                             
@@ -841,7 +874,7 @@
                     // Toggle handlers: update only the enabled flag without altering other fields
                     async function toggleNotifier(name, enabled) {
                         const cur = await (await fetch('/api/config')).json();
-                        cur[name] = enabled ? 'true' : 'false';
+                        cur[name] = enabled ? 'yes' : 'no';
                         await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cur) });
                     }
 

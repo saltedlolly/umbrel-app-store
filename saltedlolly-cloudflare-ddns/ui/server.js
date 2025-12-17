@@ -59,10 +59,22 @@ app.get('/api/config', (req, res) => {
     // Keep DOMAINS as the single authoritative source of domain names; do not map into ZONE/SUBDOMAIN/ADDITIONAL_DOMAINS
     // (legacy mappings removed for simplicity)
 
-    // Map notifier enabled flags to boolean values
-    if (obj.HEALTHCHECKS_ENABLED === undefined && obj.HEALTHCHECKS) obj.HEALTHCHECKS_ENABLED = 'true';
-    if (obj.UPTIMEKUMA_ENABLED === undefined && obj.UPTIMEKUMA) obj.UPTIMEKUMA_ENABLED = 'true';
-    if (obj.SHOUTRRR_ENABLED === undefined && obj.SHOUTRRR) obj.SHOUTRRR_ENABLED = 'true';
+    // Merge HEALTHCHECKS + HEALTHCHECKS_DISABLED (UI gets merged value, _ENABLED shows which is active)
+    // If HEALTHCHECKS exists and HEALTHCHECKS_ENABLED is not 'no', use HEALTHCHECKS
+    // Otherwise use HEALTHCHECKS_DISABLED
+    const hcEnabled = obj.HEALTHCHECKS_ENABLED === 'yes';
+    const ukEnabled = obj.UPTIMEKUMA_ENABLED === 'yes';
+    const srEnabled = obj.SHOUTRRR_ENABLED === 'yes';
+    
+    obj.HEALTHCHECKS = hcEnabled ? (obj.HEALTHCHECKS || '') : (obj.HEALTHCHECKS_DISABLED || '');
+    obj.UPTIMEKUMA = ukEnabled ? (obj.UPTIMEKUMA || '') : (obj.UPTIMEKUMA_DISABLED || '');
+    obj.SHOUTRRR = srEnabled ? (obj.SHOUTRRR || '') : (obj.SHOUTRRR_DISABLED || '');
+    
+    // Default _ENABLED to 'yes' if URL exists
+    if (obj.HEALTHCHECKS_ENABLED === undefined && (obj.HEALTHCHECKS || obj.HEALTHCHECKS_DISABLED)) obj.HEALTHCHECKS_ENABLED = 'yes';
+    if (obj.UPTIMEKUMA_ENABLED === undefined && (obj.UPTIMEKUMA || obj.UPTIMEKUMA_DISABLED)) obj.UPTIMEKUMA_ENABLED = 'yes';
+    if (obj.SHOUTRRR_ENABLED === undefined && (obj.SHOUTRRR || obj.SHOUTRRR_DISABLED)) obj.SHOUTRRR_ENABLED = 'yes';
+    
     res.json(obj);
 });
 
@@ -185,11 +197,12 @@ app.post('/api/config', async (req, res) => {
     const DOMAINS = (DOMAINS_IN || '').split(',').map(s => s.trim()).filter(Boolean).join(',');
     const shout = (SHOUTRRR || '').split('\n').map(s => s.trim()).filter(Boolean).join(',');
     
-    // Always save URLs, regardless of enabled state
-    // Auto-enable when URLs are provided (unless explicitly disabled)
-    const hc_enabled = (HEALTHCHECKS && HEALTHCHECKS.trim()) ? (HEALTHCHECKS_ENABLED !== 'false') : (HEALTHCHECKS_ENABLED === 'true');
-    const uk_enabled = (UPTIMEKUMA && UPTIMEKUMA.trim()) ? (UPTIMEKUMA_ENABLED !== 'false') : (UPTIMEKUMA_ENABLED === 'true');
-    const sr_enabled = (shout) ? (SHOUTRRR_ENABLED !== 'false') : (SHOUTRRR_ENABLED === 'true');
+    // New approach: Save URLs to HEALTHCHECKS or HEALTHCHECKS_DISABLED based on toggle
+    // When toggle ON (HEALTHCHECKS_ENABLED='yes'): save to HEALTHCHECKS, clear HEALTHCHECKS_DISABLED
+    // When toggle OFF (HEALTHCHECKS_ENABLED='no'): save to HEALTHCHECKS_DISABLED, clear HEALTHCHECKS
+    const hc_enabled = HEALTHCHECKS_ENABLED === 'yes';
+    const uk_enabled = UPTIMEKUMA_ENABLED === 'yes';
+    const sr_enabled = SHOUTRRR_ENABLED === 'yes';
     
     const existing = readEnv();
     const token = (CLOUDFLARE_API_TOKEN === '***') ? existing.CLOUDFLARE_API_TOKEN : CLOUDFLARE_API_TOKEN;
@@ -199,12 +212,18 @@ app.post('/api/config', async (req, res) => {
         `PROXIED=${PROXIED || 'true'}`,
         `IP4_PROVIDER=${IP4_PROVIDER || ''}`,
         `IP6_PROVIDER=${IP6_PROVIDER || ''}`,
-        `HEALTHCHECKS=${HEALTHCHECKS || ''}`,
-        `HEALTHCHECKS_ENABLED=${hc_enabled ? 'true' : 'false'}`,
-        `UPTIMEKUMA=${UPTIMEKUMA || ''}`,
-        `UPTIMEKUMA_ENABLED=${uk_enabled ? 'true' : 'false'}`,
-        `SHOUTRRR=${shout}`,
-        `SHOUTRRR_ENABLED=${sr_enabled ? 'true' : 'false'}`
+        // HEALTHCHECKS: save to active var, clear disabled var
+        `HEALTHCHECKS=${hc_enabled ? (HEALTHCHECKS || '') : ''}`,
+        `HEALTHCHECKS_DISABLED=${!hc_enabled ? (HEALTHCHECKS || '') : ''}`,
+        `HEALTHCHECKS_ENABLED=${hc_enabled ? 'yes' : 'no'}`,
+        // UPTIMEKUMA: save to active var, clear disabled var
+        `UPTIMEKUMA=${uk_enabled ? (UPTIMEKUMA || '') : ''}`,
+        `UPTIMEKUMA_DISABLED=${!uk_enabled ? (UPTIMEKUMA || '') : ''}`,
+        `UPTIMEKUMA_ENABLED=${uk_enabled ? 'yes' : 'no'}`,
+        // SHOUTRRR: save to active var, clear disabled var
+        `SHOUTRRR=${sr_enabled ? shout : ''}`,
+        `SHOUTRRR_DISABLED=${!sr_enabled ? shout : ''}`,
+        `SHOUTRRR_ENABLED=${sr_enabled ? 'yes' : 'no'}`
     ];
     try {
         // Ensure directories exist before writing
