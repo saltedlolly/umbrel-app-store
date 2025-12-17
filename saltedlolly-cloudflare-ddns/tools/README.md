@@ -74,6 +74,43 @@ Prepends custom notes to `releaseNotes` in umbrel-app.yml.
 ./build.sh --bump minor --notes "Major UI redesign with dark mode"
 ```
 
+### Local Testing
+```bash
+./build.sh --localtest
+```
+Builds images, pushes to Docker Hub, and deploys to local umbrel-dev for testing.
+
+**Requirements:**
+- umbrel-dev running at 192.168.215.2 (configurable in script)
+- SSH access to umbrel-dev
+- App must be uninstalled before deploying
+
+**What it does:**
+1. Builds and pushes images (same as regular build)
+2. Updates docker-compose.yml with new digests
+3. Checks if app is installed (prompts to uninstall if needed)
+4. Copies app files to umbrel-dev's app store
+5. Provides install instructions
+
+**Workflow:**
+```bash
+# 1. Disable SSO for local testing
+#    Edit umbrel-app.yml: path: "/" 
+
+# 2. Build and deploy to umbrel-dev
+./build.sh --localtest
+
+# 3. Uninstall old version if prompted
+
+# 4. Install via Web UI or SSH:
+ssh umbrel@192.168.215.2 'umbreld client apps.install.mutate --appId saltedlolly-cloudflare-ddns'
+
+# 5. Test at http://192.168.215.2:4100/
+
+# 6. When satisfied, build for production:
+./build.sh --bump patch --notes "Your release notes"
+```
+
 ## Requirements
 
 - **Docker Buildx** with docker-container driver for multi-platform builds

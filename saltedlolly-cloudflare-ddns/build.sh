@@ -35,6 +35,8 @@ BUMP_KIND="patch"   # patch|minor|major
 RELEASE_NOTES="Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility"
 COMPOSE_FILE="$APP_ROOT/docker-compose.yml"
 APP_YML_FILE="$APP_ROOT/umbrel-app.yml"
+LOCAL_TEST=false
+UMBREL_DEV_HOST="192.168.215.2"
 
 is_macos=false
 if [[ "${OSTYPE:-}" == darwin* ]]; then is_macos=true; fi
@@ -48,6 +50,7 @@ Options:
   --version <x.y.z>    : Set explicit version (otherwise auto-bump)
   --bump patch|minor|major : Choose bump type (default: patch)
   --notes <text>       : Custom release notes
+  --localtest          : Build and deploy to local umbrel-dev ($UMBREL_DEV_HOST)
 
 Default repo paths (within the app folder):
   UI_REPO:   $UI_REPO
@@ -175,6 +178,7 @@ while [[ $# -gt 0 ]]; do
     --version) SET_VERSION="$2"; shift 2 ;;
     --bump) BUMP_KIND="$2"; shift 2 ;;
     --notes) RELEASE_NOTES="$2"; shift 2 ;;
+    --localtest) LOCAL_TEST=true; shift ;;
     *) usage; exit 1 ;;
   esac
 done
@@ -295,8 +299,97 @@ echo "Updated files:"
 echo "  - umbrel-app.yml (version: $target_v)"
 echo "  - docker-compose.yml (digests pinned)"
 echo
-echo "Next steps:"
-echo "  1. Review changes: git diff"
-echo "  2. Commit: git add -A && git commit -m 'chore: bump to v${target_v}, build multi-arch and pin digests'"
-echo "  3. Push: git push"
+
+########################################
+# Local test deployment
+########################################
+if [[ "$LOCAL_TEST" == "true" ]]; then
+  echo "========================================" 
+  echo "LOCAL TEST DEPLOYMENT"
+  echo "========================================"
+  echo
+  
+  APP_ID="saltedlolly-cloudflare-ddns"
+  UMBREL_USER="umbrel"
+  
+  echo "Deploying to umbrel-dev at $UMBREL_DEV_HOST..."
+  echo
+  
+  # Check if we can reach umbrel-dev
+  if ! ssh -o ConnectTimeout=5 "$UMBREL_USER@$UMBREL_DEV_HOST" "echo 'Connection successful'" > /dev/null 2>&1; then
+    echo "❌ Error: Cannot connect to umbrel-dev at $UMBREL_DEV_HOST"
+    echo "   Please check:"
+    echo "   - umbrel-dev is running"
+    echo "   - IP address is correct (currently: $UMBREL_DEV_HOST)"
+    echo "   - SSH is accessible"
+    exit 1
+  fi
+  
+  echo "✓ Connected to umbrel-dev"
+  echo
+  
+  # Check if app is currently installed
+  echo "Checking if app is currently installed..."
+  if ssh "$UMBREL_USER@$UMBREL_DEV_HOST" "test -d ~/umbrel/app-data/$APP_ID"; then
+    echo "⚠️  App is currently installed on umbrel-dev"
+    echo
+    echo "You need to uninstall it first. You can:"
+    echo "  1. Uninstall via Web UI (right-click app icon → Uninstall)"
+    echo "  2. Uninstall via SSH: ssh $UMBREL_USER@$UMBREL_DEV_HOST 'umbreld client apps.uninstall.mutate --appId $APP_ID'"
+    echo
+    read -p "Has the app been uninstalled? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+      echo "Please uninstall the app and run this script again with --localtest"
+      exit 1
+    fi
+  fi
+  
+  # Copy app files to umbrel-dev  
+  echo "Copying app files to umbrel-dev..."
+  TEMP_DIR=$(mktemp -d)
+  
+  # Copy only the necessary files (exclude .git, data, tools, etc.)
+  rsync -av --exclude=".git" \
+            --exclude=".gitignore" \
+            --exclude=".gitkeep" \
+            --exclude="data" \
+            --exclude="tools" \
+            --exclude="build.sh" \
+            --exclude="ui/node_modules" \
+            --exclude="ui/.npm" \
+            "$APP_ROOT/" "$TEMP_DIR/$APP_ID/"
+  
+  # Create the getumbrel app store directory structure on umbrel-dev
+  ssh "$UMBREL_USER@$UMBREL_DEV_HOST" "mkdir -p ~/umbrel/app-stores/getumbrel-umbrel-apps-github-test/"
+  
+  # Copy to umbrel-dev
+  rsync -av --delete "$TEMP_DIR/$APP_ID/" \
+    "$UMBREL_USER@$UMBREL_DEV_HOST:~/umbrel/app-stores/getumbrel-umbrel-apps-github-test/$APP_ID/"
+  
+  rm -rf "$TEMP_DIR"
+  
+  echo "✓ App files copied"
+  echo
+  echo "========================================" 
+  echo "INSTALL THE APP"
+  echo "========================================" 
+  echo
+  echo "The app files are now on umbrel-dev. To install:"
+  echo
+  echo "  1. Via Web UI:"
+  echo "     Go to App Store and find '$APP_ID'"
+  echo "     Click Install"
+  echo
+  echo "  2. Via SSH:"
+  echo "     ssh $UMBREL_USER@$UMBREL_DEV_HOST 'umbreld client apps.install.mutate --appId $APP_ID'"
+  echo
+  echo "After installing, access at: http://$UMBREL_DEV_HOST:4100/"
+  echo
+else
+  echo "Next steps:"
+  echo "  1. Review changes: git diff"
+  echo "  2. Commit: git add -A && git commit -m 'chore: bump to v${target_v}, build multi-arch and pin digests'"
+  echo "  3. Push: git push"
+fi
 echo "  4. Reinstall app from Umbrel community app store"
