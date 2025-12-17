@@ -90,8 +90,8 @@
                         <div class="row">
                             <div class="col">
                                 <div class="small text-muted">Public IPs</div>
-                                <div><strong id="ipv4">n/a</strong> <span id="ipsep">/</span> <strong
-                                        id="ipv6">n/a</strong></div>
+                                <div id="ipv4Container"><span class="text-muted small">IPv4:</span> <strong id="ipv4">n/a</strong></div>
+                                <div id="ipv6Container" style="display:none;"><span class="text-muted small">IPv6:</span> <strong id="ipv6">n/a</strong></div>
                             </div>
                             <div class="col text-end">
                                 <div class="small text-muted">Cloudflare Last Updated</div>
@@ -398,7 +398,8 @@
                 const stopBtn = document.getElementById('stop');
                 const ipv4El = document.getElementById('ipv4');
                 const ipv6El = document.getElementById('ipv6');
-                const ipSep = document.getElementById('ipsep');
+                const ipv4Container = document.getElementById('ipv4Container');
+                const ipv6Container = document.getElementById('ipv6Container');
                 const statusErrorEl = document.getElementById('statusError');
                 const cfgTokenStatus = document.getElementById('cfgTokenStatus');
                 const cfgDomainsStatus = document.getElementById('cfgDomainsStatus');
@@ -474,7 +475,12 @@
                     try {
                         const publicIp = await (await fetch('/api/public-ip')).json();
                         ipv4El.innerText = publicIp.ipv4 || 'n/a';
-                        if (publicIp.ipv6) { ipv6El.innerText = publicIp.ipv6; ipSep.style.display = ''; ipv6El.style.display = ''; } else { ipSep.style.display = 'none'; ipv6El.style.display = 'none'; }
+                        if (publicIp.ipv6) { 
+                            ipv6El.innerText = publicIp.ipv6; 
+                            ipv6Container.style.display = ''; 
+                        } else { 
+                            ipv6Container.style.display = 'none'; 
+                        }
                     } catch (e) { }
                 }
                 setInterval(updateStatus, 3000);
