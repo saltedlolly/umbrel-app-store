@@ -373,26 +373,22 @@ if [[ "$LOCAL_TEST" == "true" ]]; then
   echo "✓ App files copied"
   echo
   echo "========================================" 
-  echo "NEXT STEPS - IMPORTANT!"
+  echo "NEXT STEPS"
   echo "========================================" 
   echo
   echo "The NEW version (v$target_v) is now on umbrel-dev with updated Docker images."
   echo
   echo "⚠️  CRITICAL: Umbrel only reads app files during installation!"
-  echo "   You MUST uninstall and reinstall for changes to take effect."
+  echo "   You MUST reinstall for changes to take effect."
   echo
   echo "Steps to test:"
   echo
-  echo "  1. UNINSTALL current version:"
-  echo "     • Via Web UI: Right-click app icon → Uninstall"
-  echo "     • Wait for uninstall to complete"
-  echo
-  echo "  2. REINSTALL from App Store:"
+  echo "  1. REINSTALL from App Store:"
   echo "     • Go to App Store → Find 'Cloudflare DDNS Client'"
   echo "     • Click Install"
   echo "     • This will pull the NEW images from Docker Hub"
   echo
-  echo "  3. TEST the app:"
+  echo "  2. TEST the app:"
   echo "     • Access at: http://$UMBREL_DEV_HOST:4100/"
   echo "     • Version badge should show: v$target_v"
   echo
