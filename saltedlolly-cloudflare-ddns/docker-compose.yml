@@ -8,7 +8,7 @@ services:
       PROXY_AUTH_ADD: "false"
 
   ui:
-    image: saltedlolly/cloudflare-ddns-ui@sha256:b12c11661403d95a886fc3969b41df3ba9dc45b36a444f0d560ddaab0e108e4f
+    image: saltedlolly/cloudflare-ddns-ui@sha256:6c353346af83d80ed314f5540e865a2d49ae1500a261c8b58715eecf4562c9c5
     container_name: saltedlolly-cloudflare-ddns_ui_1
     hostname: saltedlolly-cloudflare-ddns_ui_1
     init: true
@@ -25,7 +25,7 @@ services:
       retries: 5
 
   cloudflare-ddns:
-    image: saltedlolly/cloudflare-ddns@sha256:af2177e53cb374b42594d576dff09fc2102604aeb379c7ca4b27f891a2feb6f5
+    image: saltedlolly/cloudflare-ddns@sha256:5e907c964a786032822f0053735cf1e6dc803be9c8b37557b9486ce032f13d1e
     container_name: saltedlolly-cloudflare-ddns_cloudflare-ddns_1
     hostname: saltedlolly-cloudflare-ddns_cloudflare-ddns_1
     init: true
