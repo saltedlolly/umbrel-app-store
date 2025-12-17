@@ -319,37 +319,39 @@
                             </div>
                         </div>
                         <div id="notifiersEdit" style="display:none; margin-top:.5rem">
-                            <div class="mb-2">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <label class="form-label small mb-0">Healthchecks URL</label>
-                                    <div class="form-check form-switch">
-                                        <input id="edit_HEALTHCHECKS_ENABLED" class="form-check-input proxied-toggle" type="checkbox">
+                            <form id="notifiersEditForm">
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <label class="form-label small mb-0">Healthchecks URL</label>
+                                        <div class="form-check form-switch">
+                                            <input id="edit_HEALTHCHECKS_ENABLED" class="form-check-input proxied-toggle" type="checkbox">
+                                        </div>
                                     </div>
+                                    <input id="edit_HEALTHCHECKS" class="form-control form-control-sm" />
                                 </div>
-                                <input id="edit_HEALTHCHECKS" class="form-control form-control-sm" />
-                            </div>
-                            <div class="mb-2">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <label class="form-label small mb-0">Uptime Kuma Push URL</label>
-                                    <div class="form-check form-switch">
-                                        <input id="edit_UPTIMEKUMA_ENABLED" class="form-check-input proxied-toggle" type="checkbox">
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <label class="form-label small mb-0">Uptime Kuma Push URL</label>
+                                        <div class="form-check form-switch">
+                                            <input id="edit_UPTIMEKUMA_ENABLED" class="form-check-input proxied-toggle" type="checkbox">
+                                        </div>
                                     </div>
+                                    <input id="edit_UPTIMEKUMA" class="form-control form-control-sm" />
                                 </div>
-                                <input id="edit_UPTIMEKUMA" class="form-control form-control-sm" />
-                            </div>
-                            <div class="mb-2">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <label class="form-label small mb-0">Shoutrrr URLs (newline separated)</label>
-                                    <div class="form-check form-switch">
-                                        <input id="edit_SHOUTRRR_ENABLED" class="form-check-input proxied-toggle" type="checkbox">
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <label class="form-label small mb-0">Shoutrrr URLs (newline separated)</label>
+                                        <div class="form-check form-switch">
+                                            <input id="edit_SHOUTRRR_ENABLED" class="form-check-input proxied-toggle" type="checkbox">
+                                        </div>
                                     </div>
+                                    <textarea id="edit_SHOUTRRR" class="form-control form-control-sm" rows="3"></textarea>
                                 </div>
-                                <textarea id="edit_SHOUTRRR" class="form-control form-control-sm" rows="3"></textarea>
-                            </div>
-                            <div class="d-flex gap-2 justify-content-end w-100">
-                                <button id="saveNotifiersBtn" class="btn btn-primary btn-sm">Save</button>
-                                <button id="cancelNotifiersBtn" class="btn btn-secondary btn-sm">Cancel</button>
-                            </div>
+                                <div class="d-flex gap-2 justify-content-end mt-2 w-100">
+                                    <button id="saveNotifiersBtn" class="btn btn-primary btn-sm">Save</button>
+                                    <button id="cancelNotifiersBtn" class="btn btn-secondary btn-sm">Cancel</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
 
