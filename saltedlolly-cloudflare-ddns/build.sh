@@ -291,9 +291,14 @@ echo
 ########################################
 # Update umbrel-app.yml and package.json
 ########################################
-echo "Updating umbrel-app.yml version and release notes..."
+echo "Updating umbrel-app.yml version..."
 set_version_in_app_yml "$target_v"
-prepend_release_notes "$target_v" "$RELEASE_NOTES"
+
+# Only update release notes for non-localtest builds (mainly --publish)
+if [[ "$LOCAL_TEST" != "true" ]]; then
+  echo "Updating release notes..."
+  prepend_release_notes "$target_v" "$RELEASE_NOTES"
+fi
 
 echo "Updating package.json version..."
 set_version_in_package_json "$target_v"
