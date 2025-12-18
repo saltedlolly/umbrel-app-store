@@ -241,13 +241,16 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Determine version
+# Determine version from umbrel-app.yml (the main app version, not the UI component version)
 if [[ -z "$SET_VERSION" ]]; then
-  SET_VERSION=$(node -p "require('$UI_REPO/package.json').version")
-  echo "Using version from package.json: $SET_VERSION"
+  SET_VERSION=$(grep '^version:' "$APP_YML_FILE" | sed 's/version: *"\(.*\)"/\1/')
+  echo "Using version from umbrel-app.yml: $SET_VERSION"
 else
   echo "Using specified version: $SET_VERSION"
 fi
+
+# Get UI component version for Docker image tagging
+UI_VERSION=$(node -p "require('$UI_REPO/package.json').version")
 
 # Always check and update ABS version to latest stable release
 update_abs_version
@@ -258,10 +261,7 @@ update_ui_version
 echo "========================================="
 echo "Building Network Shares UI Docker image"
 echo "========================================="
-echo "Image: $IMAGE_NAME:$SET_VERSION"
-echo "Repo:  $UI_REPO"
-echo ""
-
+echo "Image: $IMAGE_NAME:$UI_VERSION"
 # Ensure buildx is set up
 ensure_buildx
 
@@ -269,7 +269,7 @@ ensure_buildx
 echo "Building multi-arch image (linux/amd64, linux/arm64)..."
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
-  -t "$IMAGE_NAME:$SET_VERSION" \
+  -t "$IMAGE_NAME:$UI_VERSION" \
   -t "$IMAGE_NAME:latest" \
   -f "$UI_REPO/Dockerfile" \
   --push \
@@ -277,7 +277,7 @@ docker buildx build \
 
 echo ""
 echo "Fetching manifest digest..."
-UI_DIGEST=$(docker buildx imagetools inspect "$IMAGE_NAME:$SET_VERSION" 2>/dev/null | grep "^Digest:" | awk '{print $2}')
+UI_DIGEST=$(docker buildx imagetools inspect "$IMAGE_NAME:$UI_VERSION" 2>/dev/null | grep "^Digest:" | awk '{print $2}')
 if [[ -z "$UI_DIGEST" ]]; then
   echo "Error: Failed to obtain image digest" >&2
   exit 1
@@ -365,7 +365,7 @@ if $LOCAL_TEST; then
   echo "NEXT STEPS"
   echo "========================================" 
   echo ""
-  echo "The NEW version (v$SET_VERSION) is now on umbrel-dev with updated Docker image."
+  echo "The NEW version (v$UI_VERSION) is now on umbrel-dev with updated Docker image."
   echo ""
   echo "⚠️  CRITICAL: Umbrel only reads app files during installation!"
   echo "   You MUST reinstall for changes to take effect."
@@ -382,7 +382,7 @@ if $LOCAL_TEST; then
   echo "     • Configure network shares via Network Shares UI"
   echo ""
   echo "Built image on Docker Hub:"
-  echo "  • $IMAGE_NAME:$SET_VERSION@$UI_DIGEST"
+  echo "  • $IMAGE_NAME:$UI_VERSION@$UI_DIGEST"
   echo ""
 elif $PUBLISH_TO_GITHUB; then
   echo "========================================" 
@@ -402,7 +402,7 @@ elif $PUBLISH_TO_GITHUB; then
   echo "✓ Successfully published v${SET_VERSION} to GitHub"
   echo ""
   echo "Built image on Docker Hub:"
-  echo "  • $IMAGE_NAME:$SET_VERSION@$UI_DIGEST"
+  echo "  • $IMAGE_NAME:$UI_VERSION@$UI_DIGEST"
   echo ""
 else
   echo "Next steps:"
