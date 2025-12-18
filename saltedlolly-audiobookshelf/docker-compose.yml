@@ -1,0 +1,58 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      # Network Shares Config UI is primary (accessible via dashboard icon on port 23378)
+      APP_HOST: saltedlolly-audiobookshelf_network-shares-ui_1
+      APP_PORT: 3001
+      PROXY_AUTH_ADD: "false"
+
+  # Lightweight UI service for managing network share selection
+  # Accessible via app_proxy on port 23378 (dashboard icon)
+  network-shares-ui:
+    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:28216eef6753ccf457783cc2e94b8734cf8d255047606cb2de56d47d4fc1d732
+    container_name: saltedlolly-audiobookshelf_network-shares-ui_1
+    hostname: saltedlolly-audiobookshelf_network-shares-ui_1
+    init: true
+    restart: unless-stopped
+    environment:
+      - APP_DATA_DIR=${APP_DATA_DIR}
+      - NODE_ENV=production
+    volumes:
+      - ${APP_DATA_DIR}:/data
+      # Mount the Umbrel network storage root (read-only) so we can discover shares
+      - ${UMBREL_ROOT}/data/storage/network:/umbrel-network:ro
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  web:
+    image: ghcr.io/advplyr/audiobookshelf:2.31.0@sha256:e23adb24848d99d19cd1e251aee4e1e12ed4f5effc8ccb21754b062b6a06cf66
+    container_name: saltedlolly-audiobookshelf_web_1
+    hostname: saltedlolly-audiobookshelf_web_1
+    user: 1000:1000
+    init: true
+    restart: on-failure
+    stop_grace_period: 1m
+    ports:
+      - "13378:80"
+    healthcheck:
+      disable: true
+    environment:
+      - CONFIG_PATH=/home/node/config
+      - METADATA_PATH=/home/node/metadata
+      - AUDIOBOOKSHELF_UID=1000
+      - AUDIOBOOKSHELF_GID=1000
+    volumes:
+      - ${APP_DATA_DIR}/data/config:/home/node/config
+      - ${APP_DATA_DIR}/data/metadata:/home/node/metadata
+      - ${UMBREL_ROOT}/data/storage/downloads/audiobooks:/audiobooks
+      - ${UMBREL_ROOT}/data/storage/downloads/podcasts:/podcasts
+      # Mount the Umbrel network storage root to make NAS shares visible
+      # Individual enabled shares will be symlinked by the pre-start hook
+      - ${UMBREL_ROOT}/data/storage/network:/media/network
+    depends_on:
+      - network-shares-ui

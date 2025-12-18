@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Shares - Audiobookshelf</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+        }
+
+        .info-box p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .share-list {
+            margin: 20px 0;
+        }
+
+        .share-item {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.2s;
+        }
+
+        .share-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+
+        .share-item.enabled {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .share-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .share-checkbox {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .share-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: #1f2937;
+            flex: 1;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-badge.mounted {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.unmounted {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .share-details {
+            margin-left: 35px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .share-details p {
+            margin: 5px 0;
+        }
+
+        .share-actions {
+            margin-left: 35px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 10px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+
+        .btn-test {
+            background: #f59e0b;
+            color: white;
+            font-size: 13px;
+            padding: 6px 14px;
+        }
+
+        .btn-test:hover {
+            background: #d97706;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .message {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 15px;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        .message.success strong {
+            display: block;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .message.success code {
+            background: #059669;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        .message.warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .test-result.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .test-result.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        footer {
+            margin-top: 0;
+            padding: 20px;
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .footer-left {
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .footer-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-align: center;
+        }
+
+        .footer-version {
+            font-size: 13px;
+            color: #1f2937;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .footer-version .version-badge {
+            display: inline-block;
+            background: transparent;
+            padding: 0 4px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #6b7280;
+            margin-left: 4px;
+        }
+
+        .footer-author {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .footer-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .btn-issue {
+            background: #ffffff;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            padding: 6px 12px;
+            font-size: 12px;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: inline-block;
+            white-space: nowrap;
+        }
+
+        .btn-issue:hover {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+
+        .sponsor-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+        }
+
+        .sponsor-container iframe {
+            opacity: 0.85;
+            transition: opacity 0.2s;
+        }
+
+        .sponsor-container iframe:hover {
+            opacity: 1;
+        }
+
+        .sponsor-text {
+            font-size: 11px;
+            color: #6b7280;
+            text-align: right;
+            line-height: 1.3;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .share-header {
+                flex-wrap: wrap;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            footer {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .footer-left,
+            .footer-center,
+            .footer-right {
+                justify-content: center;
+                align-items: center;
+            }
+
+            .footer-right {
+                align-items: center;
+            }
+
+            .sponsor-container {
+                align-items: center;
+            }
+
+            .sponsor-text {
+                text-align: center;
+            }
+
+            .btn-issue {
+                width: auto;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <img src="abs-icon.svg" alt="Audiobookshelf" style="width: 48px; height: 48px;">
+                    <h1 style="margin: 0;">Network Share Config Tool<br>for Audiobookshelf</h1>
+                </div>
+                <button onclick="window.open('http://'+window.location.hostname+':13378', '_blank')"
+                    class="btn btn-primary" style="margin: 0;">
+                    Open Audiobookshelf →
+                </button>
+            </div>
+            <div
+                style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 12px 16px; margin-bottom: 20px; border-radius: 4px;">
+                <strong>💡 Tip:</strong> Access Audiobookshelf at <code
+                    style="background: #eff6ff; padding: 2px 6px; border-radius: 3px;">http://<script>document.write(window.location.hostname)</script>:13378</code>
+                — This configuration page is at port <code
+                    style="background: #eff6ff; padding: 2px 6px; border-radius: 3px;">23378</code>
+            </div>
+            <p class="subtitle">Manage which network shares (NAS/SMB/NFS) Audiobookshelf can access.</p>
+
+            <div class="info-box">
+                <p><strong>ℹ️ How it works:</strong></p>
+                <p>• First, add the network shares containing your media in the <a
+                        href="javascript:window.open(window.location.protocol+'//'+window.location.hostname.split(':')[0]+'/files/Home', '_blank')"
+                        style="color: #3b82f6; text-decoration: underline;">Umbrel Files app</a></p>
+                <p>• Then, enable the shares you want Audiobookshelf to access here</p>
+                <p>• Audiobookshelf will wait for enabled shares to be mounted before starting</p>
+                <p>• Access your network shares at <code>/media/network/&lt;host&gt;/&lt;share&gt;</code> in
+                    Audiobookshelf</p>
+            </div>
+
+            <div id="message"></div>
+
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Discovering network shares...</p>
+            </div>
+
+            <div id="content" style="display: none;">
+                <div id="shares-container"></div>
+
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="saveConfiguration()">💾 Save Configuration</button>
+                    <button class="btn btn-secondary" onclick="refreshShares()">🔄 Refresh Shares</button>
+                </div>
+            </div>
+
+            <footer>
+                <div class="footer-left">
+                    <a href="https://github.com/saltedlolly/umbrel-app-store/issues" target="_blank"
+                        class="btn-issue">🐛 Report an Issue</a>
+                </div>
+                <div class="footer-center">
+                    <div class="footer-version">
+                        Network Share Config Tool for Audiobookshelf<span class="version-badge"
+                            id="version-display">v0.0.0.0</span>
+                    </div>
+                    <div class="footer-author">by Olly Stedall</div>
+                </div>
+                <div class="footer-right">
+                    <div class="sponsor-container">
+                        <div class="sponsor-text">Please Sponsor Olly<br>on GitHub Sponsors:</div>
+                        <iframe src="https://github.com/sponsors/saltedlolly/button" title="Sponsor saltedlolly"
+                            height="32" width="114" style="border: 0; border-radius: 6px;">
+                        </iframe>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        let shares = [];
+        let config = { enabledShares: [], shareSettings: {} };
+
+        // Show message
+        function showMessage(text, type = 'success') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = text;  // Use innerHTML to support HTML formatting
+            messageDiv.style.display = 'block';
+
+            // Don't auto-hide success messages (restart instructions are important)
+            if (type !== 'success') {
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Load current configuration
+        async function loadConfiguration() {
+            try {
+                const response = await fetch('/api/config');
+                config = await response.json();
+            } catch (error) {
+                console.error('Error loading configuration:', error);
+            }
+        }
+
+        // Discover shares
+        async function discoverShares() {
+            try {
+                const response = await fetch('/api/shares/discover');
+                const data = await response.json();
+                shares = data.shares || [];
+                return shares;
+            } catch (error) {
+                console.error('Error discovering shares:', error);
+                showMessage('Error discovering shares: ' + error.message, 'error');
+                return [];
+            }
+        }
+
+        // Test share access
+        async function testShare(sharePath, shareIndex) {
+            const resultDiv = document.getElementById(`test-result-${shareIndex}`);
+            resultDiv.innerHTML = '<em>Testing...</em>';
+            resultDiv.className = 'test-result';
+
+            try {
+                const response = await fetch('/api/shares/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sharePath })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    resultDiv.className = 'test-result success';
+                    resultDiv.textContent = `✓ ${result.message}`;
+                } else {
+                    resultDiv.className = 'test-result error';
+                    resultDiv.textContent = `✗ ${result.message}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.textContent = `✗ Error: ${error.message}`;
+            }
+        }
+
+        // Toggle share enabled state
+        function toggleShare(index) {
+            const checkbox = document.getElementById(`share-${index}`);
+            const share = shares[index];
+            const shareDiv = checkbox.closest('.share-item');
+
+            if (checkbox.checked) {
+                if (!config.enabledShares.includes(share.fullPath)) {
+                    config.enabledShares.push(share.fullPath);
+                }
+                shareDiv.classList.add('enabled');
+            } else {
+                config.enabledShares = config.enabledShares.filter(s => s !== share.fullPath);
+                shareDiv.classList.remove('enabled');
+            }
+        }
+
+        // Save configuration
+        async function saveConfiguration() {
+            try {
+                const response = await fetch('/api/config/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const message = `<strong>✓ Configuration saved!</strong><br><br>To apply changes:<br>1. Go to Umbrel Dashboard<br>2. Right-click the <code>Audiobookshelf</code> app icon<br>3. Select <code>Restart</code>`;
+                    showMessage(message, 'success');
+                } else {
+                    showMessage('✗ Error saving configuration', 'error');
+                }
+            } catch (error) {
+                showMessage('✗ Error saving configuration: ' + error.message, 'error');
+            }
+        }
+
+        // Refresh shares
+        async function refreshShares() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('content').style.display = 'none';
+            await initialize();
+        }
+
+        // Render shares
+        function renderShares() {
+            const container = document.getElementById('shares-container');
+
+            if (shares.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📁</div>
+                        <h3>No Network Shares Found</h3>
+                        <p>Add network shares in Umbrel's Files app first, then refresh this page.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = '<div class="share-list">' + shares.map((share, index) => {
+                const isEnabled = config.enabledShares.includes(share.fullPath);
+                const statusClass = share.isMounted && share.isAccessible ? 'mounted' : 'unmounted';
+                const statusText = share.isMounted && share.isAccessible ? 'Accessible' : 'Not Mounted';
+
+                return `
+                    <div class="share-item ${isEnabled ? 'enabled' : ''}" id="share-item-${index}">
+                        <div class="share-header">
+                            <input 
+                                type="checkbox" 
+                                class="share-checkbox" 
+                                id="share-${index}"
+                                ${isEnabled ? 'checked' : ''}
+                                onchange="toggleShare(${index})"
+                            >
+                            <label for="share-${index}" class="share-name">
+                                ${share.host} / ${share.shareName}
+                            </label>
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="share-details">
+                            <p><strong>Path in Audiobookshelf:</strong> <code>/media/network/${share.fullPath}</code></p>
+                            <p><strong>System Path:</strong> <code>${share.systemPath}</code></p>
+                        </div>
+                        <div class="share-actions">
+                            <button class="btn btn-test" onclick="testShare('${share.fullPath}', ${index})">
+                                🔍 Test Access
+                            </button>
+                            <div id="test-result-${index}" class="test-result" style="display: none;"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('') + '</div>';
+        }
+
+        // Load version information
+        async function loadVersion() {
+            try {
+                const response = await fetch('/version.json');
+                if (response.ok) {
+                    const versionData = await response.json();
+                    document.getElementById('version-display').textContent = `v${versionData.version}`;
+                }
+            } catch (error) {
+                console.warn('Could not load version information:', error);
+            }
+        }
+
+        // Initialize
+        async function initialize() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('content').style.display = 'none';
+
+            await loadVersion();
+            await loadConfiguration();
+            await discoverShares();
+
+            renderShares();
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', initialize);
+    </script>
+</body>
+
+</html>

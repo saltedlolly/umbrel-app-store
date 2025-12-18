@@ -1,0 +1,112 @@
+manifestVersion: 1.1
+id: saltedlolly-audiobookshelf
+name: ABS NAS Edition
+tagline: Audiobookshelf with NAS support
+category: media
+version: "2.31.0"
+icon: https://raw.githubusercontent.com/getumbrel/umbrel-apps-gallery/bf4f92764bf577208567ab7cacc5bce81847898f/audiobookshelf/icon.svg
+port: 23378
+description: >-
+  This version of Audiobookshelf includes Network Shares support for accessing your media on NAS/SMB/NFS shares.
+
+ ⚠️ IMPORTANT: Be sure to uninstall the standard Audiobookshelf app from the Umbrel App Store before installing this version to avoid port conflicts.
+ 
+
+  Direct Access URLs:
+
+  - Network Shares Config Tool: http://umbrel.local:23378 (opens from dashboard icon)
+
+  - Main Audiobookshelf App: http://umbrel.local:13378 (link provided in config UI)
+
+
+  Audioookshelf - NAS Edition features:
+
+  - Includes a network share configuration tools accessible via the dashboard icon
+  
+  - Give Audiobookshelf access to your network shares via a simple UI
+
+  - After a system restart, Audiobookshelf will wait for the network shares to be available before starting
+
+  
+  ⚠️ IMPORTANT: After enabling/disabling network shares, RESTART the Audiobookshelf app (right-click app icon → Restart)
+
+
+  Main Features:
+
+
+  - Fully open-source, including the android & iOS app (in beta)
+
+  - Stream all audio formats on the fly
+
+  - Search and add podcasts to download episodes w/ auto-download
+
+  - Multi-user support w/ custom permissions
+
+  - Keeps progress per user and syncs across devices
+
+  - Auto-detects library updates, no need to re-scan
+
+  - Upload books and podcasts w/ bulk upload drag and drop folders
+
+  - Backup your metadata + automated daily backups
+
+  - Progressive Web App (PWA)
+
+  - Chromecast support on the web app and android app
+
+  - Fetch metadata and cover art from several sources
+
+  - Chapter editor and chapter lookup (using Audnexus API)
+
+  - Merge your audio files into a single m4b
+
+  - Embed metadata and cover image into your audio files (using Tone)
+
+  - Basic ebook support and e-reader (experimental)
+
+
+  Android App (beta)
+
+  - Try it out on the Google Play Store
+
+
+  iOS App (early beta)
+
+  - Available using Test Flight: https://testflight.apple.com/join/wiic7QIW
+
+developer: advplyr (Network Share Config Tool by saltedlolly)
+website: https://audiobookshelf.org
+repo: https://github.com/advplyr/audiobookshelf
+support: https://discord.gg/pJsjuNCKRq
+gallery:
+  - 1.jpg
+  - 2.jpg
+  - 3.jpg
+dependencies: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+hooks:
+  pre-start: hooks/pre-start
+releaseNotes: >-
+  New features and improvements:
+    - Added "Best" option for book cover search (searches audible, google & fantlab)
+    - Book cover search is now async and streams results using websockets
+    - Decreased timeout to 10s on all metadata providers
+
+
+  Bug fixes:
+    - Fixed OIDC invalid callback URL issue
+    - Fixed MultiSelect causing web client to become unresponsive
+    - Fixed podcast episodes being downloaded without an audio stream
+    - Fixed chapter editor overflowing on smaller screen sizes
+
+
+  UI/UX improvements:
+    - Chapter editor no longer redirects back after saving changes or deleting all chapters
+    - Various translation updates for multiple languages
+
+
+  Full release notes can be found at https://github.com/advplyr/audiobookshelf/releases
+submitter: Olly Stedall
+submission: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-audiobookshelf

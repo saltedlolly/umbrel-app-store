@@ -35,29 +35,29 @@ repo: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddn
 support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery: []
 releaseNotes: >-
-  v1.2.5:
+ v1.2.5:
 
-  - Improve status display to better support IPv6 addresses
+  - Improve status display to better support IPv6 addresses.
+
 
   v1.2.0:
 
   - Add support for detecting IPv6 addresses, if the system supports it. Required the container to use `network_mode: host`.
 
+
   v1.1.0:
 
   - Fix Notifier section - URLs now save correctly. Hopefully Notifiers should now be working.
+
 
   v1.0.8:
 
   - Add version badge in footer for easier debugging; gets baked into the image at build time.
 
+
   v1.0.7:
 
-  - Fix notifier URLs not being saved
-
   - Add IPv4/IPv6 support toggles in UI
-
-  - Tweaks and bug fixes
 
 dependencies: []
 path: ""
