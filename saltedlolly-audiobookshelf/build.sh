@@ -241,7 +241,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Determine version from umbrel-app.yml (the main app version, not the UI component version)
+# Determine version from umbrel-app.yml (the main app version)
 if [[ -z "$SET_VERSION" ]]; then
   SET_VERSION=$(grep '^version:' "$APP_YML_FILE" | sed 's/version: *"\(.*\)"/\1/')
   echo "Using version from umbrel-app.yml: $SET_VERSION"
@@ -249,14 +249,14 @@ else
   echo "Using specified version: $SET_VERSION"
 fi
 
-# Get UI component version for Docker image tagging
-UI_VERSION=$(node -p "require('$UI_REPO/package.json').version")
-
 # Always check and update ABS version to latest stable release
 update_abs_version
 
-# Update UI version
+# Update UI version (this creates/updates version.json with ABS version + UI build number)
 update_ui_version
+
+# Get the full version from version.json for Docker image tagging (e.g., "2.31.0.11")
+UI_VERSION=$(node -p "require('$UI_REPO/public/version.json').version")
 
 echo "========================================="
 echo "Building Network Shares UI Docker image"
