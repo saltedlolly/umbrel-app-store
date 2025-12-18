@@ -17,6 +17,8 @@ ABS_IMAGE="ghcr.io/advplyr/audiobookshelf"
 SET_VERSION=""
 LOCAL_TEST=false
 PUBLISH_TO_GITHUB=false
+CLEANUP_IMAGES=false
+KEEP_IMAGES=10
 UMBREL_DEV_HOST="192.168.215.2"
 
 is_macos=false
@@ -31,6 +33,7 @@ Options:
   --version <x.y.z>    : Set explicit version (default: use package.json version)
   --localtest          : Build multi-arch, push to Docker Hub, and deploy to umbrel-dev ($UMBREL_DEV_HOST)
   --publish            : Build multi-arch, push to Docker Hub (for production)
+  --cleanup [N]        : Delete old Docker Hub images, keep last N versions (default: 10)
 
 Default paths:
   UI_REPO:      $UI_REPO
@@ -174,7 +177,7 @@ update_abs_version() {
 update_ui_version() {
   local VERSION_FILE="$UI_REPO/public/version.json"
   
-  # Get current ABS version from umbrel-app.yml
+  # Get current ABS version from umbrel-app.yml (source of truth)
   local abs_version=$(grep '^version:' "$APP_YML_FILE" | awk '{print $2}' | tr -d '"')
   
   # Check if version.json exists
@@ -189,14 +192,15 @@ update_ui_version() {
     return
   fi
   
-  # Read current version info
+  # Read current ABS version from version.json
   local stored_abs_version=$(grep '"absVersion"' "$VERSION_FILE" | cut -d'"' -f4)
   local ui_version=$(grep '"uiVersion"' "$VERSION_FILE" | cut -d':' -f2 | tr -d ' ,')
   
-  # If ABS version changed, reset UI version to 1
+  # Compare version.json's absVersion with umbrel-app.yml's version
+  # If ABS version changed (in umbrel-app.yml), reset UI version to 1
   if [[ "$stored_abs_version" != "$abs_version" ]]; then
     ui_version=1
-    echo "ABS version changed from $stored_abs_version to $abs_version, resetting UI version to 1"
+    echo "ABS version changed from $stored_abs_version to $abs_version (in umbrel-app.yml), resetting UI version to 1"
   else
     # Increment UI version
     ui_version=$((ui_version + 1))
@@ -212,6 +216,150 @@ update_ui_version() {
   
   echo "✓ Updated version.json to v${abs_version}.${ui_version}"
   echo ""
+}
+
+# Cleanup old Docker Hub images
+cleanup_docker_hub_images() {
+  echo "========================================="
+  echo "Docker Hub Image Cleanup"
+  echo "========================================="
+  echo "Repository: $IMAGE_NAME"
+  echo "Keep last: $KEEP_IMAGES images"
+  echo ""
+  
+  local docker_username=""
+  local docker_token=""
+  
+  # Try to get credentials from docker config
+  local docker_config="$HOME/.docker/config.json"
+  if [[ -f "$docker_config" ]]; then
+    # Check if using credential store (macOS keychain, etc.)
+    local creds_store=$(grep '"credsStore"' "$docker_config" | cut -d'"' -f4)
+    
+    if [[ -n "$creds_store" ]]; then
+      # Use docker-credential helper to get credentials
+      echo "Retrieving credentials from $creds_store..."
+      local creds=$(echo "https://index.docker.io/v1/" | docker-credential-"$creds_store" get 2>/dev/null || true)
+      if [[ -n "$creds" ]]; then
+        docker_username=$(echo "$creds" | grep -o '"Username":"[^"]*' | cut -d'"' -f4)
+        docker_token=$(echo "$creds" | grep -o '"Secret":"[^"]*' | cut -d'"' -f4)
+        if [[ -n "$docker_username" ]] && [[ -n "$docker_token" ]]; then
+          echo "✓ Using Docker credentials from $creds_store"
+        fi
+      fi
+    else
+      # Try to extract auth from config.json directly
+      local auth=$(grep -A 2 '"https://index.docker.io/v1/"' "$docker_config" 2>/dev/null | grep '"auth"' | cut -d'"' -f4)
+      
+      if [[ -n "$auth" ]]; then
+        # Decode base64 auth (format: username:token)
+        local decoded=$(echo "$auth" | base64 -d 2>/dev/null || echo "$auth" | base64 -D 2>/dev/null)
+        docker_username=$(echo "$decoded" | cut -d':' -f1)
+        docker_token=$(echo "$decoded" | cut -d':' -f2)
+        echo "✓ Using Docker credentials from ~/.docker/config.json"
+      fi
+    fi
+  fi
+  
+  # Fall back to environment variables
+  if [[ -z "$docker_username" ]] || [[ -z "$docker_token" ]]; then
+    docker_username="${DOCKER_HUB_USERNAME:-}"
+    docker_token="${DOCKER_HUB_TOKEN:-}"
+    if [[ -n "$docker_username" ]] && [[ -n "$docker_token" ]]; then
+      echo "✓ Using Docker credentials from environment variables"
+    fi
+  fi
+  
+  # Check if we have credentials
+  if [[ -z "$docker_username" ]] || [[ -z "$docker_token" ]]; then
+    echo "Error: Docker Hub credentials not found" >&2
+    echo "" >&2
+    echo "Please either:" >&2
+    echo "  1. Run 'docker login' to save credentials, OR" >&2
+    echo "  2. Set environment variables:" >&2
+    echo "     export DOCKER_HUB_USERNAME='your-username'" >&2
+    echo "     export DOCKER_HUB_TOKEN='your-token'" >&2
+    echo "" >&2
+    echo "To create a token: https://hub.docker.com/settings/security" >&2
+    exit 1
+  fi
+  
+  # Extract repository name (e.g., "saltedlolly/audiobookshelf-network-shares-ui" -> "saltedlolly" and "audiobookshelf-network-shares-ui")
+  local namespace=$(echo "$IMAGE_NAME" | cut -d'/' -f1)
+  local repo=$(echo "$IMAGE_NAME" | cut -d'/' -f2)
+  
+  echo "Fetching image tags from Docker Hub..."
+  
+  # Get authentication token
+  local auth_token=$(curl -s -H "Content-Type: application/json" \
+    -X POST \
+    -d "{\"username\": \"$docker_username\", \"password\": \"$docker_token\"}" \
+    https://hub.docker.com/v2/users/login/ | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+  
+  if [[ -z "$auth_token" ]]; then
+    echo "Error: Failed to authenticate with Docker Hub" >&2
+    exit 1
+  fi
+  
+  # Fetch all tags
+  local tags=$(curl -s -H "Authorization: JWT $auth_token" \
+    "https://hub.docker.com/v2/repositories/${namespace}/${repo}/tags/?page_size=100" \
+    | grep -o '"name":"[^"]*' | cut -d'"' -f4 | sort -V -r)
+  
+  if [[ -z "$tags" ]]; then
+    echo "No tags found or failed to fetch tags" >&2
+    exit 1
+  fi
+  
+  local tag_count=$(echo "$tags" | wc -l | tr -d ' ')
+  echo "Found $tag_count tags"
+  echo ""
+  
+  if [[ $tag_count -le $KEEP_IMAGES ]]; then
+    echo "Only $tag_count tags exist (keeping $KEEP_IMAGES), nothing to delete"
+    exit 0
+  fi
+  
+  # Calculate how many to delete
+  local delete_count=$((tag_count - KEEP_IMAGES))
+  local tags_to_delete=$(echo "$tags" | tail -n "$delete_count")
+  
+  echo "Tags to keep (newest $KEEP_IMAGES):"
+  echo "$tags" | head -n "$KEEP_IMAGES" | sed 's/^/  ✓ /'
+  echo ""
+  echo "Tags to DELETE ($delete_count):"
+  echo "$tags_to_delete" | sed 's/^/  ✗ /'
+  echo ""
+  
+  # Confirm deletion
+  read -p "Delete these $delete_count old image(s)? [y/N] " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Cancelled"
+    exit 0
+  fi
+  
+  echo ""
+  echo "Deleting old images..."
+  local deleted=0
+  
+  while IFS= read -r tag; do
+    echo -n "  Deleting $tag... "
+    local response=$(curl -s -X DELETE \
+      -H "Authorization: JWT $auth_token" \
+      "https://hub.docker.com/v2/repositories/${namespace}/${repo}/tags/${tag}/")
+    
+    if [[ "$response" == "" ]]; then
+      echo "✓"
+      deleted=$((deleted + 1))
+    else
+      echo "✗ (error: $response)"
+    fi
+  done <<< "$tags_to_delete"
+  
+  echo ""
+  echo "✓ Deleted $deleted of $delete_count images"
+  echo "✓ Kept $KEEP_IMAGES most recent images"
 }
 
 # Parse arguments
@@ -233,6 +381,15 @@ while [[ $# -gt 0 ]]; do
       PUBLISH_TO_GITHUB=true
       shift
       ;;
+    --cleanup)
+      CLEANUP_IMAGES=true
+      if [[ -n "${2:-}" ]] && [[ "$2" =~ ^[0-9]+$ ]]; then
+        KEEP_IMAGES="$2"
+        shift 2
+      else
+        shift
+      fi
+      ;;
     *)
       echo "Unknown option: $1" >&2
       usage
@@ -240,6 +397,12 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# If cleanup mode, run cleanup and exit
+if [[ "$CLEANUP_IMAGES" == true ]]; then
+  cleanup_docker_hub_images
+  exit 0
+fi
 
 # Determine version from umbrel-app.yml (the main app version)
 if [[ -z "$SET_VERSION" ]]; then
