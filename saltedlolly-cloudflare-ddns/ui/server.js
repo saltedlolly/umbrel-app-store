@@ -139,7 +139,7 @@ app.get('/api/domain-status', async (req, res) => {
         const detected = detectPublicIPsFromLogs();
         const results = [];
         if (!token) {
-            for (const d of parts) results.push({ domain: d, status: 'missing', reason: 'Token missing', ipv4Match: false, ipv6Match: false });
+            for (const d of parts) results.push({ domain: d, status: 'missing', reason: 'Token missing', ipv4Match: false, ipv6Match: false, ipv4Proxied: null, ipv6Proxied: null });
             return res.json({ domains: results });
         }
 
@@ -148,17 +148,17 @@ app.get('/api/domain-status', async (req, res) => {
             const zoneName = getZoneName(d);
             const zres = await cfGet(`/zones?name=${encodeURIComponent(zoneName)}`, token);
             if (!zres) {
-                results.push({ domain: d, status: 'error', reason: 'Network error', ipv4Match: false, ipv6Match: false });
+                results.push({ domain: d, status: 'error', reason: 'Network error', ipv4Match: false, ipv6Match: false, ipv4Proxied: null, ipv6Proxied: null });
                 continue;
             }
             if (zres.success === false) {
                 // Treat auth failures as invalid token
-                results.push({ domain: d, status: 'invalid', reason: 'Auth error', ipv4Match: false, ipv6Match: false });
+                results.push({ domain: d, status: 'invalid', reason: 'Auth error', ipv4Match: false, ipv6Match: false, ipv4Proxied: null, ipv6Proxied: null });
                 continue;
             }
             if (!zres.result || !zres.result.length) {
                 // Could be wrong zone heuristic; classify as pending rather than hard error
-                results.push({ domain: d, status: 'pending', reason: 'Zone not found', ipv4Match: false, ipv6Match: false });
+                results.push({ domain: d, status: 'pending', reason: 'Zone not found', ipv4Match: false, ipv6Match: false, ipv4Proxied: null, ipv6Proxied: null });
                 continue;
             }
             const zoneId = zres.result[0].id;
@@ -166,11 +166,11 @@ app.get('/api/domain-status', async (req, res) => {
             const rres6 = await cfGet(`/zones/${zoneId}/dns_records?type=AAAA&name=${encodeURIComponent(d)}`, token);
             // Handle network/auth errors
             if (!rres || !rres6) {
-                results.push({ domain: d, status: 'error', reason: 'Network error', ipv4Match: false, ipv6Match: false });
+                results.push({ domain: d, status: 'error', reason: 'Network error', ipv4Match: false, ipv6Match: false, ipv4Proxied: null, ipv6Proxied: null });
                 continue;
             }
             if (rres.success === false || rres6.success === false) {
-                results.push({ domain: d, status: 'invalid', reason: 'Auth error', ipv4Match: false, ipv6Match: false });
+                results.push({ domain: d, status: 'invalid', reason: 'Auth error', ipv4Match: false, ipv6Match: false, ipv4Proxied: null, ipv6Proxied: null });
                 continue;
             }
             const aRecords = (rres && rres.result) ? rres.result : [];
@@ -179,11 +179,16 @@ app.get('/api/domain-status', async (req, res) => {
             const currentAAAA = aaaaRecords.map(r => r.content).filter(Boolean);
             const v4Match = detected.ipv4 ? currentA.includes(detected.ipv4) : false;
             const v6Match = detected.ipv6 ? currentAAAA.includes(detected.ipv6) : false;
+
+            // Get current proxied status from Cloudflare records
+            const ipv4Proxied = aRecords.length > 0 ? aRecords[0].proxied : null;
+            const ipv6Proxied = aaaaRecords.length > 0 ? aaaaRecords[0].proxied : null;
+
             // Derive status
             let status = 'pending'; let reason = '';
             if (v4Match || v6Match) { status = 'ok'; reason = 'Records match detected IPs'; }
             else { status = 'pending'; reason = 'Records differ from detected IPs'; }
-            results.push({ domain: d, status, reason, ipv4Match: v4Match, ipv6Match: v6Match });
+            results.push({ domain: d, status, reason, ipv4Match: v4Match, ipv6Match: v6Match, ipv4Proxied, ipv6Proxied });
         }
         res.json({ domains: results });
     } catch (e) {
@@ -372,7 +377,7 @@ function findLastUpdateLine(text) {
         // Only match lines that indicate a successful *change* to DNS records
         // Exclude: config updates, service starts, and "already up to date" checks
         if (!/Config updated|UI started|Service (auto-)?enabled|Service (auto-)?disabled|already up to date|unchanged|no change/gi.test(l) &&
-            /a records.*were|updated.*record|record.*updated|set the ip|successfully updated|update successful|were updated/gi.test(l)) {
+            /a{1,4} records.*were|updated.*record|record.*updated|added.*new.*record|set the ip|successfully updated|update successful|were updated/gi.test(l)) {
             return l;
         }
     }
@@ -397,13 +402,38 @@ app.get('/api/last-update', (req, res) => {
             const s = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8'));
             if (s.lastSuccessfulUpdate) return res.json({ lastUpdate: s.lastSuccessfulUpdate });
         }
-        if (!fs.existsSync(LOG_FILE)) return res.json({ lastUpdate: null });
+        if (!fs.existsSync(LOG_FILE)) return res.json({ lastUpdate: null, ipv4Update: null, ipv6Update: null });
         const txt = fs.readFileSync(LOG_FILE, 'utf8');
-        const lastLine = findLastUpdateLine(txt);
-        if (!lastLine) return res.json({ lastUpdate: null });
-        const ts = extractTimestampFromLine(lastLine);
-        if (!ts) return res.json({ lastUpdate: null });
-        res.json({ lastUpdate: ts.toISOString() });
+        const lines = txt.split(/\r?\n/).filter(Boolean);
+
+        let ipv4Update = null;
+        let ipv6Update = null;
+
+        // Scan logs from newest to oldest to find last IPv4 and IPv6 updates
+        for (let i = lines.length - 1; i >= 0; i--) {
+            const l = lines[i];
+            // Skip non-update lines
+            if (/Config updated|UI started|Service (auto-)?enabled|Service (auto-)?disabled|already up to date|unchanged|no change/gi.test(l)) continue;
+
+            // Check for IPv4 (A record) updates
+            if (!ipv4Update && /\bA\b.*record|added.*new.*A\b.*record|updated.*A\b.*record/gi.test(l)) {
+                const ts = extractTimestampFromLine(l);
+                if (ts) ipv4Update = ts.toISOString();
+            }
+
+            // Check for IPv6 (AAAA record) updates
+            if (!ipv6Update && /AAAA.*record|added.*new.*AAAA.*record|updated.*AAAA.*record/gi.test(l)) {
+                const ts = extractTimestampFromLine(l);
+                if (ts) ipv6Update = ts.toISOString();
+            }
+
+            // Stop once we have both
+            if (ipv4Update && ipv6Update) break;
+        }
+
+        // For backward compatibility, return the most recent of the two as lastUpdate
+        const mostRecent = [ipv4Update, ipv6Update].filter(Boolean).sort().reverse()[0] || null;
+        res.json({ lastUpdate: mostRecent, ipv4Update, ipv6Update });
     } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 

@@ -90,13 +90,18 @@
                         <div class="row">
                             <div class="col">
                                 <div class="small text-muted">Public IPs</div>
-                                <div id="ipv4Container"><span class="text-muted small">IPv4:</span> <strong id="ipv4">n/a</strong></div>
-                                <div id="ipv6Container" style="display:none;"><span class="text-muted small">IPv6:</span> <strong id="ipv6">n/a</strong></div>
+                                <div id="ipv4Container"><span class="text-muted small">IPv4:</span> <strong
+                                        id="ipv4">n/a</strong></div>
+                                <div id="ipv6Container" style="display:none;"><span
+                                        class="text-muted small">IPv6:</span> <strong id="ipv6">n/a</strong></div>
                             </div>
                             <div class="col text-end">
                                 <div class="small text-muted">Cloudflare Last Updated</div>
-                                <div id="ipv4UpdateContainer"><span class="text-muted small">IPv4:</span> <span id="ipv4LastUpdated">Never</span></div>
-                                <div id="ipv6UpdateContainer" style="display:none;"><span class="text-muted small">IPv6:</span> <span id="ipv6LastUpdated">Never</span></div>
+                                <div id="ipv4UpdateContainer"><span class="text-muted small">IPv4:</span> <span
+                                        id="ipv4LastUpdated">Never</span></div>
+                                <div id="ipv6UpdateContainer" style="display:none;"><span
+                                        class="text-muted small">IPv6:</span> <span id="ipv6LastUpdated">Never</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -325,8 +330,8 @@
                                     <div class="d-flex justify-content-between align-items-center">
                                         <label class="form-label small mb-0">Healthchecks URL</label>
                                         <div class="form-check form-switch">
-                                            <input id="edit_HEALTHCHECKS_ENABLED" class="form-check-input proxied-toggle"
-                                                type="checkbox">
+                                            <input id="edit_HEALTHCHECKS_ENABLED"
+                                                class="form-check-input proxied-toggle" type="checkbox">
                                         </div>
                                     </div>
                                     <input id="edit_HEALTHCHECKS" class="form-control form-control-sm" />
@@ -349,7 +354,8 @@
                                                 type="checkbox">
                                         </div>
                                     </div>
-                                    <textarea id="edit_SHOUTRRR" class="form-control form-control-sm" rows="3"></textarea>
+                                    <textarea id="edit_SHOUTRRR" class="form-control form-control-sm"
+                                        rows="3"></textarea>
                                 </div>
                                 <div class="d-flex gap-2 justify-content-end mt-2">
                                     <button id="saveNotifiersBtn" class="btn btn-primary btn-sm">Save</button>
@@ -460,28 +466,28 @@
                     // Update last update timestamps for IPv4 and IPv6 separately
                     try {
                         const lu = await (await fetch('/api/last-update')).json();
-                        
+
                         // Update IPv4 timestamp
                         if (lu.ipv4Update) {
                             const d4 = new Date(lu.ipv4Update);
                             ipv4LastUpdatedEl.innerText = d4.toLocaleString();
                         } else {
-                            ipv4LastUpdatedEl.innerText = 'Never';
+                            ipv4LastUpdatedEl.innerText = 'Not Yet';
                         }
-                        
+
                         // Update IPv6 timestamp and show/hide container
                         if (lu.ipv6Update) {
                             const d6 = new Date(lu.ipv6Update);
                             ipv6LastUpdatedEl.innerText = d6.toLocaleString();
                             ipv6UpdateContainer.style.display = '';
                         } else {
-                            ipv6LastUpdatedEl.innerText = 'Never';
+                            ipv6LastUpdatedEl.innerText = 'Not Yet';
                             // Only show IPv6 container if IPv6 support is enabled
                             const cfg = currentConfig || {};
                             const ipv6Enabled = !cfg.IP6_PROVIDER || cfg.IP6_PROVIDER !== 'none';
                             ipv6UpdateContainer.style.display = ipv6Enabled ? '' : 'none';
                         }
-                        
+
                         // Check for stale updates (using most recent of the two)
                         const mostRecent = lu.lastUpdate;
                         if (mostRecent) {
@@ -499,11 +505,11 @@
                     try {
                         const publicIp = await (await fetch('/api/public-ip')).json();
                         ipv4El.innerText = publicIp.ipv4 || 'n/a';
-                        if (publicIp.ipv6) { 
-                            ipv6El.innerText = publicIp.ipv6; 
-                            ipv6Container.style.display = ''; 
-                        } else { 
-                            ipv6Container.style.display = 'none'; 
+                        if (publicIp.ipv6) {
+                            ipv6El.innerText = publicIp.ipv6;
+                            ipv6Container.style.display = '';
+                        } else {
+                            ipv6Container.style.display = 'none';
                         }
                     } catch (e) { }
                 }
@@ -709,73 +715,135 @@
                     const proxied = data.PROXIED === 'true' || data.PROXIED === true;
                     const ipv4Enabled = !data.IP4_PROVIDER || data.IP4_PROVIDER !== 'none';
                     const ipv6Enabled = !data.IP6_PROVIDER || data.IP6_PROVIDER !== 'none';
-                    
+
                     if (!domainsStr.trim()) {
                         summarySettings.innerHTML = `<div class="col-12"><div class="p-2 border rounded">⚠️ No domains configured</div></div>`;
                     } else {
                         const parts = domainsStr.split(',').map(s => s.trim()).filter(Boolean);
+
                         // Fetch domain status from backend
-                        let ipv4Rows = '';
-                        let ipv6Rows = '';
-                        
+                        let rows = '';
                         try {
                             const resp = await (await fetch('/api/domain-status')).json();
                             const byDomain = new Map(resp.domains && resp.domains.map(x => [x.domain, x]) || []);
-                            
-                            // Get current public IPs
+
+                            // Get current public IPs to check if IPv6 is available
                             const publicIp = await (await fetch('/api/public-ip')).json();
-                            
-                            ipv4Rows = parts.map((d) => {
+                            const hasIPv6 = !!publicIp.ipv6;
+
+                            rows = parts.map((d) => {
                                 const info = byDomain.get(d);
-                                const proxyIcon = proxied ? '✓' : '';
-                                const recordMatch = info && info.ipv4Match ? '✓' : '';
-                                return `<tr><td>${d}</td><td class="text-center">${proxyIcon}</td><td class="text-center">${recordMatch}</td></tr>`;
-                            }).join('');
-                            
-                            ipv6Rows = parts.map((d) => {
-                                const info = byDomain.get(d);
-                                const proxyIcon = proxied ? '✓' : '';
-                                const recordMatch = info && info.ipv6Match ? '✓' : '';
-                                return `<tr><td>${d}</td><td class="text-center">${proxyIcon}</td><td class="text-center">${recordMatch}</td></tr>`;
+
+                                // Determine IPv4 status symbol
+                                let ipv4Symbol = '⏳';
+                                if (!info) ipv4Symbol = '⏳';
+                                else if (info.ipv4Match) ipv4Symbol = '✅';
+                                else if (info.status === 'pending') ipv4Symbol = '⏳';
+                                else if (info.status === 'missing' || info.status === 'invalid') ipv4Symbol = '⚠️';
+                                else if (info.status === 'error') ipv4Symbol = '⛔️';
+
+                                // Determine IPv6 status symbol
+                                let ipv6Symbol = '⏳';
+                                if (!hasIPv6 && ipv6Enabled) {
+                                    // Network doesn't support IPv6
+                                    ipv6Symbol = '⚠️';
+                                } else if (!info) {
+                                    ipv6Symbol = '⏳';
+                                } else if (info.ipv6Match) {
+                                    // AAAA record matches current public IPv6
+                                    ipv6Symbol = '✅';
+                                } else if (info.status === 'pending') {
+                                    // Records differ, update anticipated
+                                    ipv6Symbol = '⏳';
+                                } else if (info.status === 'missing' || info.status === 'invalid') {
+                                    ipv6Symbol = '⚠️';
+                                } else if (info.status === 'error') {
+                                    ipv6Symbol = '⛔️';
+                                }
+
+                                // Determine IPv4 proxied status display
+                                let ipv4ProxiedDisplay = '⛔️';
+                                if (info && info.ipv4Proxied !== null) {
+                                    const currentlyProxied = info.ipv4Proxied;
+                                    const configProxied = proxied;
+                                    if (currentlyProxied === configProxied) {
+                                        ipv4ProxiedDisplay = currentlyProxied ? '☁️ Yes' : 'No';
+                                    } else if (currentlyProxied && !configProxied) {
+                                        ipv4ProxiedDisplay = '☁️ Yes ‣ No ⏳';
+                                    } else {
+                                        ipv4ProxiedDisplay = 'No ‣ ☁️ Yes ⏳';
+                                    }
+                                } else if (info && info.status === 'error') {
+                                    ipv4ProxiedDisplay = '⛔️';
+                                }
+
+                                // Determine IPv6 proxied status display
+                                let ipv6ProxiedDisplay = '⛔️';
+                                if (info && info.ipv6Proxied !== null) {
+                                    const currentlyProxied = info.ipv6Proxied;
+                                    const configProxied = proxied;
+                                    if (currentlyProxied === configProxied) {
+                                        ipv6ProxiedDisplay = currentlyProxied ? '☁️ Yes' : 'No';
+                                    } else if (currentlyProxied && !configProxied) {
+                                        ipv6ProxiedDisplay = '☁️ Yes ‣ No ⏳';
+                                    } else {
+                                        ipv6ProxiedDisplay = 'No ‣ ☁️ Yes ⏳';
+                                    }
+                                } else if (info && info.status === 'error') {
+                                    ipv6ProxiedDisplay = '⛔️';
+                                }
+
+                                let row = `<tr><td>${d}</td>`;
+
+                                // IPv4 columns
+                                if (ipv4Enabled) {
+                                    row += `<td class="text-center">${ipv4ProxiedDisplay}</td>`;
+                                    row += `<td class="text-center">${ipv4Symbol}</td>`;
+                                }
+
+                                // IPv6 columns
+                                if (ipv6Enabled) {
+                                    row += `<td class="text-center">${ipv6ProxiedDisplay}</td>`;
+                                    row += `<td class="text-center">${ipv6Symbol}</td>`;
+                                }
+
+                                row += '</tr>';
+                                return row;
                             }).join('');
                         } catch (e) {
                             // Fallback if API fails
-                            ipv4Rows = parts.map((d) => `<tr><td>${d}</td><td class="text-center">${proxied ? '✓' : ''}</td><td class="text-center">⛔️</td></tr>`).join('');
-                            ipv6Rows = parts.map((d) => `<tr><td>${d}</td><td class="text-center">${proxied ? '✓' : ''}</td><td class="text-center">⛔️</td></tr>`).join('');
+                            rows = parts.map((d) => {
+                                let row = `<tr><td>${d}</td>`;
+                                if (ipv4Enabled) {
+                                    row += `<td class="text-center">${proxied ? '☁️ Yes' : 'No'}</td>`;
+                                    row += `<td class="text-center">⛔️</td>`;
+                                }
+                                if (ipv6Enabled) {
+                                    row += `<td class="text-center">${proxied ? '☁️ Yes' : 'No'}</td>`;
+                                    row += `<td class="text-center">⛔️</td>`;
+                                }
+                                row += '</tr>';
+                                return row;
+                            }).join('');
                         }
-                        
-                        // Build HTML with two columns, hiding disabled ones
-                        let html = '<div class="col-12"><div class="row g-2">';
-                        
-                        if (ipv4Enabled) {
-                            html += `<div class="${ipv6Enabled ? 'col-md-6' : 'col-12'}">
-                                <div class="table-responsive">
-                                    <table class="table table-sm mb-0">
-                                        <thead class="small text-muted">
-                                            <tr><th colspan="3" class="text-center">IPv4 (A Records)</th></tr>
-                                            <tr><th>Domain</th><th class="text-center">Proxied</th><th class="text-center">Status</th></tr>
-                                        </thead>
-                                        <tbody>${ipv4Rows}</tbody>
-                                    </table>
-                                </div>
-                            </div>`;
-                        }
-                        
-                        if (ipv6Enabled) {
-                            html += `<div class="${ipv4Enabled ? 'col-md-6' : 'col-12'}">
-                                <div class="table-responsive">
-                                    <table class="table table-sm mb-0">
-                                        <thead class="small text-muted">
-                                            <tr><th colspan="3" class="text-center">IPv6 (AAAA Records)</th></tr>
-                                            <tr><th>Domain</th><th class="text-center">Proxied</th><th class="text-center">Status</th></tr>
-                                        </thead>
-                                        <tbody>${ipv6Rows}</tbody>
-                                    </table>
-                                </div>
-                            </div>`;
-                        }
-                        
-                        html += '</div></div>';
+
+                        // Build single table with dynamic columns and two-row headers
+                        let html = '<div class="col-12"><div class="table-responsive"><table class="table table-sm mb-0"><thead class="small text-muted">';
+
+                        // First header row with spanning headers
+                        html += '<tr><th rowspan="2">Domains</th>';
+                        if (ipv4Enabled) html += '<th colspan="2" class="text-center">🌐 IPv4 → A Records</th>';
+                        if (ipv6Enabled) html += '<th colspan="2" class="text-center">🌐 IPv6 → AAAA Records</th>';
+                        html += '</tr>';
+
+                        // Second header row with column headers
+                        html += '<tr>';
+                        if (ipv4Enabled) html += '<th class="text-center">Proxied</th><th class="text-center">Status</th>';
+                        if (ipv6Enabled) html += '<th class="text-center">Proxied</th><th class="text-center">Status</th>';
+                        html += '</tr>';
+
+                        html += `</thead><tbody>${rows}</tbody></table></div></div>`;
+
                         summarySettings.innerHTML = html;
                     }
                     // Populate edit fields
