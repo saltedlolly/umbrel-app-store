@@ -22,7 +22,7 @@ services:
     volumes:
       - ${APP_DATA_DIR}:/data
       # Mount the Umbrel network storage root (read-only) so we can discover shares
-      - ${UMBREL_ROOT}/data/storage/network:/umbrel-network:ro
+      - ${UMBREL_ROOT}/network:/umbrel-network:ro
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
       interval: 30s
@@ -53,6 +53,6 @@ services:
       - ${UMBREL_ROOT}/data/storage/downloads/podcasts:/podcasts
       # Mount the Umbrel network storage root to make NAS shares visible
       # Individual enabled shares will be symlinked by the pre-start hook
-      - ${UMBREL_ROOT}/data/storage/network:/media/network
+      - ${UMBREL_ROOT}/network:/media/network
     depends_on:
       - network-shares-ui
