@@ -14,7 +14,6 @@ COMPOSE_FILE="$APP_ROOT/docker-compose.yml"
 APP_YML_FILE="$APP_ROOT/umbrel-app.yml"
 IMAGE_NAME="saltedlolly/audiobookshelf-network-shares-ui"
 ABS_IMAGE="ghcr.io/advplyr/audiobookshelf"
-SET_VERSION=""
 LOCAL_TEST=false
 PUBLISH_TO_GITHUB=false
 CLEANUP_IMAGES=false
@@ -30,7 +29,6 @@ Usage: $0 [OPTIONS]
 
 Options:
   -h, --help           : Show this help message
-  --version <x.y.z>    : Set explicit version (default: use package.json version)
   --localtest          : Build multi-arch, push to Docker Hub, and deploy to umbrel-dev ($UMBREL_DEV_HOST)
   --publish            : Build multi-arch, push to Docker Hub (for production)
   --cleanup [N]        : Delete old Docker Hub images, keep last N versions (default: 10)
@@ -119,17 +117,6 @@ update_abs_version() {
   
   if [[ "$current_version" == "$latest_version" ]]; then
     echo "✓ Already on latest stable version"
-    # Still need to ensure umbrel-app.yml matches
-    local app_yml_version=$(grep '^version:' "$APP_YML_FILE" | awk '{print $2}' | tr -d '"')
-    if [[ "$app_yml_version" != "$latest_version" ]]; then
-      echo "Updating umbrel-app.yml version to match ABS..."
-      if $is_macos; then
-        sed -i '' "s/^version: .*/version: \"$latest_version\"/" "$APP_YML_FILE"
-      else
-        sed -i "s/^version: .*/version: \"$latest_version\"/" "$APP_YML_FILE"
-      fi
-      echo "✓ Updated umbrel-app.yml version to $latest_version"
-    fi
     echo ""
     return
   fi
@@ -160,16 +147,6 @@ update_abs_version() {
   fi
   
   echo "✓ Updated docker-compose.yml to ABS $latest_version"
-  
-  # Update umbrel-app.yml version to match ABS version
-  echo "Updating umbrel-app.yml version..."
-  if $is_macos; then
-    sed -i '' "s/^version: .*/version: \"$latest_version\"/" "$APP_YML_FILE"
-  else
-    sed -i "s/^version: .*/version: \"$latest_version\"/" "$APP_YML_FILE"
-  fi
-  
-  echo "✓ Updated umbrel-app.yml version to $latest_version"
   echo ""
 }
 
@@ -177,8 +154,8 @@ update_abs_version() {
 update_ui_version() {
   local VERSION_FILE="$UI_REPO/public/version.json"
   
-  # Get current ABS version from umbrel-app.yml (source of truth)
-  local abs_version=$(grep '^version:' "$APP_YML_FILE" | awk '{print $2}' | tr -d '"')
+  # Get current ABS version from docker-compose.yml (source of truth)
+  local abs_version=$(grep "$ABS_IMAGE" "$COMPOSE_FILE" | grep -o ':[0-9]\+\.[0-9]\+\.[0-9]\+' | cut -d':' -f2)
   
   # Check if version.json exists
   if [[ ! -f "$VERSION_FILE" ]]; then
@@ -196,11 +173,11 @@ update_ui_version() {
   local stored_abs_version=$(grep '"absVersion"' "$VERSION_FILE" | cut -d'"' -f4)
   local ui_version=$(grep '"uiVersion"' "$VERSION_FILE" | cut -d':' -f2 | tr -d ' ,')
   
-  # Compare version.json's absVersion with umbrel-app.yml's version
-  # If ABS version changed (in umbrel-app.yml), reset UI version to 1
+  # Compare version.json's absVersion with docker-compose.yml's version
+  # If ABS version changed (in docker-compose.yml), reset UI version to 1
   if [[ "$stored_abs_version" != "$abs_version" ]]; then
     ui_version=1
-    echo "ABS version changed from $stored_abs_version to $abs_version (in umbrel-app.yml), resetting UI version to 1"
+    echo "ABS version changed from $stored_abs_version to $abs_version, resetting UI version to 1"
   else
     # Increment UI version
     ui_version=$((ui_version + 1))
@@ -215,6 +192,21 @@ update_ui_version() {
   echo "}" >> "$VERSION_FILE"
   
   echo "✓ Updated version.json to v${abs_version}.${ui_version}"
+  echo ""
+}
+
+# Update umbrel-app.yml with full version from version.json
+update_app_yml_version() {
+  local VERSION_FILE="$UI_REPO/public/version.json"
+  local full_version=$(node -p "require('$VERSION_FILE').version")
+  
+  echo "Updating umbrel-app.yml to v$full_version..."
+  if $is_macos; then
+    sed -i '' "s/^version: .*/version: \"$full_version\"/" "$APP_YML_FILE"
+  else
+    sed -i "s/^version: .*/version: \"$full_version\"/" "$APP_YML_FILE"
+  fi
+  echo "✓ Updated umbrel-app.yml version to $full_version"
   echo ""
 }
 
@@ -369,10 +361,6 @@ while [[ $# -gt 0 ]]; do
       usage
       exit 0
       ;;
-    --version)
-      SET_VERSION="$2"
-      shift 2
-      ;;
     --localtest)
       LOCAL_TEST=true
       shift
@@ -404,27 +392,22 @@ if [[ "$CLEANUP_IMAGES" == true ]]; then
   exit 0
 fi
 
-# Determine version from umbrel-app.yml (the main app version)
-if [[ -z "$SET_VERSION" ]]; then
-  SET_VERSION=$(grep '^version:' "$APP_YML_FILE" | sed 's/version: *"\(.*\)"/\1/')
-  echo "Using version from umbrel-app.yml: $SET_VERSION"
-else
-  echo "Using specified version: $SET_VERSION"
-fi
-
 # Always check and update ABS version to latest stable release
 update_abs_version
 
 # Update UI version (this creates/updates version.json with ABS version + UI build number)
 update_ui_version
 
-# Get the full version from version.json for Docker image tagging (e.g., "2.31.0.11")
-UI_VERSION=$(node -p "require('$UI_REPO/public/version.json').version")
+# Update umbrel-app.yml with the full 4-part version
+update_app_yml_version
+
+# Get the full version from version.json for everything (e.g., "2.31.0.13")
+FULL_VERSION=$(node -p "require('$UI_REPO/public/version.json').version")
 
 echo "========================================="
 echo "Building Network Shares UI Docker image"
 echo "========================================="
-echo "Image: $IMAGE_NAME:$UI_VERSION"
+echo "Image: $IMAGE_NAME:$FULL_VERSION"
 # Ensure buildx is set up
 ensure_buildx
 
@@ -432,7 +415,7 @@ ensure_buildx
 echo "Building multi-arch image (linux/amd64, linux/arm64)..."
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
-  -t "$IMAGE_NAME:$UI_VERSION" \
+  -t "$IMAGE_NAME:$FULL_VERSION" \
   -t "$IMAGE_NAME:latest" \
   -f "$UI_REPO/Dockerfile" \
   --push \
@@ -440,7 +423,7 @@ docker buildx build \
 
 echo ""
 echo "Fetching manifest digest..."
-UI_DIGEST=$(docker buildx imagetools inspect "$IMAGE_NAME:$UI_VERSION" 2>/dev/null | grep "^Digest:" | awk '{print $2}')
+UI_DIGEST=$(docker buildx imagetools inspect "$IMAGE_NAME:$FULL_VERSION" 2>/dev/null | grep "^Digest:" | awk '{print $2}')
 if [[ -z "$UI_DIGEST" ]]; then
   echo "Error: Failed to obtain image digest" >&2
   exit 1
@@ -528,7 +511,7 @@ if $LOCAL_TEST; then
   echo "NEXT STEPS"
   echo "========================================" 
   echo ""
-  echo "The NEW version (v$UI_VERSION) is now on umbrel-dev with updated Docker image."
+  echo "The NEW version (v$FULL_VERSION) is now on umbrel-dev with updated Docker image."
   echo ""
   echo "⚠️  CRITICAL: Umbrel only reads app files during installation!"
   echo "   You MUST reinstall for changes to take effect."
@@ -545,7 +528,7 @@ if $LOCAL_TEST; then
   echo "     • Configure network shares via Network Shares UI"
   echo ""
   echo "Built image on Docker Hub:"
-  echo "  • $IMAGE_NAME:$UI_VERSION@$UI_DIGEST"
+  echo "  • $IMAGE_NAME:$FULL_VERSION@$UI_DIGEST"
   echo ""
 elif $PUBLISH_TO_GITHUB; then
   echo "========================================" 
@@ -556,16 +539,16 @@ elif $PUBLISH_TO_GITHUB; then
   # Commit and push to GitHub
   echo "Committing changes..."
   git add -A
-  git commit -m "release: v${SET_VERSION} - Build and push network-shares-ui multi-arch image"
+  git commit -m "release: v${FULL_VERSION} - Build and push network-shares-ui multi-arch image"
   
   echo "Pushing to GitHub..."
   git push
   
   echo ""
-  echo "✓ Successfully published v${SET_VERSION} to GitHub"
+  echo "✓ Successfully published v${FULL_VERSION} to GitHub"
   echo ""
   echo "Built image on Docker Hub:"
-  echo "  • $IMAGE_NAME:$UI_VERSION@$UI_DIGEST"
+  echo "  • $IMAGE_NAME:$FULL_VERSION@$UI_DIGEST"
   echo ""
 else
   echo "Next steps:"

@@ -1,9 +1,9 @@
-manifestVersion: 1.1
+manifestVersion: 1
 id: saltedlolly-audiobookshelf
 name: ABS NAS Edition
 tagline: Audiobookshelf with NAS support
-category: media
-version: "2.31.0"
+category: Media
+version: "2.31.0.15"
 icon: https://raw.githubusercontent.com/getumbrel/umbrel-apps-gallery/bf4f92764bf577208567ab7cacc5bce81847898f/audiobookshelf/icon.svg
 port: 23378
 description: >-
@@ -76,18 +76,14 @@ description: >-
 
 developer: advplyr (Network Share Config Tool by saltedlolly)
 website: https://audiobookshelf.org
+submitter: saltedlolly
+submission: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-audiobookshelf
 repo: https://github.com/advplyr/audiobookshelf
-support: https://discord.gg/pJsjuNCKRq
+support: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-audiobookshelf/issues
 gallery:
   - 1.jpg
   - 2.jpg
   - 3.jpg
-dependencies: []
-path: ""
-defaultUsername: ""
-defaultPassword: ""
-hooks:
-  pre-start: hooks/pre-start
 releaseNotes: >-
   New features and improvements:
     - Added "Best" option for book cover search (searches audible, google & fantlab)
@@ -108,5 +104,9 @@ releaseNotes: >-
 
 
   Full release notes can be found at https://github.com/advplyr/audiobookshelf/releases
-submitter: Olly Stedall
-submission: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-audiobookshelf
+dependencies: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+hooks:
+  pre-start: hooks/pre-start
