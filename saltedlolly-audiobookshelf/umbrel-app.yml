@@ -7,6 +7,8 @@ version: "2.31.0.15"
 icon: https://raw.githubusercontent.com/getumbrel/umbrel-apps-gallery/bf4f92764bf577208567ab7cacc5bce81847898f/audiobookshelf/icon.svg
 port: 23378
 description: >-
+  🚧 🚨 Warning: This app is currently sill under development and may not be fully functional. Data loss is possible. Use for testing only.
+
   This version of Audiobookshelf includes Network Shares support for accessing your media on NAS/SMB/NFS shares.
 
  ⚠️ IMPORTANT: Be sure to uninstall the standard Audiobookshelf app from the Umbrel App Store before installing this version to avoid port conflicts.
