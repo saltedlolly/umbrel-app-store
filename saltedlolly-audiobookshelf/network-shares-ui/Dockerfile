@@ -17,8 +17,8 @@ RUN npm ci --only=production
 COPY server.js ./
 COPY public ./public/
 
-# Create data directory
-RUN mkdir -p /data
+# Create data directory and set ownership
+RUN mkdir -p /data && chown -R node:node /data
 
 # Run as non-root user
 USER node

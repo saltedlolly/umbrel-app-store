@@ -3,7 +3,7 @@ id: saltedlolly-audiobookshelf
 name: ABS NAS Edition
 tagline: Audiobookshelf with NAS support
 category: Media
-version: "2.31.0.18"
+version: "2.31.0.23"
 icon: https://raw.githubusercontent.com/getumbrel/umbrel-apps-gallery/bf4f92764bf577208567ab7cacc5bce81847898f/audiobookshelf/icon.svg
 port: 23378
 description: >-
@@ -24,9 +24,13 @@ description: >-
   - Give Audiobookshelf access to your network shares via a simple UI
 
   - After a system restart, Audiobookshelf will wait for the network shares to be available before starting
- 
 
-   Direct Access URLs:
+  - Your config and library metadata are stored in persistent storage (survives app uninstall/reinstall)
+
+  - Access your data via Umbrel Files app at: audiobookshelf-data/
+
+
+  Direct Access URLs:
 
   - Network Shares Config Tool: http://umbrel.local:23378 (opens from dashboard icon)
 

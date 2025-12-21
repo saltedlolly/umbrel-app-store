@@ -13,7 +13,8 @@ set -euo pipefail
 readonly CONFIG_FILE="${APP_DATA_DIR}/network-shares.json"
 readonly MAX_WAIT_SECONDS=300  # 5 minutes total timeout
 readonly CHECK_INTERVAL=2      # Check every 2 seconds
-readonly NETWORK_MOUNT_ROOT="${UMBREL_ROOT}/data/storage/network"
+readonly NETWORK_MOUNT_ROOT="${UMBREL_ROOT}/network"
+readonly PERSISTENT_DATA_ROOT="${UMBREL_ROOT}/data/storage/audiobookshelf-data"
 
 # Logging helpers
 log() {
@@ -36,15 +37,16 @@ if ! command -v jq &> /dev/null; then
 fi
 
 # Ensure data directories exist with correct ownership
-log "Ensuring data directories have correct permissions..."
-mkdir -p "${APP_DATA_DIR}/data/config"
-mkdir -p "${APP_DATA_DIR}/data/metadata"
-mkdir -p "${APP_DATA_DIR}/data/metadata/logs"
+log "Ensuring persistent data directories exist..."
+mkdir -p "${PERSISTENT_DATA_ROOT}/config"
+mkdir -p "${PERSISTENT_DATA_ROOT}/metadata"
+mkdir -p "${PERSISTENT_DATA_ROOT}/metadata/logs"
 
 # Set ownership to 1000:1000 (Audiobookshelf container user)
-chown -R 1000:1000 "${APP_DATA_DIR}/data/config" 2>/dev/null || log_warn "Could not set ownership on config directory"
-chown -R 1000:1000 "${APP_DATA_DIR}/data/metadata" 2>/dev/null || log_warn "Could not set ownership on metadata directory"
-log "Data directories ready"
+chown -R 1000:1000 "${PERSISTENT_DATA_ROOT}/config" 2>/dev/null || log_warn "Could not set ownership on config directory"
+chown -R 1000:1000 "${PERSISTENT_DATA_ROOT}/metadata" 2>/dev/null || log_warn "Could not set ownership on metadata directory"
+log "Persistent data directories ready at ${PERSISTENT_DATA_ROOT}"
+log "These directories will survive app uninstalls and can be accessed via Umbrel Files app"
 
 # Check if config file exists
 if [[ ! -f "$CONFIG_FILE" ]]; then

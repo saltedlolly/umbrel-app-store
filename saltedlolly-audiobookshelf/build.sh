@@ -395,8 +395,34 @@ fi
 # Always check and update ABS version to latest stable release
 update_abs_version
 
-# Update UI version (this creates/updates version.json with ABS version + UI build number)
-update_ui_version
+# Check if network-shares-ui has changes that need building
+echo ""
+echo "Checking for network-shares-ui changes..."
+UI_HAS_CHANGES=false
+
+# Check for uncommitted changes in network-shares-ui directory
+if git diff --quiet HEAD -- "$UI_REPO" && git diff --cached --quiet -- "$UI_REPO"; then
+  echo "✓ No changes detected in network-shares-ui"
+  echo "  Will use existing Docker image"
+else
+  echo "✓ Changes detected in network-shares-ui"
+  echo "  Will build and push new Docker image"
+  UI_HAS_CHANGES=true
+fi
+
+# Update UI version only if there are changes
+if [[ "$UI_HAS_CHANGES" == true ]]; then
+  update_ui_version
+else
+  echo ""
+  echo "Skipping UI version increment (no code changes)"
+  # Ensure version.json exists with current version
+  if [[ ! -f "$UI_REPO/public/version.json" ]]; then
+    echo "Error: version.json not found, but UI has no changes" >&2
+    echo "Run with UI changes to initialize version.json" >&2
+    exit 1
+  fi
+fi
 
 # Update umbrel-app.yml with the full 4-part version
 update_app_yml_version
@@ -404,39 +430,65 @@ update_app_yml_version
 # Get the full version from version.json for everything (e.g., "2.31.0.13")
 FULL_VERSION=$(node -p "require('$UI_REPO/public/version.json').version")
 
-echo "========================================="
-echo "Building Network Shares UI Docker image"
-echo "========================================="
-echo "Image: $IMAGE_NAME:$FULL_VERSION"
-# Ensure buildx is set up
-ensure_buildx
+if [[ "$UI_HAS_CHANGES" == true ]]; then
+  echo "========================================="
+  echo "Building Network Shares UI Docker image"
+  echo "========================================="
+  echo "Image: $IMAGE_NAME:$FULL_VERSION"
+  # Ensure buildx is set up
+  ensure_buildx
 
-# Build and push multi-arch image
-echo "Building multi-arch image (linux/amd64, linux/arm64)..."
-docker buildx build \
-  --platform linux/amd64,linux/arm64 \
-  -t "$IMAGE_NAME:$FULL_VERSION" \
-  -t "$IMAGE_NAME:latest" \
-  -f "$UI_REPO/Dockerfile" \
-  --push \
-  "$UI_REPO"
+  # Build and push multi-arch image
+  echo "Building multi-arch image (linux/amd64, linux/arm64)..."
+  docker buildx build \
+    --platform linux/amd64,linux/arm64 \
+    -t "$IMAGE_NAME:$FULL_VERSION" \
+    -t "$IMAGE_NAME:latest" \
+    -f "$UI_REPO/Dockerfile" \
+    --push \
+    "$UI_REPO"
 
-echo ""
-echo "Fetching manifest digest..."
-UI_DIGEST=$(docker buildx imagetools inspect "$IMAGE_NAME:$FULL_VERSION" 2>/dev/null | grep "^Digest:" | awk '{print $2}')
-if [[ -z "$UI_DIGEST" ]]; then
-  echo "Error: Failed to obtain image digest" >&2
-  exit 1
+  echo ""
+  echo "Fetching manifest digest..."
+  UI_DIGEST=$(docker buildx imagetools inspect "$IMAGE_NAME:$FULL_VERSION" 2>/dev/null | grep "^Digest:" | awk '{print $2}')
+  if [[ -z "$UI_DIGEST" ]]; then
+    echo "Error: Failed to obtain image digest" >&2
+    exit 1
+  fi
+  echo "Image digest: $UI_DIGEST"
+
+  # Update docker-compose.yml with new digest
+  echo ""
+  echo "Updating docker-compose.yml with new digest..."
+  update_compose_digest "$IMAGE_NAME" "$UI_DIGEST"
+
+  echo ""
+  echo "✓ Build complete"
+else
+  echo ""
+  echo "========================================="
+  echo "Using existing Docker image"
+  echo "========================================="
+  echo "Image: $IMAGE_NAME:$FULL_VERSION"
+  echo ""
+  echo "Fetching existing manifest digest..."
+  UI_DIGEST=$(docker buildx imagetools inspect "$IMAGE_NAME:$FULL_VERSION" 2>/dev/null | grep "^Digest:" | awk '{print $2}')
+  if [[ -z "$UI_DIGEST" ]]; then
+    echo "Error: Failed to find existing image on Docker Hub" >&2
+    echo "Image $IMAGE_NAME:$FULL_VERSION does not exist" >&2
+    echo "You may need to build with UI changes first" >&2
+    exit 1
+  fi
+  echo "Image digest: $UI_DIGEST"
+  
+  # Ensure docker-compose.yml has correct digest
+  echo ""
+  echo "Verifying docker-compose.yml has correct digest..."
+  update_compose_digest "$IMAGE_NAME" "$UI_DIGEST"
+  
+  echo ""
+  echo "✓ Using existing image (no rebuild needed)"
 fi
-echo "Image digest: $UI_DIGEST"
-
-# Update docker-compose.yml with new digest
-echo ""
-echo "Updating docker-compose.yml with new digest..."
-update_compose_digest "$IMAGE_NAME" "$UI_DIGEST"
-
-echo ""
-echo "✓ Build complete"
 echo ""
 
 if $LOCAL_TEST; then
