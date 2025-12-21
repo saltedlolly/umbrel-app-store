@@ -19,8 +19,12 @@ This is a custom version of [Audiobookshelf](https://www.audiobookshelf.org/) fo
 
 Location: `saltedlolly-audiobookshelf/`
 
+Current Status: In Development (may not be functional - use only for testing)
+
 ### Cloudflare DDNS Client for Umbrel
 
 Dynamic DNS client for Cloudflare to keep your domain updated with your changing public IP address. Includes a web UI for configuration and monitoring.
 
 Location: `saltedlolly-cloudflare-ddns/`
+
+Current Status: Working

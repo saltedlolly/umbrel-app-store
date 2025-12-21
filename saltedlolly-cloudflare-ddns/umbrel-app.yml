@@ -7,6 +7,8 @@ category: Networking
 version: "1.2.5"
 port: 4100
 description: >-
+  🚧 🚨 Warning: This app is currently in development and may not be fully stable. Use with caution. 
+  
   Dynamic DDNS client for Cloudflare to keep your domain or sub-domain updated with your current public IP address.
 
 
