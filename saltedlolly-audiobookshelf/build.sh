@@ -214,6 +214,27 @@ update_app_yml_version() {
   echo ""
 }
 
+# Update app store README.md with the app version
+update_readme_version() {
+  local new_version="$1"
+  local README_FILE="$SCRIPT_DIR/../README.md"
+  
+  if [[ ! -f "$README_FILE" ]]; then
+    echo "⚠️  README.md not found at $README_FILE, skipping README update"
+    return
+  fi
+  
+  echo "Updating app store README.md version..."
+  # Update the line: ### Audiobookshelf: NAS Edition  `v0.1.2.1`
+  if $is_macos; then
+    sed -i '' -E "s/(### Audiobookshelf: NAS Edition[[:space:]]+\`v)[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/\1$new_version/" "$README_FILE"
+  else
+    sed -i -E "s/(### Audiobookshelf: NAS Edition[[:space:]]+\`v)[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/\1$new_version/" "$README_FILE"
+  fi
+  echo "✓ Updated README.md version to v$new_version"
+  echo ""
+}
+
 # Cleanup old Docker Hub images
 cleanup_docker_hub_images() {
   echo "========================================="
@@ -455,6 +476,9 @@ update_app_yml_version
 # Get the full version from version.json for everything (e.g., "2.31.0.13")
 FULL_VERSION=$(node -p "require('$UI_REPO/public/version.json').version")
 
+# Update app store README.md with the new version
+update_readme_version "$FULL_VERSION"
+
 # Build if there are UI code changes OR ABS version changed
 if [[ "$UI_HAS_CHANGES" == true ]] || [[ "$ABS_VERSION_CHANGED" == true ]]; then
   echo "========================================="
@@ -630,6 +654,8 @@ elif $PUBLISH_TO_GITHUB; then
   # Commit and push to GitHub
   echo "Committing changes..."
   git add -A
+  # Explicitly add the README.md from app store root (in case it's not in current dir)
+  git add "$SCRIPT_DIR/../README.md" 2>/dev/null || true
   git commit -m "release: v${FULL_VERSION} - ${RELEASE_NOTES}"
   
   echo "Pushing to GitHub..."

@@ -6,7 +6,7 @@ services:
       # Network Shares Config UI is primary (accessible via dashboard icon on port 23378)
       APP_HOST: saltedlolly-audiobookshelf_network-shares-ui_1
       APP_PORT: 3001
-      PROXY_AUTH_ADD: "false"
+      PROXY_AUTH_ADD: "true"
 
   # Lightweight UI service for managing network share selection
   # Accessible via app_proxy on port 23378 (dashboard icon)
