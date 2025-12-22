@@ -19,8 +19,5 @@ COPY ui/ ./
 # Write version to a file that server.js can read
 RUN echo "{\"version\": \"${VERSION}\"}" > version.json
 
-# Copy the project logo into the UI public folder (context is repository root)
-COPY logo.png ./public/logo.png
-
 EXPOSE 3000
 CMD ["node", "server.js"]

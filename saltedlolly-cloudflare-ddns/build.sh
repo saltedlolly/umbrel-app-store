@@ -300,7 +300,7 @@ else
 fi
 
 # Handle docker-compose.yml PROXY_AUTH_ADD setting
-proxy_auth_line=$(grep -n "PROXY_AUTH_ADD" "$COMPOSE_FILE" | head -1)
+proxy_auth_line=$(grep -n "PROXY_AUTH_ADD" "$COMPOSE_FILE" | head -1 || true)
 if [[ "$LOCAL_TEST" == "true" ]]; then
   # For local testing, ensure PROXY_AUTH_ADD is set to "false" to bypass SSO
   if [[ -z "$proxy_auth_line" ]]; then
