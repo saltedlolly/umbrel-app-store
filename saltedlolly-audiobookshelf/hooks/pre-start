@@ -79,20 +79,32 @@ else
 fi
 
 # Set ownership to 1000:1000 (Audiobookshelf container user)
+# ALWAYS set ownership, even if directories already exist (fixes permission inheritance issues)
 log "Setting ownership to 1000:1000 on persistent data directories..."
-if ! chown -R 1000:1000 "${PERSISTENT_DATA_ROOT}/config"; then
-    log_error "Failed to set ownership on ${PERSISTENT_DATA_ROOT}/config"
-    log_error "Please run: sudo chown -R 1000:1000 ~/umbrel/data/storage/Audiobookshelf/"
-    exit 1
-fi
-log "✓ Config directory ownership set successfully"
 
-if ! chown -R 1000:1000 "${PERSISTENT_DATA_ROOT}/metadata"; then
-    log_error "Failed to set ownership on ${PERSISTENT_DATA_ROOT}/metadata"
-    log_error "Please run: sudo chown -R 1000:1000 ~/umbrel/data/storage/Audiobookshelf/"
+# Set ownership on entire app-data tree
+if ! chown -R 1000:1000 "${PERSISTENT_DATA_ROOT}"; then
+    log_error "Failed to set ownership on ${PERSISTENT_DATA_ROOT}"
+    log_error "Current ownership:"
+    ls -la "${PERSISTENT_DATA_ROOT}"
+    ls -la "${PERSISTENT_DATA_ROOT}/metadata" 2>/dev/null || true
+    log_error "Please run manually: sudo chown -R 1000:1000 ~/umbrel/data/storage/Audiobookshelf/"
     exit 1
 fi
-log "✓ Metadata directory ownership set successfully"
+
+# Verify ownership was actually set
+log "Verifying ownership..."
+ACTUAL_OWNER=$(stat -c '%u:%g' "${PERSISTENT_DATA_ROOT}/metadata/logs" 2>/dev/null || stat -f '%u:%g' "${PERSISTENT_DATA_ROOT}/metadata/logs" 2>/dev/null)
+if [[ "$ACTUAL_OWNER" != "1000:1000" ]]; then
+    log_error "Ownership verification failed!"
+    log_error "Expected: 1000:1000, Got: $ACTUAL_OWNER"
+    log_error "Filesystem might not support ownership or parent has restrictive permissions"
+    log_error "Directory listing:"
+    ls -lan "${PERSISTENT_DATA_ROOT}/metadata/"
+    exit 1
+fi
+
+log "✓ Ownership set and verified: ${PERSISTENT_DATA_ROOT}"
 
 log "Persistent data directories ready at ${PERSISTENT_DATA_ROOT}"
 log "These directories will survive app uninstalls and can be accessed via Umbrel Files app"
