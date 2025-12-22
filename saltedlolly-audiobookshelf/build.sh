@@ -401,23 +401,40 @@ fi
 # Always check and update ABS version to latest stable release
 update_abs_version
 
-# Check if network-shares-ui has changes that need building
+# Check if network-shares-ui has changes OR if ABS version changed
 echo ""
 echo "Checking for network-shares-ui changes..."
 UI_HAS_CHANGES=false
+ABS_VERSION_CHANGED=false
+
+# Check current ABS version from docker-compose.yml
+current_abs_version=$(grep "$ABS_IMAGE" "$COMPOSE_FILE" | grep -o ':[0-9]\+\.[0-9]\+\.[0-9]\+' | cut -d':' -f2)
+
+# Check stored ABS version from version.json (if it exists)
+if [[ -f "$UI_REPO/public/version.json" ]]; then
+  stored_abs_version=$(grep '"absVersion"' "$UI_REPO/public/version.json" | cut -d'"' -f4)
+  
+  if [[ "$stored_abs_version" != "$current_abs_version" ]]; then
+    echo "✓ ABS version changed from $stored_abs_version to $current_abs_version"
+    echo "  Will rebuild UI with updated ABS version"
+    ABS_VERSION_CHANGED=true
+  fi
+fi
 
 # Check for uncommitted changes in network-shares-ui directory
 if git diff --quiet HEAD -- "$UI_REPO" && git diff --cached --quiet -- "$UI_REPO"; then
-  echo "✓ No changes detected in network-shares-ui"
-  echo "  Will use existing Docker image"
+  if [[ "$ABS_VERSION_CHANGED" == false ]]; then
+    echo "✓ No changes detected in network-shares-ui"
+    echo "  Will use existing Docker image"
+  fi
 else
   echo "✓ Changes detected in network-shares-ui"
   echo "  Will build and push new Docker image"
   UI_HAS_CHANGES=true
 fi
 
-# Update UI version only if there are changes
-if [[ "$UI_HAS_CHANGES" == true ]]; then
+# Update UI version if there are code changes OR ABS version changed
+if [[ "$UI_HAS_CHANGES" == true ]] || [[ "$ABS_VERSION_CHANGED" == true ]]; then
   update_ui_version
 else
   echo ""
@@ -436,7 +453,8 @@ update_app_yml_version
 # Get the full version from version.json for everything (e.g., "2.31.0.13")
 FULL_VERSION=$(node -p "require('$UI_REPO/public/version.json').version")
 
-if [[ "$UI_HAS_CHANGES" == true ]]; then
+# Build if there are UI code changes OR ABS version changed
+if [[ "$UI_HAS_CHANGES" == true ]] || [[ "$ABS_VERSION_CHANGED" == true ]]; then
   echo "========================================="
   echo "Building Network Shares UI Docker image"
   echo "========================================="
