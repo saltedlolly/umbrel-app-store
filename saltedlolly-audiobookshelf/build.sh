@@ -139,7 +139,7 @@ update_abs_version() {
   # Update docker-compose.yml with new version and digest
   echo "Updating docker-compose.yml..."
   local escaped_image=$(echo "$ABS_IMAGE" | sed 's/[\/&]/\\&/g')
-  local pattern="${escaped_image}:[0-9]\+\.[0-9]\+\.[0-9]\+@sha256:[a-f0-9A-Z]+"
+  local pattern="${escaped_image}:[0-9]\+\.[0-9]\+\.[0-9]\+@sha256:[a-f0-9A-Z]\+"
   local replacement="${ABS_IMAGE}:${latest_version}@${abs_digest}"
   
   if $is_macos; then
