@@ -50,6 +50,7 @@ services:
       # Store config and metadata in persistent storage (survives app uninstall)
       - ${UMBREL_ROOT}/data/storage/Audiobookshelf/app-data/config:/home/node/config
       - ${UMBREL_ROOT}/data/storage/Audiobookshelf/app-data/metadata:/home/node/metadata
+      # Store media in Audiobookshelf folders (accessible via Files app)
       - ${UMBREL_ROOT}/data/storage/Audiobookshelf/Audiobooks:/audiobooks
       - ${UMBREL_ROOT}/data/storage/Audiobookshelf/Podcasts:/podcasts
       # Mount the Umbrel network storage root to make NAS shares visible
