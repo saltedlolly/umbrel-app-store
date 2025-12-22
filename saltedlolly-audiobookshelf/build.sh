@@ -19,6 +19,7 @@ LOCAL_TEST=false
 PUBLISH_TO_GITHUB=false
 CLEANUP_IMAGES=false
 KEEP_IMAGES=10
+FORCE_BUMP=false
 UMBREL_DEV_HOST="192.168.215.2"
 
 is_macos=false
@@ -31,6 +32,7 @@ Usage: $0 [OPTIONS]
 Options:
   -h, --help           : Show this help message
   --notes <text>       : Custom release notes (for --publish mode)
+  --bump               : Force UI version increment (even without code changes)
   --localtest          : Build multi-arch, push to Docker Hub, and deploy to umbrel-dev ($UMBREL_DEV_HOST)
   --publish            : Build multi-arch, push to Docker Hub (for production)
   --cleanup [N]        : Delete old Docker Hub images, keep last N versions (default: 10)
@@ -390,6 +392,10 @@ while [[ $# -gt 0 ]]; do
       RELEASE_NOTES="$2"
       shift 2
       ;;
+    --bump)
+      FORCE_BUMP=true
+      shift
+      ;;
     --localtest)
       LOCAL_TEST=true
       shift
@@ -444,8 +450,12 @@ if [[ -f "$UI_REPO/public/version.json" ]]; then
   fi
 fi
 
-# Check for uncommitted changes in network-shares-ui directory
-if git diff --quiet HEAD -- "$UI_REPO" && git diff --cached --quiet -- "$UI_REPO"; then
+# Check for uncommitted changes in network-shares-ui directory or manual bump
+if [[ "$FORCE_BUMP" == true ]]; then
+  echo "✓ Manual version bump requested (--bump)"
+  echo "  Will build and push new Docker image"
+  UI_HAS_CHANGES=true
+elif git diff --quiet HEAD -- "$UI_REPO" && git diff --cached --quiet -- "$UI_REPO"; then
   if [[ "$ABS_VERSION_CHANGED" == false ]]; then
     echo "✓ No changes detected in network-shares-ui"
     echo "  Will use existing Docker image"
