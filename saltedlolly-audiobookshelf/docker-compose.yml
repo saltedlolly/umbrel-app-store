@@ -48,10 +48,10 @@ services:
       - AUDIOBOOKSHELF_GID=1000
     volumes:
       # Store config and metadata in persistent storage (survives app uninstall)
-      - ${UMBREL_ROOT}/data/storage/audiobookshelf-data/config:/home/node/config
-      - ${UMBREL_ROOT}/data/storage/audiobookshelf-data/metadata:/home/node/metadata
-      - ${UMBREL_ROOT}/data/storage/downloads/audiobooks:/audiobooks
-      - ${UMBREL_ROOT}/data/storage/downloads/podcasts:/podcasts
+      - ${UMBREL_ROOT}/data/storage/Audiobookshelf/app-data/config:/home/node/config
+      - ${UMBREL_ROOT}/data/storage/Audiobookshelf/app-data/metadata:/home/node/metadata
+      - ${UMBREL_ROOT}/data/storage/Audiobookshelf/Audiobooks:/audiobooks
+      - ${UMBREL_ROOT}/data/storage/Audiobookshelf/Podcasts:/podcasts
       # Mount the Umbrel network storage root to make NAS shares visible
       # Individual enabled shares will be symlinked by the pre-start hook
       - ${UMBREL_ROOT}/network:/media/network

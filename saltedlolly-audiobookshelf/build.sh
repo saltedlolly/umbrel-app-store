@@ -14,6 +14,7 @@ COMPOSE_FILE="$APP_ROOT/docker-compose.yml"
 APP_YML_FILE="$APP_ROOT/umbrel-app.yml"
 IMAGE_NAME="saltedlolly/audiobookshelf-network-shares-ui"
 ABS_IMAGE="ghcr.io/advplyr/audiobookshelf"
+RELEASE_NOTES="Update network-shares-ui multi-arch image for Umbrel Home compatibility"
 LOCAL_TEST=false
 PUBLISH_TO_GITHUB=false
 CLEANUP_IMAGES=false
@@ -29,6 +30,7 @@ Usage: $0 [OPTIONS]
 
 Options:
   -h, --help           : Show this help message
+  --notes <text>       : Custom release notes (for --publish mode)
   --localtest          : Build multi-arch, push to Docker Hub, and deploy to umbrel-dev ($UMBREL_DEV_HOST)
   --publish            : Build multi-arch, push to Docker Hub (for production)
   --cleanup [N]        : Delete old Docker Hub images, keep last N versions (default: 10)
@@ -361,6 +363,10 @@ while [[ $# -gt 0 ]]; do
       usage
       exit 0
       ;;
+    --notes)
+      RELEASE_NOTES="$2"
+      shift 2
+      ;;
     --localtest)
       LOCAL_TEST=true
       shift
@@ -588,10 +594,23 @@ elif $PUBLISH_TO_GITHUB; then
   echo "========================================" 
   echo ""
   
+  # Prompt for release notes if using default
+  if [[ "$RELEASE_NOTES" == "Update network-shares-ui multi-arch image for Umbrel Home compatibility" ]]; then
+    echo "Enter release notes (used for commit message):"
+    read -r RELEASE_NOTES
+    
+    if [[ -z "$RELEASE_NOTES" ]]; then
+      echo "Error: Release notes cannot be empty" >&2
+      exit 1
+    fi
+    
+    echo ""
+  fi
+  
   # Commit and push to GitHub
   echo "Committing changes..."
   git add -A
-  git commit -m "release: v${FULL_VERSION} - Build and push network-shares-ui multi-arch image"
+  git commit -m "release: v${FULL_VERSION} - ${RELEASE_NOTES}"
   
   echo "Pushing to GitHub..."
   git push

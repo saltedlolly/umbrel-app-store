@@ -14,7 +14,7 @@ readonly CONFIG_FILE="${APP_DATA_DIR}/network-shares.json"
 readonly MAX_WAIT_SECONDS=300  # 5 minutes total timeout
 readonly CHECK_INTERVAL=2      # Check every 2 seconds
 readonly NETWORK_MOUNT_ROOT="${UMBREL_ROOT}/network"
-readonly PERSISTENT_DATA_ROOT="${UMBREL_ROOT}/data/storage/audiobookshelf-data"
+readonly PERSISTENT_DATA_ROOT="${UMBREL_ROOT}/data/storage/Audiobookshelf/app-data"
 
 # Logging helpers
 log() {
@@ -38,13 +38,62 @@ fi
 
 # Ensure data directories exist with correct ownership
 log "Ensuring persistent data directories exist..."
-mkdir -p "${PERSISTENT_DATA_ROOT}/config"
-mkdir -p "${PERSISTENT_DATA_ROOT}/metadata"
-mkdir -p "${PERSISTENT_DATA_ROOT}/metadata/logs"
+
+# Create config directory
+if [[ ! -d "${PERSISTENT_DATA_ROOT}/config" ]]; then
+    log "Creating config directory: ${PERSISTENT_DATA_ROOT}/config"
+    if mkdir -p "${PERSISTENT_DATA_ROOT}/config"; then
+        log "✓ Config directory created successfully"
+    else
+        log_error "Failed to create config directory"
+        exit 1
+    fi
+else
+    log "✓ Config directory already exists"
+fi
+
+# Create metadata directory
+if [[ ! -d "${PERSISTENT_DATA_ROOT}/metadata" ]]; then
+    log "Creating metadata directory: ${PERSISTENT_DATA_ROOT}/metadata"
+    if mkdir -p "${PERSISTENT_DATA_ROOT}/metadata"; then
+        log "✓ Metadata directory created successfully"
+    else
+        log_error "Failed to create metadata directory"
+        exit 1
+    fi
+else
+    log "✓ Metadata directory already exists"
+fi
+
+# Create metadata/logs subdirectory
+if [[ ! -d "${PERSISTENT_DATA_ROOT}/metadata/logs" ]]; then
+    log "Creating metadata/logs directory: ${PERSISTENT_DATA_ROOT}/metadata/logs"
+    if mkdir -p "${PERSISTENT_DATA_ROOT}/metadata/logs"; then
+        log "✓ Metadata/logs directory created successfully"
+    else
+        log_error "Failed to create metadata/logs directory"
+        exit 1
+    fi
+else
+    log "✓ Metadata/logs directory already exists"
+fi
 
 # Set ownership to 1000:1000 (Audiobookshelf container user)
-chown -R 1000:1000 "${PERSISTENT_DATA_ROOT}/config" 2>/dev/null || log_warn "Could not set ownership on config directory"
-chown -R 1000:1000 "${PERSISTENT_DATA_ROOT}/metadata" 2>/dev/null || log_warn "Could not set ownership on metadata directory"
+log "Setting ownership to 1000:1000 on persistent data directories..."
+if ! chown -R 1000:1000 "${PERSISTENT_DATA_ROOT}/config"; then
+    log_error "Failed to set ownership on ${PERSISTENT_DATA_ROOT}/config"
+    log_error "Please run: sudo chown -R 1000:1000 ~/umbrel/data/storage/Audiobookshelf/"
+    exit 1
+fi
+log "✓ Config directory ownership set successfully"
+
+if ! chown -R 1000:1000 "${PERSISTENT_DATA_ROOT}/metadata"; then
+    log_error "Failed to set ownership on ${PERSISTENT_DATA_ROOT}/metadata"
+    log_error "Please run: sudo chown -R 1000:1000 ~/umbrel/data/storage/Audiobookshelf/"
+    exit 1
+fi
+log "✓ Metadata directory ownership set successfully"
+
 log "Persistent data directories ready at ${PERSISTENT_DATA_ROOT}"
 log "These directories will survive app uninstalls and can be accessed via Umbrel Files app"
 
