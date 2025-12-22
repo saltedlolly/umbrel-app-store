@@ -4,7 +4,7 @@ name: Cloudflare DDNS Client
 tagline: Dynamic DNS client for Cloudflare to keep your domain updated with your changing IP address.
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/logo.png
 category: Networking
-version: "1.2.6"
+version: "1.2.7"
 port: 4100
 description: >-  
   Dynamic DDNS client for Cloudflare to keep your domain or sub-domain updated with your current public IP address.
@@ -36,12 +36,18 @@ support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery:
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/1.png
 releaseNotes: >-
+  v1.2.7:
+
+  - fix formatting issue in umbrel-app.yml
+
   v1.2.6:
 
-  - move images to gallery repo. move logo inside ui. tweak dashboard icon. add screenshot.
+  - move images to app store gallery repo. add app store screenshot.
+  - move logo inside ui. 
+  -tweak dashboard icon. 
 
 
- v1.2.5:
+  v1.2.5:
 
   - Improve status display to better support IPv6 addresses.
 
