@@ -1,21 +1,25 @@
 ## 🌂 Olly's Umbrel App Store
 
-This is my Umbrel Community App Store containing apps I have created for UmbrelOS. If you find them useful, please help by [becoming a sponsor](https://github.com/sponsors/saltedlolly?o=esb). 
+This is my Umbrel Community App Store containing apps I have created for Umbrel OS. 
 
-**Disclaimer:** This is an unofficial App Store that is in no way affiliated with Umbrel. Use at your own risk.
+If you find these apps useful, please support my work by [becoming a sponsor](https://github.com/sponsors/saltedlolly?o=esb). 
+
 
 ## 🧱 How to add the App Store to your Umbrel
 
-1. Open the Umbrel Dashboard and click on the **App Store**.
+1. Launch the **App Store** from your Umbrel Dashboard.
 2. Click the **•••** button in the top right, and click "Community App Stores".
-3. Paste the URL `https://github.com/saltedlolly/umbrel-app-store` and click 'Add'.
+3. Paste this URL `https://github.com/saltedlolly/umbrel-app-store` and click 'Add'.
 4. Click 'Open' next to "Olly's Umbrel Community App Store".
+
+**Disclaimer:** This is an unofficial App Store that is in no way affiliated with Umbrel. Use at your own risk.
+
 
 ## 🖤 Support App Development
 
 Give the repo a ⭐ or share it fellow with Umbrel users.
 
-If you find these apps useful, please support development by [becoming a sponsor](https://github.com/sponsors/saltedlolly?o=esb). A monthly donation is a real help. Many thanks.
+If you find these apps useful, please support my work by [becoming a sponsor](https://github.com/sponsors/saltedlolly?o=esb). A monthly donation is a real help. Many thanks.
 
 
 ## 🧩 Apps
