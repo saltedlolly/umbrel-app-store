@@ -1,8 +1,6 @@
 ## 🌂 Olly's Umbrel App Store
 
-This is my Umbrel Community App Store containing apps I have created for Umbrel OS. 
-
-If you find these apps useful, please support my work by [becoming a sponsor](https://github.com/sponsors/saltedlolly?o=esb). 
+My Umbrel Community App Store containing apps I have created for [Umbrel](https://umbrel.com/). 
 
 
 ## 🧱 How to add the App Store to your Umbrel
@@ -22,7 +20,7 @@ Give the repo a ⭐ or share it fellow with Umbrel users.
 If you find these apps useful, please support my work by [becoming a sponsor](https://github.com/sponsors/saltedlolly?o=esb). A monthly donation is a real help. Many thanks.
 
 
-## 🧩 Apps
+## 🧩 Umbrel Apps
 
 ### Audiobookshelf: NAS Edition  `v2.32.0.7`
 
@@ -33,7 +31,7 @@ If you find these apps useful, please support my work by [becoming a sponsor](ht
 - Use the dedicated Network Shares Config Tool to choose which shares mounted in the Files app can be accessed in Audiobookshelf.
 - Your Audiobookshelf user accounts, libraries and associated metadata are backed up when using Umbrel's Backup feature.
 
-⚠️ CAUTION: If moving from the Audiobookshelf app available in the official Umbrel App Store to this NAS Edition, your user accounts, libraries and associated metadata are NOT migrated automatically. Be advised that uninstalling either app will delete your existing libary from your Umbrel - before proceeding, use provided migration tool (see below), which will help you to move your existing library between each version.
+⚠️ CAUTION: If you are moving from the Audiobookshelf app available in the official Umbrel App Store to this NAS Edition, your user accounts, libraries and associated metadata are NOT migrated automatically. Be advised that uninstalling either app will delete your existing library from your Umbrel. The ABS Library Migration Tool (see below) can help you migrate your existing library to the NAS edition.
 
 | Name                         | Port         | Local Address                                            | Umbrel SSO    |
 |------------------------------| ------------ | -------------------------------------------------------- | ------------- |
@@ -48,7 +46,7 @@ The app creates the following folders in your Umbrel Home folder. These folders 
  - `├── Audiobooks/`       - Audiobooks stored locally on your Umbrel live here
  - `└── Podcasts/`         - Podcasts stored locally on your Umbrel live here
 
-These folders contain your user accounts, libraries and associated metadata. They will be deleted if you uninstall the app. It is reccomended to use Umbrel Backup, so they can be easily recovered if needed. You can also create a manual backup from the Files app. The migration tool (see below) can be used to migrate your library between the Audiobookshelf app available from the Umbrel App Store. 
+The folders below contain your user accounts, libraries and associated metadata. They will be deleted if you uninstall the app. It is reccomended to use Umbrel Backup so they can be easily recovered, if needed. You can also create a manual backup from the Files app. The ABS Library Migration Tool (see below) can be used to migrate your library when moving from the Audiobookshelf app available from the Umbrel App Store. 
  
  - `Apps/`
  - `└── saltedlolly-audiobookshelf/`   
@@ -56,13 +54,13 @@ These folders contain your user accounts, libraries and associated metadata. The
  - `        ├── config/`       - Contains config files for Audiobookshelf (user accounts, libraries etc.)
  - `        └── metadata/`     - Contains metadata for your Audiobookshelf media (cover art, file metadata etc.)
 
- #### Audiobookshelf Library Migration Tool
+ #### ABS Library Migration Tool
 
  If you're switching between the official Audiobookshelf app and this NAS Edition, use the migration tool to backup and restore your library (user accounts, libraries, reading progress, and metadata).
 
  **To run the migration tool:**
 
- 1. Open the **Terminal** app from your Umbrel Dashboard
+ 1. Open the **Terminal** app from your Umbrel Dashboard. (Go to Settings → Advanced Settings → Terminal)
  2. Run this command:
     ```bash
     bash <(curl -fsSL https://raw.githubusercontent.com/saltedlolly/umbrel-apps/master/saltedlolly-audiobookshelf/tools/migrate-library.sh)
