@@ -1,4 +1,4 @@
-# Audiobookshelf Library Migration Tool
+# ABS Library Migration Tool
 
 This tool helps you migrate your Audiobookshelf library data between the official Audiobookshelf app and the Audiobookshelf: NAS Edition.
 
