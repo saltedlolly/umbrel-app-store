@@ -11,6 +11,7 @@ const PORT = 3001;
 const DATA_DIR = process.env.APP_DATA_DIR || '/data';
 const CONFIG_FILE = path.join(DATA_DIR, 'network-shares.json');
 const NETWORK_MOUNT_ROOT = '/umbrel-network';
+const AUDIOBOOKSHELF_CONTAINER = 'saltedlolly-audiobookshelf_web_1';
 
 // Middleware
 app.use(express.json());
@@ -77,17 +78,15 @@ async function discoverShares() {
                     const shareStat = await fs.stat(sharePath);
                     if (!shareStat.isDirectory()) continue;
 
-                    // Check if it's mounted and accessible
-                    const isMounted = await checkIfMounted(sharePath);
-                    const isAccessible = await checkIfAccessible(sharePath);
+                    // Check detailed share status
+                    const status = await getShareStatus(sharePath);
 
                     shares.push({
                         host,
                         shareName,
                         fullPath: fullMountPath,
                         systemPath: sharePath,
-                        isMounted,
-                        isAccessible,
+                        ...status,
                     });
                 }
             } catch (error) {
@@ -101,32 +100,100 @@ async function discoverShares() {
     return shares;
 }
 
-// Check if a path is actually mounted
-async function checkIfMounted(mountPath) {
+// Get detailed share status (4 possible states)
+async function getShareStatus(sharePath) {
     try {
-        // Use mountpoint command if available
-        await execAsync(`mountpoint -q "${mountPath}"`);
-        return true;
-    } catch {
-        // mountpoint command failed or not available
-        // Check if the path exists and is not empty as a fallback
+        // Check 1: Does the path exist?
         try {
-            const files = await fs.readdir(mountPath);
-            return files.length > 0;
+            await fs.access(sharePath);
         } catch {
-            return false;
+            return {
+                status: 'not-mounted',
+                isMounted: false,
+                isAccessible: false,
+                isEmpty: false,
+            };
         }
+
+        // Check 2: Can we read it?
+        let files;
+        try {
+            await fs.access(sharePath, fs.constants.R_OK);
+            files = await fs.readdir(sharePath);
+        } catch (error) {
+            return {
+                status: 'permission-denied',
+                isMounted: true,
+                isAccessible: false,
+                isEmpty: false,
+            };
+        }
+
+        // Check 3: Is it empty? (common sign of mount failure)
+        if (files.length === 0) {
+            return {
+                status: 'empty',
+                isMounted: true,
+                isAccessible: true,
+                isEmpty: true,
+            };
+        }
+
+        // All good!
+        return {
+            status: 'accessible',
+            isMounted: true,
+            isAccessible: true,
+            isEmpty: false,
+        };
+    } catch (error) {
+        return {
+            status: 'not-mounted',
+            isMounted: false,
+            isAccessible: false,
+            isEmpty: false,
+        };
     }
 }
 
-// Check if a path is accessible (can read it)
-async function checkIfAccessible(testPath) {
+// Check if Audiobookshelf container is running
+async function getAudiobookshelfStatus() {
     try {
-        await fs.access(testPath, fs.constants.R_OK);
-        await fs.readdir(testPath);
-        return true;
-    } catch {
-        return false;
+        const { stdout } = await execAsync(`docker ps --filter "name=${AUDIOBOOKSHELF_CONTAINER}" --format "{{.Status}}"`);
+        const isRunning = stdout.trim().length > 0;
+        
+        if (isRunning) {
+            return {
+                running: true,
+                status: 'running',
+                message: 'Audiobookshelf is running',
+            };
+        }
+
+        // Check if container exists but is stopped
+        const { stdout: allContainers } = await execAsync(`docker ps -a --filter "name=${AUDIOBOOKSHELF_CONTAINER}" --format "{{.Status}}"`);
+        
+        if (allContainers.trim().length > 0) {
+            // Container exists but not running - might be waiting for shares
+            return {
+                running: false,
+                status: 'stopped',
+                message: 'Audiobookshelf is stopped (may be waiting for required shares)',
+            };
+        }
+
+        return {
+            running: false,
+            status: 'not-found',
+            message: 'Audiobookshelf container not found',
+        };
+    } catch (error) {
+        log('error', `Error checking container status: ${error.message}`);
+        return {
+            running: false,
+            status: 'error',
+            message: `Error checking status: ${error.message}`,
+        };
     }
 }
 
@@ -145,6 +212,45 @@ app.get('/api/config', async (req, res) => {
     } catch (error) {
         log('error', `Error reading config: ${error.message}`);
         res.status(500).json({ error: 'Failed to read configuration' });
+    }
+});
+
+// Get combined status (app + shares)
+app.get('/api/status', async (req, res) => {
+    try {
+        const [appStatus, config, shares] = await Promise.all([
+            getAudiobookshelfStatus(),
+            readConfig(),
+            discoverShares(),
+        ]);
+
+        // Determine if any required shares are blocking
+        const requiredShares = shares.filter(s => config.enabledShares.includes(s.fullPath));
+        const blockingShares = requiredShares.filter(s => s.status !== 'accessible');
+
+        let overallStatus = appStatus.status;
+        let message = appStatus.message;
+
+        if (!appStatus.running && blockingShares.length > 0) {
+            overallStatus = 'waiting';
+            message = `Waiting for ${blockingShares.length} required share(s) to become available`;
+        }
+
+        res.json({
+            app: {
+                ...appStatus,
+                overallStatus,
+                message,
+            },
+            shares: shares.map(share => ({
+                ...share,
+                isRequired: config.enabledShares.includes(share.fullPath),
+                isBlocking: config.enabledShares.includes(share.fullPath) && share.status !== 'accessible',
+            })),
+        });
+    } catch (error) {
+        log('error', `Error getting status: ${error.message}`);
+        res.status(500).json({ error: 'Failed to get status' });
     }
 });
 
@@ -169,42 +275,41 @@ app.post('/api/shares/test', async (req, res) => {
         }
 
         const systemPath = path.join(NETWORK_MOUNT_ROOT, sharePath);
-        const isMounted = await checkIfMounted(systemPath);
-        const isAccessible = await checkIfAccessible(systemPath);
+        const status = await getShareStatus(systemPath);
 
-        if (!isMounted) {
-            return res.json({
-                success: false,
-                message: 'Share does not appear to be mounted',
-                isMounted,
-                isAccessible,
-            });
+        // Map status to user-friendly messages
+        const statusMessages = {
+            'accessible': 'Share is accessible and working correctly',
+            'empty': 'Share appears to be mounted but is empty (possible mount failure)',
+            'permission-denied': 'Share exists but cannot be read (permission denied)',
+            'not-mounted': 'Share does not appear to be mounted',
+        };
+
+        // Try to count files if accessible
+        let fileCount = 0;
+        if (status.isAccessible) {
+            try {
+                const files = await fs.readdir(systemPath);
+                fileCount = files.length;
+            } catch {
+                // Ignore errors
+            }
         }
 
-        if (!isAccessible) {
-            return res.json({
-                success: false,
-                message: 'Share is mounted but not accessible (permission denied)',
-                isMounted,
-                isAccessible,
-            });
-        }
-
-        // Try to list files
-        const files = await fs.readdir(systemPath);
+        const success = status.status === 'accessible';
 
         res.json({
-            success: true,
-            message: `Successfully accessed share (${files.length} items found)`,
-            isMounted,
-            isAccessible,
-            fileCount: files.length,
+            success,
+            message: statusMessages[status.status] + (fileCount > 0 ? ` (${fileCount} items found)` : ''),
+            ...status,
+            fileCount,
         });
     } catch (error) {
         log('error', `Error testing share access: ${error.message}`);
         res.status(500).json({
             success: false,
             message: `Error: ${error.message}`,
+            status: 'not-mounted',
             isMounted: false,
             isAccessible: false,
         });

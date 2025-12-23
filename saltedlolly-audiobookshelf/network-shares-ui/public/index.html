@@ -49,7 +49,7 @@
             background: #f0f4ff;
             border-left: 4px solid #667eea;
             padding: 15px;
-            margin-bottom: 25px;
+            margin-bottom: 15px;
             border-radius: 4px;
         }
 
@@ -57,6 +57,76 @@
             margin: 5px 0;
             font-size: 14px;
             color: #555;
+        }
+
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+        }
+
+        .warning-box p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #92400e;
+        }
+
+        .app-status-banner {
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+        }
+
+        .app-status-banner.running {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            color: #065f46;
+        }
+
+        .app-status-banner.stopped {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+            color: #991b1b;
+        }
+
+        .app-status-banner.waiting {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            color: #92400e;
+        }
+
+        .app-status-icon {
+            font-size: 20px;
+        }
+
+        .app-status-text {
+            flex: 1;
+        }
+
+        .waiting-indicator {
+            margin-left: 35px;
+            margin-top: 10px;
+            padding: 10px 15px;
+            background: #fef3c7;
+            border-left: 3px solid #f59e0b;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #92400e;
+            display: none;
+        }
+
+        .waiting-indicator.show {
+            display: block;
+        }
+
+        .waiting-indicator .countdown {
+            font-weight: 600;
         }
 
         .share-list {
@@ -109,6 +179,27 @@
             font-weight: 500;
         }
 
+        .status-badge.accessible {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.empty {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-badge.permission-denied {
+            background: #fed7aa;
+            color: #9a3412;
+        }
+
+        .status-badge.not-mounted {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Legacy support */
         .status-badge.mounted {
             background: #d1fae5;
             color: #065f46;
@@ -127,6 +218,23 @@
 
         .share-details p {
             margin: 5px 0;
+        }
+
+        .share-help-text {
+            margin-left: 35px;
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: #f9fafb;
+            border-left: 3px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .share-item.enabled .share-help-text {
+            background: #ecfdf5;
+            border-left-color: #10b981;
+            color: #065f46;
         }
 
         .share-actions {
@@ -460,10 +568,18 @@
                 <p>• First, add the network shares containing your media in the <a
                         href="javascript:window.open(window.location.protocol+'//'+window.location.hostname.split(':')[0]+'/files/Home', '_blank')"
                         style="color: #3b82f6; text-decoration: underline;">Umbrel Files app</a></p>
-                <p>• Then, enable the shares you want Audiobookshelf to access here</p>
-                <p>• Audiobookshelf will wait for enabled shares to be mounted before starting</p>
-                <p>• Access your network shares at <code>/media/network/&lt;host&gt;/&lt;share&gt;</code> in
-                    Audiobookshelf</p>
+                <p>• All shares below are accessible in Audiobookshelf at <code>/media/network/&lt;host&gt;/&lt;share&gt;</code></p>
+                <p>• <strong>Check the box</strong> for shares that are <strong>required</strong> — Audiobookshelf will wait for them to be available before starting</p>
+                <p>• <strong>Leave unchecked</strong> for optional shares — the app will start without waiting for them</p>
+            </div>
+
+            <div class="warning-box" id="warning-box" style="display: none;">
+                <p><strong>⚠️ Important:</strong> If a required share is offline, Audiobookshelf will not start until it becomes available (max 5 minutes wait per share).</p>
+            </div>
+
+            <div id="app-status-banner" class="app-status-banner" style="display: none;">
+                <div class="app-status-icon"></div>
+                <div class="app-status-text"></div>
             </div>
 
             <div id="message"></div>
@@ -509,6 +625,8 @@
     <script>
         let shares = [];
         let config = { enabledShares: [], shareSettings: {} };
+        let appStatus = null;
+        let statusPollingInterval = null;
 
         // Show message
         function showMessage(text, type = 'success') {
@@ -582,15 +700,33 @@
             const checkbox = document.getElementById(`share-${index}`);
             const share = shares[index];
             const shareDiv = checkbox.closest('.share-item');
+            const helpText = shareDiv.querySelector('.share-help-text');
 
             if (checkbox.checked) {
                 if (!config.enabledShares.includes(share.fullPath)) {
                     config.enabledShares.push(share.fullPath);
                 }
                 shareDiv.classList.add('enabled');
+                checkbox.title = 'Mark as optional (app will start without waiting)';
+                helpText.innerHTML = '✓ <strong>Required:</strong> Audiobookshelf will wait for this share to be available before starting';
             } else {
                 config.enabledShares = config.enabledShares.filter(s => s !== share.fullPath);
                 shareDiv.classList.remove('enabled');
+                checkbox.title = 'Mark as required (app will wait for this share before starting)';
+                helpText.innerHTML = 'ⓘ <strong>Optional:</strong> Audiobookshelf will start without waiting for this share';
+            }
+
+            // Show/hide warning box
+            updateWarningBox();
+        }
+
+        // Update warning box visibility
+        function updateWarningBox() {
+            const warningBox = document.getElementById('warning-box');
+            if (config.enabledShares.length > 0) {
+                warningBox.style.display = 'block';
+            } else {
+                warningBox.style.display = 'none';
             }
         }
 
@@ -639,10 +775,32 @@
                 return;
             }
 
+            // Update warning box based on enabled shares
+            updateWarningBox();
+
             container.innerHTML = '<div class="share-list">' + shares.map((share, index) => {
                 const isEnabled = config.enabledShares.includes(share.fullPath);
-                const statusClass = share.isMounted && share.isAccessible ? 'mounted' : 'unmounted';
-                const statusText = share.isMounted && share.isAccessible ? 'Accessible' : 'Not Mounted';
+                
+                // Map status to display text
+                const statusTextMap = {
+                    'accessible': 'Accessible',
+                    'empty': 'Empty',
+                    'permission-denied': 'Permission Denied',
+                    'not-mounted': 'Not Mounted'
+                };
+                
+                const statusClass = share.status || (share.isMounted && share.isAccessible ? 'accessible' : 'not-mounted');
+                const statusText = statusTextMap[statusClass] || 'Unknown';
+
+                const helpText = isEnabled 
+                    ? '✓ <strong>Required:</strong> Audiobookshelf will wait for this share to be available before starting'
+                    : 'ⓘ <strong>Optional:</strong> Audiobookshelf will start without waiting for this share';
+
+                // Check if app is waiting for this share
+                const isBlocking = isEnabled && statusClass !== 'accessible';
+                const waitingIndicator = isBlocking && appStatus && appStatus.overallStatus === 'waiting' 
+                    ? `<div class="waiting-indicator show" id="waiting-${index}">⏳ <strong>App is waiting for this share...</strong> <span class="countdown"></span></div>`
+                    : `<div class="waiting-indicator" id="waiting-${index}"></div>`;
 
                 return `
                     <div class="share-item ${isEnabled ? 'enabled' : ''}" id="share-item-${index}">
@@ -653,12 +811,17 @@
                                 id="share-${index}"
                                 ${isEnabled ? 'checked' : ''}
                                 onchange="toggleShare(${index})"
+                                title="${isEnabled ? 'Mark as optional (app will start without waiting)' : 'Mark as required (app will wait for this share before starting)'}"
                             >
                             <label for="share-${index}" class="share-name">
                                 ${share.host} / ${share.shareName}
                             </label>
                             <span class="status-badge ${statusClass}">${statusText}</span>
                         </div>
+                        <div class="share-help-text">
+                            ${helpText}
+                        </div>
+                        ${waitingIndicator}
                         <div class="share-details">
                             <p><strong>Path in Audiobookshelf:</strong> <code>/media/network/${share.fullPath}</code></p>
                             <p><strong>System Path:</strong> <code>${share.systemPath}</code></p>
@@ -687,6 +850,68 @@
             }
         }
 
+        // Update app status banner
+        function updateAppStatusBanner(status) {
+            const banner = document.getElementById('app-status-banner');
+            const icon = banner.querySelector('.app-status-icon');
+            const text = banner.querySelector('.app-status-text');
+
+            if (!status || !status.app) {
+                banner.style.display = 'none';
+                return;
+            }
+
+            banner.style.display = 'flex';
+            banner.className = 'app-status-banner ' + status.app.overallStatus;
+
+            const iconMap = {
+                'running': '🟢',
+                'stopped': '🔴',
+                'waiting': '⏳',
+            };
+
+            icon.textContent = iconMap[status.app.overallStatus] || '⚪';
+            text.textContent = status.app.message || 'Status unknown';
+        }
+
+        // Poll status endpoint
+        async function pollStatus() {
+            try {
+                const response = await fetch('/api/status');
+                if (!response.ok) return;
+
+                const status = await response.json();
+                appStatus = status;
+
+                // Update app status banner
+                updateAppStatusBanner(status);
+
+                // Update shares with latest status
+                if (status.shares && status.shares.length > 0) {
+                    shares = status.shares;
+                    renderShares();
+                }
+            } catch (error) {
+                console.warn('Error polling status:', error);
+            }
+        }
+
+        // Start polling
+        function startPolling() {
+            if (statusPollingInterval) {
+                clearInterval(statusPollingInterval);
+            }
+            statusPollingInterval = setInterval(pollStatus, 5000); // Poll every 5 seconds
+        }
+
+        // Stop polling
+        function stopPolling() {
+            if (statusPollingInterval) {
+                clearInterval(statusPollingInterval);
+                statusPollingInterval = null;
+            }
+        }
+
         // Initialize
         async function initialize() {
             document.getElementById('loading').style.display = 'block';
@@ -698,12 +923,21 @@
 
             renderShares();
 
+            // Get initial status
+            await pollStatus();
+
+            // Start polling for status updates
+            startPolling();
+
             document.getElementById('loading').style.display = 'none';
             document.getElementById('content').style.display = 'block';
         }
 
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', initialize);
+
+        // Stop polling when page unloads
+        window.addEventListener('beforeunload', stopPolling);
     </script>
 </body>
 
