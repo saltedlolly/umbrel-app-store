@@ -3,7 +3,7 @@ id: saltedlolly-audiobookshelf
 name: ABS NAS Edition
 tagline: Audiobookshelf with NAS support
 category: Media
-version: "2.32.0.7"
+version: "2.32.0.6"
 icon: https://raw.githubusercontent.com/getumbrel/umbrel-apps-gallery/bf4f92764bf577208567ab7cacc5bce81847898f/audiobookshelf/icon.svg
 port: 23378
 description: >-
@@ -13,7 +13,7 @@ description: >-
   🚧 🚨 WARNING: This app is currently under development and may not be fully functional. Data loss is possible. Use for testing only.
 
 
-  ⚠️ IMPORTAANT - READ THIS FIRST!! 
+  ⚠️ IMPORTANT - READ THIS BEFORE INSTALLING!! 👇
   
   If you are currently using the Audiobookshelf app from the Umbrel App Store, please read this carefully:
 
@@ -23,7 +23,7 @@ description: >-
 
   - You must uninstall the existing Audiobookshelf app before installing this edition, but doing so, will delete your existing library data. This includes all user accounts, libraries and metadata. (Your media files will be preserved.)
   
-
+  - You can use the ABS Library Migration Tool to help you migrate your existing library from the official app. See the instructions here: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-audiobookshelf/tools#readme
 
 
   Audioookshelf - NAS Edition Features:
