@@ -14,7 +14,9 @@ readonly CONFIG_FILE="${APP_DATA_DIR}/network-shares.json"
 readonly MAX_WAIT_SECONDS=300  # 5 minutes total timeout
 readonly CHECK_INTERVAL=2      # Check every 2 seconds
 readonly NETWORK_MOUNT_ROOT="${UMBREL_ROOT}/network"
-readonly PERSISTENT_DATA_ROOT="${UMBREL_ROOT}/data/storage/Audiobookshelf/app-data"
+readonly AUDIOBOOKSHELF_HOME="${UMBREL_ROOT}/home/Audiobookshelf"
+readonly AUDIOBOOKS_DIR="${AUDIOBOOKSHELF_HOME}/Audiobooks"
+readonly PODCASTS_DIR="${AUDIOBOOKSHELF_HOME}/Podcasts"
 
 # Logging helpers
 log() {
@@ -36,78 +38,182 @@ if ! command -v jq &> /dev/null; then
     exit 0
 fi
 
-# Ensure data directories exist with correct ownership
-log "Ensuring persistent data directories exist..."
+# Ensure media directories exist in /home (config/metadata in APP_DATA_DIR is auto-created by Umbrel)
+log "Ensuring media directories exist in /home/Audiobookshelf..."
 
-# Create config directory
-if [[ ! -d "${PERSISTENT_DATA_ROOT}/config" ]]; then
-    log "Creating config directory: ${PERSISTENT_DATA_ROOT}/config"
-    if mkdir -p "${PERSISTENT_DATA_ROOT}/config"; then
-        log "✓ Config directory created successfully"
+# Create Audiobooks directory
+if [[ ! -d "${AUDIOBOOKS_DIR}" ]]; then
+    log "Creating Audiobooks directory: ${AUDIOBOOKS_DIR}"
+    if mkdir -p "${AUDIOBOOKS_DIR}"; then
+        log "✓ Audiobooks directory created successfully"
     else
-        log_error "Failed to create config directory"
+        log_error "Failed to create Audiobooks directory"
         exit 1
     fi
 else
-    log "✓ Config directory already exists"
+    log "✓ Audiobooks directory already exists"
 fi
 
-# Create metadata directory
-if [[ ! -d "${PERSISTENT_DATA_ROOT}/metadata" ]]; then
-    log "Creating metadata directory: ${PERSISTENT_DATA_ROOT}/metadata"
-    if mkdir -p "${PERSISTENT_DATA_ROOT}/metadata"; then
-        log "✓ Metadata directory created successfully"
+# Create README in Audiobooks directory
+cat > "${AUDIOBOOKS_DIR}/README.txt" << 'EOF'
+═══════════════════════════════════════════════════════════════════════════════
+                        AUDIOBOOKS FOLDER - ORGANIZATION GUIDE
+═══════════════════════════════════════════════════════════════════════════════
+
+This folder is for storing your audiobook files. Audiobookshelf will scan this
+directory to build your audiobook library.
+
+📁 RECOMMENDED FOLDER STRUCTURE
+───────────────────────────────────────────────────────────────────────────────
+
+Audiobooks/
+├── Author Name/
+│   ├── Series Name/
+│   │   ├── Book 1 - Title/
+│   │   │   ├── Audio Track 1.mp3
+│   │   │   ├── Audio Track 2.mp3
+│   │   │   └── cover.jpg
+│   │   └── Book 2 - Title/
+│   │       └── Audiobook.m4b
+│   └── Standalone Book/
+│       └── Audio File.m4a
+└── Another Author/
+    └── Book Title/
+        ├── Disc 1/
+        │   ├── Track 1.mp3
+        │   └── Track 2.mp3
+        └── Disc 2/
+            ├── Track 1.mp3
+            └── Track 2.mp3
+
+📝 FOLDER NAMING CONVENTIONS
+───────────────────────────────────────────────────────────────────────────────
+
+You can include additional metadata in folder names:
+
+• Title only:              "Wizards First Rule"
+• With narrator:           "Wizards First Rule {Sam Tsoutsouvas}"
+• With publish year:       "1994 - Wizards First Rule"
+• With series sequence:    "Book 1 - Wizards First Rule"
+• With subtitle:           "Wizards First Rule - A Really Good Subtitle"
+• Full format:             "Vol 1 - 1994 - Wizards First Rule {Narrator}"
+
+Author names support:
+• First Last:              "Terry Goodkind"
+• Last, First:             "Goodkind, Terry"
+• Multiple authors:        "Author One & Author Two"
+                          "Last1, First1, Last2, First2"
+
+🎵 SUPPORTED AUDIO FORMATS
+───────────────────────────────────────────────────────────────────────────────
+
+.mp3, .m4b, .m4a, .flac, .opus, .ogg, .oga, .mp4, .aac, .wma, .aiff, .wav, .webm
+
+💡 TIPS
+───────────────────────────────────────────────────────────────────────────────
+
+• All audio files in a folder will be grouped into one audiobook
+• Subfolders for the audiobook are supported but the folders must be named 
+  "Disc 1", "CD 2", "Disk 3", "Disc004", or "Disc1" (case insensitive)
+• Place a cover.jpg/png in the folder for custom cover art
+• Audiobookshelf can read metadata from audio file ID3 tags
+• To add the same audiobook to multiple book series, use mp3tag to edit the CONTENTGROUP tag. 
+  (e.g. For the book "The Alloy of Law" by Brandon Sanderson, you could enter:
+  "Mistborn Saga #5; Mistborn: Wax & Wayne #1; The Cosmere" to add it to these three series)
+• Create a desc.txt file for custom descriptions
+• Create a reader.txt file to specify narrator
+
+📚 LEARN MORE
+───────────────────────────────────────────────────────────────────────────────
+
+For complete documentation on organizing audiobooks:
+https://www.audiobookshelf.org/docs/#book-directory-structure
+
+═══════════════════════════════════════════════════════════════════════════════
+EOF
+
+# Create Podcasts directory
+if [[ ! -d "${PODCASTS_DIR}" ]]; then
+    log "Creating Podcasts directory: ${PODCASTS_DIR}"
+    if mkdir -p "${PODCASTS_DIR}"; then
+        log "✓ Podcasts directory created successfully"
     else
-        log_error "Failed to create metadata directory"
+        log_error "Failed to create Podcasts directory"
         exit 1
     fi
 else
-    log "✓ Metadata directory already exists"
+    log "✓ Podcasts directory already exists"
 fi
 
-# Create metadata/logs subdirectory
-if [[ ! -d "${PERSISTENT_DATA_ROOT}/metadata/logs" ]]; then
-    log "Creating metadata/logs directory: ${PERSISTENT_DATA_ROOT}/metadata/logs"
-    if mkdir -p "${PERSISTENT_DATA_ROOT}/metadata/logs"; then
-        log "✓ Metadata/logs directory created successfully"
-    else
-        log_error "Failed to create metadata/logs directory"
-        exit 1
-    fi
-else
-    log "✓ Metadata/logs directory already exists"
-fi
+# Create README in Podcasts directory
+cat > "${PODCASTS_DIR}/README.txt" << 'EOF'
+═══════════════════════════════════════════════════════════════════════════════
+                         PODCASTS FOLDER - ORGANIZATION GUIDE
+═══════════════════════════════════════════════════════════════════════════════
 
-# Set ownership to 1000:1000 (Audiobookshelf container user)
-# ALWAYS set ownership, even if directories already exist (fixes permission inheritance issues)
-log "Setting ownership to 1000:1000 on persistent data directories..."
+This folder is for storing podcast episodes you've downloaded manually.
+Audiobookshelf can also subscribe to and auto-download podcasts directly.
 
-# Set ownership on entire app-data tree
-if ! chown -R 1000:1000 "${PERSISTENT_DATA_ROOT}"; then
-    log_error "Failed to set ownership on ${PERSISTENT_DATA_ROOT}"
-    log_error "Current ownership:"
-    ls -la "${PERSISTENT_DATA_ROOT}"
-    ls -la "${PERSISTENT_DATA_ROOT}/metadata" 2>/dev/null || true
-    log_error "Please run manually: sudo chown -R 1000:1000 ~/umbrel/data/storage/Audiobookshelf/"
+📁 RECOMMENDED FOLDER STRUCTURE
+───────────────────────────────────────────────────────────────────────────────
+
+Podcasts/
+├── Podcast Name 1/
+│   ├── Episode 1.mp3
+│   ├── Episode 2.mp3
+│   ├── Episode 3.mp3
+│   └── cover.jpg
+└── Podcast Name 2/
+    ├── #01 - Episode Title.mp3
+    ├── #02 - Another Episode.mp3
+    └── cover.png
+
+⚠️  IMPORTANT: FLAT STRUCTURE ONLY
+───────────────────────────────────────────────────────────────────────────────
+
+Podcasts do NOT support nested folders (no season folders).
+All episodes for a podcast must be in the same folder with the podcast name.
+
+✅ Correct:   Podcasts/My Podcast/episode1.mp3
+❌ Incorrect: Podcasts/My Podcast/Season 1/episode1.mp3
+
+🎵 SUPPORTED AUDIO FORMATS
+───────────────────────────────────────────────────────────────────────────────
+
+.mp3, .m4a, .flac, .opus, .ogg, .oga, .mp4, .aac, .wma, .aiff, .wav, .webm
+
+💡 BETTER OPTION: SUBSCRIBE IN AUDIOBOOKSHELF
+───────────────────────────────────────────────────────────────────────────────
+
+Instead of manually downloading and organizing podcast files, you can:
+
+1. Search for podcasts directly in Audiobookshelf
+2. Subscribe to podcasts
+3. Auto-download new episodes
+4. Manage episodes from within the app
+
+Manual file organization is only needed if you have existing podcast files
+or want to archive episodes.
+
+📚 LEARN MORE
+───────────────────────────────────────────────────────────────────────────────
+
+For complete documentation on podcasts:
+https://www.audiobookshelf.org/docs/#podcast-directory-structure
+
+═══════════════════════════════════════════════════════════════════════════════
+EOF
+
+# Set ownership to 1000:1000 so Audiobookshelf container can write to media directories
+log "Setting ownership to 1000:1000 on media directories..."
+if ! chown -R 1000:1000 "${AUDIOBOOKSHELF_HOME}"; then
+    log_error "Failed to set ownership on ${AUDIOBOOKSHELF_HOME}"
+    log_error "Please run manually: sudo chown -R 1000:1000 ~/umbrel/home/Audiobookshelf/"
     exit 1
 fi
 
-# Verify ownership was actually set
-log "Verifying ownership..."
-ACTUAL_OWNER=$(stat -c '%u:%g' "${PERSISTENT_DATA_ROOT}/metadata/logs" 2>/dev/null || stat -f '%u:%g' "${PERSISTENT_DATA_ROOT}/metadata/logs" 2>/dev/null)
-if [[ "$ACTUAL_OWNER" != "1000:1000" ]]; then
-    log_error "Ownership verification failed!"
-    log_error "Expected: 1000:1000, Got: $ACTUAL_OWNER"
-    log_error "Filesystem might not support ownership or parent has restrictive permissions"
-    log_error "Directory listing:"
-    ls -lan "${PERSISTENT_DATA_ROOT}/metadata/"
-    exit 1
-fi
-
-log "✓ Ownership set and verified: ${PERSISTENT_DATA_ROOT}"
-
-log "Persistent data directories ready at ${PERSISTENT_DATA_ROOT}"
-log "These directories will survive app uninstalls and can be accessed via Umbrel Files app"
+log "✓ Media directories ready at ${AUDIOBOOKSHELF_HOME}"
+log "These directories are visible in Files app at /Home/Audiobookshelf and survive app uninstalls"
 
 # Check if config file exists
 if [[ ! -f "$CONFIG_FILE" ]]; then

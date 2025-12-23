@@ -11,7 +11,7 @@ services:
   # Lightweight UI service for managing network share selection
   # Accessible via app_proxy on port 23378 (dashboard icon)
   network-shares-ui:
-    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:e0958dcb0fa56cc731c652ea5fceffe4b5e1d54cac5867da308d784833ab9cc8
+    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:e1b54a2a72f1985f4f0d2122eaf240dd208388253f5485d67e229579ce9b852e
     container_name: saltedlolly-audiobookshelf_network-shares-ui_1
     hostname: saltedlolly-audiobookshelf_network-shares-ui_1
     init: true
@@ -47,12 +47,12 @@ services:
       - AUDIOBOOKSHELF_UID=1000
       - AUDIOBOOKSHELF_GID=1000
     volumes:
-      # Store config and metadata in persistent storage (survives app uninstall)
-      - ${UMBREL_DATA_STORAGE_ABS_CONFIG}:/home/node/config
-      - ${UMBREL_DATA_STORAGE_ABS_METADATA}:/home/node/metadata
-      # Store media in Audiobookshelf folders (accessible via Files app)
-      - ${UMBREL_DATA_STORAGE_AUDIOBOOKS_DIR}:/audiobooks
-      - ${UMBREL_DATA_STORAGE_PODCASTS_DIR}:/podcasts
+      # Store config and metadata in app data (backed up, deleted on uninstall)
+      - ${APP_DATA_DIR}/config:/home/node/config
+      - ${APP_DATA_DIR}/metadata:/home/node/metadata
+      # Store media in /home (backed up, survives uninstall, visible in Files app)
+      - ${UMBREL_ROOT}/home/Audiobookshelf/Audiobooks:/audiobooks
+      - ${UMBREL_ROOT}/home/Audiobookshelf/Podcasts:/podcasts
       # Mount the Umbrel network storage root to make NAS shares visible
       # Individual enabled shares will be symlinked by the pre-start hook
       - ${UMBREL_ROOT}/network:/media/network

@@ -1,46 +1,17 @@
-export UMBREL_DATA_DIR="${UMBREL_ROOT}/data"
-export UMBREL_DATA_STORAGE_DIR="${UMBREL_DATA_DIR}/storage"
-export UMBREL_DATA_STORAGE_AUDIOBOOKSHELF_DIR="${UMBREL_DATA_STORAGE_DIR}/Audiobookshelf"
-export UMBREL_DATA_STORAGE_AUDIOBOOKS_DIR="${UMBREL_DATA_STORAGE_AUDIOBOOKSHELF_DIR}/Audiobooks"
-export UMBREL_DATA_STORAGE_PODCASTS_DIR="${UMBREL_DATA_STORAGE_AUDIOBOOKSHELF_DIR}/Podcasts"
-export UMBREL_DATA_STORAGE_ABS_CONFIG="${UMBREL_DATA_STORAGE_AUDIOBOOKSHELF_DIR}/app-data/config"
-export UMBREL_DATA_STORAGE_ABS_METADATA="${UMBREL_DATA_STORAGE_AUDIOBOOKSHELF_DIR}/app-data/metadata"
-export UMBREL_DATA_STORAGE_ABS_LOGS="${UMBREL_DATA_STORAGE_AUDIOBOOKSHELF_DIR}/app-data/metadata/logs"
-export DESIRED_OWNER="1000:1000"
+# Audiobookshelf exports
+# Config and metadata are stored in ${APP_DATA_DIR} (provided by Umbrel)
+# Media files are stored in /home/Audiobookshelf (visible in Files app, survives uninstall)
 
-# Ensure all Audiobookshelf directories exist
-if [[ ! -d "${UMBREL_DATA_STORAGE_AUDIOBOOKS_DIR}" ]]; then
-	mkdir -p "${UMBREL_DATA_STORAGE_AUDIOBOOKS_DIR}"
+# Define media directory paths
+export AUDIOBOOKSHELF_HOME_DIR="${UMBREL_ROOT}/home/Audiobookshelf"
+export AUDIOBOOKS_DIR="${AUDIOBOOKSHELF_HOME_DIR}/Audiobooks"
+export PODCASTS_DIR="${AUDIOBOOKSHELF_HOME_DIR}/Podcasts"
+
+# Create media directories in /home (config/metadata in APP_DATA_DIR is auto-created by Umbrel)
+if [[ ! -d "${AUDIOBOOKS_DIR}" ]]; then
+	mkdir -p "${AUDIOBOOKS_DIR}"
 fi
 
-if [[ ! -d "${UMBREL_DATA_STORAGE_PODCASTS_DIR}" ]]; then
-	mkdir -p "${UMBREL_DATA_STORAGE_PODCASTS_DIR}"
+if [[ ! -d "${PODCASTS_DIR}" ]]; then
+	mkdir -p "${PODCASTS_DIR}"
 fi
-
-if [[ ! -d "${UMBREL_DATA_STORAGE_ABS_CONFIG}" ]]; then
-	mkdir -p "${UMBREL_DATA_STORAGE_ABS_CONFIG}"
-fi
-
-if [[ ! -d "${UMBREL_DATA_STORAGE_ABS_METADATA}" ]]; then
-	mkdir -p "${UMBREL_DATA_STORAGE_ABS_METADATA}"
-fi
-
-if [[ ! -d "${UMBREL_DATA_STORAGE_ABS_LOGS}" ]]; then
-	mkdir -p "${UMBREL_DATA_STORAGE_ABS_LOGS}"
-fi
-
-# Set correct permissions (Paperless-style approach)
-set_correct_permissions() {
-	local -r path="${1}"
-
-	if [[ -d "${path}" ]]; then
-		owner=$(stat -c "%u:%g" "${path}")
-
-		if [[ "${owner}" != "${DESIRED_OWNER}" ]]; then
-			chown -R "${DESIRED_OWNER}" "${path}"
-		fi
-	fi
-}
-
-set_correct_permissions "${UMBREL_DATA_STORAGE_DIR}"
-set_correct_permissions "${UMBREL_DATA_STORAGE_AUDIOBOOKSHELF_DIR}"
