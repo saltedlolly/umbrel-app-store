@@ -605,11 +605,12 @@
 
                 const result = await response.json();
 
-                if (result.success) {
+                if (response.ok && result.success) {
                     const message = `<strong>✓ Configuration saved!</strong><br><br>To apply changes:<br>1. Go to Umbrel Dashboard<br>2. Right-click the <code>Audiobookshelf</code> app icon<br>3. Select <code>Restart</code>`;
                     showMessage(message, 'success');
                 } else {
-                    showMessage('✗ Error saving configuration', 'error');
+                    const errorMsg = result.error || result.message || 'Unknown error';
+                    showMessage('✗ Error saving configuration: ' + errorMsg, 'error');
                 }
             } catch (error) {
                 showMessage('✗ Error saving configuration: ' + error.message, 'error');

@@ -41,24 +41,19 @@ fi
 # Fix permissions on APP_DATA_DIR (Umbrel creates these but not with correct ownership)
 log "Checking permissions on app data directories..."
 
-if [[ -d "${APP_DATA_DIR}" ]]; then
-    # Check current ownership
-    CURRENT_OWNER=$(stat -c '%u:%g' "${APP_DATA_DIR}" 2>/dev/null || stat -f '%u:%g' "${APP_DATA_DIR}" 2>/dev/null)
+if [[ -d "${APP_DATA_DIR}/data" ]]; then
+    # Check ownership on the data directory and subdirectories
+    log_info "Fixing ownership on ${APP_DATA_DIR}/data and subdirectories..."
     
-    if [[ "${CURRENT_OWNER}" != "1000:1000" ]]; then
-        log_warn "App data directory has wrong ownership: ${CURRENT_OWNER}"
-        log_info "Fixing ownership to 1000:1000..."
-        
-        if ! chown -R 1000:1000 "${APP_DATA_DIR}"; then
-            log_error "Failed to fix ownership on ${APP_DATA_DIR}"
-            log_error "Please run manually: sudo chown -R 1000:1000 ${APP_DATA_DIR}"
-            exit 1
-        fi
-        
-        log "✓ App data directory ownership fixed"
-    else
-        log "✓ App data directory ownership is correct"
+    if ! chown -R 1000:1000 "${APP_DATA_DIR}/data"; then
+        log_error "Failed to fix ownership on ${APP_DATA_DIR}/data"
+        log_error "Please run manually: sudo chown -R 1000:1000 ${APP_DATA_DIR}/data"
+        exit 1
     fi
+    
+    log "✓ App data directory ownership fixed"
+else
+    log_warn "Data directory not found at ${APP_DATA_DIR}/data"
 fi
 
 # Ensure media directories exist in /home (config/metadata in APP_DATA_DIR is auto-created by Umbrel)
