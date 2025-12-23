@@ -3,7 +3,8 @@ FROM node:18-alpine
 # Install runtime dependencies
 RUN apk add --no-cache \
     util-linux \
-    coreutils
+    coreutils \
+    docker-cli
 
 WORKDIR /app
 
@@ -20,7 +21,7 @@ COPY public ./public/
 # Create data directory and set ownership
 RUN mkdir -p /data && chown -R node:node /data
 
-# Run as non-root user
+# Run as non-root user (node user is in docker group for socket access)
 USER node
 
 EXPOSE 3001

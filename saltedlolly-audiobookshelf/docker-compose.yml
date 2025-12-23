@@ -11,11 +11,12 @@ services:
   # Lightweight UI service for managing network share selection
   # Accessible via app_proxy on port 23378 (dashboard icon)
   network-shares-ui:
-    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:16e2db592f4518ad3c00017a04a940b61a6447dacdfb27a84454c2561c2dd82e
+    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:da10d2c66a55530bf1e2a01a955fe4d956747459f5fe2a74c589def36fcd8218
     container_name: saltedlolly-audiobookshelf_network-shares-ui_1
     hostname: saltedlolly-audiobookshelf_network-shares-ui_1
     init: true
     restart: unless-stopped
+    user: "1000:999"  # node user with docker group for socket access
     environment:
       - APP_DATA_DIR=${APP_DATA_DIR}
       - NODE_ENV=production
@@ -23,6 +24,8 @@ services:
       - ${APP_DATA_DIR}:/data
       # Mount the Umbrel network storage root (read-only) so we can discover shares
       - ${UMBREL_ROOT}/network:/umbrel-network:ro
+      # Mount docker socket to check Audiobookshelf container status
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
       interval: 30s
@@ -30,7 +33,7 @@ services:
       retries: 3
 
   web:
-    image: ghcr.io/advplyr/audiobookshelf:2.32.0@sha256:de4daea50968fe2bb0b6c543c5586601cee14f2ea7543544c89ebea94491005c
+    image: ghcr.io/advplyr/audiobookshelf:2.32.1@sha256:a52dc5db694a5bf041ce38f285dd6c6a660a4b1b21e37ad6b6746433263b2ae5
     container_name: saltedlolly-audiobookshelf_web_1
     hostname: saltedlolly-audiobookshelf_web_1
     user: 1000:1000
@@ -48,8 +51,8 @@ services:
       - AUDIOBOOKSHELF_GID=1000
     volumes:
       # Store config and metadata in app data (backed up, deleted on uninstall)
-      - ${APP_DATA_DIR}/config:/home/node/config
-      - ${APP_DATA_DIR}/metadata:/home/node/metadata
+      - ${APP_DATA_DIR}/data/config:/home/node/config
+      - ${APP_DATA_DIR}/data/metadata:/home/node/metadata
       # Store media in /home (backed up, survives uninstall, visible in Files app)
       - ${UMBREL_ROOT}/home/Audiobookshelf/Audiobooks:/audiobooks
       - ${UMBREL_ROOT}/home/Audiobookshelf/Podcasts:/podcasts

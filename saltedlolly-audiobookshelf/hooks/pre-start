@@ -23,6 +23,10 @@ log() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] [PRE-START] $*"
 }
 
+log_info() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] [PRE-START] INFO: $*"
+}
+
 log_error() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] [PRE-START] ERROR: $*" >&2
 }
@@ -55,6 +59,18 @@ if [[ -d "${APP_DATA_DIR}/data" ]]; then
 else
     log_warn "Data directory not found at ${APP_DATA_DIR}/data"
 fi
+
+# Ensure network-shares.json is writable (network-shares-ui runs as node user - UID 1000)
+# Create it with correct permissions if it doesn't exist
+if [[ ! -f "${CONFIG_FILE}" ]]; then
+    log "Creating network-shares.json with default configuration..."
+    echo '{"enabledShares":[],"shareSettings":{}}' > "${CONFIG_FILE}"
+fi
+
+log "Fixing permissions on network-shares.json..."
+chown 1000:1000 "${CONFIG_FILE}"
+chmod 644 "${CONFIG_FILE}"
+log "✓ Network shares configuration file is ready"
 
 # Ensure media directories exist in /home (config/metadata in APP_DATA_DIR is auto-created by Umbrel)
 log "Ensuring media directories exist in /home/Audiobookshelf..."
