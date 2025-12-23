@@ -24,17 +24,16 @@ If you find these apps useful, please support my work by [becoming a sponsor](ht
 
 ## 🧩 Apps
 
-### Audiobookshelf: NAS Edition  `v2.32.0.6`
+### Audiobookshelf: NAS Edition  `v2.32.0.7`
 
 🚨 WARNING: 🚧 This app is currently a work-in-progress and may not be functional. Data loss is possible. Use for testing only until further notice.
 
 - Enhanced [Audiobookshelf](https://www.audiobookshelf.org/) App with several advanced features not found in the Audiobookshelf App in the official Umbrel App Store.
 - Adds robust support for accessing your media on a network share (NAS/SMB/NFS) - very useful if your audiobooks are stored on another device on your network.
 - Use the dedicated Network Shares Config Tool to choose which shares mounted in the Files app can be accessed in Audiobookshelf.
-- Audiobookshelf settings and metadata are stored in persistent storage - your library is not deleted if you uninstall. 
-- User accounts and settings are accessible from within the Umbrel Files app for easier backup and restore.
+- Your Audiobookshelf user accounts, libraries and associated metadata are backed up when using Umbrel's Backup feature.
 
-⚠️ CAUTION: At this time, ABS NAS Edition is not compatible with the Audiobookshelf app available in the official Umbrel App Store. User accounts, audiobook libraries and metadata are NOT automatically shared between them - switching to this app will require you to setup Audiobookshelf again from scratch. Be advised that uninstalling the "official" app will actually delete your existing libary from your Umbrel - before proceeding, stop the app and make a backup, if needed. Migrating data manually may be possible if you are comfortable with the command line.
+⚠️ CAUTION: If moving from the Audiobookshelf app available in the official Umbrel App Store to this NAS Edition, your user accounts, libraries and associated metadata are NOT migrated automatically. Be advised that uninstalling either app will delete your existing libary from your Umbrel - before proceeding, use provided migration tool (see below), which will help you to move your existing library between each version.
 
 | Name                         | Port         | Local Address                                            | Umbrel SSO    |
 |------------------------------| ------------ | -------------------------------------------------------- | ------------- |
@@ -43,16 +42,37 @@ If you find these apps useful, please support my work by [becoming a sponsor](ht
 
 #### Audiobookshelf Data Folders
 
-The app creates the following folders in your Umbrel Home folder:
+The app creates the following folders in your Umbrel Home folder. These folders remain even after the app is uninstalled. You can manage them from the Files app.
 
  - `Audiobookshelf/`       - Parent folder - visible in the Files app
- - `├── app-data/`     
- - `│   ├── config/`       - Contains config files for Audiobookshelf (user accounts, libraries etc.)
- - `│   └── metadata/`     - Contains metadata for your Audiobookshelf media (cover art, file metadata etc.)
  - `├── Audiobooks/`       - Audiobooks stored locally on your Umbrel live here
  - `└── Podcasts/`         - Podcasts stored locally on your Umbrel live here
 
- These folders can be accessed using the Files app on your Umbrel, and remain in place even if the App is uninstalled. To fully "factory reset" Audiobookshelf, stop or uninstall the app, delete the `app-data` folder using the Files app, and then reinstall/restart the App. You can then visit the web ui to set it up again from scratch.
+These folders contain your user accounts, libraries and associated metadata. They will be deleted if you uninstall the app. It is reccomended to use Umbrel Backup, so they can be easily recovered if needed. You can also create a manual backup from the Files app. The migration tool (see below) can be used to migrate your library between the Audiobookshelf app available from the Umbrel App Store. 
+ 
+ - `Apps/`
+ - `└── saltedlolly-audiobookshelf/`   
+ - `    └── data/`    
+ - `        ├── config/`       - Contains config files for Audiobookshelf (user accounts, libraries etc.)
+ - `        └── metadata/`     - Contains metadata for your Audiobookshelf media (cover art, file metadata etc.)
+
+ #### Audiobookshelf Library Migration Tool
+
+ If you're switching between the official Audiobookshelf app and this NAS Edition, use the migration tool to backup and restore your library (user accounts, libraries, reading progress, and metadata).
+
+ **To run the migration tool:**
+
+ 1. Open the **Terminal** app from your Umbrel Dashboard
+ 2. Run this command:
+    ```bash
+    bash <(curl -fsSL https://raw.githubusercontent.com/saltedlolly/umbrel-apps/master/saltedlolly-audiobookshelf/tools/migrate-library.sh)
+    ```
+ 3. Follow the interactive prompts to:
+    - Backup your current library
+    - Uninstall the current app and install the other version
+    - Restore your library to the newly installed app
+
+ For detailed migration instructions, see the [migration tool documentation](https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-audiobookshelf/tools#readme).
 
 ---
 
