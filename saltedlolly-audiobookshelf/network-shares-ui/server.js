@@ -52,7 +52,7 @@ async function discoverShares() {
         try {
             const data = await fs.readFile(CONFIG_FILE, 'utf8');
             config = JSON.parse(data);
-        } catch {}
+        } catch { }
 
         // Check if network mount root exists
         let hosts = [];
@@ -198,13 +198,13 @@ async function getAudiobookshelfStatus() {
                 resolve({
                     running: true,
                     status: 'running',
-                    message: 'Audiobookshelf web UI is accessible',
+                    message: 'Audiobookshelf is available',
                 });
             } else {
                 resolve({
                     running: false,
                     status: 'unhealthy',
-                    message: `Audiobookshelf web UI returned status ${res.statusCode}`,
+                    message: `Audiobookshelf is not available - ${res.statusCode}`,
                 });
             }
         });
@@ -212,7 +212,7 @@ async function getAudiobookshelfStatus() {
             resolve({
                 running: false,
                 status: 'not-responding',
-                message: `Audiobookshelf web UI not reachable: ${err.message}`,
+                message: `Audiobookshelf is not available - ${err.message}`,
             });
         });
         req.on('timeout', () => {
@@ -220,7 +220,7 @@ async function getAudiobookshelfStatus() {
             resolve({
                 running: false,
                 status: 'timeout',
-                message: 'Audiobookshelf web UI timed out',
+                message: 'Audiobookshelf is not available',
             });
         });
         req.end();
