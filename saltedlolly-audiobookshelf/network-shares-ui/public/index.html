@@ -419,7 +419,7 @@
         .header-actions {
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
+            align-items: center;
             gap: 12px;
         }
 
@@ -600,7 +600,7 @@
 
             .header-actions {
                 width: 100%;
-                align-items: flex-start;
+                align-items: stretch;
             }
 
             .header-actions .btn {
@@ -659,13 +659,14 @@
             <div class="app-header">
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <img src="abs-icon-purple.svg" alt="Audiobookshelf" style="width: 48px; height: 48px;">
-                    <h1>Network Share Config Tool<br>for Audiobookshelf</h1>
+                    <h1>ABS Network Share Config Tool</h1>
                 </div>
                 <div class="header-actions">
                     <button id="open-abs-btn" onclick="openAudiobookshelf()" class="btn btn-primary" disabled>
                         Open Audiobookshelf →
                     </button>
-                    <div id="app-status-pill" class="app-status-pill status-stopped">
+                    <div id="app-status-pill" class="app-status-pill status-stopped"
+                        title="Checking Audiobookshelf status...">
                         <span class="status-label">Current Status:</span>
                         <span id="app-status-light" class="status-light red"></span>
                         <span id="app-status-text">Checking...</span>
@@ -1002,6 +1003,7 @@
                 text.textContent = 'Offline';
                 button.disabled = true;
                 button.title = 'Waiting...';
+                pill.title = 'Waiting for Audiobookshelf status...';
                 return;
             }
 
@@ -1015,6 +1017,9 @@
 
             button.disabled = !isRunning;
             button.title = isRunning ? 'Open Audiobookshelf' : 'Audiobookshelf is not available yet. Please wait...';
+            pill.title = isRunning
+                ? 'Audiobookshelf is running and the web UI is available.'
+                : (status.app.message || 'Audiobookshelf is offline or not responding.');
         }
 
         // Poll status endpoint
