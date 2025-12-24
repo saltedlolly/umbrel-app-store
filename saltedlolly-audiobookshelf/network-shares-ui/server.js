@@ -157,44 +157,49 @@ async function getShareStatus(sharePath) {
 }
 
 // Check if Audiobookshelf container is running
+const http = require('http');
 async function getAudiobookshelfStatus() {
-    try {
-        const { stdout } = await execAsync(`docker ps --filter "name=${AUDIOBOOKSHELF_CONTAINER}" --format "{{.Status}}"`);
-        const isRunning = stdout.trim().length > 0;
-        
-        if (isRunning) {
-            return {
-                running: true,
-                status: 'running',
-                message: 'Audiobookshelf is running',
-            };
-        }
-
-        // Check if container exists but is stopped
-        const { stdout: allContainers } = await execAsync(`docker ps -a --filter "name=${AUDIOBOOKSHELF_CONTAINER}" --format "{{.Status}}"`);
-        
-        if (allContainers.trim().length > 0) {
-            // Container exists but not running - might be waiting for shares
-            return {
+    // Try to reach the Audiobookshelf web UI (health check)
+    const options = {
+        hostname: 'localhost',
+        port: 13378,
+        path: '/',
+        method: 'GET',
+        timeout: 2000,
+    };
+    return new Promise((resolve) => {
+        const req = http.request(options, (res) => {
+            if (res.statusCode && res.statusCode < 500) {
+                resolve({
+                    running: true,
+                    status: 'running',
+                    message: 'Audiobookshelf web UI is accessible',
+                });
+            } else {
+                resolve({
+                    running: false,
+                    status: 'unhealthy',
+                    message: `Audiobookshelf web UI returned status ${res.statusCode}`,
+                });
+            }
+        });
+        req.on('error', (err) => {
+            resolve({
                 running: false,
-                status: 'stopped',
-                message: 'Audiobookshelf is stopped (may be waiting for required shares)',
-            };
-        }
-
-        return {
-            running: false,
-            status: 'not-found',
-            message: 'Audiobookshelf container not found',
-        };
-    } catch (error) {
-        log('error', `Error checking container status: ${error.message}`);
-        return {
-            running: false,
-            status: 'error',
-            message: `Error checking status: ${error.message}`,
-        };
-    }
+                status: 'not-responding',
+                message: `Audiobookshelf web UI not reachable: ${err.message}`,
+            });
+        });
+        req.on('timeout', () => {
+            req.destroy();
+            resolve({
+                running: false,
+                status: 'timeout',
+                message: 'Audiobookshelf web UI timed out',
+            });
+        });
+        req.end();
+    });
 }
 
 // API Routes
