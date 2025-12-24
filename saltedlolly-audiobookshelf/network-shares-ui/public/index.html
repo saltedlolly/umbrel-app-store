@@ -74,42 +74,6 @@
             color: #92400e;
         }
 
-        .app-status-banner {
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 500;
-        }
-
-        .app-status-banner.running {
-            background: #d1fae5;
-            border: 2px solid #10b981;
-            color: #065f46;
-        }
-
-        .app-status-banner.stopped {
-            background: #fee2e2;
-            border: 2px solid #ef4444;
-            color: #991b1b;
-        }
-
-        .app-status-banner.waiting {
-            background: #fef3c7;
-            border: 2px solid #f59e0b;
-            color: #92400e;
-        }
-
-        .app-status-icon {
-            font-size: 20px;
-        }
-
-        .app-status-text {
-            flex: 1;
-        }
-
         .waiting-indicator {
             margin-left: 35px;
             margin-top: 10px;
@@ -407,30 +371,40 @@
         .app-header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
             gap: 20px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
-        .app-header h1 {
+        .header-info {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .header-text h1 {
             margin: 0;
+        }
+
+        .header-text .subtitle {
+            margin: 4px 0 0;
         }
 
         .header-actions {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 12px;
+            align-items: flex-end;
+            gap: 14px;
         }
 
         .app-status-pill {
             background: #f3f4f6;
             border-radius: 999px;
-            padding: 6px 14px;
-            font-size: 13px;
+            padding: 6px 16px;
             display: flex;
             align-items: center;
             gap: 8px;
+            font-size: 12px;
         }
 
         .app-status-pill.status-running {
@@ -461,6 +435,14 @@
 
         .status-label {
             font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #4b5563;
+        }
+
+        .header-actions .btn {
+            font-size: 16px;
         }
 
         .empty-state-icon {
@@ -598,6 +580,11 @@
                 flex-direction: column;
             }
 
+            .header-info {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
             .header-actions {
                 width: 100%;
                 align-items: stretch;
@@ -655,24 +642,26 @@
 
 <body>
     <div class="container">
-        <div class="header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 32px;">
-            <div style="display: flex; align-items: flex-start; gap: 18px;">
-                <img src="logo.svg" alt="ABS Logo" class="logo">
-                <div>
-                    <h1 style="margin-bottom: 0;">ABS Network Share Config Tool</h1>
-                    <p class="subtitle" style="margin-top: 6px; margin-bottom: 0;">Manage which network shares (NAS/SMB/NFS) Audiobookshelf requires access to.</p>
+        <div class="card">
+            <div class="app-header">
+                <div class="header-info">
+                    <img src="abs-icon-purple.svg" alt="Audiobookshelf" style="width: 48px; height: 48px;">
+                    <div class="header-text">
+                        <h1>ABS Network Share Config Tool</h1>
+                        <p class="subtitle">Manage which network shares (NAS/SMB/NFS) Audiobookshelf requires access to.</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button id="open-abs-btn" onclick="openAudiobookshelf()" class="btn btn-primary" disabled>
+                        Open Audiobookshelf →
+                    </button>
+                    <div id="app-status-pill" class="app-status-pill status-stopped"
+                        title="Checking Audiobookshelf status...">
+                        <span class="status-label">Audiobookshelf Status:</span>
+                        <span id="app-status-light" class="status-light red"></span>
+                    </div>
                 </div>
             </div>
-            <div style="display: flex; flex-direction: column; align-items: flex-end; min-width: 180px;">
-                <button class="btn btn-primary" style="margin-bottom: 8px;" onclick="openAudiobookshelf()">Open Audiobookshelf →</button>
-                <div class="status-group" style="display: flex; align-items: center;">
-                    <span class="status-label">Audiobookshelf Status:</span>
-                    <span class="status-dot online" style="margin-left: 8px;" title="Audiobookshelf is online and accessible."></span>
-                </div>
-            </div>
-        </div>
-            </div>
-            <p class="subtitle">Manage which network shares (NAS/SMB/NFS) Audiobookshelf requires access to.</p>
 
             <div class="info-box">
                 <p><strong>ℹ️ How it works:</strong></p>
@@ -992,14 +981,12 @@
         function updateAppStatusDisplay(status) {
             const pill = document.getElementById('app-status-pill');
             const light = document.getElementById('app-status-light');
-            const text = document.getElementById('app-status-text');
             const button = document.getElementById('open-abs-btn');
 
-            if (!pill || !light || !text || !button || !status || !status.app) {
+            if (!pill || !light || !button || !status || !status.app) {
                 pill.classList.remove('status-running');
                 pill.classList.add('status-stopped');
                 light.className = 'status-light red';
-                text.textContent = 'Offline';
                 button.disabled = true;
                 button.title = 'Waiting...';
                 pill.title = 'Waiting for Audiobookshelf status...';
@@ -1012,7 +999,6 @@
             pill.classList.add(isRunning ? 'status-running' : 'status-stopped');
 
             light.className = `status-light ${isRunning ? 'green' : 'red'}`;
-            text.textContent = isRunning ? 'Online' : 'Offline';
 
             button.disabled = !isRunning;
             button.title = isRunning ? 'Open Audiobookshelf' : 'Audiobookshelf is not available yet. Please wait...';
