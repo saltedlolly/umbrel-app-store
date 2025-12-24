@@ -1013,13 +1013,15 @@
             pill.classList.add(isRunning ? 'status-running' : 'status-stopped');
 
             light.className = `status-light ${isRunning ? 'green' : 'red'}`;
-            text.textContent = isRunning ? 'Online' : (status.app.message || 'Offline');
+            text.textContent = isRunning ? 'Online' : 'Offline';
 
             button.disabled = !isRunning;
             button.title = isRunning ? 'Open Audiobookshelf' : 'Audiobookshelf is not available yet. Please wait...';
             pill.title = isRunning
                 ? 'Audiobookshelf is running and the web UI is available.'
-                : (status.app.message || 'Audiobookshelf is offline or not responding.');
+                : (status.app.message
+                    ? `Audiobookshelf is offline: ${status.app.message}`
+                    : 'Audiobookshelf is offline or not responding.');
         }
 
         // Poll status endpoint
