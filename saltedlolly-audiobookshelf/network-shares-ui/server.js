@@ -183,9 +183,11 @@ async function getAudiobookshelfStatus() {
     // Try to reach the Audiobookshelf web UI (health check)
     // Use the Docker Compose service name for Audiobookshelf (network alias)
     const absHost = process.env.ABS_SERVICE_NAME || 'saltedlolly-audiobookshelf_web_1';
+    // Use port 80 for internal Docker network communication
+    const absPort = process.env.ABS_SERVICE_PORT || 80;
     const options = {
         hostname: absHost,
-        port: 13378,
+        port: absPort,
         path: '/',
         method: 'GET',
         timeout: 2000,
