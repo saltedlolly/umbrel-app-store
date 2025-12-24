@@ -628,12 +628,10 @@
             messageDiv.innerHTML = text;  // Use innerHTML to support HTML formatting
             messageDiv.style.display = 'block';
 
-            // Don't auto-hide success messages (restart instructions are important)
-            if (type !== 'success') {
-                setTimeout(() => {
-                    messageDiv.style.display = 'none';
-                }, 5000);
-            }
+            // Auto-hide all messages after 5 seconds
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
         }
 
         // Load current configuration
@@ -735,7 +733,7 @@
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    const message = `<strong>✓ Configuration saved!</strong><br><br>To apply changes:<br>1. Go to Umbrel Dashboard<br>2. Right-click the <code>Audiobookshelf</code> app icon<br>3. Select <code>Restart</code>`;
+                    const message = `<strong>✓ Configuration saved!</strong><br><br>New shares can be added as library locations in Audiobookshelf without restarting.<br>If you remove a required share, a restart may be needed if the app is stuck waiting.`;
                     showMessage(message, 'success');
                 } else {
                     const errorMsg = result.error || result.message || 'Unknown error';
