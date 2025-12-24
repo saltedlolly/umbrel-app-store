@@ -544,6 +544,7 @@
 <body>
     <div class="container">
         <div class="card">
+            <div id="restart-required-message" class="message warning" style="display:none;"></div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <img src="abs-icon.svg" alt="Audiobookshelf" style="width: 48px; height: 48px;">
@@ -632,6 +633,21 @@
             setTimeout(() => {
                 messageDiv.style.display = 'none';
             }, 5000);
+        }
+
+        // Show/hide restart required message
+        function updateRestartRequiredMessage() {
+            const restartDiv = document.getElementById('restart-required-message');
+            // Show if: ABS is running AND any required share is empty/not-mounted/permission-denied
+            if (appStatus && appStatus.app && appStatus.app.running) {
+                const blockingRequired = shares.some(share => config.enabledShares.includes(share.fullPath) && share.status !== 'accessible');
+                if (blockingRequired) {
+                    restartDiv.innerHTML = '<strong>Restart required:</strong> To access newly added required shares, you must restart Audiobookshelf.<br>Right-click the <code>Audiobookshelf</code> app icon on the Umbrel dashboard and select <code>Restart</code>.';
+                    restartDiv.style.display = 'block';
+                    return;
+                }
+            }
+            restartDiv.style.display = 'none';
         }
 
         // Load current configuration
@@ -768,6 +784,8 @@
 
             // Update warning box based on enabled shares
             updateWarningBox();
+            // Update restart required message
+            updateRestartRequiredMessage();
 
             container.innerHTML = '<div class="share-list">' + shares.map((share, index) => {
                 const isEnabled = config.enabledShares.includes(share.fullPath);
@@ -789,7 +807,8 @@
 
                 // Check if app is waiting for this share
                 const isBlocking = isEnabled && statusClass !== 'accessible';
-                const waitingIndicator = isBlocking && appStatus && appStatus.overallStatus === 'waiting' 
+                // Only show waiting indicator if ABS is NOT running and appStatus.overallStatus === 'waiting'
+                const waitingIndicator = isBlocking && appStatus && !appStatus.app.running && appStatus.app.overallStatus === 'waiting'
                     ? `<div class="waiting-indicator show" id="waiting-${index}">⏳ <strong>App is waiting for this share...</strong> <span class="countdown"></span></div>`
                     : `<div class="waiting-indicator" id="waiting-${index}"></div>`;
 
