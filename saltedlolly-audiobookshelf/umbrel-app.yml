@@ -3,7 +3,7 @@ id: saltedlolly-audiobookshelf
 name: ABS NAS Edition
 tagline: Audiobookshelf with NAS support
 category: Media
-version: "2.32.1.18"
+version: "2.32.1.19"
 icon: https://raw.githubusercontent.com/getumbrel/umbrel-apps-gallery/bf4f92764bf577208567ab7cacc5bce81847898f/audiobookshelf/icon.svg
 port: 23378
 description: >-
