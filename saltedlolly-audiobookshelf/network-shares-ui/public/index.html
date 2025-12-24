@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Network Shares - Audiobookshelf</title>
+    <link rel="icon" href="/abs-icon-purple.svg" type="image/svg+xml">
     <style>
         * {
             margin: 0;
@@ -139,37 +140,6 @@
             padding: 20px;
             margin-bottom: 15px;
             transition: all 0.2s;
-        }
-
-        .share-item.not-mounted {
-            border-color: #ef4444 !important;
-            background: #fee2e2 !important;
-            position: relative;
-            animation: shake 0.2s 1;
-        }
-
-        .share-item.not-mounted .share-header .share-name,
-        .share-item.not-mounted .share-header .status-badge,
-        .share-item.not-mounted .share-details,
-        .share-item.not-mounted .share-help-text {
-            color: #991b1b !important;
-        }
-
-        .share-item.not-mounted .warning-icon {
-            font-size: 2.5rem;
-            color: #ef4444;
-            margin-right: 18px;
-            flex-shrink: 0;
-            filter: drop-shadow(0 2px 6px #ef444488);
-        }
-
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-4px); }
-            50% { transform: translateX(4px); }
-            75% { transform: translateX(-2px); }
-            100% { transform: translateX(0); }
-        }
         }
 
         .share-item:hover {
@@ -575,10 +545,9 @@
 <body>
     <div class="container">
         <div class="card">
-            <div id="restart-required-message" class="message warning" style="display:none;"></div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <img src="abs-icon.svg" alt="Audiobookshelf" style="width: 48px; height: 48px;">
+                    <img src="abs-icon-purple.svg" alt="Audiobookshelf" style="width: 48px; height: 48px;">
                     <h1 style="margin: 0;">Network Share Config Tool<br>for Audiobookshelf</h1>
                 </div>
                 <button onclick="window.open('http://'+window.location.hostname+':13378', '_blank')"
@@ -586,27 +555,32 @@
                     Open Audiobookshelf →
                 </button>
             </div>
-            <p class="subtitle">Manage which network shares (NAS/SMB/NFS) Audiobookshelf can access.</p>
+            <p class="subtitle">Manage which network shares (NAS/SMB/NFS) Audiobookshelf needs access to.</p>
 
             <div class="info-box">
                 <p><strong>ℹ️ How it works:</strong></p>
                 <p>• First, add the network shares containing your media in the <a
                         href="javascript:window.open(window.location.protocol+'//'+window.location.hostname.split(':')[0]+'/files/Home', '_blank')"
                         style="color: #3b82f6; text-decoration: underline;">Umbrel Files app</a></p>
-                <p>• All shares below are accessible in Audiobookshelf at <code>/media/network/&lt;host&gt;/&lt;share&gt;</code></p>
-                <p>• <strong>Check the box</strong> for shares that are <strong>required</strong> — Audiobookshelf will wait for them to be available before starting</p>
-                <p>• <strong>Leave unchecked</strong> for optional shares — the app will start without waiting for them</p>
+                <p>• All shares below are accessible in Audiobookshelf at
+                    <code>/media/network/&lt;host&gt;/&lt;share&gt;</code>
+                </p>
+                <p>• <strong>Check the box</strong> for shares that are <strong>required</strong> — Audiobookshelf will
+                    wait for them to be available before starting</p>
+                <p>• <strong>Leave unchecked</strong> for optional shares — the app will start without waiting for them
+                </p>
             </div>
 
             <div class="warning-box" id="warning-box" style="display: none;">
-                <p><strong>⚠️ Important:</strong> If a required share is offline, Audiobookshelf will not start until it becomes available (max 5 minutes wait per share).</p>
+                <p><strong>⚠️ Important:</strong> If a required share is offline, Audiobookshelf will not start until it
+                    becomes available (max 5 mins wait per share).</p>
             </div>
 
             <div id="app-status-banner" class="app-status-banner" style="display: none;">
                 <div class="app-status-icon"></div>
                 <div class="app-status-text"></div>
             </div>
-
+            <div id="restart-required-message" class="message warning" style="display:none;"></div>
             <div id="message"></div>
 
             <div id="loading" class="loading">
@@ -637,7 +611,7 @@
                 </div>
                 <div class="footer-right">
                     <div class="sponsor-container">
-                        <div class="sponsor-text">Please Sponsor Olly<br>on GitHub Sponsors:</div>
+                        <div class="sponsor-text">Please support my work<br>on GitHub Sponsors</div>
                         <iframe src="https://github.com/sponsors/saltedlolly/button" title="Sponsor saltedlolly"
                             height="32" width="114" style="border: 0; border-radius: 6px;">
                         </iframe>
@@ -820,6 +794,7 @@
 
             container.innerHTML = '<div class="share-list">' + shares.map((share, index) => {
                 const isEnabled = config.enabledShares.includes(share.fullPath);
+
                 // Map status to display text
                 const statusTextMap = {
                     'accessible': 'Accessible',
@@ -827,24 +802,24 @@
                     'permission-denied': 'Permission Denied',
                     'not-mounted': 'Not Mounted'
                 };
+
                 const statusClass = share.status || (share.isMounted && share.isAccessible ? 'accessible' : 'not-mounted');
                 const statusText = statusTextMap[statusClass] || 'Unknown';
-                const helpText = isEnabled 
+
+                const helpText = isEnabled
                     ? '✓ <strong>Required:</strong> Audiobookshelf will wait for this share to be available before starting'
                     : 'ⓘ <strong>Optional:</strong> Audiobookshelf will start without waiting for this share';
+
                 // Check if app is waiting for this share
                 const isBlocking = isEnabled && statusClass !== 'accessible';
                 // Only show waiting indicator if ABS is NOT running and appStatus.overallStatus === 'waiting'
                 const waitingIndicator = isBlocking && appStatus && !appStatus.app.running && appStatus.app.overallStatus === 'waiting'
                     ? `<div class="waiting-indicator show" id="waiting-${index}">⏳ <strong>App is waiting for this share...</strong> <span class="countdown"></span></div>`
                     : `<div class="waiting-indicator" id="waiting-${index}"></div>`;
-                // Add not-mounted class and warning icon if needed
-                const notMountedClass = statusClass === 'not-mounted' ? 'not-mounted' : '';
-                const warningIcon = statusClass === 'not-mounted' ? '<span class="warning-icon" title="Not Mounted">⚠️</span>' : '';
+
                 return `
-                    <div class="share-item ${isEnabled ? 'enabled' : ''} ${notMountedClass}" id="share-item-${index}">
+                    <div class="share-item ${isEnabled ? 'enabled' : ''}" id="share-item-${index}">
                         <div class="share-header">
-                            ${warningIcon}
                             <input 
                                 type="checkbox" 
                                 class="share-checkbox" 
@@ -866,6 +841,7 @@
                             <p><strong>Path in Audiobookshelf:</strong> <code>/media/network/${share.fullPath}</code></p>
                             <p><strong>System Path:</strong> <code>${share.systemPath}</code></p>
                         </div>
+                        <!-- share-actions removed: Test Access button and result area no longer needed -->
                     </div>
                 `;
             }).join('') + '</div>';

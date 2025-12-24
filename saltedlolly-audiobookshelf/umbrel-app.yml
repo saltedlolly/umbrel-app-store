@@ -29,17 +29,17 @@ description: >-
   Audioookshelf - NAS Edition Features:
 
   
-  - Give Audiobookshelf access to your media stored on a network share
+  - Audiobookshelf can access your media stored on a network share elsewhere on your local network (e.g. NAS, SMB, NFS, etc.)
 
   - Mount any network share in the Umbrel Files app and it is immediately accessible to Audiobookshelf
 
-  - After a system restart, Audiobookshelf will wait for the network shares to become available before starting
+   - Specify which shares are required by Audiobookshelf using the provided Network Share Config Tool
 
-  - Specify which shares are required by Audiobookshelf using the provided Network Share Config Tool
+  - After a system restart, Audiobookshelf will wait for the required network shares to become available before starting up, preventing errors due to missing media.
 
   - Local folders for Audiobooks and Podcasts are accessible in the Files app
 
-  - App Data and Local folder are backed on by the Umbrel backup system
+  - Your user accounts, libraries & metadata, along with any Audiobooks and Podcasts stored on your Umbrel, are all backed up by Umbrel's backup system
 
 
   Direct Access URLs:
