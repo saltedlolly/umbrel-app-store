@@ -141,6 +141,37 @@
             transition: all 0.2s;
         }
 
+        .share-item.not-mounted {
+            border-color: #ef4444 !important;
+            background: #fee2e2 !important;
+            position: relative;
+            animation: shake 0.2s 1;
+        }
+
+        .share-item.not-mounted .share-header .share-name,
+        .share-item.not-mounted .share-header .status-badge,
+        .share-item.not-mounted .share-details,
+        .share-item.not-mounted .share-help-text {
+            color: #991b1b !important;
+        }
+
+        .share-item.not-mounted .warning-icon {
+            font-size: 2.5rem;
+            color: #ef4444;
+            margin-right: 18px;
+            flex-shrink: 0;
+            filter: drop-shadow(0 2px 6px #ef444488);
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            50% { transform: translateX(4px); }
+            75% { transform: translateX(-2px); }
+            100% { transform: translateX(0); }
+        }
+        }
+
         .share-item:hover {
             border-color: #667eea;
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
@@ -789,7 +820,6 @@
 
             container.innerHTML = '<div class="share-list">' + shares.map((share, index) => {
                 const isEnabled = config.enabledShares.includes(share.fullPath);
-                
                 // Map status to display text
                 const statusTextMap = {
                     'accessible': 'Accessible',
@@ -797,24 +827,24 @@
                     'permission-denied': 'Permission Denied',
                     'not-mounted': 'Not Mounted'
                 };
-                
                 const statusClass = share.status || (share.isMounted && share.isAccessible ? 'accessible' : 'not-mounted');
                 const statusText = statusTextMap[statusClass] || 'Unknown';
-
                 const helpText = isEnabled 
                     ? '✓ <strong>Required:</strong> Audiobookshelf will wait for this share to be available before starting'
                     : 'ⓘ <strong>Optional:</strong> Audiobookshelf will start without waiting for this share';
-
                 // Check if app is waiting for this share
                 const isBlocking = isEnabled && statusClass !== 'accessible';
                 // Only show waiting indicator if ABS is NOT running and appStatus.overallStatus === 'waiting'
                 const waitingIndicator = isBlocking && appStatus && !appStatus.app.running && appStatus.app.overallStatus === 'waiting'
                     ? `<div class="waiting-indicator show" id="waiting-${index}">⏳ <strong>App is waiting for this share...</strong> <span class="countdown"></span></div>`
                     : `<div class="waiting-indicator" id="waiting-${index}"></div>`;
-
+                // Add not-mounted class and warning icon if needed
+                const notMountedClass = statusClass === 'not-mounted' ? 'not-mounted' : '';
+                const warningIcon = statusClass === 'not-mounted' ? '<span class="warning-icon" title="Not Mounted">⚠️</span>' : '';
                 return `
-                    <div class="share-item ${isEnabled ? 'enabled' : ''}" id="share-item-${index}">
+                    <div class="share-item ${isEnabled ? 'enabled' : ''} ${notMountedClass}" id="share-item-${index}">
                         <div class="share-header">
+                            ${warningIcon}
                             <input 
                                 type="checkbox" 
                                 class="share-checkbox" 
@@ -836,7 +866,6 @@
                             <p><strong>Path in Audiobookshelf:</strong> <code>/media/network/${share.fullPath}</code></p>
                             <p><strong>System Path:</strong> <code>${share.systemPath}</code></p>
                         </div>
-                        <!-- share-actions removed: Test Access button and result area no longer needed -->
                     </div>
                 `;
             }).join('') + '</div>';
