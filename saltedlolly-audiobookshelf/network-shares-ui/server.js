@@ -46,57 +46,78 @@ async function writeConfig(config) {
 // Discover available network shares
 async function discoverShares() {
     const shares = [];
-
+    let config = { enabledShares: [], shareSettings: {} };
     try {
+        // Try to load config to get required shares
+        try {
+            const data = await fs.readFile(CONFIG_FILE, 'utf8');
+            config = JSON.parse(data);
+        } catch {}
+
         // Check if network mount root exists
+        let hosts = [];
         try {
             await fs.access(NETWORK_MOUNT_ROOT);
+            hosts = await fs.readdir(NETWORK_MOUNT_ROOT);
         } catch {
             log('warn', `Network mount root ${NETWORK_MOUNT_ROOT} not accessible`);
-            return shares;
         }
 
-        // List all hosts in /umbrel-network
-        const hosts = await fs.readdir(NETWORK_MOUNT_ROOT);
+        // Track all found shares by fullPath
+        const foundShares = new Set();
 
         for (const host of hosts) {
             const hostPath = path.join(NETWORK_MOUNT_ROOT, host);
-
-            // Check if it's a directory
-            const hostStat = await fs.stat(hostPath);
-            if (!hostStat.isDirectory()) continue;
-
-            // List all shares for this host
+            let hostStat;
             try {
-                const shareNames = await fs.readdir(hostPath);
+                hostStat = await fs.stat(hostPath);
+            } catch { continue; }
+            if (!hostStat.isDirectory()) continue;
+            let shareNames = [];
+            try {
+                shareNames = await fs.readdir(hostPath);
+            } catch { continue; }
+            for (const shareName of shareNames) {
+                const sharePath = path.join(hostPath, shareName);
+                const fullMountPath = `${host}/${shareName}`;
+                let shareStat;
+                try {
+                    shareStat = await fs.stat(sharePath);
+                } catch { continue; }
+                if (!shareStat.isDirectory()) continue;
+                const status = await getShareStatus(sharePath);
+                shares.push({
+                    host,
+                    shareName,
+                    fullPath: fullMountPath,
+                    systemPath: sharePath,
+                    ...status,
+                });
+                foundShares.add(fullMountPath);
+            }
+        }
 
-                for (const shareName of shareNames) {
-                    const sharePath = path.join(hostPath, shareName);
-                    const fullMountPath = `${host}/${shareName}`;
-
-                    // Check if it's a directory
-                    const shareStat = await fs.stat(sharePath);
-                    if (!shareStat.isDirectory()) continue;
-
-                    // Check detailed share status
-                    const status = await getShareStatus(sharePath);
-
-                    shares.push({
-                        host,
-                        shareName,
-                        fullPath: fullMountPath,
-                        systemPath: sharePath,
-                        ...status,
-                    });
-                }
-            } catch (error) {
-                log('warn', `Error reading shares for host ${host}: ${error.message}`);
+        // Add any required shares that are missing from the filesystem
+        for (const fullPath of config.enabledShares) {
+            if (!foundShares.has(fullPath)) {
+                // Parse host/shareName from fullPath
+                const [host, ...shareParts] = fullPath.split('/');
+                const shareName = shareParts.join('/');
+                shares.push({
+                    host,
+                    shareName,
+                    fullPath,
+                    systemPath: path.join(NETWORK_MOUNT_ROOT, fullPath),
+                    status: 'not-mounted',
+                    isMounted: false,
+                    isAccessible: false,
+                    isEmpty: false,
+                });
             }
         }
     } catch (error) {
         log('error', `Error discovering shares: ${error.message}`);
     }
-
     return shares;
 }
 
