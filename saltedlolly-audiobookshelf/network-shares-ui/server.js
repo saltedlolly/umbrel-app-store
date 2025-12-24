@@ -9,7 +9,7 @@ const execAsync = promisify(exec);
 const app = express();
 const PORT = 3001;
 const DATA_DIR = process.env.APP_DATA_DIR || '/data';
-const CONFIG_FILE = path.join(DATA_DIR, 'network-shares.json');
+const CONFIG_FILE = '/data/network-shares.json';
 const NETWORK_MOUNT_ROOT = '/umbrel-network';
 const AUDIOBOOKSHELF_CONTAINER = 'saltedlolly-audiobookshelf_web_1';
 
