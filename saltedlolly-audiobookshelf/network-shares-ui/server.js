@@ -161,7 +161,7 @@ const http = require('http');
 async function getAudiobookshelfStatus() {
     // Try to reach the Audiobookshelf web UI (health check)
     const options = {
-        hostname: 'localhost',
+        hostname: '127.0.0.1',
         port: 13378,
         path: '/',
         method: 'GET',
