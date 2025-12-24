@@ -420,7 +420,7 @@
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            gap: 8px;
+            gap: 12px;
         }
 
         .app-status-pill {
@@ -672,7 +672,7 @@
                     </div>
                 </div>
             </div>
-            <p class="subtitle">Manage which network shares (NAS/SMB/NFS) Audiobookshelf needs access to.</p>
+            <p class="subtitle">Manage which network shares (NAS/SMB/NFS) Audiobookshelf requires access to.</p>
 
             <div class="info-box">
                 <p><strong>ℹ️ How it works:</strong></p>
@@ -999,9 +999,9 @@
                 pill.classList.remove('status-running');
                 pill.classList.add('status-stopped');
                 light.className = 'status-light red';
-                text.textContent = 'Status unavailable';
+                text.textContent = 'Offline';
                 button.disabled = true;
-                button.title = 'Waiting for Audiobookshelf status...';
+                button.title = 'Waiting...';
                 return;
             }
 
@@ -1011,10 +1011,10 @@
             pill.classList.add(isRunning ? 'status-running' : 'status-stopped');
 
             light.className = `status-light ${isRunning ? 'green' : 'red'}`;
-            text.textContent = isRunning ? 'Running and available' : (status.app.message || 'Unavailable');
+            text.textContent = isRunning ? 'Online' : (status.app.message || 'Offline');
 
             button.disabled = !isRunning;
-            button.title = isRunning ? 'Open Audiobookshelf' : 'Audiobookshelf must be running before opening';
+            button.title = isRunning ? 'Open Audiobookshelf' : 'Audiobookshelf is not available yet. Please wait...';
         }
 
         // Poll status endpoint
