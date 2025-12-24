@@ -655,23 +655,22 @@
 
 <body>
     <div class="container">
-        <div class="card">
-            <div class="app-header">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <img src="abs-icon-purple.svg" alt="Audiobookshelf" style="width: 48px; height: 48px;">
-                    <h1>ABS Network Share Config Tool</h1>
+        <div class="header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 32px;">
+            <div style="display: flex; align-items: flex-start; gap: 18px;">
+                <img src="logo.svg" alt="ABS Logo" class="logo">
+                <div>
+                    <h1 style="margin-bottom: 0;">ABS Network Share Config Tool</h1>
+                    <p class="subtitle" style="margin-top: 6px; margin-bottom: 0;">Manage which network shares (NAS/SMB/NFS) Audiobookshelf requires access to.</p>
                 </div>
-                <div class="header-actions">
-                    <button id="open-abs-btn" onclick="openAudiobookshelf()" class="btn btn-primary" disabled>
-                        Open Audiobookshelf →
-                    </button>
-                    <div id="app-status-pill" class="app-status-pill status-stopped"
-                        title="Checking Audiobookshelf status...">
-                        <span class="status-label">Current Status:</span>
-                        <span id="app-status-light" class="status-light red"></span>
-                        <span id="app-status-text">Checking...</span>
-                    </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; min-width: 180px;">
+                <button class="btn btn-primary" style="margin-bottom: 8px;" onclick="openAudiobookshelf()">Open Audiobookshelf →</button>
+                <div class="status-group" style="display: flex; align-items: center;">
+                    <span class="status-label">Audiobookshelf Status:</span>
+                    <span class="status-dot online" style="margin-left: 8px;" title="Audiobookshelf is online and accessible."></span>
                 </div>
+            </div>
+        </div>
             </div>
             <p class="subtitle">Manage which network shares (NAS/SMB/NFS) Audiobookshelf requires access to.</p>
 
