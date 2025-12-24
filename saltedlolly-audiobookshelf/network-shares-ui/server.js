@@ -160,8 +160,10 @@ async function getShareStatus(sharePath) {
 const http = require('http');
 async function getAudiobookshelfStatus() {
     // Try to reach the Audiobookshelf web UI (health check)
+    // Use the Docker Compose service name for Audiobookshelf (network alias)
+    const absHost = process.env.ABS_SERVICE_NAME || 'saltedlolly-audiobookshelf_web_1';
     const options = {
-        hostname: '127.0.0.1',
+        hostname: absHost,
         port: 13378,
         path: '/',
         method: 'GET',

@@ -836,12 +836,7 @@
                             <p><strong>Path in Audiobookshelf:</strong> <code>/media/network/${share.fullPath}</code></p>
                             <p><strong>System Path:</strong> <code>${share.systemPath}</code></p>
                         </div>
-                        <div class="share-actions">
-                            <button class="btn btn-test" onclick="testShare('${share.fullPath}', ${index})">
-                                🔍 Test Access
-                            </button>
-                            <div id="test-result-${index}" class="test-result" style="display: none;"></div>
-                        </div>
+                        <!-- share-actions removed: Test Access button and result area no longer needed -->
                     </div>
                 `;
             }).join('') + '</div>';
