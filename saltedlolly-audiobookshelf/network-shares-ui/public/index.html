@@ -116,6 +116,11 @@
             background: #f0fdf4;
         }
 
+        .share-item.optional {
+            border-color: #fde68a;
+            background: #fffbeb;
+        }
+
         .share-item.not-mounted {
             border-color: #fca5a5;
             background: #fef2f2;
@@ -223,6 +228,12 @@
             background: #ecfdf5;
             border-left-color: #10b981;
             color: #065f46;
+        }
+
+        .share-item.optional .share-help-text {
+            background: #fff7ed;
+            border-left-color: #fbbf24;
+            color: #92400e;
         }
 
         .share-actions {
@@ -767,14 +778,14 @@
             const missingShares = requiredShares.some(share => share.status === 'not-mounted');
 
             if (requiresRestart) {
-                restartDiv.innerHTML = '<div><strong>App Restart Required</strong><br>One or more required shares were recently emptied. Restart Audiobookshelf to finish mounting them.</div><div class="message-icon">🔄</div>';
+                restartDiv.innerHTML = '<div class="message-icon">🔄</div><div><strong>App Restart Required</strong><br>A network share was recently been added. You need to restart Audiobookshelf before it can acess it.<br>To restart, right-click the app icon on the Umbrel dashboard and select "Restart". </div>';
                 restartDiv.style.display = 'flex';
             } else {
                 restartDiv.style.display = 'none';
             }
 
             if (missingShares) {
-                notMountedDiv.innerHTML = '<div><strong>Network Share is Not Mounted</strong>: A required Network Share is not currently available. Please mount it in the Files app or remove it as a required Network Share.</div><div class="message-icon">⚠️</div>';
+                notMountedDiv.innerHTML = '<div class="message-icon">🚨</div><div><strong>A Required Network Share is Not Mounted</strong><br>Please re-mount it in the Files app, or remove it as a required Network Share.</div>';
                 notMountedDiv.style.display = 'flex';
             } else {
                 notMountedDiv.style.display = 'none';
@@ -945,7 +956,7 @@
                     : `<div class="waiting-indicator" id="waiting-${index}"></div>`;
 
                 return `
-                    <div class="share-item ${isEnabled ? 'enabled' : ''} ${statusClass === 'not-mounted' ? 'not-mounted' : ''}" id="share-item-${index}">
+                    <div class="share-item ${isEnabled ? 'enabled' : 'optional'} ${statusClass === 'not-mounted' ? 'not-mounted' : ''}" id="share-item-${index}">
                         <div class="share-header">
                             <input 
                                 type="checkbox" 
@@ -958,9 +969,9 @@
                             <label for="share-${index}" class="share-name">
                                 ${share.host} / ${share.shareName}
                             </label>
-                            <span class="status-badge ${statusClass}">${statusText}</span>
-                        </div>
-                        <div class="share-alert-icon ${statusClass === 'not-mounted' ? 'show' : ''}">⚠️</div>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="share-alert-icon ${((isEnabled && statusClass === 'empty') || statusClass === 'not-mounted') ? 'show' : ''}">⚠️</div>
                         <div class="share-help-text">
                             ${helpText}
                         </div>
