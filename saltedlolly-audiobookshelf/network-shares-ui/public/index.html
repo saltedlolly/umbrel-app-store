@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Network Shares - Audiobookshelf</title>
+    <title>Network Share Config Tool for Audiobookshelf</title>
     <link rel="icon" href="/abs-icon-purple.svg" type="image/svg+xml">
     <style>
         * {
@@ -104,6 +104,10 @@
 
         .app-status-icon {
             font-size: 20px;
+        }
+
+        .app-status-text {
+            flex: 1;
         }
 
         .waiting-indicator {
@@ -424,9 +428,8 @@
 
         .header-actions {
             display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: flex-end;
+            flex-direction: column;
+            align-items: flex-end;
             gap: 14px;
         }
 
@@ -468,10 +471,10 @@
 
         .status-label {
             font-weight: 600;
-            font-size: 11px;
-            text-transform: none;
-            letter-spacing: 0.3px;
-            color: #6b7280;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #4b5563;
         }
 
         .header-actions .btn {
@@ -620,9 +623,7 @@
 
             .header-actions {
                 width: 100%;
-                flex-direction: column;
                 align-items: stretch;
-                gap: 12px;
             }
 
             .header-actions .btn {
@@ -684,14 +685,15 @@
                     <h1>ABS Network Share Config Tool</h1>
                 </div>
                 <div class="header-actions">
+                    <button id="open-abs-btn" onclick="openAudiobookshelf()" class="btn btn-primary" disabled>
+                        Open Audiobookshelf →
+                    </button>
                     <div id="app-status-pill" class="app-status-pill status-stopped"
                         title="Checking Audiobookshelf status...">
                         <span class="status-label">Audiobookshelf Status:</span>
                         <span id="app-status-light" class="status-light red"></span>
+                        <span id="app-status-text">Checking...</span>
                     </div>
-                    <button id="open-abs-btn" onclick="openAudiobookshelf()" class="btn btn-primary" disabled>
-                        Open Audiobookshelf →
-                    </button>
                 </div>
             </div>
             <p class="subtitle">Manage the network shares used by Audiobookshelf.</p>
@@ -741,10 +743,12 @@
                 </div>
                 <div class="footer-center">
                     <div class="footer-version">
-                        Network Share Config Tool for Audiobookshelf<span class="version-badge"
-                            id="version-display">v0.0.0.0</span>
+                        Audiobookshelf: NAS Edition<span class="version-badge" id="version-display">v0.0.0.0</span>
                     </div>
-                    <div class="footer-author">by Olly Stedall</div>
+                    <div class="footer-author"><a href="https://github.com/advplyr/audiobookshelf"
+                            target="_blank">Audiobookshelf</a> by advplyr and community<br><a
+                            href="https://github.com/saltedlolly/umbrel-app-store" target="_blank">ABS Network Share
+                            Config Tool</a> by saltedlolly</div>
                 </div>
                 <div class="footer-right">
                     <div class="sponsor-container">
@@ -1015,12 +1019,14 @@
         function updateAppStatusDisplay(status) {
             const pill = document.getElementById('app-status-pill');
             const light = document.getElementById('app-status-light');
+            const text = document.getElementById('app-status-text');
             const button = document.getElementById('open-abs-btn');
 
-            if (!pill || !light || !button || !status || !status.app) {
+            if (!pill || !light || !text || !button || !status || !status.app) {
                 pill.classList.remove('status-running');
                 pill.classList.add('status-stopped');
                 light.className = 'status-light red';
+                text.textContent = 'Offline';
                 button.disabled = true;
                 button.title = 'Waiting...';
                 pill.title = 'Waiting for Audiobookshelf status...';
@@ -1033,6 +1039,7 @@
             pill.classList.add(isRunning ? 'status-running' : 'status-stopped');
 
             light.className = `status-light ${isRunning ? 'green' : 'red'}`;
+            text.textContent = isRunning ? 'Online' : 'Offline';
 
             button.disabled = !isRunning;
             button.title = isRunning ? 'Open Audiobookshelf' : 'Audiobookshelf is not available yet. Please wait...';
