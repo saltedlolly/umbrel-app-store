@@ -74,6 +74,42 @@
             color: #92400e;
         }
 
+        .app-status-banner {
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+        }
+
+        .app-status-banner.running {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            color: #065f46;
+        }
+
+        .app-status-banner.stopped {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+            color: #991b1b;
+        }
+
+        .app-status-banner.waiting {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            color: #92400e;
+        }
+
+        .app-status-icon {
+            font-size: 20px;
+        }
+
+        .app-status-text {
+            flex: 1;
+        }
+
         .waiting-indicator {
             margin-left: 35px;
             margin-top: 10px;
@@ -387,15 +423,14 @@
         }
 
         .header-text .subtitle {
-            margin: 6px 0 0;
-            font-size: 16px;
-            color: #4b5563;
+            margin-top: 4px;
         }
 
         .header-actions {
             display: flex;
-            align-items: center;
-            gap: 16px;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 14px;
         }
 
         .app-status-pill {
@@ -436,15 +471,19 @@
 
         .status-label {
             font-weight: 600;
-            font-size: 13px;
-            text-transform: none;
-            letter-spacing: 0;
-            color: #1f2937;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #4b5563;
         }
 
         .header-actions .btn {
             font-size: 16px;
-            white-space: nowrap;
+        }
+
+        .status-indicator-label {
+            font-size: 11px;
+            color: #6b7280;
         }
 
         .empty-state-icon {
@@ -582,16 +621,9 @@
                 flex-direction: column;
             }
 
-            .header-info {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
             .header-actions {
                 width: 100%;
-                flex-direction: column;
                 align-items: stretch;
-                gap: 12px;
             }
 
             .header-actions .btn {
@@ -648,12 +680,9 @@
     <div class="container">
         <div class="card">
             <div class="app-header">
-                <div class="header-info">
+                <div style="display: flex; align-items: center; gap: 15px;">
                     <img src="abs-icon-purple.svg" alt="Audiobookshelf" style="width: 48px; height: 48px;">
-                    <div class="header-text">
-                        <h1>ABS Network Share Config Tool</h1>
-                        <p class="subtitle">Manage the network shares (NAS/SMB/NFS) used by Audiobookshelf.</p>
-                    </div>
+                    <h1>ABS Network Share Config Tool</h1>
                 </div>
                 <div class="header-actions">
                     <button id="open-abs-btn" onclick="openAudiobookshelf()" class="btn btn-primary" disabled>
@@ -661,11 +690,13 @@
                     </button>
                     <div id="app-status-pill" class="app-status-pill status-stopped"
                         title="Checking Audiobookshelf status...">
-                        <span class="status-label">Audiobookshelf Status:</span>
+                        <span class="status-label">Current Status:</span>
                         <span id="app-status-light" class="status-light red"></span>
+                        <span id="app-status-text">Checking...</span>
                     </div>
                 </div>
             </div>
+            <p class="subtitle">Manage the network shares used by Audiobookshelf.</p>
 
             <div class="info-box">
                 <p><strong>ℹ️ How it works:</strong></p>
@@ -676,14 +707,15 @@
                     <code>/media/network/&lt;host&gt;/&lt;share&gt;</code>
                 </p>
                 <p>• <strong>Check the box</strong> for shares that are <strong>required</strong> — Audiobookshelf will
-                    wait for them to be available before starting</p>
-                <p>• <strong>Leave unchecked</strong> for optional shares — the app will start without waiting for them
+                    wait for them to become available before starting</p>
+                <p>• <strong>Leave unchecked</strong> network shares that Audiobookshelf does not use — the app will
+                    start without waiting for them.
                 </p>
             </div>
 
             <div class="warning-box" id="warning-box" style="display: none;">
-                <p><strong>⚠️ Important:</strong> If a required share is offline, Audiobookshelf will not start until it
-                    becomes available (max 5 mins wait per share).</p>
+                <p><strong>⚠️ Important:</strong> Audiobookshelf will not start until all required network shares become
+                    available.<br>It will keep retrying for 5 minutes before giving up.</p>
             </div>
 
             <div id="restart-required-message" class="message warning with-icon" style="display:none;"></div>
@@ -985,12 +1017,14 @@
         function updateAppStatusDisplay(status) {
             const pill = document.getElementById('app-status-pill');
             const light = document.getElementById('app-status-light');
+            const text = document.getElementById('app-status-text');
             const button = document.getElementById('open-abs-btn');
 
-            if (!pill || !light || !button || !status || !status.app) {
+            if (!pill || !light || !text || !button || !status || !status.app) {
                 pill.classList.remove('status-running');
                 pill.classList.add('status-stopped');
                 light.className = 'status-light red';
+                text.textContent = 'Offline';
                 button.disabled = true;
                 button.title = 'Waiting...';
                 pill.title = 'Waiting for Audiobookshelf status...';
@@ -1003,6 +1037,7 @@
             pill.classList.add(isRunning ? 'status-running' : 'status-stopped');
 
             light.className = `status-light ${isRunning ? 'green' : 'red'}`;
+            text.textContent = isRunning ? 'Online' : 'Offline';
 
             button.disabled = !isRunning;
             button.title = isRunning ? 'Open Audiobookshelf' : 'Audiobookshelf is not available yet. Please wait...';
