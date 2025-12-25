@@ -106,10 +106,6 @@
             font-size: 20px;
         }
 
-        .app-status-text {
-            flex: 1;
-        }
-
         .waiting-indicator {
             margin-left: 35px;
             margin-top: 10px;
@@ -471,10 +467,10 @@
 
         .status-label {
             font-weight: 600;
-            font-size: 12px;
-            text-transform: uppercase;
+            font-size: 11px;
+            text-transform: lowercase;
             letter-spacing: 0.5px;
-            color: #4b5563;
+            color: #6b7280;
         }
 
         .header-actions .btn {
@@ -690,9 +686,8 @@
                     </button>
                     <div id="app-status-pill" class="app-status-pill status-stopped"
                         title="Checking Audiobookshelf status...">
-                        <span class="status-label">Current Status:</span>
+                        <span class="status-label">audiobookshelf status:</span>
                         <span id="app-status-light" class="status-light red"></span>
-                        <span id="app-status-text">Checking...</span>
                     </div>
                 </div>
             </div>
@@ -1017,14 +1012,12 @@
         function updateAppStatusDisplay(status) {
             const pill = document.getElementById('app-status-pill');
             const light = document.getElementById('app-status-light');
-            const text = document.getElementById('app-status-text');
             const button = document.getElementById('open-abs-btn');
 
-            if (!pill || !light || !text || !button || !status || !status.app) {
+            if (!pill || !light || !button || !status || !status.app) {
                 pill.classList.remove('status-running');
                 pill.classList.add('status-stopped');
                 light.className = 'status-light red';
-                text.textContent = 'Offline';
                 button.disabled = true;
                 button.title = 'Waiting...';
                 pill.title = 'Waiting for Audiobookshelf status...';
@@ -1037,7 +1030,6 @@
             pill.classList.add(isRunning ? 'status-running' : 'status-stopped');
 
             light.className = `status-light ${isRunning ? 'green' : 'red'}`;
-            text.textContent = isRunning ? 'Online' : 'Offline';
 
             button.disabled = !isRunning;
             button.title = isRunning ? 'Open Audiobookshelf' : 'Audiobookshelf is not available yet. Please wait...';
