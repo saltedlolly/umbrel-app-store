@@ -74,42 +74,6 @@
             color: #92400e;
         }
 
-        .app-status-banner {
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 500;
-        }
-
-        .app-status-banner.running {
-            background: #d1fae5;
-            border: 2px solid #10b981;
-            color: #065f46;
-        }
-
-        .app-status-banner.stopped {
-            background: #fee2e2;
-            border: 2px solid #ef4444;
-            color: #991b1b;
-        }
-
-        .app-status-banner.waiting {
-            background: #fef3c7;
-            border: 2px solid #f59e0b;
-            color: #92400e;
-        }
-
-        .app-status-icon {
-            font-size: 20px;
-        }
-
-        .app-status-text {
-            flex: 1;
-        }
-
         .waiting-indicator {
             margin-left: 35px;
             margin-top: 10px;
@@ -414,8 +378,13 @@
 
         .header-info {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             gap: 15px;
+        }
+
+        .header-text {
+            display: flex;
+            flex-direction: column;
         }
 
         .header-text h1 {
@@ -423,14 +392,17 @@
         }
 
         .header-text .subtitle {
-            margin-top: 4px;
+            margin: 4px 0 0;
+            font-size: 16px;
+            color: #4b5563;
         }
 
         .header-actions {
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
-            gap: 14px;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
         }
 
         .app-status-pill {
@@ -470,11 +442,11 @@
         }
 
         .status-label {
-            font-weight: 600;
+            font-weight: 500;
             font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #4b5563;
+            text-transform: none;
+            letter-spacing: 0.2px;
+            color: #6b7280;
         }
 
         .header-actions .btn {
@@ -680,23 +652,24 @@
     <div class="container">
         <div class="card">
             <div class="app-header">
-                <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="header-info">
                     <img src="abs-icon-purple.svg" alt="Audiobookshelf" style="width: 48px; height: 48px;">
-                    <h1>ABS Network Share Config Tool</h1>
+                    <div class="header-text">
+                        <h1>ABS Network Share Config Tool</h1>
+                        <p class="subtitle">Manage the network shares used by Audiobookshelf.</p>
+                    </div>
                 </div>
                 <div class="header-actions">
-                    <button id="open-abs-btn" onclick="openAudiobookshelf()" class="btn btn-primary" disabled>
-                        Open Audiobookshelf →
-                    </button>
                     <div id="app-status-pill" class="app-status-pill status-stopped"
                         title="Checking Audiobookshelf status...">
                         <span class="status-label">Audiobookshelf Status:</span>
                         <span id="app-status-light" class="status-light red"></span>
-                        <span id="app-status-text">Checking...</span>
                     </div>
+                    <button id="open-abs-btn" onclick="openAudiobookshelf()" class="btn btn-primary" disabled>
+                        Open Audiobookshelf →
+                    </button>
                 </div>
             </div>
-            <p class="subtitle">Manage the network shares used by Audiobookshelf.</p>
 
             <div class="info-box">
                 <p><strong>ℹ️ How it works:</strong></p>
@@ -746,9 +719,9 @@
                         Audiobookshelf: NAS Edition<span class="version-badge" id="version-display">v0.0.0.0</span>
                     </div>
                     <div class="footer-author"><a href="https://github.com/advplyr/audiobookshelf"
-                            target="_blank">Audiobookshelf</a> by advplyr and community<br><a
-                            href="https://github.com/saltedlolly/umbrel-app-store" target="_blank">ABS Network Share
-                            Config Tool</a> by saltedlolly</div>
+                            target="_blank">Audiobookshelf</a> by advplyr &nbsp;&nbsp;•&nbsp;&nbsp; <a
+                            href="https://github.com/saltedlolly/umbrel-app-store" target="_blank">NAS Edition</a> by
+                        saltedlolly</div>
                 </div>
                 <div class="footer-right">
                     <div class="sponsor-container">
@@ -1019,14 +992,12 @@
         function updateAppStatusDisplay(status) {
             const pill = document.getElementById('app-status-pill');
             const light = document.getElementById('app-status-light');
-            const text = document.getElementById('app-status-text');
             const button = document.getElementById('open-abs-btn');
 
-            if (!pill || !light || !text || !button || !status || !status.app) {
+            if (!pill || !light || !button || !status || !status.app) {
                 pill.classList.remove('status-running');
                 pill.classList.add('status-stopped');
                 light.className = 'status-light red';
-                text.textContent = 'Offline';
                 button.disabled = true;
                 button.title = 'Waiting...';
                 pill.title = 'Waiting for Audiobookshelf status...';
@@ -1039,7 +1010,6 @@
             pill.classList.add(isRunning ? 'status-running' : 'status-stopped');
 
             light.className = `status-light ${isRunning ? 'green' : 'red'}`;
-            text.textContent = isRunning ? 'Online' : 'Offline';
 
             button.disabled = !isRunning;
             button.title = isRunning ? 'Open Audiobookshelf' : 'Audiobookshelf is not available yet. Please wait...';
