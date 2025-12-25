@@ -387,14 +387,15 @@
         }
 
         .header-text .subtitle {
-            margin: 4px 0 0;
+            margin: 6px 0 0;
+            font-size: 16px;
+            color: #4b5563;
         }
 
         .header-actions {
             display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 14px;
+            align-items: center;
+            gap: 16px;
         }
 
         .app-status-pill {
@@ -435,14 +436,15 @@
 
         .status-label {
             font-weight: 600;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #4b5563;
+            font-size: 13px;
+            text-transform: none;
+            letter-spacing: 0;
+            color: #1f2937;
         }
 
         .header-actions .btn {
             font-size: 16px;
+            white-space: nowrap;
         }
 
         .empty-state-icon {
@@ -587,7 +589,9 @@
 
             .header-actions {
                 width: 100%;
+                flex-direction: column;
                 align-items: stretch;
+                gap: 12px;
             }
 
             .header-actions .btn {
@@ -648,7 +652,7 @@
                     <img src="abs-icon-purple.svg" alt="Audiobookshelf" style="width: 48px; height: 48px;">
                     <div class="header-text">
                         <h1>ABS Network Share Config Tool</h1>
-                        <p class="subtitle">Manage which network shares (NAS/SMB/NFS) Audiobookshelf requires access to.</p>
+                        <p class="subtitle">Manage the network shares (NAS/SMB/NFS) used by Audiobookshelf.</p>
                     </div>
                 </div>
                 <div class="header-actions">
