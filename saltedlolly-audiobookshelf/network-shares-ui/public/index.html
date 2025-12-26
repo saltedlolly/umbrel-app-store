@@ -130,6 +130,12 @@
             display: block;
         }
 
+        .share-alert-inline {
+            font-size: 18px;
+            color: #b91c1c;
+            margin-left: 8px;
+        }
+
         .share-header {
             display: flex;
             align-items: center;
@@ -220,6 +226,12 @@
             background: #fff7ed;
             border-left-color: #f59e0b;
             color: #b45309;
+        }
+
+        .share-item.not-mounted.enabled .share-help-text {
+            background: #fee2e2;
+            border-left-color: #ef4444;
+            color: #991b1b;
         }
 
         .share-actions {
@@ -350,13 +362,14 @@
 
         .message.with-icon {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 12px;
         }
 
         .message.with-icon .message-icon {
             font-size: 28px;
+            line-height: 1;
         }
 
         .empty-state {
@@ -446,6 +459,11 @@
         .status-light.orange {
             background: #f59e0b;
             box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+        }
+
+        .status-light.gray {
+            background: #d1d5db;
+            box-shadow: 0 0 6px rgba(209, 213, 219, 0.6);
         }
 
         .status-label {
@@ -667,10 +685,10 @@
                     </div>
                 </div>
                 <div class="header-actions">
-                    <div id="app-status-pill" class="app-status-pill status-stopped"
+                    <div id="app-status-pill" class="app-status-pill status-loading"
                         title="Checking Audiobookshelf status...">
                         <span class="status-label">Audiobookshelf Status:</span>
-                        <span id="app-status-light" class="status-light red"></span>
+                        <span id="app-status-light" class="status-light gray"></span>
                     </div>
                     <button id="open-abs-btn" onclick="openAudiobookshelf()" class="btn btn-primary" disabled>
                         Open Audiobookshelf →
@@ -952,8 +970,8 @@
                                 ${share.host} / ${share.shareName}
                             </label>
                         <span class="status-badge ${statusClass}">${statusText}</span>
+                        ${((isEnabled && statusClass === 'empty') || statusClass === 'not-mounted' || statusClass === 'permission-denied') ? '<span class="share-alert-inline">⚠️</span>' : ''}
                     </div>
-                    <div class="share-alert-icon ${((isEnabled && statusClass === 'empty') || statusClass === 'not-mounted') ? 'show' : ''}">⚠️</div>
                         <div class="share-help-text">
                             ${helpText}
                         </div>
@@ -990,7 +1008,7 @@
             if (!pill || !light || !button || !status || !status.app) {
                 pill.classList.remove('status-running', 'status-stopped', 'status-starting');
                 pill.classList.add('status-stopped');
-                light.className = 'status-light red';
+                light.className = 'status-light gray';
                 button.disabled = true;
                 button.title = 'Waiting...';
                 pill.title = 'Waiting for Audiobookshelf status...';
