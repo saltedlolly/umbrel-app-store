@@ -60,20 +60,6 @@
             color: #555;
         }
 
-        .warning-box {
-            background: #fef3c7;
-            border-left: 4px solid #f59e0b;
-            padding: 15px;
-            margin-bottom: 25px;
-            border-radius: 4px;
-        }
-
-        .warning-box p {
-            margin: 5px 0;
-            font-size: 14px;
-            color: #92400e;
-        }
-
         .waiting-indicator {
             margin-left: 35px;
             margin-top: 10px;
@@ -695,11 +681,10 @@
                 <p>• <strong>Leave unchecked</strong> network shares that Audiobookshelf does not use — the app will
                     start without waiting for them.
                 </p>
-            </div>
-
-            <div class="warning-box" id="warning-box" style="display: none;">
-                <p><strong>⚠️ Important:</strong> Audiobookshelf will not start until all required network shares become
-                    available.<br>It will keep retrying for 5 minutes before giving up.</p>
+                <p>• <strong>⚠️ Important:</strong> Audiobookshelf will not start until all required network shares
+                    become
+                    available
+                </p>
             </div>
 
             <div id="restart-required-message" class="message warning with-icon" style="display:none;"></div>
@@ -867,19 +852,7 @@
                 helpText.innerHTML = 'ⓘ <strong>Optional:</strong> Audiobookshelf will start without waiting for this share';
             }
 
-            // Show/hide warning box
-            updateWarningBox();
             updateShareStatusMessages();
-        }
-
-        // Update warning box visibility
-        function updateWarningBox() {
-            const warningBox = document.getElementById('warning-box');
-            if (config.enabledShares.length > 0) {
-                warningBox.style.display = 'block';
-            } else {
-                warningBox.style.display = 'none';
-            }
         }
 
         // Save configuration
@@ -916,8 +889,6 @@
         function renderShares() {
             const container = document.getElementById('shares-container');
 
-            // Update warning box based on enabled shares
-            updateWarningBox();
             // Update share status alerts
             updateShareStatusMessages();
 
@@ -958,7 +929,7 @@
                     : `<div class="waiting-indicator" id="waiting-${index}"></div>`;
 
                 return `
-                    <div class="share-item ${isEnabled ? 'enabled' : 'optional'} ${statusClass === 'not-mounted' ? 'not-mounted' : ''}" id="share-item-${index}">
+                    <div class="share-item ${isEnabled ? 'enabled' : 'optional'} ${(statusClass === 'not-mounted' || statusClass === 'empty' || statusClass === 'permission-denied') ? 'not-mounted' : ''}" id="share-item-${index}">
                         <div class="share-header">
                             <input 
                                 type="checkbox" 
