@@ -264,6 +264,9 @@ app.get('/api/status', async (req, res) => {
         if (!appStatus.running && blockingShares.length > 0) {
             overallStatus = 'waiting';
             message = `Waiting for ${blockingShares.length} required share(s) to become available`;
+        } else if (!appStatus.running && blockingShares.length === 0) {
+            overallStatus = 'starting';
+            message = 'Audiobookshelf is starting up...';
         }
 
         res.json({

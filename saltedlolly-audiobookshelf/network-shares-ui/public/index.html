@@ -417,6 +417,11 @@
             color: #065f46;
         }
 
+        .app-status-pill.status-starting {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
         .app-status-pill.status-stopped {
             background: #fee2e2;
             color: #991b1b;
@@ -436,6 +441,11 @@
         .status-light.red {
             background: #ef4444;
             box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+        }
+
+        .status-light.orange {
+            background: #f59e0b;
+            box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
         }
 
         .status-label {
@@ -978,7 +988,7 @@
             const button = document.getElementById('open-abs-btn');
 
             if (!pill || !light || !button || !status || !status.app) {
-                pill.classList.remove('status-running');
+                pill.classList.remove('status-running', 'status-stopped', 'status-starting');
                 pill.classList.add('status-stopped');
                 light.className = 'status-light red';
                 button.disabled = true;
@@ -987,20 +997,29 @@
                 return;
             }
 
-            const isRunning = status.app.running && status.app.overallStatus === 'running';
+            const overall = status.app.overallStatus;
+            const isRunning = status.app.running && overall === 'running';
+            const isStarting = !isRunning && overall === 'starting';
 
-            pill.classList.remove('status-running', 'status-stopped');
-            pill.classList.add(isRunning ? 'status-running' : 'status-stopped');
+            pill.classList.remove('status-running', 'status-stopped', 'status-starting');
+            pill.classList.add(isRunning ? 'status-running' : isStarting ? 'status-starting' : 'status-stopped');
 
-            light.className = `status-light ${isRunning ? 'green' : 'red'}`;
+            light.className = `status-light ${isRunning ? 'green' : isStarting ? 'orange' : 'red'}`;
 
             button.disabled = !isRunning;
-            button.title = isRunning ? 'Open Audiobookshelf' : 'Audiobookshelf is not available yet. Please wait...';
+            button.title = isRunning
+                ? 'Open Audiobookshelf'
+                : isStarting
+                    ? 'Audiobookshelf is starting...'
+                    : 'Audiobookshelf is not available yet. Please wait...';
+
             pill.title = isRunning
                 ? 'Audiobookshelf is running and the web UI is available.'
-                : (status.app.message
-                    ? `Audiobookshelf is offline: ${status.app.message}`
-                    : 'Audiobookshelf is offline or not responding.');
+                : isStarting
+                    ? 'Audiobookshelf has started and is coming online now.'
+                    : (status.app.message
+                        ? `Audiobookshelf is offline: ${status.app.message}`
+                        : 'Audiobookshelf is offline or not responding.');
         }
 
         // Poll status endpoint
