@@ -11,7 +11,7 @@ services:
   # Lightweight UI service for managing network share selection
   # Accessible via app_proxy on port 23378 (dashboard icon)
   network-shares-ui:
-    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:e08217a235492af34df8ff5d119654b25caa5daff6964253e7dc1e47f3805956
+    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:3104e60a3eb81be88dd829858a8755824cecb8b05fe243e5bcbd772955dfbaa6
     container_name: saltedlolly-audiobookshelf_network-shares-ui_1
     hostname: saltedlolly-audiobookshelf_network-shares-ui_1
     init: true
@@ -39,7 +39,12 @@ services:
     hostname: saltedlolly-audiobookshelf_share-waiter_1
     init: true
     restart: unless-stopped
-    entrypoint: ["/bin/sh", "-c", "node /app/scripts/wait-for-shares.js && touch /tmp/share-waiter-ready && tail -f /dev/null"]
+    entrypoint:
+      [
+        "/bin/sh",
+        "-c",
+        "echo 'Listing share-waiter script mounts...'; ls -l /app/scripts /bundle/scripts || true; if [ -f /app/scripts/wait-for-shares.js ]; then echo 'Running /app/scripts/wait-for-shares.js'; node /app/scripts/wait-for-shares.js; elif [ -f /bundle/scripts/wait-for-shares.js ]; then echo 'Running /bundle/scripts/wait-for-shares.js'; node /bundle/scripts/wait-for-shares.js; else echo 'wait-for-shares.js not found in /app/scripts or /bundle/scripts'; exit 1; fi && touch /tmp/share-waiter-ready && tail -f /dev/null",
+      ]
     environment:
       - CONFIG_FILE=/data/network-shares.json
       - NETWORK_MOUNT_ROOT=/media/network
@@ -48,8 +53,10 @@ services:
     volumes:
       - ${APP_DATA_DIR}:/data
       - ${UMBREL_ROOT}/network:/media/network:ro
-      # Use the copy staged by pre-start so the script is always present in app-data
+      # Primary: use the copy staged by pre-start so the script is always present in app-data
       - ${APP_DATA_DIR}/scripts:/app/scripts:ro
+      # Fallback: also mount bundled scripts so we still start if pre-start copy fails
+      - ./scripts:/bundle/scripts:ro
     healthcheck:
       test: ["CMD", "test", "-f", "/tmp/share-waiter-ready"]
       interval: 5s
