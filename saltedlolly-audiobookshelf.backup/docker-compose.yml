@@ -11,7 +11,7 @@ services:
   # Lightweight UI service for managing network share selection
   # Accessible via app_proxy on port 23378 (dashboard icon)
   network-shares-ui:
-    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:e432a10129fedfe553fad0f0bf2d45e958efcd0ee35782f475c0ef8210b769e7
+    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:4a62747e8d6b8909d49aa799a317ae28e49785af8a2fc8d500142f67017adbc4
     container_name: saltedlolly-audiobookshelf_network-shares-ui_1
     hostname: saltedlolly-audiobookshelf_network-shares-ui_1
     init: true
@@ -31,29 +31,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
-  # Waits for required network shares before allowing Audiobookshelf to start
-  share-waiter:
-    image: node:18-alpine
-    container_name: saltedlolly-audiobookshelf_share-waiter_1
-    hostname: saltedlolly-audiobookshelf_share-waiter_1
-    init: true
-    restart: unless-stopped
-    entrypoint: ["/bin/sh", "-c", "node /scripts/wait-for-shares.js && touch /tmp/share-waiter-ready && tail -f /dev/null"]
-    environment:
-      - CONFIG_FILE=/data/network-shares.json
-      - NETWORK_MOUNT_ROOT=/media/network
-      - MAX_WAIT_SECONDS=300
-      - CHECK_INTERVAL_MS=2000
-    volumes:
-      - ${APP_DATA_DIR}:/data
-      - ${UMBREL_ROOT}/network:/media/network:ro
-      - ./scripts:/scripts:ro
-    healthcheck:
-      test: ["CMD", "test", "-f", "/tmp/share-waiter-ready"]
-      interval: 5s
-      timeout: 3s
-      retries: 60
 
   web:
     image: ghcr.io/advplyr/audiobookshelf:2.32.1@sha256:a52dc5db694a5bf041ce38f285dd6c6a660a4b1b21e37ad6b6746433263b2ae5
@@ -83,7 +60,4 @@ services:
       # Individual enabled shares will be symlinked by the pre-start hook
       - ${UMBREL_ROOT}/network:/media/network
     depends_on:
-      network-shares-ui:
-        condition: service_started
-      share-waiter:
-        condition: service_healthy
+      - network-shares-ui

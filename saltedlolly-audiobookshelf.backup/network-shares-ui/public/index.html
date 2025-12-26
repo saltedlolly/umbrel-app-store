@@ -856,13 +856,11 @@
                     config.enabledShares.push(share.fullPath);
                 }
                 shareDiv.classList.add('enabled');
-                shareDiv.classList.remove('optional');
                 checkbox.title = 'Mark as optional (app will start without waiting)';
                 helpText.innerHTML = '✓ <strong>Required:</strong> Audiobookshelf will wait for this share to be available before starting';
             } else {
                 config.enabledShares = config.enabledShares.filter(s => s !== share.fullPath);
                 shareDiv.classList.remove('enabled');
-                shareDiv.classList.add('optional');
                 checkbox.title = 'Mark as required (app will wait for this share before starting)';
                 helpText.innerHTML = 'ⓘ <strong>Optional:</strong> Audiobookshelf will start without waiting for this share';
             }
