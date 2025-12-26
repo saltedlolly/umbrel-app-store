@@ -11,7 +11,7 @@ services:
   # Lightweight UI service for managing network share selection
   # Accessible via app_proxy on port 23378 (dashboard icon)
   network-shares-ui:
-    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:f40d814a813b0fa696bcf1c6ed3b7a77d0e6997172ca8de02755bcd4d490d1bc
+    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:09b84f1357fa950a2ce568d4d3135c5badb3540b72b1b928742869fa76959270
     container_name: saltedlolly-audiobookshelf_network-shares-ui_1
     hostname: saltedlolly-audiobookshelf_network-shares-ui_1
     init: true
@@ -39,7 +39,7 @@ services:
     hostname: saltedlolly-audiobookshelf_share-waiter_1
     init: true
     restart: unless-stopped
-    entrypoint: ["/bin/sh", "-c", "node /scripts/wait-for-shares.js && touch /tmp/share-waiter-ready && tail -f /dev/null"]
+    entrypoint: ["/bin/sh", "-c", "node /app/scripts/wait-for-shares.js && touch /tmp/share-waiter-ready && tail -f /dev/null"]
     environment:
       - CONFIG_FILE=/data/network-shares.json
       - NETWORK_MOUNT_ROOT=/media/network
@@ -48,7 +48,7 @@ services:
     volumes:
       - ${APP_DATA_DIR}:/data
       - ${UMBREL_ROOT}/network:/media/network:ro
-      - ./scripts:/scripts:ro
+      - ./scripts:/app/scripts:ro
     healthcheck:
       test: ["CMD", "test", "-f", "/tmp/share-waiter-ready"]
       interval: 5s
