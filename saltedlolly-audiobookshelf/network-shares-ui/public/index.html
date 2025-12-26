@@ -121,26 +121,27 @@
             background: #fffbeb;
         }
 
-        .share-item.warning {
+        .share-item.not-mounted {
             border-color: #fca5a5;
             background: #fef2f2;
         }
 
-        .share-item.warning .share-help-text {
+        .share-item.not-mounted .share-help-text {
             background: #fee2e2;
             border-left-color: #ef4444;
             color: #991b1b;
         }
 
         .share-alert-icon {
-            font-size: 18px;
+            text-align: right;
+            font-size: 26px;
             color: #b91c1c;
+            margin-top: 6px;
             display: none;
-            margin-right: 6px;
         }
 
         .share-alert-icon.show {
-            display: inline-flex;
+            display: block;
         }
 
         .share-header {
@@ -363,12 +364,13 @@
 
         .message.with-icon {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 12px;
+            gap: 15px;
         }
 
         .message.with-icon .message-icon {
-            font-size: 24px;
+            font-size: 28px;
         }
 
         .empty-state {
@@ -774,23 +776,16 @@
             const requiredShares = shares.filter(share => config.enabledShares.includes(share.fullPath));
             const requiresRestart = requiredShares.some(share => share.status === 'empty');
             const missingShares = requiredShares.some(share => share.status === 'not-mounted');
-            const deniedShares = requiredShares.some(share => share.status === 'permission-denied');
 
             if (requiresRestart) {
-                restartDiv.innerHTML = '<div class="message-icon">🔄</div><div><strong>App Restart Required</strong><br>A network share was recently been added. You need to restart Audiobookshelf before it can access it.<br>To restart, right-click the app icon on the Umbrel dashboard and select "Restart". </div>';
+                restartDiv.innerHTML = '<div class="message-icon">🔄</div><div><strong>App Restart Required</strong><br>A network share was recently been added. You need to restart Audiobookshelf before it can acess it.<br>To restart, right-click the app icon on the Umbrel dashboard and select "Restart". </div>';
                 restartDiv.style.display = 'flex';
             } else {
                 restartDiv.style.display = 'none';
             }
 
-            if (deniedShares) {
-                notMountedDiv.innerHTML = '<div class="message-icon">⛔️</div><div><strong>A Required Network Share is Not Accessible</strong><br>Please check the password in the Files app, or remove it as a required Network Share.</div>';
-                notMountedDiv.style.display = 'flex';
-                return;
-            }
-
             if (missingShares) {
-                notMountedDiv.innerHTML = '<div class="message-icon">🚨</div><div><strong>A Required Network Share is Not Mounted</strong><br>Please re-mount it in the Files app, or remove it as a required Network Share.</div>';
+                notMountedDiv.innerHTML = '<div class="message-icon">⛔️</div><div><strong>A Required Network Share is Not Mounted</strong><br>Please re-mount it in the Files app, or remove it as a required Network Share.</div>';
                 notMountedDiv.style.display = 'flex';
             } else {
                 notMountedDiv.style.display = 'none';
@@ -949,7 +944,6 @@
                 };
 
                 const statusClass = share.status || (share.isMounted && share.isAccessible ? 'accessible' : 'not-mounted');
-                const isCriticalStatus = statusClass === 'empty' || statusClass === 'not-mounted' || statusClass === 'permission-denied';
                 const statusText = statusTextMap[statusClass] || 'Unknown';
 
                 const helpText = isEnabled
@@ -960,11 +954,11 @@
                 const isBlocking = isEnabled && statusClass !== 'accessible';
                 // Only show waiting indicator if ABS is NOT running and appStatus.overallStatus === 'waiting'
                 const waitingIndicator = isBlocking && appStatus && !appStatus.app.running && appStatus.app.overallStatus === 'waiting'
-                    ? `<div class="waiting-indicator show" id="waiting-${index}">⏳ <strong>Audiobookshelf is waiting for this Network Share to become available...</strong> <span class="countdown"></span></div>`
+                    ? `<div class="waiting-indicator show" id="waiting-${index}">⏳ <strong>App is waiting for this share...</strong> <span class="countdown"></span></div>`
                     : `<div class="waiting-indicator" id="waiting-${index}"></div>`;
 
                 return `
-                    <div class="share-item ${isEnabled ? 'enabled' : 'optional'} ${(isEnabled && isCriticalStatus) ? 'warning' : ''}" id="share-item-${index}">
+                    <div class="share-item ${isEnabled ? 'enabled' : 'optional'} ${statusClass === 'not-mounted' ? 'not-mounted' : ''}" id="share-item-${index}">
                         <div class="share-header">
                             <input 
                                 type="checkbox" 
@@ -977,9 +971,9 @@
                             <label for="share-${index}" class="share-name">
                                 ${share.host} / ${share.shareName}
                             </label>
-                            <span class="share-alert-icon ${(isEnabled && isCriticalStatus) ? 'show' : ''}">⚠️</span>
-                            <span class="status-badge ${statusClass}">${statusText}</span>
-                        </div>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="share-alert-icon ${((isEnabled && statusClass === 'empty') || statusClass === 'not-mounted') ? 'show' : ''}">⚠️</div>
                         <div class="share-help-text">
                             ${helpText}
                         </div>
