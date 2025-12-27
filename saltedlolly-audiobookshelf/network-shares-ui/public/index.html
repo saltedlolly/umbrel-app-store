@@ -340,6 +340,8 @@
             display: inline-block;
             height: 28px;
             margin: auto 0;
+            display: flex;
+            align-items: center;
         }
 
         .banner-spinner {
@@ -350,6 +352,10 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
             display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
         .loading {
@@ -428,13 +434,16 @@
         .message.with-icon {
             display: flex;
             justify-content: flex-start;
-            align-items: flex-start;
+            align-items: center;
             gap: 12px;
+            position: relative;
         }
 
         .message.with-icon .message-icon {
             font-size: 28px;
             line-height: 1;
+            display: flex;
+            align-items: center;
         }
 
         .empty-state {
@@ -1219,7 +1228,7 @@
                         clearTimeout(startupBannerTimer);
                         startupBannerTimer = null;
                     }
-                } else if (isRunning && lastOverallStatus !== 'running') {
+                } else if (isRunning && lastOverallStatus === 'starting') {
                     banner.style.display = 'flex';
                     if (bannerText) bannerText.textContent = 'Audiobookshelf is now available.';
                     if (bannerIcon) bannerIcon.textContent = '✅';
