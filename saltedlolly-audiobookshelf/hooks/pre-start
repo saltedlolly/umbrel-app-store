@@ -71,10 +71,11 @@ SHARE_WAITER_DST="${APP_DATA_DIR}/scripts/wait-for-shares.js"
 log "Ensuring share-waiter script is available at ${SHARE_WAITER_DST}"
 mkdir -p "$(dirname "${SHARE_WAITER_DST}")"
 if [[ -f "${SHARE_WAITER_SRC}" ]]; then
-    if cp -f "${SHARE_WAITER_SRC}" "${SHARE_WAITER_DST}"; then
-        log "✓ Copied share-waiter script from bundle"
-    else
+    # Always overwrite with the latest from the bundle
+    if ! cp -f "${SHARE_WAITER_SRC}" "${SHARE_WAITER_DST}"; then
         log_error "Failed to copy share-waiter script from bundle"
+    else
+        log "✓ Copied share-waiter script from bundle (overwrite)"
     fi
 else
     log_warn "Share-waiter script not found at ${SHARE_WAITER_SRC}, writing fallback copy"
