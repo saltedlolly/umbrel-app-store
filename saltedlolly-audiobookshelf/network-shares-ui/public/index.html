@@ -64,6 +64,7 @@
             margin: 5px 20px;
             font-size: 14px;
             color: #555;
+            line-height: 1.3em
         }
 
         .waiting-indicator {
@@ -353,7 +354,7 @@
             animation: spin 1s linear infinite;
             display: none;
             position: absolute;
-            left: 50%;
+            left: 50%-14px;
             top: 50%-14px;
             transform: translate(-50%, -50%);
             margin: auto 10px;
@@ -804,12 +805,13 @@
                         start without waiting for them
                     </li>
                     <li><strong> Important:</strong> Audiobookshelf will only start if all the required network shares
-                        are available.
+                        are available
                     </li>
-                    <li><strong> Bookmark this page!</strong> If a required network share is unavailable, Audiobookshelf
-                        will be prevented from starting up. In this situation, the App icon on the
-                        Umbrel dashboard may remain stuck showing "Starting..." or "Updating...". Return to this page
-                        for help solving the issue.
+                    <li><strong> Bookmark this Page.</strong> If a required network share is not available,
+                        Audiobookshelf
+                        will not start, and the App icon on the dashboard may appear stuck showing "Starting..." or
+                        "Updating...". In this situation, return to this page
+                        for help troubleshooting the issue.
                     </li>
                 </ul>
             </div>
@@ -824,8 +826,7 @@
             </div>
 
             <div id="content" style="display:none;">
-                <div id="startup-banner" class="message info with-icon" style="display:none;"> // Set to non after
-                    testing
+                <div id="startup-banner" class="message info with-icon" style="display:none;">
                     <span class="message-icon">⏳</span>
                     <span class="message-text">Audiobookshelf is starting up...</span>
                     <span class="banner-spinner" id="startup-spinner"></span>
