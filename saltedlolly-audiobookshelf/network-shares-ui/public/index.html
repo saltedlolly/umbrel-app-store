@@ -289,8 +289,14 @@
         .actions {
             display: flex;
             gap: 10px;
+            align-items: center;
             margin-top: 30px;
             margin-bottom: 20px;
+        }
+
+        .save-status {
+            font-size: 13px;
+            color: #6b7280;
         }
 
         .loading {
@@ -729,6 +735,7 @@
                 <div class="actions">
                     <button class="btn btn-primary" onclick="saveConfiguration()">💾 Save Configuration</button>
                     <button class="btn btn-secondary" onclick="refreshShares()">🔄 Refresh Shares</button>
+                    <span id="save-status" class="save-status"></span>
                 </div>
             </div>
 
@@ -856,6 +863,15 @@
             }
         }
 
+        let saveDebounceTimer = null;
+
+        function scheduleAutoSave() {
+            const statusEl = document.getElementById('save-status');
+            if (statusEl) statusEl.textContent = 'Saving...';
+            if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+            saveDebounceTimer = setTimeout(() => saveConfiguration(true), 800);
+        }
+
         // Toggle share enabled state
         function toggleShare(index) {
             const checkbox = document.getElementById(`share-${index}`);
@@ -880,11 +896,15 @@
             }
 
             updateShareStatusMessages();
+            scheduleAutoSave();
         }
 
         // Save configuration
-        async function saveConfiguration() {
+        async function saveConfiguration(isAuto = false) {
+            const statusEl = document.getElementById('save-status');
             try {
+                if (statusEl && isAuto) statusEl.textContent = 'Saving...';
+
                 const response = await fetch('/api/config/save', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -894,13 +914,18 @@
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    const message = `<strong>✓ Configuration saved!</strong>`;
-                    showMessage(message, 'success');
+                    if (statusEl) statusEl.textContent = 'Saved';
+                    if (!isAuto) {
+                        const message = `<strong>✓ Configuration saved!</strong>`;
+                        showMessage(message, 'success');
+                    }
                 } else {
                     const errorMsg = result.error || result.message || 'Unknown error';
+                    if (statusEl) statusEl.textContent = 'Save failed';
                     showMessage('✗ Error saving configuration: ' + errorMsg, 'error');
                 }
             } catch (error) {
+                if (statusEl) statusEl.textContent = 'Save failed';
                 showMessage('✗ Error saving configuration: ' + error.message, 'error');
             }
         }
