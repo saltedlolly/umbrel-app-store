@@ -70,6 +70,10 @@ SHARE_WAITER_SRC="$(cd "$(dirname "$0")/.." && pwd)/scripts/wait-for-shares.js"
 SHARE_WAITER_DST="${APP_DATA_DIR}/scripts/wait-for-shares.js"
 log "Ensuring share-waiter script is available at ${SHARE_WAITER_DST}"
 mkdir -p "$(dirname "${SHARE_WAITER_DST}")"
+SHARE_WAITER_SRC="${UMBREL_APP_STORE_APP_PATH}/scripts/wait-for-shares.js"
+SHARE_WAITER_DST="${APP_DATA_DIR}/scripts/wait-for-shares.js"
+log "Ensuring share-waiter script is available at ${SHARE_WAITER_DST} (from ${SHARE_WAITER_SRC})"
+mkdir -p "$(dirname "${SHARE_WAITER_DST}")"
 if [[ -f "${SHARE_WAITER_SRC}" ]]; then
     # Always overwrite with the latest from the bundle
     if ! cp -f "${SHARE_WAITER_SRC}" "${SHARE_WAITER_DST}"; then
