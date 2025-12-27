@@ -22,7 +22,7 @@ If you find these apps useful, please support my work by [becoming a sponsor](ht
 
 ## 🧩 Umbrel Apps
 
-### Audiobookshelf: NAS Edition  `v2.32.1.39`
+### Audiobookshelf: NAS Edition  `v2.32.1.40`
 
 🚨 WARNING: 🚧 This app is currently a work-in-progress and may not be functional. Data loss is possible. Use for testing only until further notice.
 

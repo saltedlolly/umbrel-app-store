@@ -969,8 +969,8 @@
                             <label for="share-${index}" class="share-name">
                                 ${share.host} / ${share.shareName}
                             </label>
-                        <span class="status-badge ${statusClass}">${statusText}</span>
                         ${((isEnabled && statusClass === 'empty') || statusClass === 'not-mounted' || statusClass === 'permission-denied') ? '<span class="share-alert-inline">⚠️</span>' : ''}
+                        <span class="status-badge ${statusClass}">${statusText}</span>
                     </div>
                         <div class="share-help-text">
                             ${helpText}
