@@ -353,9 +353,9 @@
             animation: spin 1s linear infinite;
             display: none;
             position: absolute;
-            right: 16px;
+            left: 50%;
             top: 50%;
-            transform: translateY(-50%);
+            transform: translate(-50%, -50%);
             margin: 0;
         }
 
@@ -803,10 +803,10 @@
                     <li><strong> Important:</strong> Audiobookshelf will only start if all the required network shares
                         are available.
                     </li>
-                    <li><strong> Bookmark this tool!</strong> If a required network share is unavailable during
-                        startup, Audiobookshelf will be prevented from opening, and the App icon on the Umbrel dashboard
-                        will get stuck displaying "Starting..." or "Updating...". Return to this tool for help fixing
-                        the issue.
+                    <li><strong> Bookmark this page!</strong> If a required network share is unavailable, Audiobookshelf
+                        will be prevented from starting up. In this situation, the App icon on the
+                        Umbrel dashboard may remain stuck showing "Starting..." or "Updating...". Return to this page
+                        for help solving the issue.
                     </li>
                 </ul>
             </div>
@@ -964,6 +964,7 @@
         let pendingConfirmShare = null; // fullPath of share awaiting confirmation
         let startupBannerTimer = null;
         let lastOverallStatus = null;
+        let lastStatusReceived = null;
 
         function scheduleAutoSave() {
             const statusEl = document.getElementById('save-status');
@@ -1016,6 +1017,26 @@
             if (shares[index] && pendingConfirmShare === shares[index].fullPath) {
                 pendingConfirmShare = null;
             }
+        }
+
+        function positionStartupSpinner() {
+            const banner = document.getElementById('startup-banner');
+            const spinner = document.getElementById('startup-spinner');
+            if (!banner || !spinner || spinner.style.display === 'none') return;
+
+            const textEl = banner.querySelector('.message-text');
+            const iconEl = banner.querySelector('.message-icon');
+            const bannerWidth = banner.clientWidth || 0;
+            const spinnerWidth = spinner.offsetWidth || 28;
+            const gap = 16;
+            const textWidth = (iconEl ? iconEl.offsetWidth : 0) + (textEl ? textEl.offsetWidth : 0) + gap;
+
+            const minLeft = bannerWidth / 2;
+            const desiredLeft = Math.max(minLeft, textWidth + spinnerWidth / 2 + gap);
+            const maxLeft = bannerWidth - gap - spinnerWidth / 2;
+            const left = Math.min(desiredLeft, maxLeft);
+
+            spinner.style.left = `${left}px`;
         }
 
         // Toggle share enabled state
@@ -1230,6 +1251,7 @@
                     if (bannerText) bannerText.textContent = 'Audiobookshelf is starting up...';
                     if (bannerIcon) bannerIcon.textContent = '⏳';
                     if (bannerSpinner) bannerSpinner.style.display = 'inline-block';
+                    positionStartupSpinner();
                     if (startupBannerTimer) {
                         clearTimeout(startupBannerTimer);
                         startupBannerTimer = null;
@@ -1251,11 +1273,16 @@
                             clearTimeout(startupBannerTimer);
                             startupBannerTimer = null;
                         }
+                    } else {
+                        // Already running on load; keep banner hidden
+                        banner.style.display = 'none';
+                        if (bannerSpinner) bannerSpinner.style.display = 'none';
                     }
                 }
             }
 
             lastOverallStatus = overall;
+            lastStatusReceived = status;
         }
 
         // Poll status endpoint
@@ -1287,6 +1314,11 @@
             }
             statusPollingInterval = setInterval(pollStatus, 5000); // Poll every 5 seconds
         }
+
+        // Reposition spinner on resize when visible
+        window.addEventListener('resize', () => {
+            positionStartupSpinner();
+        });
 
         // Stop polling
         function stopPolling() {
