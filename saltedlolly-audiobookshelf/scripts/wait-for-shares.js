@@ -35,7 +35,8 @@ async function isMountAccessible(mountPath) {
         await fsp.access(mountPath, fs.constants.R_OK);
         const entries = await fsp.readdir(mountPath);
         if (entries.length === 0) {
-            log(`WARN: ${mountPath} is accessible but empty (could be a failed mount).`);
+            log(`WARN: ${mountPath} is accessible but empty (likely not ready yet).`);
+            return false;
         }
         return true;
     } catch {
