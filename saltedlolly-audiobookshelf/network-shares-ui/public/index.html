@@ -85,6 +85,7 @@
         }
 
         .share-item {
+            position: relative;
             border: 2px solid #e5e7eb;
             border-radius: 8px;
             padding: 20px;
@@ -134,6 +135,36 @@
             font-size: 18px;
             color: #b91c1c;
             margin-left: 8px;
+        }
+
+        .confirm-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.92);
+            border: 2px solid #fca5a5;
+            border-radius: 8px;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            text-align: center;
+            z-index: 2;
+        }
+
+        .confirm-overlay.show {
+            display: flex;
+        }
+
+        .confirm-text {
+            color: #991b1b;
+            font-weight: 600;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 10px;
         }
 
         .share-header {
@@ -733,7 +764,6 @@
                 <div id="shares-container"></div>
 
                 <div class="actions">
-                    <button class="btn btn-primary" onclick="saveConfiguration()">💾 Save Configuration</button>
                     <button class="btn btn-secondary" onclick="refreshShares()">🔄 Refresh Shares</button>
                     <span id="save-status" class="save-status"></span>
                 </div>
@@ -872,14 +902,15 @@
             saveDebounceTimer = setTimeout(() => saveConfiguration(true), 800);
         }
 
-        // Toggle share enabled state
-        function toggleShare(index) {
+        function applyShareSelection(index, enabled) {
             const checkbox = document.getElementById(`share-${index}`);
             const share = shares[index];
             const shareDiv = checkbox.closest('.share-item');
             const helpText = shareDiv.querySelector('.share-help-text');
 
-            if (checkbox.checked) {
+            checkbox.checked = enabled;
+
+            if (enabled) {
                 if (!config.enabledShares.includes(share.fullPath)) {
                     config.enabledShares.push(share.fullPath);
                 }
@@ -897,6 +928,34 @@
 
             updateShareStatusMessages();
             scheduleAutoSave();
+        }
+
+        function showConfirmOverlay(index) {
+            const overlay = document.getElementById(`confirm-overlay-${index}`);
+            if (overlay) overlay.classList.add('show');
+        }
+
+        function hideConfirmOverlay(index) {
+            const overlay = document.getElementById(`confirm-overlay-${index}`);
+            if (overlay) overlay.classList.remove('show');
+        }
+
+        // Toggle share enabled state
+        function toggleShare(index) {
+            const checkbox = document.getElementById(`share-${index}`);
+            const share = shares[index];
+
+            if (checkbox.checked) {
+                applyShareSelection(index, true);
+            } else {
+                if (share.status === 'not-mounted') {
+                    // Re-check until user confirms
+                    checkbox.checked = true;
+                    showConfirmOverlay(index);
+                    return;
+                }
+                applyShareSelection(index, false);
+            }
         }
 
         // Save configuration
@@ -982,6 +1041,13 @@
 
                 return `
                     <div class="share-item ${isEnabled ? 'enabled' : 'optional'} ${(statusClass === 'not-mounted' || statusClass === 'empty' || statusClass === 'permission-denied') ? 'not-mounted' : ''}" id="share-item-${index}">
+                        <div class="confirm-overlay" id="confirm-overlay-${index}">
+                            <div class="confirm-text">Are you sure we don't require this network share?</div>
+                            <div class="confirm-actions">
+                                <button class="btn btn-secondary" onclick="hideConfirmOverlay(${index}); applyShareSelection(${index}, true);">No</button>
+                                <button class="btn btn-primary" onclick="hideConfirmOverlay(${index}); applyShareSelection(${index}, false);">Yes</button>
+                            </div>
+                        </div>
                         <div class="share-header">
                             <input 
                                 type="checkbox" 
