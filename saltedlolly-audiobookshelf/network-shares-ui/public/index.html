@@ -894,6 +894,7 @@
         }
 
         let saveDebounceTimer = null;
+        let pendingConfirmShare = null; // fullPath of share awaiting confirmation
 
         function scheduleAutoSave() {
             const statusEl = document.getElementById('save-status');
@@ -907,6 +908,10 @@
             const share = shares[index];
             const shareDiv = checkbox.closest('.share-item');
             const helpText = shareDiv.querySelector('.share-help-text');
+            if (pendingConfirmShare === share.fullPath) {
+                pendingConfirmShare = null;
+                hideConfirmOverlay(index);
+            }
 
             checkbox.checked = enabled;
 
@@ -932,6 +937,7 @@
 
         function showConfirmOverlay(index) {
             const overlay = document.getElementById(`confirm-overlay-${index}`);
+            pendingConfirmShare = shares[index].fullPath;
             if (overlay) overlay.classList.add('show');
         }
 
@@ -942,6 +948,15 @@
 
         // Toggle share enabled state
         function toggleShare(index) {
+            // If another confirm is pending, cancel it as "No" (keep required)
+            if (pendingConfirmShare && pendingConfirmShare !== shares[index].fullPath) {
+                const prevIdx = shares.findIndex(s => s.fullPath === pendingConfirmShare);
+                if (prevIdx !== -1) {
+                    applyShareSelection(prevIdx, true);
+                }
+                pendingConfirmShare = null;
+            }
+
             const checkbox = document.getElementById(`share-${index}`);
             const share = shares[index];
 
@@ -1041,8 +1056,8 @@
 
                 return `
                     <div class="share-item ${isEnabled ? 'enabled' : 'optional'} ${(isEnabled && (statusClass === 'not-mounted' || statusClass === 'empty' || statusClass === 'permission-denied')) ? 'not-mounted' : ''}" id="share-item-${index}">
-                        <div class="confirm-overlay" id="confirm-overlay-${index}">
-                            <div class="confirm-text">Are you sure we don't require this network share?</div>
+                        <div class="confirm-overlay ${pendingConfirmShare === share.fullPath ? 'show' : ''}" id="confirm-overlay-${index}" data-share="${share.fullPath}">
+                            <div class="confirm-text">Are you sure you don't require this network share?</div>
                             <div class="confirm-actions">
                                 <button class="btn btn-secondary" onclick="hideConfirmOverlay(${index}); applyShareSelection(${index}, true);">No</button>
                                 <button class="btn btn-primary" onclick="hideConfirmOverlay(${index}); applyShareSelection(${index}, false);">Yes</button>
