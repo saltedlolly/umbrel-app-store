@@ -944,6 +944,9 @@
         function hideConfirmOverlay(index) {
             const overlay = document.getElementById(`confirm-overlay-${index}`);
             if (overlay) overlay.classList.remove('show');
+            if (shares[index] && pendingConfirmShare === shares[index].fullPath) {
+                pendingConfirmShare = null;
+            }
         }
 
         // Toggle share enabled state
@@ -1059,8 +1062,8 @@
                         <div class="confirm-overlay ${pendingConfirmShare === share.fullPath ? 'show' : ''}" id="confirm-overlay-${index}" data-share="${share.fullPath}">
                             <div class="confirm-text">Are you sure you don't require this network share?</div>
                             <div class="confirm-actions">
-                                <button class="btn btn-secondary" onclick="hideConfirmOverlay(${index}); applyShareSelection(${index}, true);">No</button>
-                                <button class="btn btn-primary" onclick="hideConfirmOverlay(${index}); applyShareSelection(${index}, false);">Yes</button>
+                                <button class="btn btn-secondary" onclick="hideConfirmOverlay(${index});">No</button>
+                                <button class="btn btn-primary" onclick="applyShareSelection(${index}, false);">Yes</button>
                             </div>
                         </div>
                         <div class="share-header">
