@@ -60,6 +60,12 @@
             color: #555;
         }
 
+        .hiw-bullets li {
+            margin: 5px 20px;
+            font-size: 14px;
+            color: #555;
+        }
+
         .waiting-indicator {
             margin-left: 35px;
             margin-top: 10px;
@@ -334,6 +340,16 @@
             display: inline-block;
         }
 
+        .banner-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #bae6fd;
+            border-top: 2px solid #0ea5e9;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
         .loading {
             text-align: center;
             padding: 40px;
@@ -554,10 +570,11 @@
         }
 
         footer {
-            margin-top: 0;
-            padding: 20px;
+            margin: 30px -30px -30px -30px;
+            padding: 20px 30px;
             background: #f9fafb;
             border-top: 1px solid #e5e7eb;
+            border-radius: 0 0 12px 12px;
             display: grid;
             grid-template-columns: auto 1fr auto;
             gap: 20px;
@@ -628,7 +645,8 @@
         .sponsor-container {
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
+            align-items: center;
+            justify-content: center;
             gap: 6px;
         }
 
@@ -644,8 +662,14 @@
         .sponsor-text {
             font-size: 11px;
             color: #6b7280;
-            text-align: right;
+            text-align: center;
             line-height: 1.3;
+            width: auto;
+        }
+
+        .sponsor-button {
+            width: auto;
+            margin: 0 auto;
         }
 
         @media (max-width: 768px) {
@@ -689,7 +713,7 @@
 
             footer {
                 grid-template-columns: 1fr;
-                gap: 15px;
+                gap: 2px 2px;
                 text-align: center;
             }
 
@@ -744,25 +768,30 @@
             </div>
 
             <div class="info-box">
-                <p><strong>ℹ️ How it works:</strong></p>
-                <p>• First, add the network shares containing your media in the <a
-                        href="javascript:window.open(window.location.protocol+'//'+window.location.hostname.split(':')[0]+'/files/Home', '_blank')"
-                        style="color: #3b82f6; text-decoration: underline;">Umbrel Files app</a></p>
-                <p>• All shares below are accessible in Audiobookshelf at
-                    <code>/media/network/&lt;host&gt;/&lt;share&gt;</code>
-                </p>
-                <p>• <strong>Check the box</strong> for shares that are <strong>required</strong> — Audiobookshelf will
-                    wait for them to become available before starting</p>
-                <p>• <strong>Leave unchecked</strong> network shares that Audiobookshelf does not use — the app will
-                    start without waiting for them
-                </p>
-                <p>• <strong> Important:</strong> Audiobookshelf will only start if all the required network shares
-                    are available.
-                </p>
-                <p>• <strong> Bookmark this tool for later!</strong> If a required network share is unavailable during
-                    startup, Audiobookshelf will be prevented from opening, and the App icon on the Umbrel dashboard
-                    will get stuck displaying "Starting..." or "Updating...". This tool will help you fix the issue.
-                </p>
+                <p><strong>ℹ️ &nbsp; How it works:</strong></p>
+
+                <ul class="hiw-bullets">
+
+                    <li>Add your network shares containing media in the <a
+                            href="javascript:window.open(window.location.protocol+'//'+window.location.hostname.split(':')[0]+'/files/Home', '_blank')"
+                            style="color: #3b82f6; text-decoration: underline;">Umbrel Files app</a></li>
+                    <li>All shares below are accessible in Audiobookshelf at
+                        <code>/media/network/&lt;host&gt;/&lt;share&gt;</code>
+                    </li>
+                    <li><strong>Check the box</strong> for shares that are <strong>required</strong> — Audiobookshelf
+                        will wait for them to become available before starting</li>
+                    <li><strong>Leave unchecked</strong> network shares that Audiobookshelf does not use — the app will
+                        start without waiting for them
+                    </li>
+                    <li><strong> Important:</strong> Audiobookshelf will only start if all the required network shares
+                        are available.
+                    </li>
+                    <li><strong> Bookmark this tool!</strong> If a required network share is unavailable during
+                        startup, Audiobookshelf will be prevented from opening, and the App icon on the Umbrel dashboard
+                        will get stuck displaying "Starting..." or "Updating...". Return to this tool for help fixing
+                        the issue.
+                    </li>
+                </ul>
             </div>
 
             <div id="restart-required-message" class="message warning with-icon" style="display:none;"></div>
@@ -776,6 +805,7 @@
 
             <div id="content" style="display: none;">
                 <div id="startup-banner" class="message info with-icon" style="display:none;">
+                    <span class="banner-spinner" id="startup-spinner"></span>
                     <span class="message-icon">⏳</span>
                     <span class="message-text">Audiobookshelf is starting up...</span>
                 </div>
@@ -803,10 +833,12 @@
                 </div>
                 <div class="footer-right">
                     <div class="sponsor-container">
-                        <div class="sponsor-text">Please support my work<br>on GitHub Sponsors</div>
-                        <iframe src="https://github.com/sponsors/saltedlolly/button" title="Sponsor saltedlolly"
-                            height="32" width="114" style="border: 0; border-radius: 6px;">
-                        </iframe>
+                        <div class="sponsor-text">Please Support<br>App Development:</div>
+                        <div class="sponsor-button">
+                            <iframe src="https://github.com/sponsors/saltedlolly/button" title="Sponsor saltedlolly"
+                                height="32" width="114" style="border: 0; border-radius: 6px;">
+                            </iframe>
+                        </div>
                     </div>
                 </div>
             </footer>
@@ -1136,6 +1168,7 @@
             const banner = document.getElementById('startup-banner');
             const bannerText = banner ? banner.querySelector('.message-text') : null;
             const bannerIcon = banner ? banner.querySelector('.message-icon') : null;
+            const bannerSpinner = document.getElementById('startup-spinner');
 
             if (!pill || !light || !button || !status || !status.app) {
                 pill.classList.remove('status-running', 'status-stopped', 'status-starting');
@@ -1145,6 +1178,7 @@
                 button.title = 'Waiting...';
                 pill.title = 'Waiting for Audiobookshelf status...';
                 if (banner) banner.style.display = 'none';
+                if (bannerSpinner) bannerSpinner.style.display = 'none';
                 return;
             }
 
@@ -1178,6 +1212,7 @@
                     banner.style.display = 'flex';
                     if (bannerText) bannerText.textContent = 'Audiobookshelf is starting up...';
                     if (bannerIcon) bannerIcon.textContent = '⏳';
+                    if (bannerSpinner) bannerSpinner.style.display = 'inline-block';
                     if (startupBannerTimer) {
                         clearTimeout(startupBannerTimer);
                         startupBannerTimer = null;
@@ -1186,6 +1221,7 @@
                     banner.style.display = 'flex';
                     if (bannerText) bannerText.textContent = 'Audiobookshelf is now available.';
                     if (bannerIcon) bannerIcon.textContent = '✅';
+                    if (bannerSpinner) bannerSpinner.style.display = 'none';
                     if (startupBannerTimer) clearTimeout(startupBannerTimer);
                     startupBannerTimer = setTimeout(() => {
                         banner.style.display = 'none';
@@ -1193,6 +1229,7 @@
                 } else {
                     if (!isRunning) {
                         banner.style.display = 'none';
+                        if (bannerSpinner) bannerSpinner.style.display = 'none';
                         if (startupBannerTimer) {
                             clearTimeout(startupBannerTimer);
                             startupBannerTimer = null;
