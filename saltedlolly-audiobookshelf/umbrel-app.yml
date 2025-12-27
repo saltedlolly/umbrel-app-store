@@ -46,10 +46,10 @@ description: >-
 
   - Network Shares Config Tool: http://umbrel.local:23378 (opens from dashboard icon)
 
-  - Main Audiobookshelf App: http://umbrel.local:13378 (link provided in config UI)
+  - Main Audiobookshelf App: http://umbrel.local:13378 (opens from config tool)
 
   
-  ⚠️ After enabling/disabling network shares, RESTART the Audiobookshelf app (right-click app icon → Restart) 
+  ⚠️ After mounting a new network share, you must RESTART the Audiobookshelf app to access it (right-click app icon → Restart) 
 
 
   Audiobookshelf - Main Features:
