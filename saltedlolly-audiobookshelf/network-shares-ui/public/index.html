@@ -596,6 +596,9 @@
         #startup-banner {
             position: relative;
             padding-right: 60px;
+            min-height: 46px;
+            display: flex;
+            align-items: center;
         }
 
         .footer-left {
@@ -1029,12 +1032,22 @@
             const bannerWidth = banner.clientWidth || 0;
             const spinnerWidth = spinner.offsetWidth || 28;
             const gap = 16;
-            const textWidth = (iconEl ? iconEl.offsetWidth : 0) + (textEl ? textEl.offsetWidth : 0) + gap;
+            const textWidth = (iconEl ? iconEl.offsetWidth : 0) + (textEl ? textEl.offsetWidth : 0);
 
-            const minLeft = bannerWidth / 2;
-            const desiredLeft = Math.max(minLeft, textWidth + spinnerWidth / 2 + gap);
+            // Start centered
+            let left = bannerWidth / 2;
+
+            // Push right if text overlaps
+            const minLeft = textWidth + gap + spinnerWidth / 2;
+            if (left < minLeft) {
+                left = minLeft;
+            }
+
+            // Clamp to right edge
             const maxLeft = bannerWidth - gap - spinnerWidth / 2;
-            const left = Math.min(desiredLeft, maxLeft);
+            if (left > maxLeft) {
+                left = maxLeft;
+            }
 
             spinner.style.left = `${left}px`;
         }
@@ -1250,8 +1263,11 @@
                     banner.style.display = 'flex';
                     if (bannerText) bannerText.textContent = 'Audiobookshelf is starting up...';
                     if (bannerIcon) bannerIcon.textContent = '⏳';
-                    if (bannerSpinner) bannerSpinner.style.display = 'inline-block';
-                    positionStartupSpinner();
+                    if (bannerSpinner) {
+                        bannerSpinner.style.display = 'inline-block';
+                        // Defer positioning to allow layout to settle
+                        requestAnimationFrame(() => positionStartupSpinner());
+                    }
                     if (startupBannerTimer) {
                         clearTimeout(startupBannerTimer);
                         startupBannerTimer = null;
