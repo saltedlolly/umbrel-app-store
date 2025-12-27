@@ -11,7 +11,7 @@ services:
   # Lightweight UI service for managing network share selection
   # Accessible via app_proxy on port 23378 (dashboard icon)
   network-shares-ui:
-    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:f8a352f37383f2ed048afe98a2313f2731ba1c6f722502414d13f14ad27a6f71
+    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:25ba7b8c922f3d1e96dd5fc10366c37e013aeb7be698d965bbcf31b5cf81af0a
     container_name: saltedlolly-audiobookshelf_network-shares-ui_1
     hostname: saltedlolly-audiobookshelf_network-shares-ui_1
     init: true
