@@ -330,6 +330,10 @@
             color: #6b7280;
         }
 
+        .message-text {
+            display: inline-block;
+        }
+
         .loading {
             text-align: center;
             padding: 40px;
@@ -389,6 +393,12 @@
             background: #fee2e2;
             color: #991b1b;
             border-left: 4px solid #ef4444;
+        }
+
+        .message.info {
+            background: #e0f2fe;
+            color: #0b5394;
+            border-left: 4px solid #0ea5e9;
         }
 
         .message.warning {
@@ -761,6 +771,10 @@
             </div>
 
             <div id="content" style="display: none;">
+                <div id="startup-banner" class="message info with-icon" style="display:none;">
+                    <span class="message-icon">⏳</span>
+                    <span class="message-text">Audiobookshelf is starting up...</span>
+                </div>
                 <div id="shares-container"></div>
 
                 <div class="actions">
@@ -895,6 +909,8 @@
 
         let saveDebounceTimer = null;
         let pendingConfirmShare = null; // fullPath of share awaiting confirmation
+        let startupBannerTimer = null;
+        let lastOverallStatus = null;
 
         function scheduleAutoSave() {
             const statusEl = document.getElementById('save-status');
@@ -1113,6 +1129,9 @@
             const pill = document.getElementById('app-status-pill');
             const light = document.getElementById('app-status-light');
             const button = document.getElementById('open-abs-btn');
+            const banner = document.getElementById('startup-banner');
+            const bannerText = banner ? banner.querySelector('.message-text') : null;
+            const bannerIcon = banner ? banner.querySelector('.message-icon') : null;
 
             if (!pill || !light || !button || !status || !status.app) {
                 pill.classList.remove('status-running', 'status-stopped', 'status-starting');
@@ -1121,6 +1140,7 @@
                 button.disabled = true;
                 button.title = 'Waiting...';
                 pill.title = 'Waiting for Audiobookshelf status...';
+                if (banner) banner.style.display = 'none';
                 return;
             }
 
@@ -1147,6 +1167,37 @@
                     : (status.app.message
                         ? `Audiobookshelf is offline: ${status.app.message}`
                         : 'Audiobookshelf is offline or not responding.');
+
+            // Startup banner logic
+            if (banner) {
+                if (isStarting) {
+                    banner.style.display = 'flex';
+                    if (bannerText) bannerText.textContent = 'Audiobookshelf is starting up...';
+                    if (bannerIcon) bannerIcon.textContent = '⏳';
+                    if (startupBannerTimer) {
+                        clearTimeout(startupBannerTimer);
+                        startupBannerTimer = null;
+                    }
+                } else if (isRunning && lastOverallStatus !== 'running') {
+                    banner.style.display = 'flex';
+                    if (bannerText) bannerText.textContent = 'Audiobookshelf is now available.';
+                    if (bannerIcon) bannerIcon.textContent = '✅';
+                    if (startupBannerTimer) clearTimeout(startupBannerTimer);
+                    startupBannerTimer = setTimeout(() => {
+                        banner.style.display = 'none';
+                    }, 3000);
+                } else {
+                    if (!isRunning) {
+                        banner.style.display = 'none';
+                        if (startupBannerTimer) {
+                            clearTimeout(startupBannerTimer);
+                            startupBannerTimer = null;
+                        }
+                    }
+                }
+            }
+
+            lastOverallStatus = overall;
         }
 
         // Poll status endpoint
