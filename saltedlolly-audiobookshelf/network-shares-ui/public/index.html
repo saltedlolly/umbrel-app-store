@@ -354,9 +354,9 @@
             display: none;
             position: absolute;
             left: 50%;
-            top: 50%;
+            top: 50%-14px;
             transform: translate(-50%, -50%);
-            margin: auto 5px;
+            margin: auto 10px;
         }
 
         .loading {
@@ -824,7 +824,8 @@
             </div>
 
             <div id="content" style="display:none;">
-                <div id="startup-banner" class="message info with-icon" style="display:none;">
+                <div id="startup-banner" class="message info with-icon" style="display:none;"> // Set to non after
+                    testing
                     <span class="message-icon">⏳</span>
                     <span class="message-text">Audiobookshelf is starting up...</span>
                     <span class="banner-spinner" id="startup-spinner"></span>
