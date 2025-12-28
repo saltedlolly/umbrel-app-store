@@ -135,6 +135,13 @@ async function main() {
                     log(`WARN: Could not list contents of ${mountPath}: ${err.message}`);
                 }
             }
+            // Create healthcheck file so container is marked healthy
+            try {
+                await fsp.writeFile('/tmp/share-waiter-ready', 'ready\n');
+                log('Created /tmp/share-waiter-ready for healthcheck.');
+            } catch (err) {
+                log('ERROR: Could not create /tmp/share-waiter-ready:', err.message);
+            }
             break;
         }
 
