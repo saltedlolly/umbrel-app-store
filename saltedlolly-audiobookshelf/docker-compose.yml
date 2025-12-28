@@ -11,7 +11,7 @@ services:
   # Lightweight UI service for managing network share selection
   # Accessible via app_proxy on port 23378 (dashboard icon)
   network-shares-ui:
-    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:29a7e0c67cc90b6e142debe00943c3cdc5e19939e54bb4bb0fefab1c017a367d
+    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:6bd76ea3e56a40325a9d90ab4b5675a9d28aa02d6c1639721f198e502934fa9e
     container_name: saltedlolly-audiobookshelf_network-shares-ui_1
     hostname: saltedlolly-audiobookshelf_network-shares-ui_1
     init: true
@@ -34,17 +34,11 @@ services:
 
   # Waits for required network shares before allowing Audiobookshelf to start
   share-waiter:
-    image: node:18-alpine
+    image: saltedlolly/audiobookshelf-share-waiter:latest # Will be replaced with digest by build.sh
     container_name: saltedlolly-audiobookshelf_share-waiter_1
     hostname: saltedlolly-audiobookshelf_share-waiter_1
     init: true
     restart: unless-stopped
-    entrypoint:
-      [
-        "/bin/sh",
-        "-c",
-        "echo 'Listing share-waiter script mounts...'; ls -l /app/scripts /bundle/scripts || true; if [ -f /app/scripts/wait-for-shares.js ]; then echo 'Running /app/scripts/wait-for-shares.js'; node /app/scripts/wait-for-shares.js; elif [ -f /bundle/scripts/wait-for-shares.js ]; then echo 'Running /bundle/scripts/wait-for-shares.js'; node /bundle/scripts/wait-for-shares.js; else echo 'wait-for-shares.js not found in /app/scripts or /bundle/scripts'; exit 1; fi && touch /tmp/share-waiter-ready && tail -f /dev/null",
-      ]
     environment:
       - CONFIG_FILE=/data/network-shares.json
       - NETWORK_MOUNT_ROOT=/media/network
@@ -53,10 +47,6 @@ services:
     volumes:
       - ${APP_DATA_DIR}:/data
       - ${UMBREL_ROOT}/network:/media/network:ro
-      # Primary: use the copy staged by pre-start so the script is always present in app-data
-      - ${APP_DATA_DIR}/scripts:/app/scripts:ro
-      # Fallback: also mount bundled scripts so we still start if pre-start copy fails
-      - ./scripts:/bundle/scripts:ro
     healthcheck:
       test: ["CMD", "test", "-f", "/tmp/share-waiter-ready"]
       interval: 5s

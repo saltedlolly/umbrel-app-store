@@ -13,6 +13,8 @@ UI_REPO="$APP_ROOT/network-shares-ui"
 COMPOSE_FILE="$APP_ROOT/docker-compose.yml"
 APP_YML_FILE="$APP_ROOT/umbrel-app.yml"
 IMAGE_NAME="saltedlolly/audiobookshelf-network-shares-ui"
+SHARE_WAITER_REPO="$APP_ROOT/share-waiter"
+SHARE_WAITER_IMAGE="saltedlolly/audiobookshelf-share-waiter"
 ABS_IMAGE="ghcr.io/advplyr/audiobookshelf"
 RELEASE_NOTES="Update network-shares-ui multi-arch image for Umbrel Home compatibility"
 LOCAL_TEST=false
@@ -489,7 +491,6 @@ FULL_VERSION=$(node -p "require('$UI_REPO/public/version.json').version")
 # Update app store README.md with the new version
 update_readme_version "$FULL_VERSION"
 
-# Build if there are UI code changes OR ABS version changed
 if [[ "$UI_HAS_CHANGES" == true ]] || [[ "$ABS_VERSION_CHANGED" == true ]]; then
   echo "========================================="
   echo "Building Network Shares UI Docker image"
@@ -498,8 +499,8 @@ if [[ "$UI_HAS_CHANGES" == true ]] || [[ "$ABS_VERSION_CHANGED" == true ]]; then
   # Ensure buildx is set up
   ensure_buildx
 
-  # Build and push multi-arch image
-  echo "Building multi-arch image (linux/amd64, linux/arm64)..."
+  # Build and push multi-arch image for network-shares-ui
+  echo "Building multi-arch image (linux/amd64, linux/arm64) for network-shares-ui..."
   docker buildx build \
     --platform linux/amd64,linux/arm64 \
     -t "$IMAGE_NAME:$FULL_VERSION" \
@@ -509,18 +510,50 @@ if [[ "$UI_HAS_CHANGES" == true ]] || [[ "$ABS_VERSION_CHANGED" == true ]]; then
     "$UI_REPO"
 
   echo ""
-  echo "Fetching manifest digest..."
+  echo "Fetching manifest digest for network-shares-ui..."
   UI_DIGEST=$(docker buildx imagetools inspect "$IMAGE_NAME:$FULL_VERSION" 2>/dev/null | grep "^Digest:" | awk '{print $2}')
   if [[ -z "$UI_DIGEST" ]]; then
-    echo "Error: Failed to obtain image digest" >&2
+    echo "Error: Failed to obtain image digest for network-shares-ui" >&2
     exit 1
   fi
   echo "Image digest: $UI_DIGEST"
 
-  # Update docker-compose.yml with new digest
+  # Update docker-compose.yml with new digest for network-shares-ui
   echo ""
-  echo "Updating docker-compose.yml with new digest..."
+  echo "Updating docker-compose.yml with new digest for network-shares-ui..."
   update_compose_digest "$IMAGE_NAME" "$UI_DIGEST"
+
+  echo ""
+  echo "========================================="
+  echo "Building Share Waiter Docker image"
+  echo "========================================="
+  echo "Image: $SHARE_WAITER_IMAGE:$FULL_VERSION"
+
+  # Copy the latest wait-for-shares.js into the share-waiter build context
+  cp "$APP_ROOT/scripts/wait-for-shares.js" "$SHARE_WAITER_REPO/wait-for-shares.js"
+
+  # Build and push multi-arch image for share-waiter
+  docker buildx build \
+    --platform linux/amd64,linux/arm64 \
+    -t "$SHARE_WAITER_IMAGE:$FULL_VERSION" \
+    -t "$SHARE_WAITER_IMAGE:latest" \
+    -f "$SHARE_WAITER_REPO/Dockerfile" \
+    --push \
+    "$SHARE_WAITER_REPO"
+
+  echo ""
+  echo "Fetching manifest digest for share-waiter..."
+  SHARE_WAITER_DIGEST=$(docker buildx imagetools inspect "$SHARE_WAITER_IMAGE:$FULL_VERSION" 2>/dev/null | grep "^Digest:" | awk '{print $2}')
+  if [[ -z "$SHARE_WAITER_DIGEST" ]]; then
+    echo "Error: Failed to obtain image digest for share-waiter" >&2
+    exit 1
+  fi
+  echo "Share-waiter image digest: $SHARE_WAITER_DIGEST"
+
+  # Update docker-compose.yml with new digest for share-waiter
+  echo ""
+  echo "Updating docker-compose.yml with new digest for share-waiter..."
+  update_compose_digest "$SHARE_WAITER_IMAGE" "$SHARE_WAITER_DIGEST"
 
   echo ""
   echo "✓ Build complete"

@@ -65,31 +65,7 @@ chown 1000:1000 "${CONFIG_FILE}"
 chmod 644 "${CONFIG_FILE}"
 log "✓ Network shares configuration file is ready"
 
-# Ensure share-waiter script is available inside APP_DATA_DIR for container bind mount
-SHARE_WAITER_SRC="$(cd "$(dirname "$0")/.." && pwd)/scripts/wait-for-shares.js"
-SHARE_WAITER_DST="${APP_DATA_DIR}/scripts/wait-for-shares.js"
-log "Ensuring share-waiter script is available at ${SHARE_WAITER_DST}"
-mkdir -p "$(dirname "${SHARE_WAITER_DST}")"
-if [[ -f "${SHARE_WAITER_SRC}" ]]; then
-    # Always overwrite with the latest from the bundle
-    if ! cp -f "${SHARE_WAITER_SRC}" "${SHARE_WAITER_DST}"; then
-        log_error "Failed to copy share-waiter script from bundle"
-        exit 1
-    else
-        log "✓ Copied share-waiter script from bundle (overwrite)"
-    fi
-else
-    log_error "Share-waiter script not found at ${SHARE_WAITER_SRC}. This is a fatal error."
-    exit 1
-fi
-
-# Fix permissions and show the directory contents for debugging
-if chown 1000:1000 "${SHARE_WAITER_DST}" && chmod 644 "${SHARE_WAITER_DST}"; then
-    log "✓ Share-waiter script ready with correct permissions"
-else
-    log_error "Failed to set permissions on share-waiter script"
-fi
-ls -l "$(dirname "${SHARE_WAITER_DST}")" || true
+# Share-waiter script is now included in its own container image; no copy needed.
 
 # Ensure media directories exist in /home (config/metadata in APP_DATA_DIR is auto-created by Umbrel)
 log "Ensuring media directories exist in /home/Audiobookshelf..."
