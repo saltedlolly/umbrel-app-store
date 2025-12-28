@@ -529,8 +529,6 @@ if [[ "$UI_HAS_CHANGES" == true ]] || [[ "$ABS_VERSION_CHANGED" == true ]]; then
   echo "========================================="
   echo "Image: $SHARE_WAITER_IMAGE:$FULL_VERSION"
 
-  # Copy the latest wait-for-shares.js into the share-waiter build context
-  cp "$APP_ROOT/scripts/wait-for-shares.js" "$SHARE_WAITER_REPO/wait-for-shares.js"
 
   # Build and push multi-arch image for share-waiter
   docker buildx build \
