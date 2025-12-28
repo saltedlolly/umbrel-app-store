@@ -114,11 +114,13 @@ async function sleep(ms) {
 async function main() {
     log('Starting share-waiter service (continuous mode)');
 
-    while (true) {
+    let ready = false;
+    while (!ready) {
         const { total, outstanding } = await evaluateShares();
 
         if (total === 0) {
             log('No required network shares configured. Skipping wait.');
+            ready = true;
             break;
         }
 
@@ -142,6 +144,7 @@ async function main() {
             } catch (err) {
                 log('ERROR: Could not create /tmp/share-waiter-ready:', err.message);
             }
+            ready = true;
             break;
         }
 
@@ -149,10 +152,14 @@ async function main() {
         log(`Waiting for ${outstanding.length}/${total} required share(s): ${list}`);
         await sleep(CHECK_INTERVAL_MS);
     }
+
+    // Keep the container alive after success
+    while (true) {
+        await sleep(60 * 60 * 1000); // sleep 1 hour, repeat
+    }
 }
 
 main()
-    .then(() => process.exit(0))
     .catch(error => {
         log('ERROR:', error.message || error);
         process.exit(1);
