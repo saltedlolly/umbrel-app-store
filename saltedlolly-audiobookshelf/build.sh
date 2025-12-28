@@ -86,17 +86,18 @@ ensure_buildx() {
 
 update_compose_digest() {
   local image_prefix="$1" digest="$2"
-  
+
   # Escape special characters in image_prefix for use in regex
   local escaped_prefix=$(echo "$image_prefix" | sed 's/[\/&]/\\&/g')
-  
-  # Pattern matches either existing digest or placeholder
-  local pattern="^([[:space:]]*image:[[:space:]]*${escaped_prefix}@sha256:)[a-f0-9A-Z_]+"
-  
+
+  # Pattern matches any image line for this image (with or without tag/digest)
+  local pattern="^([[:space:]]*image:[[:space:]]*)${escaped_prefix}(:[a-zA-Z0-9._-]+)?(@sha256:[a-f0-9]+)?"
+  local replacement="\\1${image_prefix}@${digest}"
+
   if $is_macos; then
-    sed -E -i '' "s|$pattern|\\1${digest#sha256:}|" "$COMPOSE_FILE"
+    sed -E -i '' "s|$pattern|$replacement|" "$COMPOSE_FILE"
   else
-    sed -E -i "s|$pattern|\\1${digest#sha256:}|" "$COMPOSE_FILE"
+    sed -E -i "s|$pattern|$replacement|" "$COMPOSE_FILE"
   fi
 }
 
