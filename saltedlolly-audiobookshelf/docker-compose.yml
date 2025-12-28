@@ -11,7 +11,7 @@ services:
   # Lightweight UI service for managing network share selection
   # Accessible via app_proxy on port 23378 (dashboard icon)
   network-shares-ui:
-    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:cbce0183814b26804281ccf9df3d5d8e84989952ad87d98205c7adb3fd67c300
+    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:508ad5bcf01b0eac2e516e8e1c9b891b8a10e950f8cc11935de8ad3468476a2c
     container_name: saltedlolly-audiobookshelf_network-shares-ui_1
     hostname: saltedlolly-audiobookshelf_network-shares-ui_1
     init: true
@@ -34,7 +34,7 @@ services:
 
   # Waits for required network shares before allowing Audiobookshelf to start
   share-waiter:
-    image: saltedlolly/audiobookshelf-share-waiter@sha256:2a23a41c49c9514846274603be8326703ac1a6b7fe5071f258ecec4681a2bfa6
+    image: saltedlolly/audiobookshelf-share-waiter@sha256:cbaa1e1119f3e264aa844ab7f7a2441f55d5306634d203df07164e3c2282cf37
     container_name: saltedlolly-audiobookshelf_share-waiter_1
     hostname: saltedlolly-audiobookshelf_share-waiter_1
     init: true
@@ -52,9 +52,9 @@ services:
       interval: 5s
       timeout: 3s
       retries: 60
-      depends_on:
-        network-shares-ui:
-          condition: service_started
+    depends_on:
+      network-shares-ui:
+        condition: service_healthy
 
   web:
     image: ghcr.io/advplyr/audiobookshelf:2.32.1@sha256:a52dc5db694a5bf041ce38f285dd6c6a660a4b1b21e37ad6b6746433263b2ae5
