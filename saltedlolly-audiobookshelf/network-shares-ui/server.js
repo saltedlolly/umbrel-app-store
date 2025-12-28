@@ -12,6 +12,8 @@ const DATA_DIR = process.env.APP_DATA_DIR || '/data';
 const CONFIG_FILE = '/data/network-shares.json';
 const NETWORK_MOUNT_ROOT = '/umbrel-network';
 const AUDIOBOOKSHELF_CONTAINER = 'saltedlolly-audiobookshelf_web_1';
+const SHARE_WAITER_CONTAINER = 'saltedlolly-audiobookshelf_share-waiter_1';
+const SHARE_WAITER_READY_FILE = '/tmp/share-waiter-ready';
 
 // Middleware
 app.use(express.json());
@@ -227,6 +229,15 @@ async function getAudiobookshelfStatus() {
     });
 }
 
+const checkShareWaiterReady = async () => {
+    try {
+        const { stdout } = await execAsync(`docker exec ${SHARE_WAITER_CONTAINER} test -f ${SHARE_WAITER_READY_FILE} && echo READY || echo NOT_READY`);
+        return stdout.trim() === 'READY';
+    } catch {
+        return false;
+    }
+};
+
 // API Routes
 
 // Health check endpoint
@@ -248,10 +259,11 @@ app.get('/api/config', async (req, res) => {
 // Get combined status (app + shares)
 app.get('/api/status', async (req, res) => {
     try {
-        const [appStatus, config, shares] = await Promise.all([
+        const [appStatus, config, shares, shareWaiterReady] = await Promise.all([
             getAudiobookshelfStatus(),
             readConfig(),
             discoverShares(),
+            checkShareWaiterReady(),
         ]);
 
         // Determine if any required shares are blocking
@@ -261,7 +273,8 @@ app.get('/api/status', async (req, res) => {
         let overallStatus = appStatus.status;
         let message = appStatus.message;
 
-        if (!appStatus.running && blockingShares.length > 0) {
+        // Only allow 'starting' (orange) if share-waiter has allowed ABS to start
+        if (!shareWaiterReady) {
             overallStatus = 'waiting';
             message = `Waiting for ${blockingShares.length} required share(s) to become available`;
         } else if (!appStatus.running && blockingShares.length === 0) {
