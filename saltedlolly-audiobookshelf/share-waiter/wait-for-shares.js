@@ -114,49 +114,52 @@ async function sleep(ms) {
 async function main() {
     log('Starting share-waiter service (continuous mode)');
 
-    let ready = false;
-    while (!ready) {
-        const { total, outstanding } = await evaluateShares();
+    const { total, outstanding } = await evaluateShares();
 
-        if (total === 0) {
-            log('No required network shares configured. Skipping wait.');
-            ready = true;
-            break;
+    if (total === 0) {
+        log('No required network shares configured. Skipping wait.');
+        // Still create healthcheck file and keep alive
+        try {
+            await fsp.writeFile('/tmp/share-waiter-ready', 'ready\n');
+            log('Created /tmp/share-waiter-ready for healthcheck.');
+        } catch (err) {
+            log('ERROR: Could not create /tmp/share-waiter-ready:', err.message);
         }
+        while (true) {
+            await sleep(60 * 60 * 1000);
+        }
+    }
 
-        if (outstanding.length === 0) {
-            log('All required network shares are ready. Listing contents for verification:');
-            // List all required shares and their contents for logging
-            const config = await readConfig();
-            for (const share of config.enabledShares || []) {
-                const mountPath = path.join(NETWORK_ROOT, share);
-                try {
-                    const entries = await fsp.readdir(mountPath);
-                    log(`Share ${share} (${mountPath}): ${entries.length} items: [${entries.join(', ')}]`);
-                } catch (err) {
-                    log(`WARN: Could not list contents of ${mountPath}: ${err.message}`);
-                }
-            }
-            // Create healthcheck file so container is marked healthy
+    if (outstanding.length === 0) {
+        log('All required network shares are ready. Listing contents for verification:');
+        // List all required shares and their contents for logging
+        const config = await readConfig();
+        for (const share of config.enabledShares || []) {
+            const mountPath = path.join(NETWORK_ROOT, share);
             try {
-                await fsp.writeFile('/tmp/share-waiter-ready', 'ready\n');
-                log('Created /tmp/share-waiter-ready for healthcheck.');
+                const entries = await fsp.readdir(mountPath);
+                log(`Share ${share} (${mountPath}): ${entries.length} items: [${entries.join(', ')}]`);
             } catch (err) {
-                log('ERROR: Could not create /tmp/share-waiter-ready:', err.message);
+                log(`WARN: Could not list contents of ${mountPath}: ${err.message}`);
             }
-            ready = true;
-            break;
         }
-
-        const list = outstanding.map(s => `${s.name} (${s.path})`).join(', ');
-        log(`Waiting for ${outstanding.length}/${total} required share(s): ${list}`);
-        await sleep(CHECK_INTERVAL_MS);
+        // Create healthcheck file so container is marked healthy
+        try {
+            await fsp.writeFile('/tmp/share-waiter-ready', 'ready\n');
+            log('Created /tmp/share-waiter-ready for healthcheck.');
+        } catch (err) {
+            log('ERROR: Could not create /tmp/share-waiter-ready:', err.message);
+        }
+        // Keep the container alive after success
+        while (true) {
+            await sleep(60 * 60 * 1000); // sleep 1 hour, repeat
+        }
     }
 
-    // Keep the container alive after success
-    while (true) {
-        await sleep(60 * 60 * 1000); // sleep 1 hour, repeat
-    }
+    // If any required share is missing, log and exit (container will restart)
+    const list = outstanding.map(s => `${s.name} (${s.path})`).join(', ');
+    log(`Waiting for ${outstanding.length}/${total} required share(s): ${list}`);
+    process.exit(1);
 }
 
 main()
