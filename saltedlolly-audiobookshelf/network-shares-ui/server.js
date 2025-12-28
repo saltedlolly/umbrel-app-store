@@ -13,7 +13,7 @@ const CONFIG_FILE = '/data/network-shares.json';
 const NETWORK_MOUNT_ROOT = '/umbrel-network';
 const AUDIOBOOKSHELF_CONTAINER = 'saltedlolly-audiobookshelf_web_1';
 const SHARE_WAITER_CONTAINER = 'saltedlolly-audiobookshelf_share-waiter_1';
-const SHARE_WAITER_READY_FILE = '/tmp/share-waiter-ready';
+const SHARE_WAITER_HEALTH_URL = 'http://share-waiter:8080/health';
 
 // Middleware
 app.use(express.json());
@@ -229,13 +229,21 @@ async function getAudiobookshelfStatus() {
     });
 }
 
-const checkShareWaiterReady = async () => {
-    try {
-        const { stdout } = await execAsync(`docker exec ${SHARE_WAITER_CONTAINER} test -f ${SHARE_WAITER_READY_FILE} && echo READY || echo NOT_READY`);
-        return stdout.trim() === 'READY';
-    } catch {
-        return false;
-    }
+async function checkShareWaiterReady() {
+    return new Promise((resolve) => {
+        http.get(SHARE_WAITER_HEALTH_URL, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                try {
+                    const json = JSON.parse(data);
+                    resolve(!!json.ready);
+                } catch {
+                    resolve(false);
+                }
+            });
+        }).on('error', () => resolve(false));
+    });
 };
 
 // API Routes

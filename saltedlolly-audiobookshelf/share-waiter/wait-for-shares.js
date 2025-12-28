@@ -8,6 +8,7 @@
 const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
+const http = require('http');
 
 const CONFIG_FILE = process.env.CONFIG_FILE || '/data/network-shares.json';
 const NETWORK_ROOT = process.env.NETWORK_MOUNT_ROOT || '/media/network';
@@ -111,20 +112,32 @@ async function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+let lastReady = false;
+
+// Start HTTP health endpoint
+const server = http.createServer((req, res) => {
+    if (req.url === '/health') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ready: lastReady }));
+    } else {
+        res.writeHead(404);
+        res.end();
+    }
+});
+server.listen(8080, () => {
+    log('Health endpoint listening on :8080');
+});
+
 async function main() {
     log('Starting share-waiter service (continuous mode)');
 
     const { total, outstanding } = await evaluateShares();
 
+    lastReady = (total === 0 || outstanding.length === 0);
+
     if (total === 0) {
         log('No required network shares configured. Skipping wait.');
-        // Still create healthcheck file and keep alive
-        try {
-            await fsp.writeFile('/tmp/share-waiter-ready', 'ready\n');
-            log('Created /tmp/share-waiter-ready for healthcheck.');
-        } catch (err) {
-            log('ERROR: Could not create /tmp/share-waiter-ready:', err.message);
-        }
+        // Keep alive
         while (true) {
             await sleep(60 * 60 * 1000);
         }
@@ -142,13 +155,6 @@ async function main() {
             } catch (err) {
                 log(`WARN: Could not list contents of ${mountPath}: ${err.message}`);
             }
-        }
-        // Create healthcheck file so container is marked healthy
-        try {
-            await fsp.writeFile('/tmp/share-waiter-ready', 'ready\n');
-            log('Created /tmp/share-waiter-ready for healthcheck.');
-        } catch (err) {
-            log('ERROR: Could not create /tmp/share-waiter-ready:', err.message);
         }
         // Keep the container alive after success
         while (true) {

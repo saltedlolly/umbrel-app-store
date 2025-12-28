@@ -11,7 +11,7 @@ services:
   # Lightweight UI service for managing network share selection
   # Accessible via app_proxy on port 23378 (dashboard icon)
   network-shares-ui:
-    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:63a6c5608ece8a9e17f55598f80371c32fd464edc9b5c32099551de573e004c9
+    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:cbce0183814b26804281ccf9df3d5d8e84989952ad87d98205c7adb3fd67c300
     container_name: saltedlolly-audiobookshelf_network-shares-ui_1
     hostname: saltedlolly-audiobookshelf_network-shares-ui_1
     init: true
@@ -34,7 +34,7 @@ services:
 
   # Waits for required network shares before allowing Audiobookshelf to start
   share-waiter:
-    image: saltedlolly/audiobookshelf-share-waiter@sha256:7d451145f21aa80eb6fc06bc5b81bf1ab05549288648d77065109d98709a4a27
+    image: saltedlolly/audiobookshelf-share-waiter@sha256:2a23a41c49c9514846274603be8326703ac1a6b7fe5071f258ecec4681a2bfa6
     container_name: saltedlolly-audiobookshelf_share-waiter_1
     hostname: saltedlolly-audiobookshelf_share-waiter_1
     init: true
@@ -48,10 +48,13 @@ services:
       - ${APP_DATA_DIR}:/data
       - ${UMBREL_ROOT}/network:/media/network:ro
     healthcheck:
-      test: ["CMD", "test", "-f", "/tmp/share-waiter-ready"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health" ]
       interval: 5s
       timeout: 3s
       retries: 60
+      depends_on:
+        network-shares-ui:
+          condition: service_started
 
   web:
     image: ghcr.io/advplyr/audiobookshelf:2.32.1@sha256:a52dc5db694a5bf041ce38f285dd6c6a660a4b1b21e37ad6b6746433263b2ae5
