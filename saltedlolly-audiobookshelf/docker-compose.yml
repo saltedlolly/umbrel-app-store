@@ -11,7 +11,7 @@ services:
   # Lightweight UI service for managing and monitoring required network shares selection
   # Accessible via app_proxy on port 23378 (or via Umbreldashboard icon)
   network-shares-ui:
-    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:4f93ab02173f8ff6ce3c28bee649e83b6213ddab468d513c9a3c569f371dbe33
+    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:5a182046d1768ded7cc20ac3ba9e6b488643a284f9f9b08ae311dd2e5a0c8fdf
     container_name: saltedlolly-audiobookshelf_network-shares-ui_1
     hostname: saltedlolly-audiobookshelf_network-shares-ui_1
     init: true
@@ -27,14 +27,15 @@ services:
       # Mount docker socket to check Audiobookshelf container status
       - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/health"]
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 10s
 
   # Background service which verifies that all required network shares are accessible before allowing Audiobookshelf to start
   share-waiter:
-    image: saltedlolly/audiobookshelf-share-waiter@sha256:973c8ea40c0deb9d18e526c8f1eb4d175d981ad60f5b5206f231af54110ebc0b
+    image: saltedlolly/audiobookshelf-share-waiter@sha256:f77e88b02cf586a74645c7256febdae50bf34837b338903ee4a5648e9de45e8c
     container_name: saltedlolly-audiobookshelf_share-waiter_1
     hostname: saltedlolly-audiobookshelf_share-waiter_1
     init: true
