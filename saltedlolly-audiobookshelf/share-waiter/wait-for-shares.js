@@ -19,71 +19,75 @@ const log = (...args) => {
     console.log(`[SHARE-WAITER] [${timestamp}]`, ...args);
 };
 
-async function main() {
-    log('Starting share-waiter service (continuous mode)');
-    startHealthServer();
-
-    while (true) {
-        const requiredShares = getRequiredShares();
-        let allReady = true;
-        for (const share of requiredShares) {
-            const ready = await checkShareReady(share);
-            if (!ready) {
-                allReady = false;
-            }
-        }
-        if (allReady) {
-            log('All required network shares are ready. Listing contents for verification:');
-            for (const share of requiredShares) {
-                await listShareContents(share);
-            }
-            // Instead of break, just keep looping and monitoring
-        } else {
-            log(`Waiting for ${requiredShares.length}/1 required share(s): ${requiredShares.map(s => s.displayName + ' (' + s.path + ')').join(', ')}`);
-        }
-        await sleep(5000);
+async function readConfig() {
+    try {
+        const raw = await fsp.readFile(CONFIG_FILE, 'utf8');
+        return JSON.parse(raw);
+    } catch (error) {
+        log('Failed to read config file, assuming no required shares:', error.message);
+        return { enabledShares: [] };
     }
 }
 
-while (queue.length > 0 && foldersChecked < MAX_FOLDERS && !foundReadableFile) {
-    const { path: currentPath, depth } = queue.shift();
-    foldersChecked++;
-    let entries;
+async function isMountAccessible(mountPath) {
+    // Robust, efficient breadth-first search for a readable file
+    const MAX_FOLDERS = 20;
+    const MAX_DEPTH = 3;
+    let foldersChecked = 0;
+    let foundReadableFile = false;
+    const queue = [{ path: mountPath, depth: 0 }];
+    log(`Checking share: ${mountPath}`);
     try {
-        entries = await fsp.readdir(currentPath);
+        const stat = await fsp.stat(mountPath);
+        if (!stat.isDirectory()) {
+            log(`WARN: ${mountPath} exists but is not a directory.`);
+            return false;
+        }
+        await fsp.access(mountPath, fs.constants.R_OK);
     } catch (err) {
-        log(`WARN: Could not read directory ${currentPath}: ${err.message}`);
-        continue;
+        log(`WARN: Error accessing root of share ${mountPath}: ${err.message}`);
+        return false;
     }
-    log(`[Depth ${depth}] ${currentPath}: ${entries.length} entries (${entries.slice(0, 10).join(', ')}${entries.length > 10 ? ', ...' : ''})`);
-    for (const entry of entries) {
-        const entryPath = path.join(currentPath, entry);
-        let entryStat;
+
+    while (queue.length > 0 && foldersChecked < MAX_FOLDERS && !foundReadableFile) {
+        const { path: currentPath, depth } = queue.shift();
+        foldersChecked++;
+        let entries;
         try {
-            entryStat = await fsp.stat(entryPath);
+            entries = await fsp.readdir(currentPath);
         } catch (err) {
-            log(`WARN: Could not stat ${entryPath}: ${err.message}`);
+            log(`WARN: Could not read directory ${currentPath}: ${err.message}`);
             continue;
         }
-        if (entryStat.isFile()) {
+        log(`[Depth ${depth}] ${currentPath}: ${entries.length} entries (${entries.slice(0, 10).join(', ')}${entries.length > 10 ? ', ...' : ''})`);
+        for (const entry of entries) {
+            const entryPath = path.join(currentPath, entry);
+            let entryStat;
             try {
-                await fsp.access(entryPath, fs.constants.R_OK);
-                log(`SUCCESS: Readable file found: ${entryPath}`);
-                foundReadableFile = true;
-                break;
+                entryStat = await fsp.stat(entryPath);
             } catch (err) {
-                log(`WARN: Could not read file ${entryPath}: ${err.message}`);
+                log(`WARN: Could not stat ${entryPath}: ${err.message}`);
+                continue;
             }
-        } else if (entryStat.isDirectory() && depth + 1 < MAX_DEPTH) {
-            queue.push({ path: entryPath, depth: depth + 1 });
+            if (entryStat.isFile()) {
+                try {
+                    await fsp.access(entryPath, fs.constants.R_OK);
+                    log(`SUCCESS: Readable file found: ${entryPath}`);
+                    foundReadableFile = true;
+                    break;
+                } catch (err) {
+                    log(`WARN: Could not read file ${entryPath}: ${err.message}`);
+                }
+            } else if (entryStat.isDirectory() && depth + 1 < MAX_DEPTH) {
+                queue.push({ path: entryPath, depth: depth + 1 });
+            }
         }
     }
-}
-if (!foundReadableFile) {
-    log(`WARN: No readable file found in ${mountPath} after checking up to ${foldersChecked} folders and depth ${MAX_DEPTH}.`);
-    return false;
-}
-return true;
+    if (!foundReadableFile) {
+        log(`WARN: No readable file found in ${mountPath} after checking up to ${foldersChecked} folders and depth ${MAX_DEPTH}.`);
+        return false;
+    }
+    return true;
 }
 
 async function evaluateShares() {
@@ -128,7 +132,46 @@ server.listen(8080, () => {
     log('Health endpoint listening on :8080');
 });
 
-// ...existing code...
+async function main() {
+    log('Starting share-waiter service (continuous mode)');
+
+    const { total, outstanding } = await evaluateShares();
+
+    lastReady = (total === 0 || outstanding.length === 0);
+
+    if (total === 0) {
+        log('No required network shares configured. Skipping wait.');
+        // Keep alive
+        while (true) {
+            await sleep(60 * 60 * 1000);
+        }
+    }
+
+    if (outstanding.length === 0) {
+        log('All required network shares are ready. Listing contents for verification:');
+        // List all required shares and their contents for logging
+        const config = await readConfig();
+        for (const share of config.enabledShares || []) {
+            const mountPath = path.join(NETWORK_ROOT, share);
+            try {
+                const entries = await fsp.readdir(mountPath);
+                log(`Share ${share} (${mountPath}): ${entries.length} items: [${entries.join(', ')}]`);
+            } catch (err) {
+                log(`WARN: Could not list contents of ${mountPath}: ${err.message}`);
+            }
+        }
+        // Keep the container alive after success
+        while (true) {
+            await sleep(60 * 60 * 1000); // sleep 1 hour, repeat
+        }
+    }
+
+    // If any required share is missing, log and exit (container will restart)
+    const list = outstanding.map(s => `${s.name} (${s.path})`).join(', ');
+    log(`Waiting for ${outstanding.length}/${total} required share(s): ${list}`);
+    process.exit(1);
+}
+
 main()
     .catch(error => {
         log('ERROR:', error.message || error);
