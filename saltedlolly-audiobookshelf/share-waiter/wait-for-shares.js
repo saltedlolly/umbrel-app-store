@@ -44,10 +44,6 @@ async function main() {
         await sleep(5000);
     }
 }
-    } catch (err) {
-    log(`WARN: Error accessing root of share ${mountPath}: ${err.message}`);
-    return false;
-}
 
 while (queue.length > 0 && foldersChecked < MAX_FOLDERS && !foundReadableFile) {
     const { path: currentPath, depth } = queue.shift();
