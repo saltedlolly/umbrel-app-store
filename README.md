@@ -16,29 +16,28 @@ Details about the Apps are below. More may be added in future. Give the repo a �
 
 ## ❤️ Support App Development
 
-If you find these Apps useful, please support my work by [becoming a sponsor](https://github.com/sponsors/saltedlolly?o=esb). 
+If you find these Apps useful, please support my work by [becoming a sponsor](https://github.com/sponsors/saltedlolly). 
 
-Your support helps me to maintain and improve existing Apps, and develop new ones.
+Your support helps me maintain and improve existing Apps, and develop new ones.
 
 One-time donations and monthly sponsors are both hugely appreciated — thank you for helping keep open-source sustainable. 🙏
-
-Learn more [here](https://github.com/sponsors/saltedlolly?o=esb).
 
 
 ## 🧩 Umbrel Apps
 
-### Audiobookshelf: NAS Edition  `v2.32.1.81`
+### Audiobookshelf: NAS Edition  `v2.32.1.82`
 <img src="https://raw.githubusercontent.com/getumbrel/umbrel-apps-gallery/master/audiobookshelf/icon.svg" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 🚨 WARNING: 🚧 This app is currently a work-in-progress and may not be functional. Data loss is possible. Use for testing only until further notice.
 
- Enhanced [Audiobookshelf](https://www.audiobookshelf.org/) App with several advanced features not found in the official Audiobookshelf App found in the Umbrel App Store:
+ This [Audiobookshelf](https://www.audiobookshelf.org/) app includes several advanced features not available in the Umbrel App Store version:
 
-- Adds robust support for accessing your media on a network share (NAS/SMB/NFS) - very useful if your audiobooks are stored on another device on your network.
-- Use the ABS Network Share Config Tool to select the network shares containing your media, and it will aways wait until they are accessible before starting Audibookshelf.
+- Adds robust support for accessing your media on a network share (NAS/SMB/NFS) - essential if your audiobooks are stored on another device on your network.
+- Use the 'ABS Network Share Config Tool' to select the network share(s) containing your media, and it will aways wait until they are available before starting Audiobookshelf.
 - Your Audiobookshelf user accounts, libraries, associated metadata, and local media files are all backed up when using Umbrel's Backup tool.
+- The separate ABS Library Migration Tool (see below) can help you migrate your existing Audiobookshelf library from the official app.
 
-⚠️ CAUTION: If you are moving from the Audiobookshelf app available in the official Umbrel App Store to the NAS Edition, your user accounts, libraries and associated metadata are NOT migrated automatically. Be advised that uninstalling either app will delete your existing library from your Umbrel. The ABS Library Migration Tool (see below) can help you migrate your existing library to the NAS edition.
+⚠️ IMPORTANT: If you are moving from the Audiobookshelf app available in the official Umbrel App Store to the NAS Edition, your user accounts, libraries and associated metadata are NOT migrated automatically. Be advised that uninstalling either app will delete your existing library from your Umbrel. The ABS Library Migration Tool (see below) can help you migrate your existing library to the NAS edition.
 
 | Name                          | Port         | Local Address                                            | Umbrel SSO    |
 |-------------------------------| ------------ | -------------------------------------------------------- | ------------- |
