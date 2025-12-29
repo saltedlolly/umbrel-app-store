@@ -762,6 +762,46 @@
                 text-align: center;
             }
         }
+
+        /* Reconnect Overlay Styles */
+        .reconnect-overlay {
+            position: fixed;
+            z-index: 9999;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.96);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            transition: opacity 0.3s;
+        }
+
+        .reconnect-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .reconnect-spinner {
+            border: 5px solid #e0e7ff;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            width: 54px;
+            height: 54px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+
+        .reconnect-message {
+            font-size: 18px;
+            color: #444;
+            text-align: center;
+            font-weight: 500;
+        }
     </style>
 </head>
 
@@ -825,7 +865,9 @@
             <div id="reconnect-overlay" class="reconnect-overlay" style="display:none;">
                 <div class="reconnect-content">
                     <div class="reconnect-spinner"></div>
-                    <div class="reconnect-message">Attempting to reconnect...<br><span style="font-size:13px;color:#888;">The backend is unavailable. This page will reload automatically when it comes back online.</span></div>
+                    <div class="reconnect-message">Attempting to reconnect...<br><span
+                            style="font-size:13px;color:#888;">The backend is unavailable. This page will reload
+                            automatically when it comes back online.</span></div>
                 </div>
             </div>
 
