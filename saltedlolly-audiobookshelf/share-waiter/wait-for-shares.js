@@ -19,31 +19,31 @@ const log = (...args) => {
     console.log(`[SHARE-WAITER] [${timestamp}]`, ...args);
 };
 
-async function readConfig() {
-    try {
-        const raw = await fsp.readFile(CONFIG_FILE, 'utf8');
-        return JSON.parse(raw);
-    } catch (error) {
-        log('Failed to read config file, assuming no required shares:', error.message);
-        return { enabledShares: [] };
+async function main() {
+    log('Starting share-waiter service (continuous mode)');
+    startHealthServer();
+
+    while (true) {
+        const requiredShares = getRequiredShares();
+        let allReady = true;
+        for (const share of requiredShares) {
+            const ready = await checkShareReady(share);
+            if (!ready) {
+                allReady = false;
+            }
+        }
+        if (allReady) {
+            log('All required network shares are ready. Listing contents for verification:');
+            for (const share of requiredShares) {
+                await listShareContents(share);
+            }
+            // Instead of break, just keep looping and monitoring
+        } else {
+            log(`Waiting for ${requiredShares.length}/1 required share(s): ${requiredShares.map(s => s.displayName + ' (' + s.path + ')').join(', ')}`);
+        }
+        await sleep(5000);
     }
 }
-
-async function isMountAccessible(mountPath) {
-    // Robust, efficient breadth-first search for a readable file
-    const MAX_FOLDERS = 20;
-    const MAX_DEPTH = 3;
-    let foldersChecked = 0;
-    let foundReadableFile = false;
-    const queue = [{ path: mountPath, depth: 0 }];
-    log(`Checking share: ${mountPath}`);
-    try {
-        const stat = await fsp.stat(mountPath);
-        if (!stat.isDirectory()) {
-            log(`WARN: ${mountPath} exists but is not a directory.`);
-            return false;
-        }
-        await fsp.access(mountPath, fs.constants.R_OK);
     } catch (err) {
         log(`WARN: Error accessing root of share ${mountPath}: ${err.message}`);
         return false;
