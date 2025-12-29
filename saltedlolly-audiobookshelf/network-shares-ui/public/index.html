@@ -768,6 +768,13 @@
 <body>
     <div class="container">
         <div class="card">
+            <!-- Reconnect Overlay -->
+            <div id="reconnect-overlay" class="reconnect-overlay" style="display:none;">
+                <div class="reconnect-content">
+                    <div class="reconnect-spinner"></div>
+                    <div class="reconnect-message">Attempting to reconnect...<br><span style="font-size:13px;color:#888;">The backend is unavailable. This page will reload automatically when it comes back online.</span></div>
+                </div>
+            </div>
             <div class="app-header">
                 <div class="header-info">
                     <img src="abs-icon-purple.svg" alt="Audiobookshelf" style="width: 48px; height: 48px;">
@@ -1304,24 +1311,56 @@
         }
 
         // Poll status endpoint
+        // --- Reconnect Overlay Logic ---
+        let reconnectActive = false;
+        let reconnectInterval = null;
+        function showReconnectOverlay() {
+            if (reconnectActive) return;
+            reconnectActive = true;
+            document.getElementById('reconnect-overlay').style.display = 'flex';
+        }
+        function hideReconnectOverlay() {
+            reconnectActive = false;
+            document.getElementById('reconnect-overlay').style.display = 'none';
+        }
         async function pollStatus() {
             try {
                 const response = await fetch('/api/status');
-                if (!response.ok) return;
-
+                if (!response.ok) throw new Error('Status not ok');
                 const status = await response.json();
                 appStatus = status;
-
-                // Update app status indicator
                 updateAppStatusDisplay(status);
-
-                // Update shares with latest status
                 if (status.shares && status.shares.length > 0) {
                     shares = status.shares;
                     renderShares();
                 }
+                // If reconnect overlay is showing, hide it and reload (in case of backend restart)
+                if (reconnectActive) {
+                    hideReconnectOverlay();
+                    window.location.reload();
+                }
             } catch (error) {
+                // Backend is unavailable, show overlay and start reconnect polling
                 console.warn('Error polling status:', error);
+                showReconnectOverlay();
+                if (!reconnectInterval) {
+                    reconnectInterval = setInterval(tryReconnect, 2000);
+                }
+            }
+        }
+
+        async function tryReconnect() {
+            try {
+                // Use /health for a lightweight check
+                const resp = await fetch('/health', { cache: 'no-store' });
+                if (resp.ok) {
+                    clearInterval(reconnectInterval);
+                    reconnectInterval = null;
+                    hideReconnectOverlay();
+                    window.location.reload();
+                }
+            } catch (e) {
+                // Still unavailable, keep overlay
             }
         }
 
