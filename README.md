@@ -1,6 +1,8 @@
 ## 🌂 Olly's Umbrel App Store
 
-Welcome to my Umbrel Community App Store containing apps I have created for [Umbrel](https://umbrel.com/). 
+Welcome to my Umbrel Community App Store, containing all the apps I have developed for [Umbrel](https://umbrel.com/).
+
+Details about the Apps are below. More may be added in future. Give the repo a ⭐ to be kept informed.
 
 ## 🧱 How to access the App Store on your Umbrel
 
@@ -9,23 +11,29 @@ Welcome to my Umbrel Community App Store containing apps I have created for [Umb
 3. Paste this URL `https://github.com/saltedlolly/umbrel-app-store` and click 'Add'.
 4. Click 'Open' next to "Olly's Umbrel Community App Store".
 
-**Disclaimer:** This is an unofficial App Store that is in no way affiliated with Umbrel. I cannot be held liable for any data loss that migh
+**Disclaimer:** This is a community project, not an official Umbrel service. Stuff might break. Please back up your data and don’t rely on any app without testing first. By using this app store, you accept that you’re responsible for your own system.
 
 
-## 🖤 Support App Development
+## ❤️ Support App Development
 
-Give the repo a ⭐ or share it fellow with Umbrel users.
+If you find these Apps useful, please support my work by [becoming a sponsor](https://github.com/sponsors/saltedlolly?o=esb). 
 
-If you find these apps useful, please support my work by [becoming a sponsor](https://github.com/sponsors/saltedlolly?o=esb). Your monthly donation helps me to keep improving theese Apps, and developing new ones.
+Your support helps me to maintain and improve existing Apps, and develop new ones.
+
+One-time donations and monthly sponsors are both hugely appreciated — thank you for helping keep open-source sustainable. 🙏
+
+Learn more [here](https://github.com/sponsors/saltedlolly?o=esb).
 
 
 ## 🧩 Umbrel Apps
 
-### Audiobookshelf: NAS Edition  `v2.32.1.80`
+### Audiobookshelf: NAS Edition  `v2.32.1.81`
+<img src="https://raw.githubusercontent.com/getumbrel/umbrel-apps-gallery/master/audiobookshelf/icon.svg" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 🚨 WARNING: 🚧 This app is currently a work-in-progress and may not be functional. Data loss is possible. Use for testing only until further notice.
 
-- Enhanced [Audiobookshelf](https://www.audiobookshelf.org/) App with several advanced features not found in the official Audiobookshelf App found in the Umbrel App Store.
+ Enhanced [Audiobookshelf](https://www.audiobookshelf.org/) App with several advanced features not found in the official Audiobookshelf App found in the Umbrel App Store:
+
 - Adds robust support for accessing your media on a network share (NAS/SMB/NFS) - very useful if your audiobooks are stored on another device on your network.
 - Use the ABS Network Share Config Tool to select the network shares containing your media, and it will aways wait until they are accessible before starting Audibookshelf.
 - Your Audiobookshelf user accounts, libraries, associated metadata, and local media files are all backed up when using Umbrel's Backup tool.
@@ -75,6 +83,7 @@ The folders below contain your user accounts, libraries and associated metadata.
 ---
 
 ### Cloudflare DDNS  `v0.1.2` 
+<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/logo.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 A dynamic DNS client for Cloudflare powered by [favonia/cloudflare-ddns](https://github.com/favonia/cloudflare-ddns) which helps you automatically keep your Cloudflare domain or subdomain updated with your current IP address. Includes a web UI for configuration and monitoring. Supports IPv4 and IPv6, multiple domains, and Cloudflare cloud proxying.
 
