@@ -90,6 +90,9 @@ async function isMountAccessible(mountPath) {
     return true;
 }
 
+// Tracks shares that have been confirmed accessible
+const knownAccessibleShares = new Map();
+
 async function evaluateShares() {
     const config = await readConfig();
     const shares = config.enabledShares || [];
@@ -101,8 +104,19 @@ async function evaluateShares() {
     for (const share of shares) {
         if (!share) continue;
         const mountPath = path.join(NETWORK_ROOT, share);
-        if (!(await isMountAccessible(mountPath))) {
-            outstanding.push({ name: share, path: mountPath });
+        // Only check if not already known accessible
+        if (!knownAccessibleShares.get(share)) {
+            if (await isMountAccessible(mountPath)) {
+                knownAccessibleShares.set(share, true);
+            } else {
+                outstanding.push({ name: share, path: mountPath });
+            }
+        }
+    }
+    // Remove from knownAccessibleShares if share is no longer in config
+    for (const knownShare of Array.from(knownAccessibleShares.keys())) {
+        if (!shares.includes(knownShare)) {
+            knownAccessibleShares.delete(knownShare);
         }
     }
     return { total: shares.length, outstanding };
@@ -117,9 +131,12 @@ let lastReady = false;
 // Start HTTP health endpoint
 const server = http.createServer((req, res) => {
     if (req.url === '/health') {
+        log(`[HEALTH] /health requested. lastReady=${lastReady}`);
         if (lastReady) {
+            log('[HEALTH] Returning 200 (all shares ready)');
             res.writeHead(200, { 'Content-Type': 'application/json' });
         } else {
+            log('[HEALTH] Returning 503 (not ready)');
             res.writeHead(503, { 'Content-Type': 'application/json' });
         }
         res.end(JSON.stringify({ ready: lastReady }));
@@ -134,42 +151,38 @@ server.listen(8080, () => {
 
 async function main() {
     log('Starting share-waiter service (continuous mode)');
+    while (true) {
+        const { total, outstanding } = await evaluateShares();
+        lastReady = (total === 0 || outstanding.length === 0);
 
-    const { total, outstanding } = await evaluateShares();
-
-    lastReady = (total === 0 || outstanding.length === 0);
-
-    if (total === 0) {
-        log('No required network shares configured. Skipping wait.');
-        // Keep alive
-        while (true) {
+        if (total === 0) {
+            log('No required network shares configured. Skipping wait.');
             await sleep(60 * 60 * 1000);
+            continue;
         }
-    }
 
-    if (outstanding.length === 0) {
-        log('All required network shares are ready. Listing contents for verification:');
-        // List all required shares and their contents for logging
-        const config = await readConfig();
-        for (const share of config.enabledShares || []) {
-            const mountPath = path.join(NETWORK_ROOT, share);
-            try {
-                const entries = await fsp.readdir(mountPath);
-                log(`Share ${share} (${mountPath}): ${entries.length} items: [${entries.join(', ')}]`);
-            } catch (err) {
-                log(`WARN: Could not list contents of ${mountPath}: ${err.message}`);
+        if (outstanding.length === 0) {
+            log('All required network shares are ready. Listing contents for verification:');
+            // List all required shares and their contents for logging
+            const config = await readConfig();
+            for (const share of config.enabledShares || []) {
+                const mountPath = path.join(NETWORK_ROOT, share);
+                try {
+                    const entries = await fsp.readdir(mountPath);
+                    log(`Share ${share} (${mountPath}): ${entries.length} items: [${entries.join(', ')}]`);
+                } catch (err) {
+                    log(`WARN: Could not list contents of ${mountPath}: ${err.message}`);
+                }
             }
-        }
-        // Keep the container alive after success
-        while (true) {
             await sleep(60 * 60 * 1000); // sleep 1 hour, repeat
+            continue;
         }
-    }
 
-    // If any required share is missing, log and exit (container will restart)
-    const list = outstanding.map(s => `${s.name} (${s.path})`).join(', ');
-    log(`Waiting for ${outstanding.length}/${total} required share(s): ${list}`);
-    process.exit(1);
+        // If any required share is missing, log and wait, then retry
+        const list = outstanding.map(s => `${s.name} (${s.path})`).join(', ');
+        log(`Waiting for ${outstanding.length}/${total} required share(s): ${list}`);
+        await sleep(CHECK_INTERVAL_MS);
+    }
 }
 
 main()
