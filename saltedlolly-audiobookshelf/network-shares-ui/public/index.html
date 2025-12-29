@@ -768,14 +768,8 @@
 <body>
     <div class="container">
         <div class="card">
-            <!-- Reconnect Overlay -->
-            <div id="reconnect-overlay" class="reconnect-overlay" style="display:none;">
-                <div class="reconnect-content">
-                    <div class="reconnect-spinner"></div>
-                    <div class="reconnect-message">Attempting to reconnect...<br><span style="font-size:13px;color:#888;">The backend is unavailable. This page will reload automatically when it comes back online.</span></div>
-                </div>
-            </div>
-            <div class="app-header">
+            <!-- ...existing code... -->
+            <div class="app-header" id="app-header">
                 <div class="header-info">
                     <img src="abs-icon-purple.svg" alt="Audiobookshelf" style="width: 48px; height: 48px;">
                     <div class="header-text">
@@ -827,6 +821,14 @@
             <div id="not-mounted-message" class="message error with-icon" style="display:none;"></div>
             <div id="message"></div>
 
+            <!-- Reconnect Overlay (now below How it works) -->
+            <div id="reconnect-overlay" class="reconnect-overlay" style="display:none;">
+                <div class="reconnect-content">
+                    <div class="reconnect-spinner"></div>
+                    <div class="reconnect-message">Attempting to reconnect...<br><span style="font-size:13px;color:#888;">The backend is unavailable. This page will reload automatically when it comes back online.</span></div>
+                </div>
+            </div>
+
             <div id="loading" class="loading">
                 <div class="spinner"></div>
                 <p>Discovering network shares...</p>
@@ -840,7 +842,7 @@
                 </div>
                 <div id="shares-container"></div>
 
-                <div class="actions">
+                <div class="actions" id="actions-bar">
                     <button class="btn btn-secondary" onclick="refreshShares()">🔄 Refresh Shares</button>
                     <span id="save-status" class="save-status"></span>
                 </div>
@@ -1317,11 +1319,22 @@
         function showReconnectOverlay() {
             if (reconnectActive) return;
             reconnectActive = true;
+            // Hide shares, actions, status pill, alerts
             document.getElementById('reconnect-overlay').style.display = 'flex';
+            document.getElementById('content').style.display = 'none';
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('app-header').style.opacity = '0.5';
+            document.getElementById('app-status-pill').className = 'app-status-pill status-stopped';
+            document.getElementById('app-status-light').className = 'status-light gray';
+            document.getElementById('restart-required-message').style.display = 'none';
+            document.getElementById('not-mounted-message').style.display = 'none';
+            document.getElementById('message').style.display = 'none';
         }
         function hideReconnectOverlay() {
             reconnectActive = false;
             document.getElementById('reconnect-overlay').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+            document.getElementById('app-header').style.opacity = '1';
         }
         async function pollStatus() {
             try {

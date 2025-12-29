@@ -117,7 +117,11 @@ let lastReady = false;
 // Start HTTP health endpoint
 const server = http.createServer((req, res) => {
     if (req.url === '/health') {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+        if (lastReady) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+        } else {
+            res.writeHead(503, { 'Content-Type': 'application/json' });
+        }
         res.end(JSON.stringify({ ready: lastReady }));
     } else {
         res.writeHead(404);
