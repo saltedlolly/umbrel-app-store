@@ -8,10 +8,10 @@ services:
       APP_PORT: 3001
       PROXY_AUTH_ADD: "true"
 
-  # Lightweight UI service for managing network share selection
-  # Accessible via app_proxy on port 23378 (dashboard icon)
+  # Lightweight UI service for managing and monitoring required network shares selection
+  # Accessible via app_proxy on port 23378 (or via Umbreldashboard icon)
   network-shares-ui:
-    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:3d831c16821616c481fa35a0864e066444d74b8d641871fa9911b2884b326ce3
+    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:f682f1547e2069eb6b0fca10fb4a2c2a6e215e4e10971e501c4292dcacdbfc07
     container_name: saltedlolly-audiobookshelf_network-shares-ui_1
     hostname: saltedlolly-audiobookshelf_network-shares-ui_1
     init: true
@@ -32,9 +32,9 @@ services:
       timeout: 10s
       retries: 3
 
-  # Waits for required network shares before allowing Audiobookshelf to start
+  # Background service which verifies that all required network shares are accessible before allowing Audiobookshelf to start
   share-waiter:
-    image: saltedlolly/audiobookshelf-share-waiter@sha256:16eab731d1c0db544a29b307a41a1ec12898449388c701efc8f32b620c249565
+    image: saltedlolly/audiobookshelf-share-waiter@sha256:c7402ee52e6bfc09e36baf1a237b02cdb94329b662df8308292c769e5f8539f1
     container_name: saltedlolly-audiobookshelf_share-waiter_1
     hostname: saltedlolly-audiobookshelf_share-waiter_1
     init: true
@@ -52,7 +52,12 @@ services:
       interval: 5s
       timeout: 3s
       retries: 60
+    depends_on:
+      network-shares-ui:
+        condition: service_healthy
 
+  # Audiobookshelf main service. Accessible via port 13378. 
+  # Will only start once all required network shares are available.
   web:
     image: ghcr.io/advplyr/audiobookshelf:2.32.1@sha256:a52dc5db694a5bf041ce38f285dd6c6a660a4b1b21e37ad6b6746433263b2ae5
     container_name: saltedlolly-audiobookshelf_web_1
@@ -82,6 +87,6 @@ services:
       - ${UMBREL_ROOT}/network:/media/network
     depends_on:
       network-shares-ui:
-        condition: service_started
+        condition: service_healthy
       share-waiter:
         condition: service_healthy
