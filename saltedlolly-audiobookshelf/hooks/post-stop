@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# Post-stop hook for Audiobookshelf
+# Gracefully stops the child containers, removes them, then removes their images.
+set -euo pipefail
+
+log() {
+  echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"
+}
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+CHECKER_CONTAINER="saltedlolly-audiobookshelf_abs-network-shares-checker_1"
+ABS_SERVER_CONTAINER="saltedlolly-audiobookshelf_abs-server_1"
+CHECKER_IMAGE_FILE="${APP_ROOT}/docker-containers/abs-manager/abs-network-shares-checker-image.txt"
+ABS_SERVER_IMAGE_FILE="${APP_ROOT}/docker-containers/abs-manager/abs-server-image.txt"
+
+stop_container() {
+  local name="$1"
+  if docker ps --filter "name=^${name}$" --format '{{.Names}}' | grep -q "^${name}$"; then
+    log "Stopping container: ${name}"
+    docker stop -t 30 "${name}" >/dev/null 2>&1 || true
+    log "Stopped container: ${name}"
+  else
+    log "Container not running (skip stop): ${name}"
+  fi
+}
+
+remove_container() {
+  local name="$1"
+  if docker ps -a --filter "name=^${name}$" --format '{{.Names}}' | grep -q "^${name}$"; then
+    log "Removing container: ${name}"
+    docker rm -f "${name}" >/dev/null 2>&1 || true
+    log "Removed container: ${name}"
+  else
+    log "Container not present (skip remove): ${name}"
+  fi
+}
+
+read_image_ref() {
+  local file="$1";
+  local prefix="$2";
+  if [[ ! -f "${file}" ]]; then
+    log "Image file missing, skip: ${file}"
+    return 1
+  fi
+  local ref
+  ref=$(grep -E "^${prefix}" "${file}" | head -n 1 || true)
+  if [[ -z "${ref}" ]]; then
+    log "No image reference found in ${file}"
+    return 1
+  fi
+  printf '%s\n' "${ref}"
+}
+
+remove_image() {
+  local ref="$1";
+  if [[ -z "${ref}" ]]; then
+    return
+  fi
+  if docker image inspect "${ref}" >/dev/null 2>&1; then
+    log "Removing image: ${ref}"
+    docker image rm -f "${ref}" >/dev/null 2>&1 || true
+    log "Removed image: ${ref}"
+  else
+    log "Image not present (skip): ${ref}"
+  fi
+}
+
+log "Running post-stop hook..."
+
+# Gracefully stop if still running
+stop_container "${CHECKER_CONTAINER}"
+stop_container "${ABS_SERVER_CONTAINER}"
+
+# Remove containers if they exist
+remove_container "${CHECKER_CONTAINER}"
+remove_container "${ABS_SERVER_CONTAINER}"
+
+# Remove images using references from the tracked files
+checker_ref=$(read_image_ref "${CHECKER_IMAGE_FILE}" "saltedlolly/abs-network-shares-checker" || true)
+abs_ref=$(read_image_ref "${ABS_SERVER_IMAGE_FILE}" "ghcr.io/advplyr/audiobookshelf" || true)
+remove_image "${checker_ref:-}"
+remove_image "${abs_ref:-}"
+
+log "Post-stop hook complete"
+
+exit 0

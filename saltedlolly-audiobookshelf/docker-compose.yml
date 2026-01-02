@@ -3,17 +3,38 @@ version: "3.7"
 services:
   app_proxy:
     environment:
-      # Network Shares Config UI is primary (accessible via dashboard icon on port 23378)
-      APP_HOST: saltedlolly-audiobookshelf_network-shares-ui_1
+      # ABS Network Shares Config Tool is primary (accessible via dashboard icon on port 23378)
+      APP_HOST: saltedlolly-audiobookshelf_abs-network-shares-config-tool_1
       APP_PORT: 3001
       PROXY_AUTH_ADD: "true"
 
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: docker-socket-proxy
+    restart: unless-stopped
+    environment:
+      - CONTAINERS=1      # Allow container read operations
+      - POST=1            # Allow POST requests (container create/start)
+      - DELETE=1          # Allow DELETE requests (container remove)
+      - IMAGES=1          # Allow image inspect required by container create
+      - NETWORKS=0
+      - VOLUMES=0
+      - INFO=1            # Allow /info for health/status
+      - EVENTS=1          # Allow /events for monitoring
+      - AUTH=0
+      - SYSTEM=0
+      - SERVICES=0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "2375:2375"       # Expose proxy on port 2375 (internal only)
+
   # Lightweight UI service for managing and monitoring required network shares selection
   # Accessible via app_proxy on port 23378 (or via Umbreldashboard icon)
-  network-shares-ui:
-    image: saltedlolly/audiobookshelf-network-shares-ui@sha256:c5393a09b4abc63858b3d89f4a3767c6161f4b5d9a22127b23c64f22800fa596
-    container_name: saltedlolly-audiobookshelf_network-shares-ui_1
-    hostname: saltedlolly-audiobookshelf_network-shares-ui_1
+  abs-network-shares-config-tool:
+    image: saltedlolly/abs-network-shares-config-tool@sha256:9070a377b8beb7cd44c3bd3e7d7c0344fec9b93aa2f0d588c8efba58c91f98a9
+    container_name: saltedlolly-audiobookshelf_abs-network-shares-config-tool_1
+    hostname: saltedlolly-audiobookshelf_abs-network-shares-config-tool_1
     init: true
     restart: unless-stopped
     user: "1000:999"  # node user with docker group for socket access
@@ -21,7 +42,7 @@ services:
       - APP_DATA_DIR=${APP_DATA_DIR}
       - NODE_ENV=production
     volumes:
-      - ${APP_DATA_DIR}:/data
+      - ${APP_DATA_DIR}/data:/data
       # Mount the Umbrel network storage root (read-only) so we can discover shares
       - ${UMBREL_ROOT}/network:/umbrel-network:ro
       # Mount docker socket to check Audiobookshelf container status
@@ -33,61 +54,18 @@ services:
       retries: 5
       start_period: 2s
 
-  # Background service which verifies that all required network shares are accessible before allowing Audiobookshelf to start
-  share-waiter:
-    image: saltedlolly/audiobookshelf-share-waiter@sha256:28d137de0128b65036e571327b21991b6ae23a2a84ce65f74ee2a391bfb54bd6
-    container_name: saltedlolly-audiobookshelf_share-waiter_1
-    hostname: saltedlolly-audiobookshelf_share-waiter_1
-    init: true
+  # Background service that manages starting Audiobookshelf. At launch, it runs abs-network-share-waiter-checker  
+  # repeatedly which checks all required networkshares are accessible and starts abs-server only once they are.
+  abs-manager:
+    image: saltedlolly/abs-manager@sha256:e9b8a593027456bfaacf77fb532c9f4ca92cedbe89b3ce9945aa7bf7fd038207
+    container_name: saltedlolly-audiobookshelf_abs-manager_1
     restart: unless-stopped
     environment:
-      - CONFIG_FILE=/data/network-shares.json
-      - NETWORK_MOUNT_ROOT=/media/network
-      - MAX_WAIT_SECONDS=300
-      - CHECK_INTERVAL_MS=2000
+      - APP_DATA_DIR=${APP_DATA_DIR}
+      - UMBREL_ROOT=${UMBREL_ROOT}
     volumes:
-      - ${APP_DATA_DIR}:/data
-      - ${UMBREL_ROOT}/network:/media/network:ro
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health" ]
-      interval: 2s
-      timeout: 1s
-      retries: 10
+      - ${APP_DATA_DIR}/data:/data
     depends_on:
-      network-shares-ui:
-        condition: service_healthy
-
-  # Audiobookshelf main service. Accessible via port 13378. 
-  # Will only start once all required network shares are available.
-  web:
-    image: ghcr.io/advplyr/audiobookshelf:2.32.1@sha256:a52dc5db694a5bf041ce38f285dd6c6a660a4b1b21e37ad6b6746433263b2ae5
-    container_name: saltedlolly-audiobookshelf_web_1
-    hostname: saltedlolly-audiobookshelf_web_1
-    user: 1000:1000
-    init: true
-    restart: on-failure
-    stop_grace_period: 1m
-    ports:
-      - "13378:80"
-    healthcheck:
-      disable: true
-    environment:
-      - CONFIG_PATH=/home/node/config
-      - METADATA_PATH=/home/node/metadata
-      - AUDIOBOOKSHELF_UID=1000
-      - AUDIOBOOKSHELF_GID=1000
-    volumes:
-      # Store config and metadata in app data (backed up, deleted on uninstall)
-      - ${APP_DATA_DIR}/data/config:/home/node/config
-      - ${APP_DATA_DIR}/data/metadata:/home/node/metadata
-      # Store media in /home (backed up, survives uninstall, visible in Files app)
-      - ${UMBREL_ROOT}/home/Audiobookshelf/Audiobooks:/audiobooks
-      - ${UMBREL_ROOT}/home/Audiobookshelf/Podcasts:/podcasts
-      # Mount the Umbrel network storage root to make NAS shares visible
-      # Individual enabled shares will be symlinked by the pre-start hook
-      - ${UMBREL_ROOT}/network:/media/network
-    depends_on:
-      network-shares-ui:
-        condition: service_healthy
-      share-waiter:
-        condition: service_healthy
+      - docker-socket-proxy
+    networks:
+      - default

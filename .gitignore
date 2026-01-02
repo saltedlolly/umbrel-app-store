@@ -4,6 +4,9 @@
 **/cloudflare-ddns.env
 **/.env
 
+# Pre-built docker containers
+**/docker-containers/
+
 # Node and frontend artifacts
 **/node_modules/
 **/npm-debug.log*
@@ -15,6 +18,18 @@
 
 # macOS junk
 .DS_Store
+
+# Documentation
 saltedlolly-audiobookshelf/IMPLEMENTATION.md
 saltedlolly-audiobookshelf/QUICKSTART.md
 saltedlolly-audiobookshelf/network-shares-ui/DEVELOPMENT.md
+saltedlolly-audiobookshelf/HASH_SYSTEM.md
+saltedlolly-audiobookshelf/tools/HASH_REFERENCE.md
+
+# Backup files
+saltedlolly-audiobookshelf/docker-compose.yml.backup
+
+# Test and build hash files
+saltedlolly-audiobookshelf/.build-hashes
+saltedlolly-audiobookshelf/test-build-hashes.sh
+saltedlolly-audiobookshelf/tools/test-hash-system.sh

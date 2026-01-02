@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+#
+# Pre-stop hook for Audiobookshelf
+# Cleans up dynamically-created containers (abs-server and abs-network-shares-checker)
+# before the app shuts down. This ensures they don't become orphaned on uninstall.
+#
+set -euo pipefail
+
+echo "[$(date +'%Y-%m-%d %H:%M:%S')] Running pre-stop hook..."
+
+# Container names to clean up
+CHECKER_CONTAINER="saltedlolly-audiobookshelf_abs-network-shares-checker_1"
+ABS_SERVER_CONTAINER="saltedlolly-audiobookshelf_abs-server_1"
+
+# Function to gracefully stop a container
+stop_container() {
+  local container_name="$1"
+  
+  if docker ps -a --filter "name=^${container_name}$" --format "{{.Names}}" | grep -q "^${container_name}$"; then
+    # Check if it's running
+    if docker ps --filter "name=^${container_name}$" --format "{{.Names}}" | grep -q "^${container_name}$"; then
+      echo "[$(date +'%Y-%m-%d %H:%M:%S')] Stopping container: $container_name"
+      docker stop -t 30 "$container_name" 2>/dev/null || true
+      echo "[$(date +'%Y-%m-%d %H:%M:%S')] ✓ Stopped: $container_name"
+    else
+      echo "[$(date +'%Y-%m-%d %H:%M:%S')] Container already stopped: $container_name"
+    fi
+  else
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] Container not found: $container_name"
+  fi
+}
+
+# Stop the containers gracefully
+stop_container "$CHECKER_CONTAINER"
+stop_container "$ABS_SERVER_CONTAINER"
+
+echo "[$(date +'%Y-%m-%d %H:%M:%S')] ✓ Pre-stop hook complete"
+
+exit 0

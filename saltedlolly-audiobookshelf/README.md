@@ -26,7 +26,7 @@ This solution consists of three main components:
 
 ### 1. **Pre-Start Hook** (`hooks/pre-start`)
 - Runs before Audiobookshelf starts
-- Reads configuration from `${APP_DATA_DIR}/network-shares.json`
+- Reads configuration from `${APP_DATA_DIR}/data/network-shares.json`
 - Waits up to 5 minutes for each enabled share to be mounted
 - Verifies shares are accessible using `mountpoint` and filesystem checks
 - Provides detailed logging and clear error messages
@@ -37,7 +37,7 @@ This solution consists of three main components:
 - Discovers available network shares by scanning `/umbrel-network`
 - Provides a web interface for enabling/disabling shares
 - Allows testing share accessibility
-- Saves configuration to `network-shares.json`
+- Saves configuration to `data/network-shares.json`
 - Accessible at the app's settings page
 
 ### 3. **Docker Compose Configuration**
@@ -189,12 +189,12 @@ If the pre-start hook blocks app startup:
 1. Check which shares are enabled:
    ```bash
    ssh umbrel@umbrel.local
-   cat ~/umbrel/app-data/saltedlolly-audiobookshelf/network-shares.json
+   cat ~/umbrel/app-data/saltedlolly-audiobookshelf/data/network-shares.json
    ```
 
 2. Temporarily disable all shares to allow app to start:
    ```bash
-   echo '{"enabledShares":[],"shareSettings":{}}' > ~/umbrel/app-data/saltedlolly-audiobookshelf/network-shares.json
+   echo '{"enabledShares":[],"shareSettings":{}}' > ~/umbrel/app-data/saltedlolly-audiobookshelf/data/network-shares.json
    ```
 
 3. Restart the app
@@ -212,7 +212,7 @@ Fix in Files app first, then return to Audiobookshelf.
 
 #### Empty Configuration
 
-If `network-shares.json` doesn't exist or is empty, the app starts immediately without waiting. This is by design for first-time setup.
+If `data/network-shares.json` doesn't exist or is empty, the app starts immediately without waiting. This is by design for first-time setup.
 
 ## Development
 
@@ -293,7 +293,7 @@ umbreld client apps.logs --appId saltedlolly-audiobookshelf
 
 ### Configuration File Format
 
-The `network-shares.json` configuration file:
+The `data/network-shares.json` configuration file:
 
 ```json
 {

@@ -4,13 +4,13 @@
 # Waits for selected network shares to be mounted before allowing the app to start
 # This prevents the "share isn't mounted yet" problem after reboots
 #
-# Configuration is read from ${APP_DATA_DIR}/network-shares.json
-# This file is managed by the network-shares-ui sidecar service
+# Configuration is read from ${APP_DATA_DIR}/data/network-shares.json
+# This file is managed by the abs-network-share-config-tool sidecar service
 #
 set -euo pipefail
 
 # Configuration
-readonly CONFIG_FILE="${APP_DATA_DIR}/network-shares.json"
+readonly CONFIG_FILE="${APP_DATA_DIR}/data/network-shares.json"
 readonly MAX_WAIT_SECONDS=300  # 5 minutes total timeout
 readonly CHECK_INTERVAL=2      # Check every 2 seconds
 readonly NETWORK_MOUNT_ROOT="${UMBREL_ROOT}/network"
@@ -50,14 +50,26 @@ if [[ -d "${APP_DATA_DIR}/data" ]]; then
     
     log "✓ App data directory ownership fixed"
 else
-    log_warn "Data directory not found at ${APP_DATA_DIR}/data"
+    log_warn "Data directory not found at ${APP_DATA_DIR}/data; creating it now..."
+    if mkdir -p "${APP_DATA_DIR}/data"; then
+        if chown -R 1000:1000 "${APP_DATA_DIR}/data"; then
+            log "✓ Created data directory and fixed ownership"
+        else
+            log_error "Failed to fix ownership on newly created ${APP_DATA_DIR}/data"
+            log_error "Please run manually: sudo chown -R 1000:1000 ${APP_DATA_DIR}/data"
+            exit 1
+        fi
+    else
+        log_error "Failed to create data directory at ${APP_DATA_DIR}/data"
+        exit 1
+    fi
 fi
 
 # Ensure network-shares.json is writable (network-shares-ui runs as node user - UID 1000)
 # Create it with correct permissions if it doesn't exist
 if [[ ! -f "${CONFIG_FILE}" ]]; then
     log "Creating network-shares.json with default configuration..."
-    echo '{"enabledShares":[],"shareSettings":{}}' > "${CONFIG_FILE}"
+    echo '{"enabledShares":[],"shareSettings":{},"shares":{}}' > "${CONFIG_FILE}"
 fi
 
 log "Fixing permissions on network-shares.json..."
