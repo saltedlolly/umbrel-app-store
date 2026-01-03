@@ -81,28 +81,114 @@ prompt_yes_no() {
     done
 }
 
-# Check if an app is installed
-is_app_installed() {
-    local app_id="$1"
-    local app_dir="${UMBREL_ROOT}/app-data/${app_id}"
+# Check if a path is owned by the given user:group
+is_owned_by() {
+    local path="$1"
+    local owner="$2"
     
-    if [[ -d "${app_dir}" ]] && [[ -f "${app_dir}/umbrel-app.yml" ]]; then
+    if [[ ! -e "${path}" ]]; then
+        return 1
+    fi
+    
+    local current_owner
+    current_owner=$(stat -c '%U:%G' "${path}" 2>/dev/null || stat -f '%Su:%Sg' "${path}" 2>/dev/null)
+    
+    [[ "${current_owner}" == "${owner}" ]]
+}
+
+# Fix ownership of a path to 1000:1000, with graceful sudo handling
+fix_ownership() {
+    local path="$1"
+    
+    # Check if already owned correctly
+    if is_owned_by "${path}" "1000:1000"; then
+        return 0
+    fi
+    
+    # Try without sudo first (will work if already root or user is owner)
+    if chown -R 1000:1000 "${path}" 2>/dev/null; then
+        return 0
+    fi
+    
+    # Need sudo - try with sudo
+    if sudo -n chown -R 1000:1000 "${path}" 2>/dev/null; then
+        return 0
+    fi
+    
+    # sudo -n failed (no passwordless sudo), ask user for password
+    log_warn "Root access is needed to fix file permissions"
+    log_info "Please provide your password to continue"
+    
+    if sudo chown -R 1000:1000 "${path}"; then
         return 0
     else
         return 1
     fi
 }
 
-# Check if an app is running
-is_app_running() {
+# Check if an app is installed
+is_app_installed() {
     local app_id="$1"
-    local container_name="${app_id}_web_1"
+    local apps_list
     
-    if docker ps --format '{{.Names}}' | grep -q "^${container_name}$"; then
+    # Query installed apps from umbreld
+    apps_list=$(umbreld client apps.list.query 2>/dev/null) || return 1
+    
+    # Check if the app_id exists in the list
+    if echo "${apps_list}" | jq -e ".[] | select(.id == \"${app_id}\")" &>/dev/null; then
         return 0
     else
         return 1
     fi
+}
+
+# Check if an app is running (uses provided apps list)
+is_app_running() {
+    local app_id="$1"
+    local apps_list="$2"
+    
+    # Check if app exists and state is "ready" (running)
+    if echo "${apps_list}" | jq -e ".[] | select(.id == \"${app_id}\" and .state == \"ready\")" &>/dev/null; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Wait for an app to finish installing
+wait_for_install() {
+    local app_id="$1"
+    
+    log_info "Checking if app is still installing..."
+    
+    local max_attempts=60  # Wait up to 2 minutes
+    local attempt=0
+    
+    while [[ $attempt -lt $max_attempts ]]; do
+        # Query app state
+        local apps_list
+        apps_list=$(umbreld client apps.list.query 2>/dev/null) || continue
+        
+        local app_state
+        app_state=$(echo "${apps_list}" | jq -r ".[] | select(.id == \"${app_id}\") | .state" 2>/dev/null)
+        
+        if [[ "${app_state}" == "installing" ]]; then
+            if [[ $attempt -eq 0 ]]; then
+                log_info "App is currently installing, waiting for installation to complete..."
+            fi
+            sleep 2
+            attempt=$((attempt + 1))
+        elif [[ "${app_state}" == "ready" ]] || [[ "${app_state}" == "stopped" ]]; then
+            log "App installation complete"
+            return 0
+        else
+            # Some other state - continue anyway
+            return 0
+        fi
+    done
+    
+    log_warn "App may still be installing after waiting"
+    return 1
 }
 
 # Stop an app
@@ -111,29 +197,46 @@ stop_app() {
     
     log_info "Stopping ${app_id}..."
     
-    # Try using Umbrel CLI if available
-    if command -v umbrel &> /dev/null; then
-        if umbrel app stop "${app_id}" 2>/dev/null; then
+    # Use umbreld API to stop the app
+    local stop_result
+    stop_result=$(umbreld client apps.stop.mutate --appId "${app_id}" 2>/dev/null)
+    
+    if [[ "${stop_result}" != "true" ]]; then
+        log_error "Failed to stop app"
+        log_warn "Please stop the app manually:"
+        log_warn "  1. Open Umbrel dashboard"
+        log_warn "  2. Right-click the Audiobookshelf app icon"
+        log_warn "  3. Select 'Stop'"
+        log_warn "  4. Run this script again"
+        exit 1
+    fi
+    
+    log "App stop command sent"
+    
+    # Wait and verify the app has stopped by polling state
+    log_info "Waiting for app to stop..."
+    local max_attempts=10
+    local attempt=0
+    
+    while [[ $attempt -lt $max_attempts ]]; do
+        sleep 2
+        attempt=$((attempt + 1))
+        
+        # Query app state
+        local apps_list
+        apps_list=$(umbreld client apps.list.query 2>/dev/null) || continue
+        
+        local app_state
+        app_state=$(echo "${apps_list}" | jq -r ".[] | select(.id == \"${app_id}\") | .state" 2>/dev/null)
+        
+        if [[ "${app_state}" == "stopped" ]]; then
             log "App stopped successfully"
             return 0
         fi
-    fi
+    done
     
-    # Fallback: stop docker containers directly
-    local compose_file="${UMBREL_ROOT}/app-data/${app_id}/docker-compose.yml"
-    if [[ -f "${compose_file}" ]]; then
-        if docker-compose -f "${compose_file}" down 2>/dev/null; then
-            log "App stopped successfully"
-            return 0
-        fi
-    fi
-    
-    log_error "Failed to stop app automatically"
-    log_warn "Please stop the app manually:"
-    log_warn "  1. Open Umbrel dashboard"
-    log_warn "  2. Right-click the Audiobookshelf app icon"
-    log_warn "  3. Select 'Stop'"
-    log_warn "  4. Run this script again"
+    log_error "App did not stop after waiting"
+    log_warn "Please check the app status in the Umbrel dashboard"
     exit 1
 }
 
@@ -143,16 +246,43 @@ start_app() {
     
     log_info "Starting ${app_id}..."
     
-    # Try using Umbrel CLI if available
-    if command -v umbrel &> /dev/null; then
-        if umbrel app start "${app_id}" 2>/dev/null; then
+    # Use umbreld API to start the app
+    local start_result
+    start_result=$(umbreld client apps.start.mutate --appId "${app_id}" 2>/dev/null)
+    
+    if [[ "${start_result}" != "true" ]]; then
+        log_warn "Could not start app automatically"
+        log_info "Please start the app manually from the Umbrel dashboard"
+        return 1
+    fi
+    
+    log "App start command sent"
+    
+    # Wait and verify the app has started by polling state
+    log_info "Waiting for app to start..."
+    local max_attempts=30
+    local attempt=0
+    
+    while [[ $attempt -lt $max_attempts ]]; do
+        sleep 2
+        attempt=$((attempt + 1))
+        
+        # Query app state
+        local apps_list
+        apps_list=$(umbreld client apps.list.query 2>/dev/null) || continue
+        
+        local app_state
+        app_state=$(echo "${apps_list}" | jq -r ".[] | select(.id == \"${app_id}\") | .state" 2>/dev/null)
+        
+        if [[ "${app_state}" == "ready" ]]; then
             log "App started successfully"
             return 0
         fi
-    fi
+    done
     
-    log_warn "Could not start app automatically"
-    log_info "Please start the app manually from the Umbrel dashboard"
+    log_warn "App did not fully start after waiting"
+    log_info "Please check the app status in the Umbrel dashboard"
+    return 1
 }
 
 # Get app data directory
@@ -211,11 +341,15 @@ get_other_app_id() {
     fi
 }
 
-# Detect installed Audiobookshelf app
+# Detect installed Audiobookshelf app (uses provided apps list)
 detect_installed_app() {
-    if is_app_installed "${OFFICIAL_APP_ID}"; then
+    local apps_list="$1"
+    
+    # Check for Official app first
+    if echo "${apps_list}" | jq -e ".[] | select(.id == \"${OFFICIAL_APP_ID}\")" &>/dev/null; then
         echo "${OFFICIAL_APP_ID}"
-    elif is_app_installed "${NAS_APP_ID}"; then
+    # Then check for NAS Edition
+    elif echo "${apps_list}" | jq -e ".[] | select(.id == \"${NAS_APP_ID}\")" &>/dev/null; then
         echo "${NAS_APP_ID}"
     else
         echo ""
@@ -339,11 +473,11 @@ migrate_media_to_nas() {
         log_info "Checking permissions for NAS media directories..."
         for dir in "${NAS_AUDIOBOOKS}" "${NAS_PODCASTS}"; do
             if [[ -d "${dir}" ]]; then
-                if ! sudo chown -R 1000:1000 "${dir}"; then
-                    log_warn "Could not auto-fix permissions for ${dir}"
+                if ! fix_ownership "${dir}"; then
+                    log_warn "Could not fix permissions for ${dir}"
                     log_warn "You may need to run: sudo chown -R 1000:1000 ${dir}"
                 else
-                    log "Permissions fixed for ${dir}"
+                    log "Permissions verified for ${dir}"
                 fi
             fi
         done
@@ -417,11 +551,11 @@ migrate_media_to_official() {
         log_info "Checking permissions for Official media directories..."
         for dir in "${OFFICIAL_AUDIOBOOKS}" "${OFFICIAL_PODCASTS}"; do
             if [[ -d "${dir}" ]]; then
-                if ! sudo chown -R 1000:1000 "${dir}"; then
-                    log_warn "Could not auto-fix permissions for ${dir}"
+                if ! fix_ownership "${dir}"; then
+                    log_warn "Could not fix permissions for ${dir}"
                     log_warn "You may need to run: sudo chown -R 1000:1000 ${dir}"
                 else
-                    log "Permissions fixed for ${dir}"
+                    log "Permissions verified for ${dir}"
                 fi
             fi
         done
@@ -493,13 +627,13 @@ restore_library() {
     fi
     
     # Fix permissions
-    log_info "Fixing permissions (setting ownership to 1000:1000)..."
-    if ! sudo chown -R 1000:1000 "${app_data_dir}/config" "${app_data_dir}/metadata"; then
-        log_error "Failed to fix permissions"
+    log_info "Checking permissions (ownership should be 1000:1000)..."
+    if ! fix_ownership "${app_data_dir}/config" || ! fix_ownership "${app_data_dir}/metadata"; then
+        log_warn "Could not verify all permissions"
         log_warn "You may need to run: sudo chown -R 1000:1000 ${app_data_dir}"
-        exit 1
+    else
+        log "Permissions verified successfully"
     fi
-    log "Permissions fixed successfully"
     
     # Migrate media files if needed
     log ""
@@ -562,6 +696,7 @@ delete_backup() {
 # Main menu when backup exists
 backup_exists_menu() {
     local current_app_id="$1"
+    local apps_list="$2"
     local current_app_name
     current_app_name=$(get_app_name "${current_app_id}")
     
@@ -591,7 +726,7 @@ backup_exists_menu() {
     case "${choice}" in
         1)
             # Restore backup
-            if is_app_running "${current_app_id}"; then
+            if is_app_running "${current_app_id}" "${apps_list}"; then
                 log_warn "App is currently running and must be stopped"
                 if prompt_yes_no "Stop the app now?"; then
                     stop_app "${current_app_id}"
@@ -600,6 +735,9 @@ backup_exists_menu() {
                     log_info "Please stop the app manually and run this script again"
                     exit 0
                 fi
+            else
+                # App is not running, check if it's still installing
+                wait_for_install "${current_app_id}"
             fi
             
             if prompt_yes_no "This will overwrite your current library. Continue?"; then
@@ -642,6 +780,7 @@ backup_exists_menu() {
 # Main menu when no backup exists
 no_backup_menu() {
     local current_app_id="$1"
+    local apps_list="$2"
     local current_app_name
     local other_app_id
     local other_app_name
@@ -662,7 +801,7 @@ no_backup_menu() {
     fi
     
     # Check if app is running
-    if is_app_running "${current_app_id}"; then
+    if is_app_running "${current_app_id}" "${apps_list}"; then
         log_warn "App is currently running and must be stopped before backup"
         if prompt_yes_no "Stop the app now?"; then
             stop_app "${current_app_id}"
@@ -676,34 +815,48 @@ no_backup_menu() {
     # Perform backup
     backup_library "${current_app_id}"
     
+    # Offer to uninstall the current app
+    log ""
+    if prompt_yes_no "Do you want to uninstall ${current_app_name} now?"; then
+        log_info "Uninstalling ${current_app_id}..."
+        
+        local uninstall_result
+        uninstall_result=$(umbreld client apps.uninstall.mutate --appId "${current_app_id}" 2>/dev/null)
+        
+        if [[ "${uninstall_result}" != "true" ]]; then
+            log_error "Failed to uninstall app"
+            log_warn "Please uninstall the app manually from the Umbrel dashboard"
+        else
+            log "App uninstalled successfully"
+        fi
+    fi
+    
     # Provide next steps
     log ""
     log_header "Next Steps"
     
     echo ""
-    echo "Your library has been backed up. To complete the migration:"
+    echo "To complete the migration:"
     echo ""
-    echo "  1. Uninstall the current app:"
-    echo "     - Open Umbrel dashboard"
-    echo "     - Right-click the Audiobookshelf app icon"
-    echo "     - Select 'Uninstall'"
-    echo ""
-    echo "  2. Install ${other_app_name}:"
+    echo "  1. Install ${other_app_name}:"
     
     if [[ "${other_app_id}" == "${OFFICIAL_APP_ID}" ]]; then
         echo "     - Open Umbrel App Store"
         echo "     - Search for 'Audiobookshelf'"
         echo "     - Install the official app"
+        echo "     - Wait for the install to finish"
     else
-        echo "     - Open Umbrel App Store"
-        echo "     - Go to Community App Stores"
-        echo "     - Add saltedlolly's app store if not already added"
-        echo "     - Search for 'Audiobookshelf: NAS Edition'"
-        echo "     - Install the app"
+        echo "     - Launch the App Store from your Umbrel Dashboard"
+        echo "     - Click the ••• button in the top right, and click 'Community App Stores'"
+        echo "     - Paste this URL: https://github.com/saltedlolly/umbrel-app-store"
+        echo "     - Click 'Add'"
+        echo "     - Click 'Open' next to \"Olly's Umbrel Community App Store\""
+        echo "     - Find 'Audiobookshelf: NAS Edition' and install it"
+        echo "     - Wait for the install to finish"
     fi
     
     echo ""
-    echo "  3. Run this script again to restore your library"
+    echo "  2. Run this script again to restore your library"
     echo ""
     echo "     Note: Media files (audiobooks and podcasts) will be automatically"
     echo "     migrated during restore if they exist in the old app location."
@@ -723,9 +876,57 @@ main() {
         exit 1
     fi
     
-    # Detect installed app
+    # Verify this is umbrelOS by checking for umbreld
+    if ! command -v umbreld &> /dev/null; then
+        log_error "This script must be run on umbrelOS"
+        log_error "umbreld command not found - this does not appear to be umbrelOS"
+        exit 1
+    fi
+    
+    # Check umbrelOS version
+    log_info "Checking umbrelOS version..."
+    local version_output
+    version_output=$(umbreld client system.version.query 2>/dev/null) || true
+    if [[ -n "$version_output" ]]; then
+        local version
+        # Extract version using jq (available in umbrelOS 1.5.0+)
+        version=$(echo "$version_output" | jq -r '.version' 2>/dev/null)
+        
+        if [[ -n "$version" ]] && [[ "$version" != "null" ]]; then
+            log_info "Detected umbrelOS version: $version"
+            
+            # Compare version (requires 1.5.0 or higher)
+            # Convert version to comparable number (e.g., 1.5.0 -> 10500)
+            local version_num
+            version_num=$(echo "$version" | awk -F. '{printf "%d%02d%02d", $1, $2, $3}')
+            local min_version_num=10500  # 1.5.0
+            
+            if [[ $version_num -lt $min_version_num ]]; then
+                log_error "This script requires umbrelOS 1.5.0 or higher"
+                log_error "Your version: $version"
+                log_error "Please update your Umbrel system before running this script"
+                exit 1
+            fi
+            
+            log "umbrelOS version check passed"
+        else
+            log_warn "Could not parse umbrelOS version, proceeding anyway..."
+        fi
+    else
+        log_warn "Could not query umbrelOS version, proceeding anyway..."
+    fi
+    
+    # Query installed apps once (this takes several seconds)
+    log_info "Querying installed apps..."
+    local apps_list
+    apps_list=$(umbreld client apps.list.query 2>/dev/null) || {
+        log_error "Failed to query installed apps"
+        exit 1
+    }
+    
+    # Detect installed app using the queried data
     local current_app_id
-    current_app_id=$(detect_installed_app)
+    current_app_id=$(detect_installed_app "${apps_list}")
     
     if [[ -z "${current_app_id}" ]]; then
         log_error "No Audiobookshelf app is currently installed"
@@ -738,9 +939,9 @@ main() {
     
     # Check if backup exists
     if [[ -d "${BACKUP_DIR}" ]] && [[ -n "$(ls -A "${BACKUP_DIR}" 2>/dev/null)" ]]; then
-        backup_exists_menu "${current_app_id}"
+        backup_exists_menu "${current_app_id}" "${apps_list}"
     else
-        no_backup_menu "${current_app_id}"
+        no_backup_menu "${current_app_id}" "${apps_list}"
     fi
 }
 
