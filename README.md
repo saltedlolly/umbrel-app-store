@@ -25,7 +25,7 @@ One-time donations and monthly sponsors are both hugely appreciated — thank yo
 
 ## 🧩 Umbrel Apps
 
-### Audiobookshelf: NAS Edition  `v2.32.1.141`
+### Audiobookshelf: NAS Edition  `v2.32.1.142`
 <img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/icon.svg" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 🚨 WARNING: 🚧 This app is currently a work-in-progress and may not be functional. Data loss is possible. Use for testing only until further notice.
