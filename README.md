@@ -68,7 +68,7 @@ The folders below contain your user accounts, libraries and associated metadata.
  1. Open the **Terminal** app from your Umbrel Dashboard. (Go to Settings → Advanced Settings → Terminal)
  2. Run this command:
     ```bash
-    bash <(curl -fsSL https://raw.githubusercontent.com/saltedlolly/umbrel-apps/master/saltedlolly-audiobookshelf/tools/migrate-library.sh)
+    bash <(curl -fsSL https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/tools/migrate-library.sh)
     ```
  3. Follow the interactive prompts to:
     - Backup your current library

@@ -15,7 +15,7 @@ This tool helps you migrate your Audiobookshelf library data between the officia
 Run this single command in the Umbrel terminal:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/saltedlolly/umbrel-apps/master/saltedlolly-audiobookshelf/tools/migrate-library.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/tools/migrate-library.sh)
 ```
 
 ## Migration Process
@@ -147,11 +147,11 @@ sudo cp -r ~/umbrel/app-data/audiobookshelf/metadata ~/umbrel/home/abs-library-b
 # 4. Stop new app from dashboard
 
 # 5. Restore library (adjust app ID if needed)
-sudo cp -r ~/umbrel/home/abs-library-backup/config ~/umbrel/app-data/audiobookshelf/
-sudo cp -r ~/umbrel/home/abs-library-backup/metadata ~/umbrel/app-data/audiobookshelf/
+sudo cp -r ~/umbrel/home/abs-library-backup/config ~/umbrel/app-data/saltedlolly-audiobookshelf/
+sudo cp -r ~/umbrel/home/abs-library-backup/metadata ~/umbrel/app-data/saltedlolly-audiobookshelf/
 
 # 6. Fix permissions
-sudo chown -R 1000:1000 ~/umbrel/app-data/audiobookshelf/
+sudo chown -R 1000:1000 ~/umbrel/app-data/saltedlolly-audiobookshelf/
 
 # 7. Start app from dashboard
 
