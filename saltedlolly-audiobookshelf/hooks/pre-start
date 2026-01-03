@@ -257,5 +257,40 @@ log "✓ Media directories ready at ${AUDIOBOOKSHELF_HOME}"
 log "These directories are visible in Files app at /Home/Audiobookshelf and survive app uninstalls"
 
 log "Network share readiness will now be handled by the share-waiter service."
+log "Resetting required shares to 'checking' status for fresh startup check..."
+
+# Reset share statuses before starting - ensures fresh check on every startup
+# This handles both normal restarts and unclean shutdowns (power outage)
+if [[ -f "${CONFIG_FILE}" ]]; then
+    # Read the current config to preserve enabledShares and shareSettings
+    if command -v jq &> /dev/null; then
+        # jq is available - use it for precise JSON manipulation
+        local enabledShares
+        enabledShares=$(jq -r '.enabledShares // []' "${CONFIG_FILE}")
+        local shareSettings
+        shareSettings=$(jq -r '.shareSettings // {}' "${CONFIG_FILE}")
+        
+        # Build new shares object with all required shares set to 'checking'
+        local newShares='{}'
+        for share in $(echo "$enabledShares" | jq -r '.[]'); do
+            newShares=$(echo "$newShares" | jq --arg share "$share" '.[$share] = {"status": "checking", "lastCheckedAt": null}')
+        done
+        
+        # Create new config with reset statuses and removed non-required shares
+        local newConfig='{}'
+        newConfig=$(echo "$newConfig" | jq --argjson enabled "$enabledShares" '.enabledShares = $enabled')
+        newConfig=$(echo "$newConfig" | jq --argjson settings "$shareSettings" '.shareSettings = $settings')
+        newConfig=$(echo "$newConfig" | jq --argjson shares "$newShares" '.shares = $shares')
+        
+        echo "$newConfig" > "${CONFIG_FILE}"
+        log "✓ Reset network shares to 'checking' status (removed non-required shares)"
+        log "  Required shares awaiting check: $(echo "$enabledShares" | jq -r '.[]' | tr '\n' ', ' | sed 's/,$//')"
+    else
+        log_warn "jq not available; skipping automatic reset"
+    fi
+else
+    log_warn "No network-shares.json found yet; will be created when config-tool starts"
+fi
+
 log "Starting app immediately."
 exit 0

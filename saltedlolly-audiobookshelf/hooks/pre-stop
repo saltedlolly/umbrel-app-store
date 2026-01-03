@@ -12,6 +12,46 @@ echo "[$(date +'%Y-%m-%d %H:%M:%S')] Running pre-stop hook..."
 CHECKER_CONTAINER="saltedlolly-audiobookshelf_abs-network-shares-checker_1"
 ABS_SERVER_CONTAINER="saltedlolly-audiobookshelf_abs-server_1"
 
+# Find Audiobookshelf data directory
+if [ -d "/data/app-data/saltedlolly-audiobookshelf" ]; then
+    APP_DATA_DIR="/data/app-data/saltedlolly-audiobookshelf"
+elif [ -d "/root/Appdata/app-data/saltedlolly-audiobookshelf" ]; then
+    APP_DATA_DIR="/root/Appdata/app-data/saltedlolly-audiobookshelf"
+else
+    APP_DATA_DIR="/data/saltedlolly-audiobookshelf"
+fi
+CONFIG_FILE="${APP_DATA_DIR}/data/network-shares.json"
+
+# Reset network shares to 'checking' status for clean restart
+if [ -f "$CONFIG_FILE" ]; then
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] Resetting network shares to 'checking' status..."
+    
+    if command -v jq &> /dev/null; then
+        enabledShares=$(jq -r '.enabledShares // []' "$CONFIG_FILE")
+        shareSettings=$(jq -r '.shareSettings // {}' "$CONFIG_FILE")
+        
+        # Rebuild shares object with only required shares set to 'checking'
+        newShares='{}'
+        for share in $(echo "$enabledShares" | jq -r '.[]'); do
+            newShares=$(echo "$newShares" | jq --arg share "$share" '.[$share] = {"status": "checking", "lastCheckedAt": null}')
+        done
+        
+        # Reconstruct config
+        newConfig=$(echo '{}' | jq --argjson enabled "$enabledShares" '.enabledShares = $enabled')
+        newConfig=$(echo "$newConfig" | jq --argjson settings "$shareSettings" '.shareSettings = $settings')
+        newConfig=$(echo "$newConfig" | jq --argjson shares "$newShares" '.shares = $shares')
+        
+        echo "$newConfig" > "$CONFIG_FILE"
+        
+        requiredCount=$(echo "$enabledShares" | jq 'length')
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] ✓ Reset $requiredCount required share(s) to 'checking' - awaiting next check"
+    else
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] ⚠ jq not found - skipping share reset (will perform on next startup)"
+    fi
+else
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] ℹ No network shares config found"
+fi
+
 # Function to gracefully stop a container
 stop_container() {
   local container_name="$1"
