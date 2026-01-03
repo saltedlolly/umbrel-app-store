@@ -3,19 +3,18 @@ id: saltedlolly-audiobookshelf
 name: ABS NAS Edition
 tagline: Audiobookshelf with NAS support
 category: Media
-version: "2.32.1.149"
+version: "2.32.1.150"
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/icon.svg
 port: 23378
 description: >-
-  Audiobookshelf NAS Edition adds support for accessing network shares from within Audiobookshelf, allowing you to access your media on NAS/SMB/NFS shares.
+  Audiobookshelf NAS Edition adds support for accessing network shares from within Audiobookshelf, allowing you to access your media files stored on NAS/SMB/NFS shares.
+ 
 
+ ⚠️ IMPORTANT - READ THIS BEFORE INSTALLING!! 👇
 
-  🚧 🚨 WARNING: This app is currently under development and may not be fully functional. Data loss is possible. Use for testing only.
-
-
-  ⚠️ IMPORTANT - READ THIS BEFORE INSTALLING!! 👇
   
   If you are currently using the Audiobookshelf app from the Umbrel App Store, please read this carefully:
+
 
   - When switching from the Audiobookshelf app in the Umbrel App Store to this NAS Edition, library data is NOT preserved.
   
@@ -23,7 +22,7 @@ description: >-
 
   - You must uninstall the existing Audiobookshelf app before installing this edition, but doing so, will delete your existing library data. This includes all user accounts, libraries and metadata. (Your media files will be preserved.)
   
-  - You can use the ABS Library Migration Tool to help you migrate your existing library from the official app. See the instructions here: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-audiobookshelf/tools#readme
+  - You can use the 'ABS Library Migration Tool' to help you migrate your existing library from the official app. See the instructions here: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-audiobookshelf/tools#readme
 
 
   Audioookshelf - NAS Edition Features:
@@ -44,12 +43,12 @@ description: >-
 
   Direct Access URLs:
 
-  - Network Shares Config Tool: http://umbrel.local:23378 (opens from dashboard icon)
+  - ABS Network Shares Config Tool: http://umbrel.local:23378 (opens from Umbrel dashboard icon)
 
-  - Main Audiobookshelf App: http://umbrel.local:13378 (opens from config tool)
+  - Audiobookshelf Web App: http://umbrel.local:13378 (opens from ABS Network Shares Config Tool)
 
   
-  ⚠️ After mounting a new network share, you must RESTART the Audiobookshelf app to access it (right-click app icon → Restart) 
+  ⚠️ After mounting a new network share in the Umbrel Files app, you will need to RESTART Audiobookshelf to access it. (Click the "Restart Audiobookshelf" button in the ABS Network Shares Config Tool.)
 
 
   Audiobookshelf - Main Features:

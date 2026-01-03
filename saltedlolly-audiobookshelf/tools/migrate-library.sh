@@ -4,7 +4,14 @@
 # 
 # This script helps you migrate your Audiobookshelf library between:
 # - Official Audiobookshelf app from Umbrel App Store
-# - Audiobookshelf: NAS Edition from Community App Store
+# - Audiobookshelf: NAS Edition from Olly'sCommunity App Store
+#
+# The script backs up and restores:
+# - Library configuration (settings, library data)
+# - Metadata (database information, logs excluded)
+#
+# Media files (audiobooks and podcasts) are migrated directly without backup
+# as they persist independently of the app
 #
 # Usage:
 #   bash <(curl -fsSL https://raw.githubusercontent.com/saltedlolly/umbrel-apps/master/saltedlolly-audiobookshelf/tools/migrate-library.sh)
@@ -17,6 +24,14 @@ readonly UMBREL_ROOT="${HOME}/umbrel"
 readonly BACKUP_DIR="${UMBREL_ROOT}/home/abs-library-backup"
 readonly OFFICIAL_APP_ID="audiobookshelf"
 readonly NAS_APP_ID="saltedlolly-audiobookshelf"
+
+# Media file paths for Official app
+readonly OFFICIAL_AUDIOBOOKS="${UMBREL_ROOT}/data/storage/downloads/audiobooks"
+readonly OFFICIAL_PODCASTS="${UMBREL_ROOT}/data/storage/downloads/podcasts"
+
+# Media file paths for NAS Edition
+readonly NAS_AUDIOBOOKS="${UMBREL_ROOT}/home/Audiobookshelf/Audiobooks"
+readonly NAS_PODCASTS="${UMBREL_ROOT}/home/Audiobookshelf/Podcasts"
 
 # Color codes for output
 readonly RED='\033[0;31m'
@@ -163,7 +178,29 @@ get_app_name() {
     esac
 }
 
-# Get the other app ID
+# Check if media files exist in official locations
+has_official_media() {
+    if [[ -d "${OFFICIAL_AUDIOBOOKS}" ]] && [[ -n "$(ls -A "${OFFICIAL_AUDIOBOOKS}" 2>/dev/null)" ]]; then
+        return 0
+    fi
+    if [[ -d "${OFFICIAL_PODCASTS}" ]] && [[ -n "$(ls -A "${OFFICIAL_PODCASTS}" 2>/dev/null)" ]]; then
+        return 0
+    fi
+    return 1
+}
+
+# Check if media files exist in NAS locations
+has_nas_media() {
+    if [[ -d "${NAS_AUDIOBOOKS}" ]] && [[ -n "$(ls -A "${NAS_AUDIOBOOKS}" 2>/dev/null)" ]]; then
+        return 0
+    fi
+    if [[ -d "${NAS_PODCASTS}" ]] && [[ -n "$(ls -A "${NAS_PODCASTS}" 2>/dev/null)" ]]; then
+        return 0
+    fi
+    return 1
+}
+
+
 get_other_app_id() {
     local current_app_id="$1"
     
@@ -249,6 +286,155 @@ backup_library() {
     fi
 }
 
+# Migrate media files from Official to NAS Edition
+migrate_media_to_nas() {
+    log_header "Migrating Media Files to NAS Edition"
+    
+    local files_migrated=0
+    
+    # Migrate Audiobooks
+    if [[ -d "${OFFICIAL_AUDIOBOOKS}" ]] && [[ -n "$(ls -A "${OFFICIAL_AUDIOBOOKS}" 2>/dev/null)" ]]; then
+        log_info "Found audiobooks in official location"
+        log_info "Creating NAS audiobooks directory..."
+        mkdir -p "${NAS_AUDIOBOOKS}"
+        
+        log_info "Moving audiobooks to NAS location..."
+        if ! mv "${OFFICIAL_AUDIOBOOKS}"/* "${NAS_AUDIOBOOKS}/"; then
+            log_error "Failed to move audiobooks"
+            exit 1
+        fi
+        files_migrated=$((files_migrated + 1))
+        log "Audiobooks migrated successfully"
+        
+        # Remove empty source directory
+        if [[ -z "$(ls -A "${OFFICIAL_AUDIOBOOKS}" 2>/dev/null)" ]]; then
+            rmdir "${OFFICIAL_AUDIOBOOKS}"
+            log "Removed empty audiobooks source directory"
+        fi
+    fi
+    
+    # Migrate Podcasts
+    if [[ -d "${OFFICIAL_PODCASTS}" ]] && [[ -n "$(ls -A "${OFFICIAL_PODCASTS}" 2>/dev/null)" ]]; then
+        log_info "Found podcasts in official location"
+        log_info "Creating NAS podcasts directory..."
+        mkdir -p "${NAS_PODCASTS}"
+        
+        log_info "Moving podcasts to NAS location..."
+        if ! mv "${OFFICIAL_PODCASTS}"/* "${NAS_PODCASTS}/"; then
+            log_error "Failed to move podcasts"
+            exit 1
+        fi
+        files_migrated=$((files_migrated + 1))
+        log "Podcasts migrated successfully"
+        
+        # Remove empty source directory
+        if [[ -z "$(ls -A "${OFFICIAL_PODCASTS}" 2>/dev/null)" ]]; then
+            rmdir "${OFFICIAL_PODCASTS}"
+            log "Removed empty podcasts source directory"
+        fi
+    fi
+    
+    if [[ ${files_migrated} -gt 0 ]]; then
+        # Fix permissions
+        log_info "Checking permissions for NAS media directories..."
+        for dir in "${NAS_AUDIOBOOKS}" "${NAS_PODCASTS}"; do
+            if [[ -d "${dir}" ]]; then
+                if ! sudo chown -R 1000:1000 "${dir}"; then
+                    log_warn "Could not auto-fix permissions for ${dir}"
+                    log_warn "You may need to run: sudo chown -R 1000:1000 ${dir}"
+                else
+                    log "Permissions fixed for ${dir}"
+                fi
+            fi
+        done
+        
+        log ""
+        log "${GREEN}${BOLD}Media files migrated to NAS Edition successfully!${NC}"
+        return 0
+    else
+        log_info "No media files found to migrate"
+        return 0
+    fi
+}
+
+# Migrate media files from NAS Edition to Official
+migrate_media_to_official() {
+    log_header "Migrating Media Files to Official App"
+    
+    local files_migrated=0
+    
+    # Migrate Audiobooks
+    if [[ -d "${NAS_AUDIOBOOKS}" ]] && [[ -n "$(ls -A "${NAS_AUDIOBOOKS}" 2>/dev/null)" ]]; then
+        log_info "Found audiobooks in NAS location"
+        log_info "Creating Official audiobooks directory..."
+        mkdir -p "${OFFICIAL_AUDIOBOOKS}"
+        
+        log_info "Moving audiobooks to Official location..."
+        if ! mv "${NAS_AUDIOBOOKS}"/* "${OFFICIAL_AUDIOBOOKS}/"; then
+            log_error "Failed to move audiobooks"
+            exit 1
+        fi
+        files_migrated=$((files_migrated + 1))
+        log "Audiobooks migrated successfully"
+        
+        # Remove empty source directory
+        if [[ -z "$(ls -A "${NAS_AUDIOBOOKS}" 2>/dev/null)" ]]; then
+            rmdir "${NAS_AUDIOBOOKS}"
+            log "Removed empty audiobooks source directory"
+        fi
+    fi
+    
+    # Migrate Podcasts
+    if [[ -d "${NAS_PODCASTS}" ]] && [[ -n "$(ls -A "${NAS_PODCASTS}" 2>/dev/null)" ]]; then
+        log_info "Found podcasts in NAS location"
+        log_info "Creating Official podcasts directory..."
+        mkdir -p "${OFFICIAL_PODCASTS}"
+        
+        log_info "Moving podcasts to Official location..."
+        if ! mv "${NAS_PODCASTS}"/* "${OFFICIAL_PODCASTS}/"; then
+            log_error "Failed to move podcasts"
+            exit 1
+        fi
+        files_migrated=$((files_migrated + 1))
+        log "Podcasts migrated successfully"
+        
+        # Remove empty source directory
+        if [[ -z "$(ls -A "${NAS_PODCASTS}" 2>/dev/null)" ]]; then
+            rmdir "${NAS_PODCASTS}"
+            log "Removed empty podcasts source directory"
+        fi
+    fi
+    
+    # Remove empty parent Audiobookshelf directory if it exists and is empty
+    local nas_parent="${UMBREL_ROOT}/home/Audiobookshelf"
+    if [[ -d "${nas_parent}" ]] && [[ -z "$(ls -A "${nas_parent}" 2>/dev/null)" ]]; then
+        rmdir "${nas_parent}"
+        log "Removed empty Audiobookshelf parent directory"
+    fi
+    
+    if [[ ${files_migrated} -gt 0 ]]; then
+        # Fix permissions
+        log_info "Checking permissions for Official media directories..."
+        for dir in "${OFFICIAL_AUDIOBOOKS}" "${OFFICIAL_PODCASTS}"; do
+            if [[ -d "${dir}" ]]; then
+                if ! sudo chown -R 1000:1000 "${dir}"; then
+                    log_warn "Could not auto-fix permissions for ${dir}"
+                    log_warn "You may need to run: sudo chown -R 1000:1000 ${dir}"
+                else
+                    log "Permissions fixed for ${dir}"
+                fi
+            fi
+        done
+        
+        log ""
+        log "${GREEN}${BOLD}Media files migrated to Official app successfully!${NC}"
+        return 0
+    else
+        log_info "No media files found to migrate"
+        return 0
+    fi
+}
+
 # Restore library
 restore_library() {
     local app_id="$1"
@@ -314,6 +500,32 @@ restore_library() {
         exit 1
     fi
     log "Permissions fixed successfully"
+    
+    # Migrate media files if needed
+    log ""
+    if [[ "${app_id}" == "${OFFICIAL_APP_ID}" ]]; then
+        # Restoring to Official app - migrate from NAS to Official
+        if has_nas_media; then
+            log_info "Media files found in NAS Edition location"
+            echo ""
+            if prompt_yes_no "Do you want to migrate media files to the Official app location?"; then
+                migrate_media_to_official
+            else
+                log_info "Media files will not be migrated"
+            fi
+        fi
+    else
+        # Restoring to NAS Edition - migrate from Official to NAS
+        if has_official_media; then
+            log_info "Media files found in Official app location"
+            echo ""
+            if prompt_yes_no "Do you want to migrate media files to the NAS Edition location?"; then
+                migrate_media_to_nas
+            else
+                log_info "Media files will not be migrated"
+            fi
+        fi
+    fi
     
     log ""
     log "${GREEN}${BOLD}Library restored successfully!${NC}"
@@ -492,6 +704,9 @@ no_backup_menu() {
     
     echo ""
     echo "  3. Run this script again to restore your library"
+    echo ""
+    echo "     Note: Media files (audiobooks and podcasts) will be automatically"
+    echo "     migrated during restore if they exist in the old app location."
     echo ""
     
     log_info "Backup will remain at: ${BACKUP_DIR}"

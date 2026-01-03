@@ -6,6 +6,7 @@ This tool helps you migrate your Audiobookshelf library data between the officia
 
 - **Backs up** your library (config and metadata) from the currently installed app
 - **Restores** your library to a newly installed version
+- **Migrates** local media files (audiobooks and podcasts) between app locations
 - **Manages** app stopping/starting during the migration
 - **Preserves** your entire library including user accounts, reading progress, and book metadata
 
@@ -46,6 +47,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/saltedlolly/umbrel-apps/mast
 3. The tool will:
    - Stop the new app (if needed)
    - Restore your config and metadata
+   - **Migrate media files** if found in the old app location
    - Fix permissions
    - Clean up the backup
    - Start the app
@@ -59,11 +61,15 @@ bash <(curl -fsSL https://raw.githubusercontent.com/saltedlolly/umbrel-apps/mast
 - Book covers and descriptions
 - App settings and preferences
 - Collections and playlists
+- **Local media files** (audiobooks and podcasts)
+  - Official app: `/data/storage/downloads/{audiobooks,podcasts}`
+  - NAS Edition: `/home/Audiobookshelf/{Audiobooks,Podcasts}`
+  - Files are automatically moved to the new location during restore
+  - You'll be prompted to confirm migration if media files are found
 
 ❌ **Not included:**
 - Log files (automatically excluded)
 - Cache files (automatically excluded)
-- Downloaded podcast episodes (can be re-downloaded)
 
 ## Backup Location
 
@@ -116,6 +122,14 @@ This means no library data was found. Possible causes:
 3. Check logs in the app for errors
 4. Try restarting the app
 
+### Media files didn't migrate
+
+If you see the prompt but files weren't migrated:
+- **To Official app**: Check `/home/Audiobookshelf/{Audiobooks,Podcasts}`
+- **To NAS Edition**: Check `/data/storage/downloads/{audiobooks,podcasts}`
+
+You can manually move them using the paths shown in Step 3.
+
 ## Manual Migration (Alternative)
 
 If you prefer to migrate manually without this tool:
@@ -147,10 +161,11 @@ sudo rm -rf ~/umbrel/home/abs-library-backup
 
 ## Important Notes
 
-- Media files (audiobooks/podcasts) are **not** affected by migration
-  - Official app stores them in app-data (deleted on uninstall)
-  - NAS Edition stores them in `/home/Audiobookshelf` (persists)
-  - You may need to reconfigure library paths after migration
+- **Media files are now migrated automatically** during restore
+  - The script detects media in the old app location
+  - You'll be prompted if you want to migrate them
+  - Files are moved (not copied) to avoid duplication
+  - Permissions are automatically fixed to 1000:1000
 
 - Network share configuration (NAS Edition only) is **not** migrated
   - You'll need to reconfigure network shares in the NAS Edition
