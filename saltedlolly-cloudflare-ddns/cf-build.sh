@@ -679,13 +679,13 @@ elif [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
   # Commit and push to GitHub
   echo "Committing changes..."
   git add -A
-  git commit -m "release: v${target_v} - ${RELEASE_NOTES}"
+  git commit -m "release: ${target_v} - ${RELEASE_NOTES}"
   
   echo "Pushing to GitHub..."
   git push
   
   echo
-  echo "✓ Successfully published v${target_v} to GitHub"
+  echo "✓ Successfully published ${target_v} to GitHub"
   echo
   echo "Built images on Docker Hub:"
   echo "  • UI:   saltedlolly/cloudflare-ddns-ui:$target_v@$UI_DIGEST"
@@ -694,6 +694,6 @@ elif [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
 else
   echo "Next steps:"
   echo "  1. Review changes: git diff"
-  echo "  2. Commit: git add -A && git commit -m 'chore: bump to v${target_v}, build multi-arch and pin digests'"
+  echo "  2. Commit: git add -A && git commit -m 'chore: bump to ${target_v}, build multi-arch and pin digests'"
   echo "  3. Push: git push"
 fi

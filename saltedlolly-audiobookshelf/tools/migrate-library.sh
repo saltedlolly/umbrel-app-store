@@ -19,7 +19,7 @@
 set -euo pipefail
 
 # Configuration
-readonly SCRIPT_VERSION="2.32.1.166"
+readonly SCRIPT_VERSION="2.32.1.167"
 readonly UMBREL_ROOT="${HOME}/umbrel"
 readonly BACKUP_DIR="${UMBREL_ROOT}/home/abs-library-backup"
 readonly OFFICIAL_APP_ID="audiobookshelf"
@@ -451,15 +451,23 @@ migrate_media_to_nas() {
     if [[ -d "${OFFICIAL_AUDIOBOOKS}" ]] && [[ -n "$(ls -A "${OFFICIAL_AUDIOBOOKS}" 2>/dev/null)" ]]; then
         log_info "Found audiobooks in official location"
         
-        # Fix ownership of source files before moving
-        log_info "Checking ownership of source files..."
-        fix_ownership "${OFFICIAL_AUDIOBOOKS}" > /dev/null 2>&1 || true
-        
         log_info "Creating NAS audiobooks directory..."
         mkdir -p "${NAS_AUDIOBOOKS}"
         
+        # Fix ownership of both source and destination
+        log_info "Fixing file permissions..."
+        if ! fix_ownership "${OFFICIAL_AUDIOBOOKS}"; then
+            log_error "Failed to fix ownership of source files"
+            exit 1
+        fi
+        if ! fix_ownership "${NAS_AUDIOBOOKS}"; then
+            log_error "Failed to fix ownership of destination directory"
+            exit 1
+        fi
+        
         log_info "Moving audiobooks to NAS location..."
-        if ! mv "${OFFICIAL_AUDIOBOOKS}"/* "${NAS_AUDIOBOOKS}/"; then
+        # Use sudo for the move operation to ensure it succeeds
+        if ! sudo mv "${OFFICIAL_AUDIOBOOKS}"/* "${NAS_AUDIOBOOKS}/"; then
             log_error "Failed to move audiobooks"
             exit 1
         fi
@@ -468,7 +476,7 @@ migrate_media_to_nas() {
         
         # Remove empty source directory
         if [[ -z "$(ls -A "${OFFICIAL_AUDIOBOOKS}" 2>/dev/null)" ]]; then
-            rmdir "${OFFICIAL_AUDIOBOOKS}"
+            sudo rmdir "${OFFICIAL_AUDIOBOOKS}" 2>/dev/null || rmdir "${OFFICIAL_AUDIOBOOKS}"
             log "Removed empty audiobooks source directory"
         fi
     fi
@@ -477,15 +485,23 @@ migrate_media_to_nas() {
     if [[ -d "${OFFICIAL_PODCASTS}" ]] && [[ -n "$(ls -A "${OFFICIAL_PODCASTS}" 2>/dev/null)" ]]; then
         log_info "Found podcasts in official location"
         
-        # Fix ownership of source files before moving
-        log_info "Checking ownership of source files..."
-        fix_ownership "${OFFICIAL_PODCASTS}" > /dev/null 2>&1 || true
-        
         log_info "Creating NAS podcasts directory..."
         mkdir -p "${NAS_PODCASTS}"
         
+        # Fix ownership of both source and destination
+        log_info "Fixing file permissions..."
+        if ! fix_ownership "${OFFICIAL_PODCASTS}"; then
+            log_error "Failed to fix ownership of source files"
+            exit 1
+        fi
+        if ! fix_ownership "${NAS_PODCASTS}"; then
+            log_error "Failed to fix ownership of destination directory"
+            exit 1
+        fi
+        
         log_info "Moving podcasts to NAS location..."
-        if ! mv "${OFFICIAL_PODCASTS}"/* "${NAS_PODCASTS}/"; then
+        # Use sudo for the move operation to ensure it succeeds
+        if ! sudo mv "${OFFICIAL_PODCASTS}"/* "${NAS_PODCASTS}/"; then
             log_error "Failed to move podcasts"
             exit 1
         fi
@@ -494,7 +510,7 @@ migrate_media_to_nas() {
         
         # Remove empty source directory
         if [[ -z "$(ls -A "${OFFICIAL_PODCASTS}" 2>/dev/null)" ]]; then
-            rmdir "${OFFICIAL_PODCASTS}"
+            sudo rmdir "${OFFICIAL_PODCASTS}" 2>/dev/null || rmdir "${OFFICIAL_PODCASTS}"
             log "Removed empty podcasts source directory"
         fi
     fi
@@ -532,15 +548,23 @@ migrate_media_to_official() {
     if [[ -d "${NAS_AUDIOBOOKS}" ]] && [[ -n "$(ls -A "${NAS_AUDIOBOOKS}" 2>/dev/null)" ]]; then
         log_info "Found audiobooks in NAS location"
         
-        # Fix ownership of source files before moving
-        log_info "Checking ownership of source files..."
-        fix_ownership "${NAS_AUDIOBOOKS}" > /dev/null 2>&1 || true
-        
         log_info "Creating Official audiobooks directory..."
         mkdir -p "${OFFICIAL_AUDIOBOOKS}"
         
+        # Fix ownership of both source and destination
+        log_info "Fixing file permissions..."
+        if ! fix_ownership "${NAS_AUDIOBOOKS}"; then
+            log_error "Failed to fix ownership of source files"
+            exit 1
+        fi
+        if ! fix_ownership "${OFFICIAL_AUDIOBOOKS}"; then
+            log_error "Failed to fix ownership of destination directory"
+            exit 1
+        fi
+        
         log_info "Moving audiobooks to Official location..."
-        if ! mv "${NAS_AUDIOBOOKS}"/* "${OFFICIAL_AUDIOBOOKS}/"; then
+        # Use sudo for the move operation to ensure it succeeds
+        if ! sudo mv "${NAS_AUDIOBOOKS}"/* "${OFFICIAL_AUDIOBOOKS}/"; then
             log_error "Failed to move audiobooks"
             exit 1
         fi
@@ -549,7 +573,7 @@ migrate_media_to_official() {
         
         # Remove empty source directory
         if [[ -z "$(ls -A "${NAS_AUDIOBOOKS}" 2>/dev/null)" ]]; then
-            rmdir "${NAS_AUDIOBOOKS}"
+            sudo rmdir "${NAS_AUDIOBOOKS}" 2>/dev/null || rmdir "${NAS_AUDIOBOOKS}"
             log "Removed empty audiobooks source directory"
         fi
     fi
@@ -558,15 +582,23 @@ migrate_media_to_official() {
     if [[ -d "${NAS_PODCASTS}" ]] && [[ -n "$(ls -A "${NAS_PODCASTS}" 2>/dev/null)" ]]; then
         log_info "Found podcasts in NAS location"
         
-        # Fix ownership of source files before moving
-        log_info "Checking ownership of source files..."
-        fix_ownership "${NAS_PODCASTS}" > /dev/null 2>&1 || true
-        
         log_info "Creating Official podcasts directory..."
         mkdir -p "${OFFICIAL_PODCASTS}"
         
+        # Fix ownership of both source and destination
+        log_info "Fixing file permissions..."
+        if ! fix_ownership "${NAS_PODCASTS}"; then
+            log_error "Failed to fix ownership of source files"
+            exit 1
+        fi
+        if ! fix_ownership "${OFFICIAL_PODCASTS}"; then
+            log_error "Failed to fix ownership of destination directory"
+            exit 1
+        fi
+        
         log_info "Moving podcasts to Official location..."
-        if ! mv "${NAS_PODCASTS}"/* "${OFFICIAL_PODCASTS}/"; then
+        # Use sudo for the move operation to ensure it succeeds
+        if ! sudo mv "${NAS_PODCASTS}"/* "${OFFICIAL_PODCASTS}/"; then
             log_error "Failed to move podcasts"
             exit 1
         fi
@@ -575,7 +607,7 @@ migrate_media_to_official() {
         
         # Remove empty source directory
         if [[ -z "$(ls -A "${NAS_PODCASTS}" 2>/dev/null)" ]]; then
-            rmdir "${NAS_PODCASTS}"
+            sudo rmdir "${NAS_PODCASTS}" 2>/dev/null || rmdir "${NAS_PODCASTS}"
             log "Removed empty podcasts source directory"
         fi
     fi
@@ -583,7 +615,7 @@ migrate_media_to_official() {
     # Remove empty parent Audiobookshelf directory if it exists and is empty
     local nas_parent="${UMBREL_ROOT}/home/Audiobookshelf"
     if [[ -d "${nas_parent}" ]] && [[ -z "$(ls -A "${nas_parent}" 2>/dev/null)" ]]; then
-        rmdir "${nas_parent}"
+        sudo rmdir "${nas_parent}" 2>/dev/null || rmdir "${nas_parent}"
         log "Removed empty Audiobookshelf parent directory"
     fi
     
