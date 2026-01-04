@@ -21,7 +21,7 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
     <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/icon.svg" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#audiobookshelf-nas-edition">Audiobookshelf:<br>NAS Edition</a></td>
-      <td nowrap id="saltedlolly-audiobookshelf-version"><code>v2.32.1.167</code></td>
+      <td nowrap id="saltedlolly-audiobookshelf-version"><code>v2.32.1.168</code></td>
       <td nowrap id="saltedlolly-audiobookshelf-date">2026-01-04</td>
       <td>Audiobookshelf with added support for network shares - access media stored on your local network</td>
     </tr>
