@@ -31,12 +31,13 @@ UI_REPO="$APP_ROOT/ui"
 DDNS_REPO="$APP_ROOT/cloudflare-ddns"
 
 SET_VERSION=""
-BUMP_KIND="patch"   # patch|minor|major
+BUMP_KIND="patch"   # kept for backwards compatibility, not used in 4-part versioning
 RELEASE_NOTES="Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility"
 COMPOSE_FILE="$APP_ROOT/docker-compose.yml"
 APP_YML_FILE="$APP_ROOT/umbrel-app.yml"
 LOCAL_TEST=false
 PUBLISH_TO_GITHUB=false
+FORCE_BUMP=false
 UMBREL_DEV_HOST="192.168.215.2"
 
 is_macos=false
@@ -48,11 +49,15 @@ Usage: $0 [OPTIONS]
 
 Options:
   -h, --help           : Show this help message
-  --version <x.y.z>    : Set explicit version (otherwise auto-bump)
-  --bump patch|minor|major : Choose bump type (default: patch)
+  --version <vx.x.x.x> : Set explicit version (e.g., v1.15.1.5)
+  --bump               : Force increment app patch version (default for publish)
   --notes <text>       : Custom release notes
   --localtest          : Build and deploy to local umbrel-dev ($UMBREL_DEV_HOST)
   --publish            : Build and push to GitHub (prompts for version and notes if not provided)
+
+Version numbering: vX.Y.Z.N where:
+  X.Y.Z = cloudflare-ddns upstream version (auto-reset app patch when upstream updates)
+  N     = app patch number (increments on publish, resets to 0 when upstream updates)
 
 Default repo paths (within the app folder):
   UI_REPO:   $UI_REPO
@@ -60,6 +65,48 @@ Default repo paths (within the app folder):
 EOF
 }
 
+# Extract cloudflare-ddns version from Dockerfile (source of truth)
+extract_ddns_version() {
+  grep -o 'favonia/cloudflare-ddns:[0-9.]*' "$DDNS_REPO/Dockerfile" | cut -d':' -f2
+}
+
+# Extract full app version from umbrel-app.yml
+extract_full_version() {
+  # Extract version: "vx.x.x.x" from umbrel-app.yml
+  awk -F'"' '/^version:/ {print $2; exit}' "$APP_YML_FILE"
+}
+
+# Extract app patch version (last component) from full version
+extract_app_patch() {
+  local full_version="$1"
+  echo "$full_version" | awk -F'.' '{print $NF}'
+}
+
+# Compare versions and reset app patch if upstream changed
+check_and_reset_app_version() {
+  local current_ddns_version=$(extract_ddns_version)
+  local full_version=$(extract_full_version)
+  local version_prefix=$(echo "$full_version" | cut -d'.' -f1-3)
+  
+  # If version prefix changed, reset app patch to 0
+  if [[ "$version_prefix" != "$current_ddns_version" ]]; then
+    echo "✓ cloudflare-ddns version changed to $current_ddns_version, resetting app patch to 0" >&2
+    echo "v${current_ddns_version}.0"
+  else
+    echo "$full_version"
+  fi
+}
+
+# Increment the app patch version (last component)
+increment_app_patch() {
+  local full_version="$1"
+  local prefix=$(echo "$full_version" | cut -d'.' -f1-3)
+  local patch=$(extract_app_patch "$full_version")
+  local new_patch=$((patch + 1))
+  echo "${prefix}.${new_patch}"
+}
+
+# Old semver_bump for backwards compatibility (not used for 4-part versioning)
 semver_bump() {
   local version="$1" kind="$2"
   IFS='.' read -r major minor patch <<<"$version"
@@ -72,19 +119,75 @@ semver_bump() {
   echo "${major}.${minor}.${patch}"
 }
 
-read_current_version() {
-  # Extract version: "x.y.z" from umbrel-app.yml
-  awk -F'"' '/^version:/ {print $2; exit}' "$APP_YML_FILE"
+update_ddns_version() {
+  echo ""
+  echo "========================================="
+  echo "Checking cloudflare-ddns upstream version"
+  echo "========================================="
+  
+  # Get latest stable release tag from GitHub
+  echo "Fetching latest release from GitHub..."
+  local latest_version=$(curl -s https://api.github.com/repos/favonia/cloudflare-ddns/releases/latest | grep -o '"tag_name": "v[^"]*' | cut -d'v' -f2)
+  
+  if [[ -z "$latest_version" ]]; then
+    echo "⚠️  Could not fetch latest version from GitHub, skipping update" >&2
+    echo ""
+    return
+  fi
+  
+  echo "Latest stable version: $latest_version"
+  
+  # Get current version from Dockerfile
+  local current_version=$(extract_ddns_version)
+  echo "Current version in Dockerfile: $current_version"
+  
+  if [[ "$current_version" == "$latest_version" ]]; then
+    echo "✓ Already on latest version"
+    echo ""
+    return
+  fi
+  
+  echo "Updating from $current_version to $latest_version..."
+  
+  # Update Dockerfile
+  if $is_macos; then
+    sed -i '' "s/favonia\/cloudflare-ddns:[0-9.]*/favonia\/cloudflare-ddns:${latest_version}/" "$DDNS_REPO/Dockerfile"
+  else
+    sed -i "s/favonia\/cloudflare-ddns:[0-9.]*/favonia\/cloudflare-ddns:${latest_version}/" "$DDNS_REPO/Dockerfile"
+  fi
+  
+  echo "✓ Updated Dockerfile to use favonia/cloudflare-ddns:${latest_version}"
+  echo ""
 }
 
 set_version_in_app_yml() {
   local newv="$1"
   # Use [[:space:]] instead of \s for BSD sed (macOS) compatibility
   if $is_macos; then
-    sed -E -i '' "s/^(version:[[:space:]]*)\"[0-9]+\.[0-9]+\.[0-9]+\"/\\1\"${newv}\"/" "$APP_YML_FILE"
+    sed -E -i '' "s/^(version:[[:space:]]*)\"[^\"]+\"/\\1\"${newv}\"/" "$APP_YML_FILE"
   else
-    sed -E -i "s/^(version:[[:space:]]*)\"[0-9]+\.[0-9]+\.[0-9]+\"/\\1\"${newv}\"/" "$APP_YML_FILE"
+    sed -E -i "s/^(version:[[:space:]]*)\"[^\"]+\"/\\1\"${newv}\"/" "$APP_YML_FILE"
   fi
+}
+
+# Update version.json with 4-part version info
+update_version_json() {
+  local full_version="$1"
+  local ddns_version=$(extract_ddns_version)
+  local app_patch=$(extract_app_patch "$full_version")
+  local VERSION_FILE="$APP_ROOT/ui/public/version.json"
+  
+  # Create parent directory if needed
+  mkdir -p "$(dirname "$VERSION_FILE")"
+  
+  echo "{" > "$VERSION_FILE"
+  echo "  \"version\": \"$full_version\"," >> "$VERSION_FILE"
+  echo "  \"ddnsVersion\": \"$ddns_version\"," >> "$VERSION_FILE"
+  echo "  \"appVersion\": $app_patch" >> "$VERSION_FILE"
+  echo "}" >> "$VERSION_FILE"
+  
+  echo "✓ Updated version.json to $full_version (upstream: $ddns_version, app patch: $app_patch)"
+  echo ""
 }
 
 set_version_in_package_json() {
@@ -92,9 +195,9 @@ set_version_in_package_json() {
   local package_json="ui/package.json"
   # Update version in package.json for consistency
   if $is_macos; then
-    sed -E -i '' "s/\"version\":[[:space:]]*\"[0-9]+\.[0-9]+\.[0-9]+\"/\"version\": \"${newv}\"/" "$package_json"
+    sed -E -i '' "s/\"version\":[[:space:]]*\"[^\"]+\"/\"version\": \"${newv}\"/" "$package_json"
   else
-    sed -E -i "s/\"version\":[[:space:]]*\"[0-9]+\.[0-9]+\.[0-9]+\"/\"version\": \"${newv}\"/" "$package_json"
+    sed -E -i "s/\"version\":[[:space:]]*\"[^\"]+\"/\"version\": \"${newv}\"/" "$package_json"
   fi
 }
 
@@ -178,7 +281,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --help|-h) usage; exit 0 ;;
     --version) SET_VERSION="$2"; shift 2 ;;
-    --bump) BUMP_KIND="$2"; shift 2 ;;
+    --bump) FORCE_BUMP=true; shift ;;
     --notes) RELEASE_NOTES="$2"; shift 2 ;;
     --localtest) LOCAL_TEST=true; shift ;;
     --publish) PUBLISH_TO_GITHUB=true; shift ;;
@@ -187,37 +290,36 @@ while [[ $# -gt 0 ]]; do
 done
 
 ########################################
+# Check for upstream cloudflare-ddns updates
+########################################
+update_ddns_version
+
+########################################
 # Interactive prompts for --publish mode
 ########################################
 if [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
-  current_v=$(read_current_version)
-  if [[ -z "$current_v" ]]; then
+  current_full_v=$(extract_full_version)
+  if [[ -z "$current_full_v" ]]; then
     echo "Error: Could not read current version from $APP_YML_FILE" >&2
     exit 1
   fi
   
   # Prompt for version if not specified
   if [[ -z "$SET_VERSION" ]]; then
-    echo "Current version: $current_v"
+    echo "Current version: $current_full_v"
     echo
-    patch_v=$(semver_bump "$current_v" "patch")
-    minor_v=$(semver_bump "$current_v" "minor")
-    major_v=$(semver_bump "$current_v" "major")
+    bumped_v=$(increment_app_patch "$current_full_v")
     
-    echo "Select version bump:"
-    echo "  1) Patch: $patch_v (bug fixes, minor changes)"
-    echo "  2) Minor: $minor_v (new features, backwards compatible)"
-    echo "  3) Major: $major_v (breaking changes)"
-    echo "  4) Cancel"
+    echo "Select action:"
+    echo "  1) Increment app patch: $bumped_v (normal publish)"
+    echo "  2) Cancel"
     echo
-    read -p "Enter choice (1-4): " -n 1 -r
+    read -p "Enter choice (1-2): " -n 1 -r
     echo
     
     case "$REPLY" in
-      1) SET_VERSION="$patch_v"; BUMP_KIND="patch" ;;
-      2) SET_VERSION="$minor_v"; BUMP_KIND="minor" ;;
-      3) SET_VERSION="$major_v"; BUMP_KIND="major" ;;
-      4) echo "Cancelled."; exit 0 ;;
+      1) SET_VERSION="$bumped_v" ;;
+      2) echo "Cancelled."; exit 0 ;;
       *) echo "Invalid choice. Cancelled."; exit 1 ;;
     esac
     
@@ -255,19 +357,29 @@ fi
 ########################################
 # Determine version
 ########################################
-current_v=$(read_current_version)
-if [[ -z "$current_v" ]]; then
+current_full_v=$(extract_full_version)
+if [[ -z "$current_full_v" ]]; then
   echo "Error: Could not read current version from $APP_YML_FILE" >&2
   exit 1
 fi
 
+# Check if upstream version changed; if so, reset app patch to 0
+current_full_v=$(check_and_reset_app_version)
+
 target_v="$SET_VERSION"
 if [[ -z "$target_v" ]]; then
-  target_v=$(semver_bump "$current_v" "$BUMP_KIND")
+  # If FORCE_BUMP is set or if we're publishing, increment the app patch
+  if [[ "$FORCE_BUMP" == "true" ]] || [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
+    target_v=$(increment_app_patch "$current_full_v")
+  else
+    target_v="$current_full_v"
+  fi
 fi
 
-echo "Current app version: $current_v"
-echo "Target app version:  $target_v"
+ddns_ver=$(extract_ddns_version)
+echo "Current cloudflare-ddns version: $ddns_ver"
+echo "Current app version:             $current_full_v"
+echo "Target app version:              $target_v"
 echo
 
 ########################################
@@ -337,10 +449,13 @@ fi
 echo
 
 ########################################
-# Update umbrel-app.yml and package.json
+# Update umbrel-app.yml, version.json, and package.json
 ########################################
 echo "Updating umbrel-app.yml version..."
 set_version_in_app_yml "$target_v"
+
+echo "Updating version.json..."
+update_version_json "$target_v"
 
 # Only update release notes for non-localtest builds (mainly --publish)
 if [[ "$LOCAL_TEST" != "true" ]]; then

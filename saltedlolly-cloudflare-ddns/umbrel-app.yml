@@ -4,7 +4,7 @@ name: Cloudflare DDNS Client
 tagline: Dynamic DNS client for Cloudflare to keep your domain updated with your changing IP address.
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/logo.png
 category: Networking
-version: "1.2.7"
+version: "v1.15.1.2"
 port: 4100
 description: >-  
   Dynamic DDNS client for Cloudflare to keep your domain or sub-domain updated with your current public IP address.
@@ -36,7 +36,51 @@ support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery:
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/1.png
 releaseNotes: >-
-  v1.2.7:
+  vv1.15.1.2:
+
+  - Switch to new versioning build system
+
+  vv1.15.1.1:
+
+  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
+
+  vv1.15.2.0:
+
+  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
+
+  vv1.15.1.1:
+
+  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
+
+  vv1.15.1.0:
+
+  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
+
+  vv1.15.1.0:
+
+  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
+
+  vv1.15.1.5:
+
+  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
+
+  vv1.15.1.1:
+
+  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
+
+  vv1.15.1.1:
+
+  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
+
+  vv1.15.1.0:
+
+  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
+
+  v1.15.1.0:
+
+  - Implement 4-part versioning (upstream.app): v{cloudflare-ddns version}.{app patch}
+
+  Previous releases (legacy versioning):
 
   - fix formatting issue in umbrel-app.yml
 
