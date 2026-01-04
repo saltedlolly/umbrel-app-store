@@ -66,6 +66,27 @@ log_header() {
     echo ""
 }
 
+# Ensure we have sudo cached early to avoid mid-run failures
+ensure_sudo() {
+    if ! command -v sudo >/dev/null 2>&1; then
+        log_warn "sudo is not available; continuing without pre-caching credentials"
+        return 0
+    fi
+
+    # Already have sudo without password
+    if sudo -n true 2>/dev/null; then
+        return 0
+    fi
+
+    log_info "Root privileges are needed later to fix file ownership (chown to 1000:1000) during backup/restore."
+    log_info "Please enter your password now so the rest of the script can run without interruption."
+
+    if ! sudo -v; then
+        log_error "Could not obtain sudo privileges. Please rerun the script after providing the correct password."
+        exit 1
+    fi
+}
+
 # Prompt user for yes/no
 prompt_yes_no() {
     local prompt="$1"
@@ -946,6 +967,9 @@ main() {
     else
         log_warn "Could not query umbrelOS version, proceeding anyway..."
     fi
+
+    # Cache sudo credentials up-front so chown operations do not interrupt later
+    ensure_sudo
     
     # Query installed apps once (this takes several seconds)
     log_info "Querying installed apps..."

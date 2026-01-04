@@ -339,20 +339,44 @@ update_app_yml_version() {
 update_readme_version() {
   local new_version="$1"
   local README_FILE="$SCRIPT_DIR/../README.md"
+  local today
+  today=$(date +%F)
   
   if [[ ! -f "$README_FILE" ]]; then
     echo "⚠️  README.md not found at $README_FILE, skipping README update"
     return
   fi
   
-  echo "Updating app store README.md version..."
-  # Update the line: ### Audiobookshelf: NAS Edition  `v0.1.2.1`
+  echo "Updating app store README.md version and release date..."
   if $is_macos; then
-    sed -i '' -E "s/(### Audiobookshelf: NAS Edition[[:space:]]+\`v)[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/\1$new_version/" "$README_FILE"
+    sed -i '' -E "s#(<td nowrap id=\"saltedlolly-audiobookshelf-version\"><code>v)[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(</code></td>)#\1$new_version\2#" "$README_FILE"
+    sed -i '' -E "s#(<td nowrap id=\"saltedlolly-audiobookshelf-date\">)[0-9]{4}-[0-9]{2}-[0-9]{2}(</td>)#\1$today\2#" "$README_FILE"
   else
-    sed -i -E "s/(### Audiobookshelf: NAS Edition[[:space:]]+\`v)[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/\1$new_version/" "$README_FILE"
+    sed -i -E "s#(<td nowrap id=\"saltedlolly-audiobookshelf-version\"><code>v)[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(</code></td>)#\1$new_version\2#" "$README_FILE"
+    sed -i -E "s#(<td nowrap id=\"saltedlolly-audiobookshelf-date\">)[0-9]{4}-[0-9]{2}-[0-9]{2}(</td>)#\1$today\2#" "$README_FILE"
   fi
   echo "✓ Updated README.md version to v$new_version"
+  echo "✓ Updated README.md release date to $today"
+  echo ""
+}
+
+# Update migrate-library.sh SCRIPT_VERSION to match app version
+update_migration_script_version() {
+  local new_version="$1"
+  local SCRIPT_FILE="$SCRIPT_DIR/tools/migrate-library.sh"
+
+  if [[ ! -f "$SCRIPT_FILE" ]]; then
+    echo "⚠️  migrate-library.sh not found at $SCRIPT_FILE, skipping version update"
+    return
+  fi
+
+  echo "Updating migrate-library.sh SCRIPT_VERSION to v$new_version..."
+  if $is_macos; then
+    sed -i '' -E "s/^(readonly SCRIPT_VERSION=\")([^\"]+)(\")/\\1$new_version\\3/" "$SCRIPT_FILE"
+  else
+    sed -i -E "s/^(readonly SCRIPT_VERSION=\")([^\"]+)(\")/\\1$new_version\\3/" "$SCRIPT_FILE"
+  fi
+  echo "✓ Updated SCRIPT_VERSION to v$new_version"
   echo ""
 }
 
@@ -679,7 +703,11 @@ echo "[DEBUG] Reading FULL_VERSION from version.json"
 FULL_VERSION=$(node -p "require('$CONFIG_TOOL_UI_REPO/public/version.json').version")
 echo "[DEBUG] FULL_VERSION: $FULL_VERSION"
 
-# Update app store README.md with the new version
+# Update migrate-library.sh script version to match app version
+echo "[DEBUG] Calling update_migration_script_version with $FULL_VERSION"
+update_migration_script_version "$FULL_VERSION"
+
+# Update app store README.md with the new version and release date
 echo "[DEBUG] Calling update_readme_version with $FULL_VERSION"
 update_readme_version "$FULL_VERSION"
 
