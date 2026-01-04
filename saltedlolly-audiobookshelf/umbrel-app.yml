@@ -3,14 +3,14 @@ id: saltedlolly-audiobookshelf
 name: ABS NAS Edition
 tagline: Audiobookshelf with NAS support
 category: Media
-version: "2.32.1.153"
+version: "2.32.1.154"
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/icon.svg
 port: 23378
 description: >-
   Audiobookshelf NAS Edition adds support for accessing network shares from within Audiobookshelf, allowing you to access your media files stored on NAS/SMB/NFS shares.
  
 
- ⚠️ IMPORTANT - READ THIS BEFORE INSTALLING!! 👇
+  ⚠️ IMPORTANT - READ THIS BEFORE INSTALLING!! 👇
 
   
   If you are currently using the Audiobookshelf app from the Umbrel App Store, please read this carefully:
@@ -32,7 +32,7 @@ description: >-
 
   - Mount any network share in the Umbrel Files app and it is immediately accessible to Audiobookshelf
 
-   - Specify which shares are required by Audiobookshelf using the provided Network Share Config Tool
+  - Specify which shares are required by Audiobookshelf using the provided Network Share Config Tool
 
   - After a system restart, Audiobookshelf will wait for the required network shares to become available before starting up, preventing errors due to missing media.
 
