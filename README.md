@@ -1,8 +1,19 @@
 ## 🌂 Olly's Umbrel App Store
 
-Welcome to my Umbrel Community App Store, containing all the apps I have developed for [Umbrel](https://umbrel.com/).
+Welcome to my Umbrel Community App Store containing all the apps I have developed for [Umbrel](https://umbrel.com/).
 
-Details about the Apps are below. More may be added in future. Give the repo a ⭐ to be kept informed.
+A list of the currently available Apps is below. Give the repo a ⭐ to be kept updated about new additions.
+
+
+## 🧩 Available Umbrel Apps
+
+| Name                                                       | Latest Version  | Release Date  | Description                      |
+|------------------------------------------------------------| --------------- | ------------- | -------------------------------- |
+| [Audiobookshelf: NAS Edition](#audiobookshelf-nas-edition) | v2.32.1.158     | 2026-01-03    | Audiobookshelf with added support for network shares - access your media stored on another device on your local  network |
+| [Cloudflare DDNS](#cloudflare-ddns)                        | v0.1.2          | 2026-01-03    | A dynamic DNS client for domains hosted on Cloudflare |
+
+More details about each App can be found below.
+
 
 ## 🧱 How to access the App Store on your Umbrel
 
@@ -20,12 +31,12 @@ If you find these Apps useful, please support my work by [becoming a sponsor](ht
 
 Your support helps me maintain and improve existing Apps, and develop new ones.
 
-One-time donations and monthly sponsors are both hugely appreciated — thank you for helping keep open-source sustainable. 🙏
+One-time donations and monthly sponsors are both hugely appreciated — thank you for helping keep open-source sustainable and making self-hosting. 🙏
 
 
-## 🧩 Umbrel Apps
+## 🧩 About the Apps
 
-### Audiobookshelf: NAS Edition  `v2.32.1.158`
+### Audiobookshelf: NAS Edition
 <img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/icon.svg" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
  This [Audiobookshelf](https://www.audiobookshelf.org/) app includes several advanced features not available in the Umbrel App Store version:
@@ -40,7 +51,7 @@ One-time donations and monthly sponsors are both hugely appreciated — thank yo
 | Name                          | Port         | Local Address                                            | Umbrel SSO    |
 |-------------------------------| ------------ | -------------------------------------------------------- | ------------- |
 | ABS Network Share Config Tool | `23378`      | [http://umbrel.local:23378](http://umbrel.local:23378/)  | ✅            |
-| Audiobookshelf                | `13378`      | [http://umbrel.local:13378](http://umbrel.local:13378/)  |               | 
+| Audiobookshelf Web UI         | `13378`      | [http://umbrel.local:13378](http://umbrel.local:13378/)  |               | 
 
 #### Audiobookshelf Data Folders
 
@@ -79,11 +90,11 @@ The folders below contain your user accounts, libraries and associated metadata.
 
 ---
 
-### Cloudflare DDNS  `v0.1.2` 
+### Cloudflare DDNS
 <img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/logo.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 A dynamic DNS client for Cloudflare powered by [favonia/cloudflare-ddns](https://github.com/favonia/cloudflare-ddns) which helps you automatically keep your Cloudflare domain or subdomain updated with your current IP address. Includes a web UI for configuration and monitoring. Supports IPv4 and IPv6, multiple domains, and Cloudflare cloud proxying.
 
-| Description                    | Port         | Local Address                                           | Umbrel SSO    |
-|--------------------------------| ------------ | ------------------------------------------------------- | ------------- |
-| Cloudflare DDNS Updater        | `4100`       | [http://umbrel.local:4100](http://umbrel.local:4100/)   | ✅            | 
+| Name                       | Port         | Local Address                                           | Umbrel SSO    |
+|----------------------------| ------------ | ------------------------------------------------------- | ------------- |
+| Cloudflare DDNS Updater    | `4100`       | [http://umbrel.local:4100](http://umbrel.local:4100/)   | ✅            | 
