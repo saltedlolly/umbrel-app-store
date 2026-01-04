@@ -4,7 +4,7 @@
 # 
 # This script helps you migrate your Audiobookshelf library between:
 # - Official Audiobookshelf app from Umbrel App Store
-# - Audiobookshelf: NAS Edition from Olly'sCommunity App Store
+# - Audiobookshelf: NAS Edition from Olly's Umbrel Community App Store
 #
 # The script backs up and restores:
 # - Library configuration (settings, library data)
@@ -300,7 +300,7 @@ get_app_name() {
             echo "Audiobookshelf (Official Umbrel App Store)"
             ;;
         "${NAS_APP_ID}")
-            echo "Audiobookshelf: NAS Edition (Community App Store)"
+            echo "Audiobookshelf: NAS Edition (Olly's Umbrel Community App Store)"
             ;;
         *)
             echo "${app_id}"
