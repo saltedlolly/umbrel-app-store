@@ -40,55 +40,16 @@ releaseNotes: >-
 
   - Switch to new versioning build system
 
-  vv1.15.1.1:
+  v1.15.1.2:
 
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
+  - Switch to new versioning build system
 
-  vv1.15.2.0:
-
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
-
-  vv1.15.1.1:
-
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
-
-  vv1.15.1.0:
-
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
-
-  vv1.15.1.0:
-
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
-
-  vv1.15.1.5:
-
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
-
-  vv1.15.1.1:
-
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
-
-  vv1.15.1.1:
-
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
-
-  vv1.15.1.0:
-
-  - Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility
-
-  v1.15.1.0:
-
-  - Implement 4-part versioning (upstream.app): v{cloudflare-ddns version}.{app patch}
-
-  Previous releases (legacy versioning):
-
-  - fix formatting issue in umbrel-app.yml
 
   v1.2.6:
 
   - move images to app store gallery repo. add app store screenshot.
   - move logo inside ui. 
-  -tweak dashboard icon. 
+  - tweak dashboard icon. 
 
 
   v1.2.5:
