@@ -583,6 +583,17 @@ restore_library() {
     # Remove existing library files (preserve logs)
     log_info "Removing existing library files..."
     
+    # Fix ownership before attempting removal (files might be owned by root)
+    if [[ -d "${app_data_dir}/config" ]] || [[ -d "${app_data_dir}/metadata" ]]; then
+        log_info "Checking file ownership before removal..."
+        if [[ -d "${app_data_dir}/config" ]]; then
+            fix_ownership "${app_data_dir}/config" > /dev/null 2>&1 || true
+        fi
+        if [[ -d "${app_data_dir}/metadata" ]]; then
+            fix_ownership "${app_data_dir}/metadata" > /dev/null 2>&1 || true
+        fi
+    fi
+    
     if [[ -d "${app_data_dir}/config" ]]; then
         rm -rf "${app_data_dir}/config"
         log "Removed existing config"
