@@ -429,6 +429,11 @@ migrate_media_to_nas() {
     # Migrate Audiobooks
     if [[ -d "${OFFICIAL_AUDIOBOOKS}" ]] && [[ -n "$(ls -A "${OFFICIAL_AUDIOBOOKS}" 2>/dev/null)" ]]; then
         log_info "Found audiobooks in official location"
+        
+        # Fix ownership of source files before moving
+        log_info "Checking ownership of source files..."
+        fix_ownership "${OFFICIAL_AUDIOBOOKS}" > /dev/null 2>&1 || true
+        
         log_info "Creating NAS audiobooks directory..."
         mkdir -p "${NAS_AUDIOBOOKS}"
         
@@ -450,6 +455,11 @@ migrate_media_to_nas() {
     # Migrate Podcasts
     if [[ -d "${OFFICIAL_PODCASTS}" ]] && [[ -n "$(ls -A "${OFFICIAL_PODCASTS}" 2>/dev/null)" ]]; then
         log_info "Found podcasts in official location"
+        
+        # Fix ownership of source files before moving
+        log_info "Checking ownership of source files..."
+        fix_ownership "${OFFICIAL_PODCASTS}" > /dev/null 2>&1 || true
+        
         log_info "Creating NAS podcasts directory..."
         mkdir -p "${NAS_PODCASTS}"
         
@@ -500,6 +510,11 @@ migrate_media_to_official() {
     # Migrate Audiobooks
     if [[ -d "${NAS_AUDIOBOOKS}" ]] && [[ -n "$(ls -A "${NAS_AUDIOBOOKS}" 2>/dev/null)" ]]; then
         log_info "Found audiobooks in NAS location"
+        
+        # Fix ownership of source files before moving
+        log_info "Checking ownership of source files..."
+        fix_ownership "${NAS_AUDIOBOOKS}" > /dev/null 2>&1 || true
+        
         log_info "Creating Official audiobooks directory..."
         mkdir -p "${OFFICIAL_AUDIOBOOKS}"
         
@@ -521,6 +536,11 @@ migrate_media_to_official() {
     # Migrate Podcasts
     if [[ -d "${NAS_PODCASTS}" ]] && [[ -n "$(ls -A "${NAS_PODCASTS}" 2>/dev/null)" ]]; then
         log_info "Found podcasts in NAS location"
+        
+        # Fix ownership of source files before moving
+        log_info "Checking ownership of source files..."
+        fix_ownership "${NAS_PODCASTS}" > /dev/null 2>&1 || true
+        
         log_info "Creating Official podcasts directory..."
         mkdir -p "${OFFICIAL_PODCASTS}"
         

@@ -25,7 +25,7 @@ One-time donations and monthly sponsors are both hugely appreciated — thank yo
 
 ## 🧩 Umbrel Apps
 
-### Audiobookshelf: NAS Edition  `v2.32.1.157`
+### Audiobookshelf: NAS Edition  `v2.32.1.158`
 <img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/icon.svg" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
  This [Audiobookshelf](https://www.audiobookshelf.org/) app includes several advanced features not available in the Umbrel App Store version:
