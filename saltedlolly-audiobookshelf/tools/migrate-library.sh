@@ -288,7 +288,7 @@ start_app() {
 # Get app data directory
 get_app_data_dir() {
     local app_id="$1"
-    echo "${UMBREL_ROOT}/app-data/${app_id}"
+    echo "${UMBREL_ROOT}/app-data/${app_id}/data"
 }
 
 # Get app name for display
