@@ -5,10 +5,12 @@ Welcome to my Umbrel Community App Store containing all the apps I have develope
 A list of the currently available Apps is below. Give the repo a ⭐ to be kept updated about new additions.
 
 
-<small>
+## 🧩 Umbrel Apps
+
 <table>
   <thead>
     <tr>
+      <th>Icon</th>
       <th>Name</th>
       <th nowrap>Latest Version</th>
       <th nowrap>Release Date</th>
@@ -17,20 +19,21 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
   </thead>
   <tbody>
     <tr>
-      <td><a href="#audiobookshelf-nas-edition">Audiobookshelf: NAS Edition</a></td>
-      <td nowrap id="saltedlolly-audiobookshelf-ver"><code>v2.32.1.158</code></td>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/icon.svg" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td><a href="#audiobookshelf-nas-edition">Audiobookshelf:<br>NAS Edition</a></td>
+      <td nowrap id="saltedlolly-audiobookshelf-version"><code>v2.32.1.166</code></td>
       <td nowrap id="saltedlolly-audiobookshelf-date">2026-01-04</td>
-      <td>Audiobookshelf with added support for network shares - access your media stored on another device on your local network</td>
+      <td>Audiobookshelf with added support for network shares - access media stored on your local network</td>
     </tr>
     <tr>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/logo.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#cloudflare-ddns">Cloudflare DDNS</a></td>
-      <td nowrap id="saltedlolly-cloudflare-ddns-ver"><code>v0.1.2</code></td>
+      <td nowrap id="saltedlolly-cloudflare-ddns-version"><code>v0.1.2</code></td>
       <td nowrap id="saltedlolly-cloudflare-ddns-date">2026-01-03</td>
       <td>A dynamic DNS client for domains hosted on Cloudflare</td>
     </tr>
   </tbody>
 </table>
-</small>
 
 More details about each App can be found below.
 
@@ -51,13 +54,12 @@ If you find these Apps useful, please support my work by [becoming a sponsor](ht
 
 Your support helps me maintain and improve existing Apps, and develop new ones.
 
-One-time donations and monthly sponsors are both hugely appreciated — thank you for helping keep open-source sustainable and making self-hosting. 🙏
+One-time donations and monthly sponsors are both hugely appreciated — thank you for helping keep open-source sustainable and making self-hosting easier for all. 🙏
 
 
 ## 🧩 About the Apps
 
-### Audiobookshelf: NAS Edition
-<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/icon.svg" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+### Audiobookshelf: NAS Edition<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/icon.svg" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
  This [Audiobookshelf](https://www.audiobookshelf.org/) app includes several advanced features not available in the Umbrel App Store version:
 
@@ -110,8 +112,8 @@ The folders below contain your user accounts, libraries and associated metadata.
 
 ---
 
-### Cloudflare DDNS
-<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/logo.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+### Cloudflare DDNS<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/logo.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+
 
 A dynamic DNS client for Cloudflare powered by [favonia/cloudflare-ddns](https://github.com/favonia/cloudflare-ddns) which helps you automatically keep your Cloudflare domain or subdomain updated with your current IP address. Includes a web UI for configuration and monitoring. Supports IPv4 and IPv6, multiple domains, and Cloudflare cloud proxying.
 

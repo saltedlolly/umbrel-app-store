@@ -348,13 +348,33 @@ update_readme_version() {
   fi
   
   echo "Updating app store README.md version and release date..."
-  if $is_macos; then
-    sed -i '' -E "s#(<td nowrap id=\"saltedlolly-audiobookshelf-version\"><code>v)[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(</code></td>)#\1$new_version\2#" "$README_FILE"
-    sed -i '' -E "s#(<td nowrap id=\"saltedlolly-audiobookshelf-date\">)[0-9]{4}-[0-9]{2}-[0-9]{2}(</td>)#\1$today\2#" "$README_FILE"
-  else
-    sed -i -E "s#(<td nowrap id=\"saltedlolly-audiobookshelf-version\"><code>v)[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(</code></td>)#\1$new_version\2#" "$README_FILE"
-    sed -i -E "s#(<td nowrap id=\"saltedlolly-audiobookshelf-date\">)[0-9]{4}-[0-9]{2}-[0-9]{2}(</td>)#\1$today\2#" "$README_FILE"
-  fi
+  python3 - "$README_FILE" "$new_version" "$today" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+readme_path = Path(sys.argv[1])
+new_version = sys.argv[2]
+today = sys.argv[3]
+
+text = readme_path.read_text()
+
+text = re.sub(
+    r'(<td nowrap id="saltedlolly-audiobookshelf-version"><code>)v[^<]*(</code></td>)',
+    rf"\1v{new_version}\2",
+    text,
+    count=1,
+)
+
+text = re.sub(
+    r'id="saltedlolly-audiobookshelf-date">(\d{4}-\d{2}-\d{2})',
+    f'id="saltedlolly-audiobookshelf-date">{today}',
+    text,
+    count=1,
+)
+
+readme_path.write_text(text)
+PY
   echo "✓ Updated README.md version to v$new_version"
   echo "✓ Updated README.md release date to $today"
   echo ""
