@@ -392,7 +392,7 @@
                     try {
                         const versionResp = await fetch('/api/version');
                         const versionData = await versionResp.json();
-                        document.getElementById('versionBadge').textContent = 'v' + versionData.version;
+                        document.getElementById('versionBadge').textContent = versionData.version;
                     } catch (e) {
                         console.error('Failed to load version:', e);
                     }

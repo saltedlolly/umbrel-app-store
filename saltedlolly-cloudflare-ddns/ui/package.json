@@ -1,6 +1,6 @@
 {
     "name": "cloudflare-ddns-ui",
-    "version": "v1.15.1.2",
+    "version": "v1.15.1.3",
     "description": "UI for configuring Cloudflare DDNS",
     "main": "server.js",
     "scripts": {
