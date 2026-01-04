@@ -19,7 +19,7 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
     <tr>
       <td><a href="#audiobookshelf-nas-edition">Audiobookshelf: NAS Edition</a></td>
       <td nowrap id="saltedlolly-audiobookshelf-ver"><code>v2.32.1.158</code></td>
-      <td nowrap id="saltedlolly-audiobookshelf-date">2026-01-03</td>
+      <td nowrap id="saltedlolly-audiobookshelf-date">2026-01-04</td>
       <td>Audiobookshelf with added support for network shares - access your media stored on another device on your local network</td>
     </tr>
     <tr>
