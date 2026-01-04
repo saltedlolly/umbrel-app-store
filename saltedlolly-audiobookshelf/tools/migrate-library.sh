@@ -26,8 +26,8 @@ readonly OFFICIAL_APP_ID="audiobookshelf"
 readonly NAS_APP_ID="saltedlolly-audiobookshelf"
 
 # Media file paths for Official app
-readonly OFFICIAL_AUDIOBOOKS="${UMBREL_ROOT}/data/storage/downloads/audiobooks"
-readonly OFFICIAL_PODCASTS="${UMBREL_ROOT}/data/storage/downloads/podcasts"
+readonly OFFICIAL_AUDIOBOOKS="${UMBREL_ROOT}/home/Downloads/audiobooks"
+readonly OFFICIAL_PODCASTS="${UMBREL_ROOT}/home/Downloads/podcasts"
 
 # Media file paths for NAS Edition
 readonly NAS_AUDIOBOOKS="${UMBREL_ROOT}/home/Audiobookshelf/Audiobooks"
