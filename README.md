@@ -9,9 +9,9 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
 
 | Name                                                       | Latest Version  | Release Date  | Description                      |
 |------------------------------------------------------------| --------------- | ------------- | -------------------------------- |
-| [Audiobookshelf: NAS Edition](#audiobookshelf-nas-edition) | v2.32.1.158     | 2026-01-03    | Audiobookshelf with added support for network shares - access your media stored on another device on your local  network |
+| [Audiobookshelf: NAS Edition](#audiobookshelf-nas-edition) | v2.32.1.158     | 2026-01-03    | Audiobookshelf with added support for\ network shares - access your media stored on another device on your local  network |
 | [Cloudflare DDNS](#cloudflare-ddns)                        | v0.1.2          | 2026-01-03    | A dynamic DNS client for domains hosted on Cloudflare |
-
+{.no-wrap-col-2}{.no-wrap-col-3} 
 More details about each App can be found below.
 
 
