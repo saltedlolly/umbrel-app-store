@@ -804,6 +804,9 @@ if [[ "$CHECKER_HAS_CHANGES" == true ]]; then
   echo "=================================================="
   echo "Image: $ABS_NETWORK_SHARES_CHECKER_IMAGE:$FULL_VERSION"
 
+  # Ensure buildx is set up
+  ensure_buildx
+
 
   # Build and push multi-arch image for abs-network-shares-checker
   docker buildx build \

@@ -19,7 +19,7 @@
 set -euo pipefail
 
 # Configuration
-readonly SCRIPT_VERSION="2.32.1.169"
+readonly SCRIPT_VERSION="2.33.0.5"
 readonly UMBREL_ROOT="${HOME}/umbrel"
 readonly BACKUP_DIR="${UMBREL_ROOT}/home/abs-library-backup"
 readonly OFFICIAL_APP_ID="audiobookshelf"

@@ -127,7 +127,7 @@ umbreld client apps.install.mutate --appId saltedlolly-audiobookshelf
 
 ```bash
 # Build and push multi-arch images
-./build.sh --publish
+./abs-build.sh --publish
 
 # This will:
 # - Build abs-network-shares-config-tool (amd64 + arm64)
