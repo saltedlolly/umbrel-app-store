@@ -3,7 +3,7 @@ id: saltedlolly-audiobookshelf
 name: ABS NAS Edition
 tagline: Audiobookshelf with NAS support
 category: Media
-version: "2.34.0.1"
+version: "2.35.0.1"
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/icon.svg
 port: 23378
 description: >-
@@ -106,23 +106,17 @@ gallery:
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/3.jpg
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/4.jpg
 releaseNotes: >-
-  New features and improvements:
-    - Added "Best" option for book cover search (searches audible, google & fantlab)
-    - Book cover search is now async and streams results using websockets
-    - Decreased timeout to 10s on all metadata providers
+  Added:
+    - Access token refresh grace period (fixes frequently needing to re-login) #4630 by @nichwall in #5004
 
+  Fixed:
+    - Listening sessions from Android app showing device name as Abs iOS
+    - RSS feeds serving m4b files with incorrect Content-Type #5041 by @brandonfhall in #5221
 
-  Bug fixes:
-    - Fixed OIDC invalid callback URL issue
-    - Fixed MultiSelect causing web client to become unresponsive
-    - Fixed podcast episodes being downloaded without an audio stream
-    - Fixed chapter editor overflowing on smaller screen sizes
-
-
-  UI/UX improvements:
-    - Chapter editor no longer redirects back after saving changes or deleting all chapters
-    - Various translation updates for multiple languages
-
+  Changed:
+    - Book & podcast descriptions from audio files are sanitized
+    - cancel_scan and set_log_listener socket events validate account type and log level
+    - More strings translated: Belarusian and Polish
 
   Full release notes can be found at https://github.com/advplyr/audiobookshelf/releases
 dependencies: []
