@@ -56,6 +56,46 @@ Default paths:
 EOF
 }
 
+ensure_docker_runtime() {
+  if ! command -v docker &> /dev/null; then
+    echo "Error: Docker is not installed or not in PATH" >&2
+    exit 1
+  fi
+
+  echo "Checking Docker/Orbstack availability..."
+  if docker info >/dev/null 2>&1; then
+    echo "✓ Docker daemon is available"
+    return 0
+  fi
+
+  echo "Docker daemon is not available yet. Trying to start Orbstack..."
+
+  if command -v orbctl &> /dev/null; then
+    orbctl start >/dev/null 2>&1 || true
+    sleep 2
+  fi
+
+  if command -v open &> /dev/null; then
+    if [[ -d "/Applications/Orbstack.app" ]] || [[ -x "/Applications/Orbstack.app/Contents/MacOS/Orbstack" ]]; then
+      open -a Orbstack >/dev/null 2>&1 || true
+      sleep 3
+    fi
+  fi
+
+  if docker info >/dev/null 2>&1; then
+    echo "✓ Docker daemon is available"
+    return 0
+  fi
+
+  cat >&2 <<'EOF'
+Error: Docker/Orbstack is not running.
+Please start Orbstack (or Docker Desktop) and then rerun this script.
+If you have Orbstack installed, you can also launch it manually with:
+  orbctl start
+EOF
+  exit 1
+}
+
 ensure_buildx() {
   echo "Setting up Docker buildx for multi-platform builds..."
   
@@ -611,6 +651,8 @@ if [[ "$CLEANUP_IMAGES" == true ]]; then
   echo "========================================"
   exit 0
 fi
+
+ensure_docker_runtime
 
 # Always check and update ABS version to latest stable release
 update_abs_version
