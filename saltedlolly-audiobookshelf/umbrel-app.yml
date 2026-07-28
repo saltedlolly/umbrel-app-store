@@ -3,7 +3,7 @@ id: saltedlolly-audiobookshelf
 name: ABS NAS Edition
 tagline: Audiobookshelf with NAS support
 category: Media
-version: "2.36.0.5"
+version: "2.36.0.6"
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/icon.svg
 port: 23378
 description: >-
@@ -132,7 +132,9 @@ gallery:
 releaseNotes: >-
   New in NAS Edition: Network Shares are no longer mounted as read-only - write is enabled. Podcasts now work!
 
+
   Audiobookshelf v2.35.1
+
 
   Added:
     - Logout all devices button on account page (in #5395)
@@ -170,7 +172,9 @@ releaseNotes: >-
     - Setup internal-api file upload passthrough for next.js by @mikiher in #5325
     - Readme update about frontend rewrite by @nichwall in #5407
 
+
   Audiobookshelf v2.35.1
+
 
   Fixed:
     - Duplicate refresh tokens across sessions can cause unexpected logout #5253 by @nichwall in #5255
@@ -178,7 +182,9 @@ releaseNotes: >-
     - Server crash when invalid metadata.json is scanned in #5268
     - Sequelize user queries to use direct case-insensitive username/email matching
 
+
   Audiobookshelf v2.35.0
+
 
   Added:
     - Access token refresh grace period (fixes frequently needing to re-login) #4630 by @nichwall in #5004
