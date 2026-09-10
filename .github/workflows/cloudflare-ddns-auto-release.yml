@@ -209,18 +209,9 @@ jobs:
             --version "${TARGET_VERSION}" \
             --notes "Automated update: bump bundled favonia/cloudflare-ddns to v${{ needs.check-upstream.outputs.eligible_version }}"
 
-      - name: Prune old GHCR versions (keep last 5) - UI image
+      - name: Prune old GHCR versions (keep last 5 tagged)
         if: github.event.inputs.dry_run != 'true'
-        uses: actions/delete-package-versions@v5
+        uses: dataaxiom/ghcr-cleanup-action@v1.2.2
         with:
-          package-name: 'cloudflare-ddns-ui'
-          package-type: 'container'
-          min-versions-to-keep: 5
-
-      - name: Prune old GHCR versions (keep last 5) - DDNS image
-        if: github.event.inputs.dry_run != 'true'
-        uses: actions/delete-package-versions@v5
-        with:
-          package-name: 'cloudflare-ddns'
-          package-type: 'container'
-          min-versions-to-keep: 5
+          package: 'cloudflare-ddns-ui,cloudflare-ddns'
+          keep-n-tagged: 5
