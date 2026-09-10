@@ -92,54 +92,10 @@ Umbrel mounts network shares with this structure:
 
 ## Installation
 
-### Prerequisites
-
 1. Umbrel (umbrelOS 1.2+)
-2. Network shares mounted via Umbrel's Files app (optional - can be added later)
-3. Docker Buildx for building images (if building from source)
+2. Network shares mounted via Umbrel's Files app (optional — can be added later)
 
-### Deployment
-
-#### Option 1: Use Pre-built Images (Recommended)
-
-The app is configured to use pre-built multi-architecture Docker images from Docker Hub. Simply:
-
-1. Copy the `saltedlolly-audiobookshelf` folder to your Umbrel app store
-2. Install via the Umbrel App Store UI
-
-#### Option 2: Build and Deploy Locally
-
-```bash
-# Build all Docker images
-cd saltedlolly-audiobookshelf
-./build.sh --localtest --bump
-
-# Deploy to umbrel-dev
-rsync -av --exclude='.git' --exclude='node_modules' --exclude='.gitkeep' \
-  . umbrel@umbrel-dev.local:~/umbrel/app-stores/saltedlolly/saltedlolly-audiobookshelf/
-
-# Install in Umbrel
-ssh umbrel@umbrel-dev.local
-umbreld client apps.install.mutate --appId saltedlolly-audiobookshelf
-```
-
-#### Option 3: Publish to Docker Hub
-
-Make sure Orbstack is running.
-
-Then make sure docker is running. Enter: ```docker login```
-
-```bash
-# Build and push multi-arch images
-./abs-build.sh --publish
-
-# This will:
-# - Build abs-network-shares-config-tool (amd64 + arm64)
-# - Build abs-manager (amd64 + arm64)
-# - Build abs-network-shares-checker (amd64 + arm64)
-# - Push to Docker Hub
-# - Update docker-compose.yml with new digests
-```
+The app uses pre-built multi-architecture Docker images hosted on GitHub Container Registry (GHCR), so no local building is required. See the root [README.md](../README.md) for how to add this community app store and install the app.
 
 ## Usage
 
@@ -256,7 +212,7 @@ Make sure you're using the correct path in Audiobookshelf libraries:
 
 Verify the share is enabled in the config tool and shows as "Accessible".
 
-## Development
+## How It's Put Together
 
 ### Project Structure
 
@@ -264,7 +220,6 @@ Verify the share is enabled in the config tool and shows as "Accessible".
 saltedlolly-audiobookshelf/
 ├── docker-compose.yml        # Main compose file with all services
 ├── umbrel-app.yml           # App manifest
-├── build.sh                 # Build script for all custom images
 ├── docker-containers/
 │   ├── abs-network-shares-config-tool/
 │   │   ├── Dockerfile
@@ -293,7 +248,6 @@ saltedlolly-audiobookshelf/
 - **`config-tool/public/index.html`**: Web UI with real-time status polling
 - **`manager/manager.js`**: Orchestrates checker and ABS server using Docker API
 - **`checker/wait-for-shares.js`**: Continuous share monitoring with caching
-- **`build.sh`**: Multi-arch build script for all custom Docker images
 
 ### Services Overview
 
@@ -303,79 +257,6 @@ saltedlolly-audiobookshelf/
 4. **abs-manager**: Orchestration service
 5. **abs-network-shares-checker**: Background monitoring (created by manager)
 6. **abs-server**: Audiobookshelf server (created by manager when shares are ready)
-
-### Building
-
-The build script handles all custom images in parallel:
-
-```bash
-# Local testing - builds all images locally
-./build.sh --localtest
-
-# Local testing with version bump
-./build.sh --localtest --bump
-
-# Publish all images to Docker Hub
-./build.sh --publish
-
-# This will:
-# 1. Build abs-network-shares-config-tool (multi-arch)
-# 2. Build abs-manager (multi-arch)
-# 3. Build abs-network-shares-checker (multi-arch)
-# 4. Build abs-server (multi-arch)
-# 5. Push to Docker Hub (if --publish)
-# 6. Update docker-compose.yml with new digests
-```
-
-### Testing
-
-#### Test in umbrel-dev
-
-```bash
-# Build images
-./build.sh --localtest --bump
-
-# Deploy app
-rsync -av --exclude='.git' --exclude='node_modules' --exclude='.gitkeep' \
-  . umbrel@umbrel-dev.local:~/umbrel/app-stores/saltedlolly/saltedlolly-audiobookshelf/
-
-# Install
-ssh umbrel@umbrel-dev.local
-umbreld client apps.install.mutate --appId saltedlolly-audiobookshelf
-
-# View logs
-docker logs saltedlolly-audiobookshelf_abs-network-shares-config-tool_1
-docker logs saltedlolly-audiobookshelf_abs-manager_1
-docker logs saltedlolly-audiobookshelf_abs-network-shares-checker_1  # if running
-docker logs saltedlolly-audiobookshelf_abs-server_1  # if running
-```
-
-#### Test Scenarios
-
-1. **Fresh install with no shares**: 
-   - Config tool should show "No network shares discovered"
-   - Manager should start ABS server immediately
-
-2. **Fresh install with mounted shares**: 
-   - Config tool should discover and list all shares
-   - All shares should show status (accessible/not mounted/etc.)
-
-3. **Enable shares and save**: 
-   - Manager should create checker container
-   - Checker should begin monitoring enabled shares
-   - Manager should wait for shares to be accessible
-
-4. **Unmount share while running**: 
-   - Checker should detect and update status to "not-mounted"
-   - Status should update in config tool UI within 5 seconds
-
-5. **Re-mount share**: 
-   - Checker should detect share is accessible again
-   - Manager should automatically restart ABS server
-
-6. **Disable all shares**:
-   - Manager should stop checker
-   - Manager should ensure ABS server is running
 
 ### Configuration File Format
 
@@ -427,27 +308,6 @@ The `/data/network-shares.json` configuration file:
 - Share monitoring checks every 5 seconds (with 15-minute caching to reduce I/O)
 - Manager must restart Audiobookshelf when share status changes
 - No notification system for share availability changes (status visible in config tool only)
-
-## Future Enhancements
-
-Potential improvements:
-- [ ] Push notifications when shares become unavailable
-- [ ] Per-share mount timeout configuration in UI
-- [ ] Integration with Umbrel's notification system
-- [ ] Subfolder browsing/selection in config tool
-- [ ] Share usage statistics and health metrics
-- [ ] Configurable check interval for monitoring
-- [ ] Automatic library refresh when shares reconnect
-- [ ] Share access history and logs in UI
-
-## Contributing
-
-To contribute:
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly in umbrel-dev
-5. Submit a pull request
 
 ## License
 
