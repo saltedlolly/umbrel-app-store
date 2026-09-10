@@ -863,7 +863,10 @@ if $LOCAL_TEST; then
   echo "     • Configure network shares via Network Shares UI"
   echo ""
   echo "Built image on GHCR:"
-  echo "  • $CONFIG_TOOL_UI_IMAGE_NAME:$FULL_VERSION@$UI_DIGEST"
+  # Read from docker-compose.yml rather than $UI_DIGEST, which is only set
+  # when config-tool was actually rebuilt this run - the compose file is
+  # always accurate whether this run rebuilt it or left it unchanged.
+  echo "  • $(grep -m1 "image: ${CONFIG_TOOL_UI_IMAGE_NAME}@" "$DOCKER_COMPOSE_FILE" | sed 's/^ *image: *//')"
   echo ""
 elif $PUBLISH_TO_GITHUB; then
   echo "========================================" 
@@ -898,7 +901,10 @@ elif $PUBLISH_TO_GITHUB; then
   echo "✓ Successfully published v${FULL_VERSION} to GitHub"
   echo ""
   echo "Built image on GHCR:"
-  echo "  • $CONFIG_TOOL_UI_IMAGE_NAME:$FULL_VERSION@$UI_DIGEST"
+  # Read from docker-compose.yml rather than $UI_DIGEST, which is only set
+  # when config-tool was actually rebuilt this run - the compose file is
+  # always accurate whether this run rebuilt it or left it unchanged.
+  echo "  • $(grep -m1 "image: ${CONFIG_TOOL_UI_IMAGE_NAME}@" "$DOCKER_COMPOSE_FILE" | sed 's/^ *image: *//')"
   echo ""
 else
   echo "Next steps:"
