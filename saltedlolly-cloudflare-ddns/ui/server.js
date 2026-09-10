@@ -86,9 +86,23 @@ function readLogs() {
 // Helper: detect public IPv4/IPv6 from logs (favonia ddns output)
 function detectPublicIPsFromLogs() {
     const logs = readLogs();
-    const ipv4Match = logs.match(/Detected the IPv4 address\s+([0-9.]+)/i);
-    const ipv6Match = logs.match(/Detected the IPv6 address\s+([0-9a-f:]+)/i);
-    return { ipv4: ipv4Match ? ipv4Match[1] : null, ipv6: ipv6Match ? ipv6Match[1] : null };
+    const lines = logs.split(/\r?\n/);
+    let ipv4 = null;
+    let ipv6 = null;
+    // Scan from newest to oldest so we pick up the most recently detected IP,
+    // not the first one ever logged (the log file can span weeks).
+    for (let i = lines.length - 1; i >= 0 && (!ipv4 || !ipv6); i--) {
+        const l = lines[i];
+        if (!ipv4) {
+            const v4 = l.match(/Detected the IPv4 address\s+([0-9.]+)/i);
+            if (v4) ipv4 = v4[1];
+        }
+        if (!ipv6) {
+            const v6 = l.match(/Detected the IPv6 address\s+([0-9a-f:]+)/i);
+            if (v6) ipv6 = v6[1];
+        }
+    }
+    return { ipv4, ipv6 };
 }
 
 // Helper: minimal Cloudflare API GET
@@ -397,12 +411,19 @@ function extractTimestampFromLine(line) {
 
 app.get('/api/last-update', (req, res) => {
     try {
-        // Prefer a persisted lastSuccessfulUpdate from the status file
+        // A persisted lastSuccessfulUpdate from the status file covers the case where
+        // records already matched Cloudflare from the moment the service started (no
+        // genuine DNS change was ever logged, so the log scan below would find nothing).
+        let statusLastSuccessful = null;
         if (fs.existsSync(STATUS_FILE)) {
-            const s = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8'));
-            if (s.lastSuccessfulUpdate) return res.json({ lastUpdate: s.lastSuccessfulUpdate });
+            try {
+                const s = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8'));
+                statusLastSuccessful = s.lastSuccessfulUpdate || null;
+            } catch (e) { /* ignore malformed status file */ }
         }
-        if (!fs.existsSync(LOG_FILE)) return res.json({ lastUpdate: null, ipv4Update: null, ipv6Update: null });
+        if (!fs.existsSync(LOG_FILE)) {
+            return res.json({ lastUpdate: statusLastSuccessful, ipv4Update: statusLastSuccessful, ipv6Update: statusLastSuccessful });
+        }
         const txt = fs.readFileSync(LOG_FILE, 'utf8');
         const lines = txt.split(/\r?\n/).filter(Boolean);
 
@@ -430,6 +451,11 @@ app.get('/api/last-update', (req, res) => {
             // Stop once we have both
             if (ipv4Update && ipv6Update) break;
         }
+
+        // Fall back to the wrapper's recorded successful-update time for whichever
+        // family never had a genuine DNS change logged.
+        if (!ipv4Update) ipv4Update = statusLastSuccessful;
+        if (!ipv6Update) ipv6Update = statusLastSuccessful;
 
         // For backward compatibility, return the most recent of the two as lastUpdate
         const mostRecent = [ipv4Update, ipv6Update].filter(Boolean).sort().reverse()[0] || null;

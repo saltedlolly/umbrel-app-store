@@ -153,7 +153,9 @@ check_for_token_error() {
     # Only scan lines after the marker
     txt=$(echo "$txt" | tail -n +$((marker_line + 1)))
   fi
-  if echo "$txt" | grep -Ei "Needs either CLOUDFLARE_API_TOKEN|Invalid request headers|Invalid request header|Invalid or missing authentication|403|401|Unauthorized|permission denied|invalid auth|invalid token" >/dev/null 2>&1; then
+  # Note: 401/403 are matched with surrounding non-hex boundaries so we don't false-positive
+  # on Cloudflare record/zone IDs (random hex strings that can coincidentally contain "401"/"403").
+  if echo "$txt" | grep -Ei "Needs either CLOUDFLARE_API_TOKEN|Invalid request headers|Invalid request header|Invalid or missing authentication|(^|[^0-9a-fA-F])40[13]([^0-9a-fA-F]|$)|Unauthorized|permission denied|invalid auth|invalid token" >/dev/null 2>&1; then
     log "Detected Cloudflare API token/auth error in logs; disabling service and stopping child"
     set_env_var ENABLED false
     # mark error for status file so UI can show a clear message
@@ -182,6 +184,15 @@ check_for_update() {
   # exclude: "already up to date", "unchanged", "no change"
   if echo "$txt" | grep -Eqi "(a records.*were|updated.*record|record.*updated|set the ip|successfully updated|update successful)" | grep -Eqvi "already up to date|unchanged|no change"; then
     # Use current time as success time
+    LAST_SUCCESSFUL_UPDATE=$(date --iso-8601=seconds)
+    ERROR_MSG=""
+    write_status
+    return 0
+  fi
+  # If records were already in sync and we've never recorded a successful update yet,
+  # treat this first confirmation as the update time. This covers the case where the
+  # records already matched Cloudflare from the moment the service started.
+  if [ -z "$LAST_SUCCESSFUL_UPDATE" ] && echo "$txt" | grep -Eqi "already up to date"; then
     LAST_SUCCESSFUL_UPDATE=$(date --iso-8601=seconds)
     ERROR_MSG=""
     write_status

@@ -1,61 +1,56 @@
 manifestVersion: 1
 id: saltedlolly-npm-plus
+category: networking
 name: NPMplus
-tagline: Improved fork of Nginx Proxy Manager with additional features including CrowdSec integration.
-icon: https://svgur.com/i/mvA.svg
-category: Development
-version: "1.0.0"
-port: 4000
+version: "2026-07-24-r1"
+tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
- Expose your apps to the internet easily and securely. This is an improved fork of Nginx Proxy Manager.
+  NPMplus makes it easy to publish services through a friendly web interface, with automatic TLS certificates, HTTP/3 support, access lists, stream forwarding, and advanced Nginx configuration.
 
 
-  ⚠️ Be cautious when exposing apps to the public internet. Ensure they have proper security, such as login protection, and avoid exposing sensitive apps without adequate safeguards.
-  
+  ⚠️ Publishing a service makes it reachable from the internet. Protect every exposed service with appropriate authentication and keep both NPMplus and the upstream service updated.
 
-  🔧 NPMplus uses port 50080 for HTTP (unsecured) traffic and port 50443 for HTTPS (secured) traffic.
-  To make your apps accessible from the public internet, you will need to set up port forwarding on your router.
-  Forward external port 80 (HTTP) to internal port 50080 and external port 443 (HTTPS) to internal port 50443 (tcp and udp).
 
-  🔍 Features:
-  
-    - Beautiful and Secure Admin Interface based on Tabler
-    - Easily create forwarding domains, redirections, streams and 404 hosts without knowing anything about Nginx
-    - Free SSL using Let's Encrypt or provide your own custom SSL certificates
-    - Access Lists and basic HTTP Authentication for your hosts
-    - Advanced Nginx configuration available for super users
-    - User management, permissions and audit log  
-    - NPMplus Enhancements:
-      - CrowdSec integration for enhanced security against threats
-      - Additional security headers for improved protection
-      - Customizable rate limiting to prevent abuse
-      - Enhanced logging and monitoring features
-      - Regular updates and community-driven improvements
+  Open NPMplus from the Umbrel home screen for browser-based setup instructions and a button to launch its HTTPS administration interface. Your initial username is admin@umbrel.local and Umbrel displays the unique initial password in the app's credentials.
 
-  The full list of NPMplus features can be found [here](https://github.com/ZoeyVid/NPMplus).
 
-  ### Upgrading from NPM to NPMplus?
+  Router port forwarding:
 
-  💥 The NPMplus ports are chosen to prevent conflicts with the NPM app available from the Umbrel App Store which uses ports 40080 (http) and 40443 (https).
-  This makes it possible to run both side by side, while switching over. However, NPM proxy host configurations are not shared with NPMplus - these will need to be copied over manually.
-  When you are ready to switch, simply update port forwarding on your router to point to the NPMplus ports.
 
-  While proxy host configurations are not shared between NPM and NPMplus, the Let's Encrypt SSL certificates are stored in a shared volume.
-  This means that any domains you have already secured with SSL in NPM will continue to work seamlessly in NPMplus without needing to re-issue certificates.
+  - Forward external TCP port 80 to port 50080 on your Umbrel.
+
+  - Forward external TCP port 443 to port 50443 on your Umbrel.
+
+  - Forward external UDP port 443 to port 50443 on your Umbrel for HTTP/3.
+
+
+  All NPMplus configuration, certificates, users, and proxy hosts are stored under this app's persistent data directory and survive app restarts and updates.
+
+
+  ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
+releaseNotes: >-
+  Initial standalone NPMplus package for umbrelOS
+
+
+  This package pins the immutable multi-architecture NPMplus 2026-07-24-r1 image for amd64 and arm64.
+
+
+  Full upstream release notes: https://github.com/ZoeyVid/NPMplus/releases/tag/2026-07-24-r1
 
 developer: ZoeyVid
 website: https://github.com/ZoeyVid/NPMplus
-submitter: saltedlolly
-submission: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-npm-plus
-repo: https://github.com/ZoeyVid/NPMplus
-support: https://github.com/ZoeyVid/NPMplus/issues
-gallery:
-  - https://i.imgur.com/yyVG0Jb.jpeg
-  - https://i.imgur.com/yyVG0Jb.jpeg
-  - https://i.imgur.com/yyVG0Jb.jpeg
-releaseNotes: >-
-  Add what's new in the latest version of your app here.
 dependencies: []
+repo: https://github.com/ZoeyVid/NPMplus
+support: https://github.com/ZoeyVid/NPMplus/discussions
+
+port: 5180
+gallery: []
 path: ""
-defaultUsername: ""
+
+defaultUsername: admin@umbrel.local
 defaultPassword: ""
+deterministicPassword: true
+
+icon: https://raw.githubusercontent.com/ZoeyVid/NPMplus/develop/frontend/public/images/logo-256.png
+submitter: saltedlolly
+submission: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-npm-plus

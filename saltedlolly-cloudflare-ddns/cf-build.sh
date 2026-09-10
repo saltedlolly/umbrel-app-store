@@ -6,7 +6,11 @@ set -euo pipefail
 #
 # Requirements:
 # - Docker Buildx with docker-container driver for multi-platform support
-# - Logged in to Docker Hub for `saltedlolly/*`
+# - Logged in to GHCR (ghcr.io) for `saltedlolly/*`:
+#     docker login ghcr.io -u saltedlolly
+#   using a GitHub Personal Access Token (classic: write:packages +
+#   read:packages scopes; or fine-grained: Packages read/write) as the
+#   password. GHCR does not use Docker Hub credentials.
 # - macOS (BSD sed) or Linux (GNU sed)
 # - Local git repos for UI and DDNS within the app folder
 #
@@ -29,6 +33,10 @@ APP_ROOT="$SCRIPT_DIR"
 # Default repo paths (within the app folder)
 UI_REPO="$APP_ROOT/ui"
 DDNS_REPO="$APP_ROOT/cloudflare-ddns"
+
+# Image hosting: GitHub Container Registry (GHCR), not Docker Hub
+UI_IMAGE="ghcr.io/saltedlolly/cloudflare-ddns-ui"
+DDNS_IMAGE="ghcr.io/saltedlolly/cloudflare-ddns"
 
 SET_VERSION=""
 BUMP_KIND="patch"   # kept for backwards compatibility, not used in 4-part versioning
@@ -524,16 +532,16 @@ ensure_buildx
 ########################################
 # Build UI multi-arch
 ########################################
-echo "Building UI multi-arch: saltedlolly/cloudflare-ddns-ui:${target_v}"
+echo "Building UI multi-arch: ${UI_IMAGE}:${target_v}"
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
   --build-arg VERSION="${target_v}" \
-  -t "saltedlolly/cloudflare-ddns-ui:${target_v}" \
+  -t "${UI_IMAGE}:${target_v}" \
   -f ui/Dockerfile \
   --push "$APP_ROOT"
 
 echo "Fetching UI manifest digest..."
-UI_DIGEST=$(docker buildx imagetools inspect "saltedlolly/cloudflare-ddns-ui:${target_v}" 2>/dev/null | grep "^Digest:" | awk '{print $2}')
+UI_DIGEST=$(docker buildx imagetools inspect "${UI_IMAGE}:${target_v}" 2>/dev/null | grep "^Digest:" | awk '{print $2}')
 if [[ -z "$UI_DIGEST" ]]; then
   echo "Error: Failed to obtain UI digest" >&2
   exit 1
@@ -544,15 +552,15 @@ echo "UI digest: $UI_DIGEST"
 # Build DDNS multi-arch
 ########################################
 echo
-echo "Building DDNS multi-arch: saltedlolly/cloudflare-ddns:${target_v}"
+echo "Building DDNS multi-arch: ${DDNS_IMAGE}:${target_v}"
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
-  -t "saltedlolly/cloudflare-ddns:${target_v}" \
+  -t "${DDNS_IMAGE}:${target_v}" \
   -f cloudflare-ddns/Dockerfile \
   --push "$APP_ROOT"
 
 echo "Fetching DDNS manifest digest..."
-DDNS_DIGEST=$(docker buildx imagetools inspect "saltedlolly/cloudflare-ddns:${target_v}" 2>/dev/null | grep "^Digest:" | awk '{print $2}')
+DDNS_DIGEST=$(docker buildx imagetools inspect "${DDNS_IMAGE}:${target_v}" 2>/dev/null | grep "^Digest:" | awk '{print $2}')
 if [[ -z "$DDNS_DIGEST" ]]; then
   echo "Error: Failed to obtain DDNS digest" >&2
   exit 1
@@ -564,8 +572,8 @@ echo "DDNS digest: $DDNS_DIGEST"
 ########################################
 echo
 echo "Updating docker-compose.yml with new digests..."
-update_compose_digest "saltedlolly/cloudflare-ddns-ui" "$UI_DIGEST"
-update_compose_digest "saltedlolly/cloudflare-ddns" "$DDNS_DIGEST"
+update_compose_digest "$UI_IMAGE" "$UI_DIGEST"
+update_compose_digest "$DDNS_IMAGE" "$DDNS_DIGEST"
 
 echo
 echo "=== Done ==="
@@ -660,15 +668,15 @@ if [[ "$LOCAL_TEST" == "true" ]]; then
   echo "  1. REINSTALL from App Store:"
   echo "     • Go to App Store → Find 'Cloudflare DDNS Client'"
   echo "     • Click Install"
-  echo "     • This will pull the NEW images from Docker Hub"
+  echo "     • This will pull the NEW images from GHCR"
   echo
   echo "  2. TEST the app:"
   echo "     • Access at: http://$UMBREL_DEV_HOST:4100/"
   echo "     • Version badge should show: v$target_v"
   echo
-  echo "Built images on Docker Hub:"
-  echo "  • UI:   saltedlolly/cloudflare-ddns-ui:$target_v@$UI_DIGEST"
-  echo "  • DDNS: saltedlolly/cloudflare-ddns:$target_v@$DDNS_DIGEST"
+  echo "Built images on GHCR:"
+  echo "  • UI:   ${UI_IMAGE}:$target_v@$UI_DIGEST"
+  echo "  • DDNS: ${DDNS_IMAGE}:$target_v@$DDNS_DIGEST"
   echo
 elif [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
   echo "========================================" 
@@ -687,9 +695,9 @@ elif [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
   echo
   echo "✓ Successfully published ${target_v} to GitHub"
   echo
-  echo "Built images on Docker Hub:"
-  echo "  • UI:   saltedlolly/cloudflare-ddns-ui:$target_v@$UI_DIGEST"
-  echo "  • DDNS: saltedlolly/cloudflare-ddns:$target_v@$DDNS_DIGEST"
+  echo "Built images on GHCR:"
+  echo "  • UI:   ${UI_IMAGE}:$target_v@$UI_DIGEST"
+  echo "  • DDNS: ${DDNS_IMAGE}:$target_v@$DDNS_DIGEST"
   echo
 else
   echo "Next steps:"

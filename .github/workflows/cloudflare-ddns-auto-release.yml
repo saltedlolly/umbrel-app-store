@@ -1,0 +1,226 @@
+name: Cloudflare DDNS - Auto Release
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # every Monday 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: check upstream and log the plan only (no build/push/commit)'
+        type: boolean
+        default: false
+      force_version:
+        description: 'Optional: pretend the eligible upstream version is this (e.g. 1.16.0), for testing'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-ddns-auto-release
+  cancel-in-progress: false   # never cancel mid docker-push/git-push
+
+jobs:
+  check-upstream:
+    name: Check favonia/cloudflare-ddns for an eligible release (14-day buffer)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      has_update: ${{ steps.compare.outputs.has_update }}
+      eligible_version: ${{ steps.latest.outputs.eligible_version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            saltedlolly-cloudflare-ddns/cloudflare-ddns/Dockerfile
+          sparse-checkout-cone-mode: false
+
+      - name: Find newest favonia release that has cleared the 14-day buffer
+        id: latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cutoff="$(date -u -d '14 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+          releases="$(curl -sf \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/favonia/cloudflare-ddns/releases?per_page=20")"
+
+          version="$(echo "$releases" | jq -r --arg cutoff "$cutoff" '
+            [ .[] | select(.draft==false and .prerelease==false and .published_at <= $cutoff) ]
+            | sort_by(.published_at) | last | .tag_name // empty
+          ')"
+          version="${version#v}"
+
+          if [[ -n "${{ github.event.inputs.force_version }}" ]]; then
+            version="${{ github.event.inputs.force_version }}"
+            echo "::notice::Overriding with force_version input: $version"
+          fi
+
+          if [[ -z "$version" ]]; then
+            echo "::notice::No favonia release has cleared the 14-day buffer yet"
+            echo "eligible_version=" >> "$GITHUB_OUTPUT"
+          else
+            if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Unexpected version format: '$version'"
+              exit 1
+            fi
+            echo "eligible_version=$version" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Get currently pinned version
+        id: current
+        run: |
+          set -euo pipefail
+          current="$(grep -oE 'favonia/cloudflare-ddns:[0-9.]+' \
+            saltedlolly-cloudflare-ddns/cloudflare-ddns/Dockerfile | cut -d: -f2)"
+          if [[ -z "$current" ]]; then
+            echo "::error::Could not extract pinned version from Dockerfile"
+            exit 1
+          fi
+          echo "current_version=$current" >> "$GITHUB_OUTPUT"
+
+      - name: Compare
+        id: compare
+        run: |
+          eligible="${{ steps.latest.outputs.eligible_version }}"
+          current="${{ steps.current.outputs.current_version }}"
+          if [[ -z "$eligible" || "$eligible" == "$current" ]]; then
+            echo "has_update=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No update to publish. pinned=$current eligible=${eligible:-none}"
+          else
+            echo "has_update=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Publishing update. pinned=$current -> eligible=$eligible"
+          fi
+
+  release:
+    name: Build, smoke-test, and publish new version
+    needs: check-upstream
+    if: needs.check-upstream.outputs.has_update == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      packages: write   # required to push to and prune GHCR
+    env:
+      APP_DIR: saltedlolly-cloudflare-ddns
+      TARGET_VERSION: v${{ needs.check-upstream.outputs.eligible_version }}.0
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true   # required for cf-build.sh's `git push`
+
+      - name: Configure git identity for automated commits
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Set up QEMU (for linux/arm64 cross-build)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        # Creates a docker-container-driver builder that cf-build.sh's
+        # ensure_buildx() will auto-detect and reuse via `docker buildx ls`.
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Optional, only add if you start hitting Docker Hub anonymous
+      # pull-rate-limit failures on the base images (alpine, node:18-alpine,
+      # favonia/cloudflare-ddns are all pulled FROM Docker Hub during the
+      # build even though we now PUSH to GHCR). Uncomment and add
+      # DOCKERHUB_USERNAME/DOCKERHUB_TOKEN secrets if needed:
+      # - name: Log in to Docker Hub (pull-only, avoids rate limits)
+      #   uses: docker/login-action@v3
+      #   with:
+      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # ---------- OPTIONAL SAFETY NET ----------
+      # Single-arch (amd64), --load-only builds, never pushed or committed.
+      # Aborts BEFORE cf-build.sh touches GHCR or git if either fails.
+      # Note: buildx --load can't load a multi-arch manifest, so this only
+      # smoke-tests linux/amd64 — an arm64-only regression would ship undetected.
+      - name: "[Optional] Smoke-test UI image (linux/amd64)"
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          set -euo pipefail
+          docker buildx build --platform linux/amd64 \
+            --build-arg VERSION="${TARGET_VERSION}" \
+            -t smoketest/cloudflare-ddns-ui:test -f ui/Dockerfile --load .
+          docker run -d --name ui-smoke -p 3000:3000 smoketest/cloudflare-ddns-ui:test
+          ok=false
+          for i in $(seq 1 15); do
+            curl -sf http://localhost:3000/health >/dev/null && { ok=true; break; }
+            sleep 2
+          done
+          docker logs ui-smoke || true
+          docker rm -f ui-smoke || true
+          [[ "$ok" == "true" ]] || { echo "::error::UI image failed smoke test"; exit 1; }
+
+      - name: "[Optional] Smoke-test DDNS image (linux/amd64)"
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          set -euo pipefail
+          docker buildx build --platform linux/amd64 \
+            -t smoketest/cloudflare-ddns:test -f cloudflare-ddns/Dockerfile --load .
+          mkdir -p /tmp/ddns-smoke-data
+          docker run -d --name ddns-smoke -e APP_DATA_DIR=/data \
+            -v /tmp/ddns-smoke-data:/data smoketest/cloudflare-ddns:test
+          sleep 8
+          running="$(docker inspect -f '{{.State.Running}}' ddns-smoke || echo false)"
+          status_ok=false
+          if [[ -f /tmp/ddns-smoke-data/status.json ]] && jq empty /tmp/ddns-smoke-data/status.json >/dev/null 2>&1; then
+            status_ok=true
+          fi
+          docker logs ddns-smoke || true
+          docker rm -f ddns-smoke || true
+          if [[ "$running" != "true" || "$status_ok" != "true" ]]; then
+            echo "::error::DDNS image crashed or produced no valid status.json"
+            exit 1
+          fi
+          # Only proves the container starts cleanly without real Cloudflare
+          # creds (expected status: "misconfigured"); does not validate real
+          # DNS-update behavior against Cloudflare's live API.
+      # ---------- END OPTIONAL SAFETY NET ----------
+
+      - name: Dry run summary (no build/push/commit)
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          echo "DRY RUN: would publish ${TARGET_VERSION}"
+
+      - name: Build, push, pin digests, and publish (cf-build.sh)
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          ./cf-build.sh --publish \
+            --version "${TARGET_VERSION}" \
+            --notes "Automated update: bump bundled favonia/cloudflare-ddns to v${{ needs.check-upstream.outputs.eligible_version }}"
+
+      - name: Prune old GHCR versions (keep last 5) - UI image
+        if: github.event.inputs.dry_run != 'true'
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: 'cloudflare-ddns-ui'
+          package-type: 'container'
+          min-versions-to-keep: 5
+
+      - name: Prune old GHCR versions (keep last 5) - DDNS image
+        if: github.event.inputs.dry_run != 'true'
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: 'cloudflare-ddns'
+          package-type: 'container'
+          min-versions-to-keep: 5

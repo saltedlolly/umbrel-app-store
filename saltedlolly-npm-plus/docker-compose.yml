@@ -1,25 +1,63 @@
-version: "3.7"
-
 services:
   app_proxy:
     environment:
-      APP_HOST: nginx-proxy-manager_web_1
-      APP_PORT: 81
-      
-  web:
-    image: jc21/nginx-proxy-manager:2.13.5@sha256:cd9eba29ca132cb006729f2cb2660126453f84818c2f7d75963ad7b61ef696bd
-    hostname: nginx-proxy-manager_web_1
+      APP_HOST: saltedlolly-npm-plus_launcher_1
+      APP_PORT: 8080
+
+  launcher:
+    image: docker.io/library/busybox:1.37.0@sha256:9db7b59979c38555a39def84a31fb98b5296952f9e3afd4f6f11f05b07adfab0
+    command: ["httpd", "-f", "-p", "8080", "-h", "/www"]
+    user: "1000:1000"
+    init: true
     restart: on-failure
-    ports:
-      - 40080:80
-      - 40443:443
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
     volumes:
-      - ${APP_DATA_DIR}/data/npm-data:/data
-      - ${APP_DATA_DIR}/data/letsencrypt:/etc/letsencrypt
-  
+      - ${APP_DATA_DIR}/launcher.html:/www/index.html:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  npmplus:
+    image: docker.io/zoeyvid/npmplus:2026-07-24-r1@sha256:f7f6ca26082036ee6387a7da336267fe61f16b1eb8087dd964237238b59479ef
+    restart: on-failure
+    stop_grace_period: 30s
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - SETGID
+      - SETUID
+      - CHOWN
+      - FOWNER
+      - DAC_OVERRIDE
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      TZ: Etc/UTC
+      PUID: "1000"
+      PGID: "1000"
+      INITIAL_ADMIN_EMAIL: admin@umbrel.local
+      INITIAL_ADMIN_PASSWORD: ${APP_PASSWORD}
+      COOKIE_SECRET: ${APP_SALTEDLOLLY_NPM_PLUS_COOKIE_SECRET}
+      INITIAL_DEFAULT_PAGE: "444"
+      DISABLE_GRAVATAR: "true"
+    ports:
+      - "${APP_SALTEDLOLLY_NPM_PLUS_ADMIN_PORT}:81/tcp"
+      - "${APP_SALTEDLOLLY_NPM_PLUS_HTTP_PORT}:80/tcp"
+      - "${APP_SALTEDLOLLY_NPM_PLUS_HTTPS_PORT}:443/tcp"
+      - "${APP_SALTEDLOLLY_NPM_PLUS_HTTPS_PORT}:443/udp"
+    volumes:
+      - ${APP_SALTEDLOLLY_NPM_PLUS_DATA_DIR}:/data
+
+  # Makes the Umbrel host resolvable as $DEVICE_DOMAIN_NAME from NPMplus,
+  # matching the official Umbrel Nginx Proxy Manager package.
   docker-host:
-    image: qoomon/docker-host:3.3.1@sha256:ec9d214d7fa88932e9186ca2f4419d44661376929931248525b08e7fa9e270f7
-    hostname: $DEVICE_DOMAIN_NAME
+    image: docker.io/qoomon/docker-host:3.3.1@sha256:ec9d214d7fa88932e9186ca2f4419d44661376929931248525b08e7fa9e270f7
+    hostname: ${DEVICE_DOMAIN_NAME}
     cap_add:
       - NET_ADMIN
       - NET_RAW

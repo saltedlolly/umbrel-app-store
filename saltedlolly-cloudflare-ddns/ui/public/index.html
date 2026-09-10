@@ -868,6 +868,10 @@
                     } catch (e) { }
                 }
                 load();
+                // Periodically refresh the domain status table (✅/⏳ icons, proxied status)
+                // so it reflects reality without requiring a page reload or user action.
+                // Kept at a longer interval than updateStatus() since this hits the Cloudflare API.
+                setInterval(load, 30000);
 
                 // --- Notifiers UI logic ---
                 const notifyHealthchecksSwitch = document.getElementById('notifyHealthchecksSwitch');

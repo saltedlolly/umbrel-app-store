@@ -125,6 +125,10 @@ umbreld client apps.install.mutate --appId saltedlolly-audiobookshelf
 
 #### Option 3: Publish to Docker Hub
 
+Make sure Orbstack is running.
+
+Then make sure docker is running. Enter: ```docker login```
+
 ```bash
 # Build and push multi-arch images
 ./abs-build.sh --publish
