@@ -57,7 +57,7 @@ services:
   # Background service that manages starting Audiobookshelf. At launch, it runs abs-network-share-waiter-checker  
   # repeatedly which checks all required networkshares are accessible and starts abs-server only once they are.
   abs-manager:
-    image: ghcr.io/saltedlolly/abs-manager@sha256:2040be23eaacc0d9e7aa146501d0825630bb7b326e338278d5c6afeba03de3f9
+    image: ghcr.io/saltedlolly/abs-manager@sha256:1b4fb3297fbff4d2a48ab8598cf29790cf5cccb27197f4ebddc2d43a59ef4d44
     container_name: saltedlolly-audiobookshelf_abs-manager_1
     restart: unless-stopped
     environment:
