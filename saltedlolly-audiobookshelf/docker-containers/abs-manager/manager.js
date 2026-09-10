@@ -97,7 +97,7 @@ async function getCurrentNetwork() {
 function getCheckerImage() {
   const lines = fs.readFileSync(CHECKER_IMAGE_FILE, 'utf8').split('\n');
   for (const line of lines) {
-    if (line.startsWith('saltedlolly/abs-network-shares-checker@sha256:')) {
+    if (line.startsWith('ghcr.io/saltedlolly/abs-network-shares-checker@sha256:')) {
       return line.trim();
     }
   }
