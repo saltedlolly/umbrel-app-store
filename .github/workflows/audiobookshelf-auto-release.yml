@@ -1,8 +1,8 @@
-name: Cloudflare DDNS - Auto Release
+name: Audiobookshelf - Auto Release
 
 on:
   schedule:
-    - cron: '0 6 * * 1'   # every Monday 06:00 UTC
+    - cron: '0 6 * * *'   # every day 06:00 UTC
   workflow_dispatch:
     inputs:
       dry_run:
@@ -10,7 +10,7 @@ on:
         type: boolean
         default: false
       force_version:
-        description: 'Optional: pretend the eligible upstream version is this (e.g. 1.16.0), for testing'
+        description: 'Optional: pretend the eligible advplyr/audiobookshelf version is this (e.g. 2.37.0), for testing'
         required: false
         type: string
 
@@ -18,12 +18,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: cloudflare-ddns-auto-release
-  cancel-in-progress: false   # never cancel mid docker-push/git-push
+  group: audiobookshelf-auto-release
+  cancel-in-progress: false
 
 jobs:
   check-upstream:
-    name: Check favonia/cloudflare-ddns for an eligible release (14-day buffer)
+    name: Check advplyr/audiobookshelf for an eligible release (5-day buffer)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -35,20 +35,20 @@ jobs:
       - uses: actions/checkout@v7
         with:
           sparse-checkout: |
-            saltedlolly-cloudflare-ddns/cloudflare-ddns/Dockerfile
+            saltedlolly-audiobookshelf/docker-containers/abs-manager/abs-server-image.txt
           sparse-checkout-cone-mode: false
 
-      - name: Find newest favonia release that has cleared the 14-day buffer
+      - name: Find newest advplyr/audiobookshelf release that has cleared the 5-day buffer
         id: latest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          cutoff="$(date -u -d '14 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+          cutoff="$(date -u -d '5 days ago' +%Y-%m-%dT%H:%M:%SZ)"
           releases="$(curl -sf \
             -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/favonia/cloudflare-ddns/releases?per_page=20")"
+            "https://api.github.com/repos/advplyr/audiobookshelf/releases?per_page=20")"
 
           version="$(echo "$releases" | jq -r --arg cutoff "$cutoff" '
             [ .[] | select(.draft==false and .prerelease==false and .published_at <= $cutoff) ]
@@ -62,7 +62,7 @@ jobs:
           fi
 
           if [[ -z "$version" ]]; then
-            echo "::notice::No favonia release has cleared the 14-day buffer yet"
+            echo "::notice::No advplyr/audiobookshelf release has cleared the 5-day buffer yet"
             echo "eligible_version=" >> "$GITHUB_OUTPUT"
           else
             if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -72,14 +72,18 @@ jobs:
             echo "eligible_version=$version" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Get currently pinned version
+      - name: Get currently pinned ABS version
         id: current
         run: |
           set -euo pipefail
-          current="$(grep -oE 'favonia/cloudflare-ddns:[0-9.]+' \
-            saltedlolly-cloudflare-ddns/cloudflare-ddns/Dockerfile | cut -d: -f2)"
+          TXT_FILE="saltedlolly-audiobookshelf/docker-containers/abs-manager/abs-server-image.txt"
+          if [[ ! -f "$TXT_FILE" ]]; then
+            echo "::error::abs-server-image.txt not found"
+            exit 1
+          fi
+          current="$(grep -o ':[0-9]\+\.[0-9]\+\.[0-9]\+' "$TXT_FILE" | cut -d':' -f2)"
           if [[ -z "$current" ]]; then
-            echo "::error::Could not extract pinned version from Dockerfile"
+            echo "::error::Could not extract pinned version from abs-server-image.txt"
             exit 1
           fi
           echo "current_version=$current" >> "$GITHUB_OUTPUT"
@@ -102,18 +106,18 @@ jobs:
     needs: check-upstream
     if: needs.check-upstream.outputs.has_update == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90   # 3 sequential multi-arch builds vs cloudflare-ddns's 2
     permissions:
       contents: write
-      packages: write   # required to push to and prune GHCR
+      packages: write
     env:
-      APP_DIR: saltedlolly-cloudflare-ddns
-      TARGET_VERSION: v${{ needs.check-upstream.outputs.eligible_version }}.0
+      APP_DIR: saltedlolly-audiobookshelf
+      ELIGIBLE_VERSION: ${{ needs.check-upstream.outputs.eligible_version }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          persist-credentials: true   # required for cf-build.sh's `git push`
+          persist-credentials: true
 
       - name: Configure git identity for automated commits
         run: |
@@ -127,8 +131,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
-        # Creates a docker-container-driver builder that cf-build.sh's
-        # ensure_buildx() will auto-detect and reuse via `docker buildx ls`.
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
@@ -138,9 +140,9 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # Optional, only add if you start hitting Docker Hub anonymous
-      # pull-rate-limit failures on the base images (alpine, node:18-alpine,
-      # favonia/cloudflare-ddns are all pulled FROM Docker Hub during the
-      # build even though we now PUSH to GHCR). Uncomment and add
+      # pull-rate-limit failures on the base images (node:20-alpine,
+      # node:18-alpine are pulled FROM Docker Hub during the build even
+      # though we now push to GHCR). Uncomment and add
       # DOCKERHUB_USERNAME/DOCKERHUB_TOKEN secrets if needed:
       # - name: Log in to Docker Hub (pull-only, avoids rate limits)
       #   uses: docker/login-action@v4
@@ -149,70 +151,54 @@ jobs:
       #     password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # ---------- OPTIONAL SAFETY NET ----------
-      # Single-arch (amd64), --load-only builds, never pushed or committed.
-      # Aborts BEFORE cf-build.sh touches GHCR or git if either fails.
-      # Note: buildx --load can't load a multi-arch manifest, so this only
-      # smoke-tests linux/amd64 — an arm64-only regression would ship undetected.
-      - name: "[Optional] Smoke-test UI image (linux/amd64)"
+      # Only abs-network-shares-config-tool is practically smoke-testable in
+      # isolation: simple /health endpoint, no external runtime dependencies.
+      # abs-manager needs a live Docker socket proxy to do anything useful,
+      # and abs-network-shares-checker needs real mounted network shares to
+      # report healthy — neither is practical to smoke-test standalone, so
+      # those two images get NO automated safety net before publish. This is
+      # a bigger gap than cloudflare-ddns's "arm64 not covered" caveat.
+      - name: "[Optional] Smoke-test abs-network-shares-config-tool (linux/amd64)"
         working-directory: ${{ env.APP_DIR }}
         run: |
           set -euo pipefail
           docker buildx build --platform linux/amd64 \
-            --build-arg VERSION="${TARGET_VERSION}" \
-            -t smoketest/cloudflare-ddns-ui:test -f ui/Dockerfile --load .
-          docker run -d --name ui-smoke -p 3000:3000 smoketest/cloudflare-ddns-ui:test
+            -t smoketest/abs-network-shares-config-tool:test \
+            -f docker-containers/abs-network-shares-config-tool/Dockerfile \
+            --load docker-containers/abs-network-shares-config-tool
+          docker run -d --name config-tool-smoke -p 3001:3001 smoketest/abs-network-shares-config-tool:test
           ok=false
           for i in $(seq 1 15); do
-            curl -sf http://localhost:3000/health >/dev/null && { ok=true; break; }
+            curl -sf http://localhost:3001/health >/dev/null && { ok=true; break; }
             sleep 2
           done
-          docker logs ui-smoke || true
-          docker rm -f ui-smoke || true
-          [[ "$ok" == "true" ]] || { echo "::error::UI image failed smoke test"; exit 1; }
-
-      - name: "[Optional] Smoke-test DDNS image (linux/amd64)"
-        working-directory: ${{ env.APP_DIR }}
-        run: |
-          set -euo pipefail
-          docker buildx build --platform linux/amd64 \
-            -t smoketest/cloudflare-ddns:test -f cloudflare-ddns/Dockerfile --load .
-          mkdir -p /tmp/ddns-smoke-data
-          docker run -d --name ddns-smoke -e APP_DATA_DIR=/data \
-            -v /tmp/ddns-smoke-data:/data smoketest/cloudflare-ddns:test
-          sleep 8
-          running="$(docker inspect -f '{{.State.Running}}' ddns-smoke || echo false)"
-          status_ok=false
-          if [[ -f /tmp/ddns-smoke-data/status.json ]] && jq empty /tmp/ddns-smoke-data/status.json >/dev/null 2>&1; then
-            status_ok=true
-          fi
-          docker logs ddns-smoke || true
-          docker rm -f ddns-smoke || true
-          if [[ "$running" != "true" || "$status_ok" != "true" ]]; then
-            echo "::error::DDNS image crashed or produced no valid status.json"
-            exit 1
-          fi
-          # Only proves the container starts cleanly without real Cloudflare
-          # creds (expected status: "misconfigured"); does not validate real
-          # DNS-update behavior against Cloudflare's live API.
+          docker logs config-tool-smoke || true
+          docker rm -f config-tool-smoke || true
+          [[ "$ok" == "true" ]] || { echo "::error::abs-network-shares-config-tool image failed smoke test"; exit 1; }
       # ---------- END OPTIONAL SAFETY NET ----------
 
       - name: Dry run summary (no build/push/commit)
         if: github.event.inputs.dry_run == 'true'
         run: |
-          echo "DRY RUN: would publish ${TARGET_VERSION}"
+          echo "DRY RUN: would publish advplyr/audiobookshelf v${ELIGIBLE_VERSION}"
 
-      - name: Build, push, pin digests, and publish (cf-build.sh)
+      - name: Build, push, pin digests, and publish (abs-build.sh)
         if: github.event.inputs.dry_run != 'true'
         working-directory: ${{ env.APP_DIR }}
         run: |
-          ./cf-build.sh --publish \
-            --version "${TARGET_VERSION}" \
-            --ddns-version "${{ needs.check-upstream.outputs.eligible_version }}" \
-            --notes "Automated update: bump bundled favonia/cloudflare-ddns to v${{ needs.check-upstream.outputs.eligible_version }}"
+          ./abs-build.sh --publish \
+            --abs-version "${ELIGIBLE_VERSION}" \
+            --notes "Automated update: bump bundled advplyr/audiobookshelf to v${ELIGIBLE_VERSION}"
+
+      - name: Log published app version
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          echo "::notice::Published app version: $(grep '^version:' umbrel-app.yml)"
 
       - name: Prune old GHCR versions (keep last 5 tagged)
         if: github.event.inputs.dry_run != 'true'
         uses: dataaxiom/ghcr-cleanup-action@v1.2.2
         with:
-          package: 'cloudflare-ddns-ui,cloudflare-ddns'
+          package: 'abs-network-shares-config-tool,abs-manager,abs-network-shares-checker'
           keep-n-tagged: 5

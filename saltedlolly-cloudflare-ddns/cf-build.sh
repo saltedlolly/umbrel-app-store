@@ -40,6 +40,11 @@ DDNS_IMAGE="ghcr.io/saltedlolly/cloudflare-ddns"
 
 SET_VERSION=""
 BUMP_KIND="patch"   # kept for backwards compatibility, not used in 4-part versioning
+# Explicit favonia/cloudflare-ddns version override (for CI/automation):
+# skips the GitHub releases lookup in update_ddns_version() and uses this
+# version directly. Independent of SET_VERSION/--version, which controls
+# the overall app version string, not which upstream tag gets pinned.
+DDNS_VERSION_OVERRIDE=""
 RELEASE_NOTES="Publish multi-arch images (linux/arm64 + linux/amd64) for Umbrel Home compatibility"
 COMPOSE_FILE="$APP_ROOT/docker-compose.yml"
 APP_YML_FILE="$APP_ROOT/umbrel-app.yml"
@@ -56,12 +61,14 @@ usage() {
 Usage: $0 [OPTIONS]
 
 Options:
-  -h, --help           : Show this help message
-  --version <vx.x.x.x> : Set explicit version (e.g., v1.15.1.5)
-  --bump               : Force increment app patch version (default for publish)
-  --notes <text>       : Custom release notes
-  --localtest          : Build and deploy to local umbrel-dev ($UMBREL_DEV_HOST)
-  --publish            : Build and push to GitHub (prompts for version and notes if not provided)
+  -h, --help             : Show this help message
+  --version <vx.x.x.x>   : Set explicit version (e.g., v1.15.1.5)
+  --bump                 : Force increment app patch version (default for publish)
+  --notes <text>         : Custom release notes
+  --ddns-version <X.Y.Z> : Skip the upstream GitHub release check and use this exact
+                           favonia/cloudflare-ddns version (for CI/automation)
+  --localtest            : Build and deploy to local umbrel-dev ($UMBREL_DEV_HOST)
+  --publish              : Build and push to GitHub (prompts for version and notes if not provided)
 
 Version numbering: vX.Y.Z.N where:
   X.Y.Z = cloudflare-ddns upstream version (auto-reset app patch when upstream updates)
@@ -133,17 +140,23 @@ update_ddns_version() {
   echo "Checking cloudflare-ddns upstream version"
   echo "========================================="
   
-  # Get latest stable release tag from GitHub
-  echo "Fetching latest release from GitHub..."
-  local latest_version=$(curl -s https://api.github.com/repos/favonia/cloudflare-ddns/releases/latest | grep -o '"tag_name": "v[^"]*' | cut -d'v' -f2)
-  
-  if [[ -z "$latest_version" ]]; then
-    echo "⚠️  Could not fetch latest version from GitHub, skipping update" >&2
-    echo ""
-    return
+  local latest_version
+  if [[ -n "$DDNS_VERSION_OVERRIDE" ]]; then
+    latest_version="$DDNS_VERSION_OVERRIDE"
+    echo "Using explicitly supplied cloudflare-ddns version: $latest_version (skipping GitHub release lookup)"
+  else
+    # Get latest stable release tag from GitHub
+    echo "Fetching latest release from GitHub..."
+    latest_version=$(curl -s https://api.github.com/repos/favonia/cloudflare-ddns/releases/latest | grep -o '"tag_name": "v[^"]*' | cut -d'v' -f2)
+
+    if [[ -z "$latest_version" ]]; then
+      echo "⚠️  Could not fetch latest version from GitHub, skipping update" >&2
+      echo ""
+      return
+    fi
+
+    echo "Latest stable version: $latest_version"
   fi
-  
-  echo "Latest stable version: $latest_version"
   
   # Get current version from Dockerfile
   local current_version=$(extract_ddns_version)
@@ -338,6 +351,7 @@ while [[ $# -gt 0 ]]; do
     --version) SET_VERSION="$2"; shift 2 ;;
     --bump) FORCE_BUMP=true; shift ;;
     --notes) RELEASE_NOTES="$2"; shift 2 ;;
+    --ddns-version) DDNS_VERSION_OVERRIDE="$2"; shift 2 ;;
     --localtest) LOCAL_TEST=true; shift ;;
     --publish) PUBLISH_TO_GITHUB=true; shift ;;
     *) usage; exit 1 ;;

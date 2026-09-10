@@ -3,6 +3,14 @@
 # Build script for Audiobookshelf with Network Shares Support
 # Builds the network-shares-ui Docker image and updates docker-compose.yml with the new digest
 #
+# Requirements:
+# - Docker Buildx with docker-container driver for multi-platform support
+# - Logged in to GHCR (ghcr.io) for `saltedlolly/*`:
+#     docker login ghcr.io -u saltedlolly
+#   using a GitHub Personal Access Token (classic: write:packages +
+#   read:packages scopes; or fine-grained: Packages read/write) as the
+#   password. GHCR does not use Docker Hub credentials.
+#
 set -euo pipefail
 echo "[DEBUG] Current working directory: $(pwd)"
 
@@ -15,25 +23,26 @@ APP_YML_FILE="$APP_ROOT/umbrel-app.yml"
 
 # Images used in docker-compose.yml
 CONFIG_TOOL_UI_REPO="$APP_ROOT/docker-containers/abs-network-shares-config-tool"
-CONFIG_TOOL_UI_IMAGE_NAME="saltedlolly/abs-network-shares-config-tool"
+CONFIG_TOOL_UI_IMAGE_NAME="ghcr.io/saltedlolly/abs-network-shares-config-tool"
 ABS_MANAGER_REPO="$APP_ROOT/docker-containers/abs-manager"
-ABS_MANAGER_IMAGE="saltedlolly/abs-manager"
+ABS_MANAGER_IMAGE="ghcr.io/saltedlolly/abs-manager"
 
 # Images used in abs-manager to deploy other services
 ABS_NETWORK_SHARES_CHECKER_REPO="$APP_ROOT/docker-containers/abs-network-shares-checker"
-ABS_NETWORK_SHARES_CHECKER_IMAGE="saltedlolly/abs-network-shares-checker"
+ABS_NETWORK_SHARES_CHECKER_IMAGE="ghcr.io/saltedlolly/abs-network-shares-checker"
 ABS_NETWORK_SHARES_CHECKER_TXT_FILE="$APP_ROOT/docker-containers/abs-manager/abs-network-shares-checker-image.txt"
 ABS_SERVER_IMAGE="ghcr.io/advplyr/audiobookshelf"
 ABS_SERVER_LOCAL_TXT_FILE="$APP_ROOT/docker-containers/abs-manager/abs-server-image.txt"
 
-# Development / publishing options 
+# Development / publishing options
 RELEASE_NOTES="Update abs-network-shares-config-tool multi-arch image for Umbrel Home compatibility"
 LOCAL_TEST=false
 PUBLISH_TO_GITHUB=false
-CLEANUP_IMAGES=false
-KEEP_IMAGES=10
 FORCE_BUMP=false
 UMBREL_DEV_HOST="192.168.215.2"
+# Explicit ABS version override (for CI/automation): skips the GitHub
+# releases lookup in update_abs_version() and uses this version directly.
+ABS_VERSION_OVERRIDE=""
 
 is_macos=false
 if [[ "${OSTYPE:-}" == darwin* ]]; then is_macos=true; fi
@@ -43,12 +52,13 @@ usage() {
 Usage: $0 [OPTIONS]
 
 Options:
-  -h, --help           : Show this help message
-  --notes <text>       : Custom release notes (for --publish mode)
-  --bump               : Force UI version increment (even without code changes)
-  --localtest          : Build multi-arch, push to Docker Hub, and deploy to umbrel-dev ($UMBREL_DEV_HOST)
-  --publish            : Build multi-arch, push to Docker Hub (for production)
-  --cleanup [N]        : Delete old Docker Hub images, keep last N versions (default: 10)
+  -h, --help             : Show this help message
+  --notes <text>         : Custom release notes (for --publish mode)
+  --bump                 : Force UI version increment (even without code changes)
+  --abs-version <X.Y.Z>  : Skip the upstream GitHub release check and use this exact
+                           advplyr/audiobookshelf version (for CI/automation)
+  --localtest            : Build multi-arch, push to GHCR, and deploy to umbrel-dev ($UMBREL_DEV_HOST)
+  --publish              : Build multi-arch, push to GHCR (for production)
 
 Default paths:
   CONFIG_TOOL_UI_REPO: $CONFIG_TOOL_UI_REPO
@@ -265,16 +275,22 @@ update_abs_version() {
   echo "Checking Audiobookshelf version"
   echo "========================================="
   
-  # Get latest stable release tag from GitHub (not edge/develop)
-  echo "Fetching latest stable ABS version from GitHub..."
-  local latest_version=$(curl -s https://api.github.com/repos/advplyr/audiobookshelf/releases/latest | grep -o '"tag_name": "v[^"]*' | cut -d'v' -f2)
-  
-  if [[ -z "$latest_version" ]]; then
-    echo "❌ Error: Could not fetch latest version from GitHub" >&2
-    exit 1
+  local latest_version
+  if [[ -n "$ABS_VERSION_OVERRIDE" ]]; then
+    latest_version="$ABS_VERSION_OVERRIDE"
+    echo "Using explicitly supplied ABS version: $latest_version (skipping GitHub release lookup)"
+  else
+    # Get latest stable release tag from GitHub (not edge/develop)
+    echo "Fetching latest stable ABS version from GitHub..."
+    latest_version=$(curl -s https://api.github.com/repos/advplyr/audiobookshelf/releases/latest | grep -o '"tag_name": "v[^"]*' | cut -d'v' -f2)
+
+    if [[ -z "$latest_version" ]]; then
+      echo "❌ Error: Could not fetch latest version from GitHub" >&2
+      exit 1
+    fi
+
+    echo "Latest stable ABS version: $latest_version"
   fi
-  
-  echo "Latest stable ABS version: $latest_version"
   
   # Get current version from abs-server-image.txt (source of truth)
   local current_version=""
@@ -440,152 +456,6 @@ update_migration_script_version() {
   echo ""
 }
 
-# Cleanup old Docker Hub images
-cleanup_docker_hub_images() {
-  local image_name="$1"
-  
-  echo "========================================="
-  echo "Docker Hub Image Cleanup"
-  echo "========================================="
-  echo "Repository: $image_name"
-  echo "Keep last: $KEEP_IMAGES images"
-  echo ""
-  
-  local docker_username=""
-  local docker_token=""
-  
-  # Try to get credentials from docker config
-  local docker_config="$HOME/.docker/config.json"
-  if [[ -f "$docker_config" ]]; then
-    # Check if using credential store (macOS keychain, etc.)
-    local creds_store=$(grep '"credsStore"' "$docker_config" | cut -d'"' -f4)
-    
-    if [[ -n "$creds_store" ]]; then
-      # Use docker-credential helper to get credentials
-      echo "Retrieving credentials from $creds_store..."
-      local creds=$(echo "https://index.docker.io/v1/" | docker-credential-"$creds_store" get 2>/dev/null || true)
-      if [[ -n "$creds" ]]; then
-        docker_username=$(echo "$creds" | grep -o '"Username":"[^"]*' | cut -d'"' -f4)
-        docker_token=$(echo "$creds" | grep -o '"Secret":"[^"]*' | cut -d'"' -f4)
-        if [[ -n "$docker_username" ]] && [[ -n "$docker_token" ]]; then
-          echo "✓ Using Docker credentials from $creds_store"
-        fi
-      fi
-    else
-      # Try to extract auth from config.json directly
-      local auth=$(grep -A 2 '"https://index.docker.io/v1/"' "$docker_config" 2>/dev/null | grep '"auth"' | cut -d'"' -f4)
-      
-      if [[ -n "$auth" ]]; then
-        # Decode base64 auth (format: username:token)
-        local decoded=$(echo "$auth" | base64 -d 2>/dev/null || echo "$auth" | base64 -D 2>/dev/null)
-        docker_username=$(echo "$decoded" | cut -d':' -f1)
-        docker_token=$(echo "$decoded" | cut -d':' -f2)
-        echo "✓ Using Docker credentials from ~/.docker/config.json"
-      fi
-    fi
-  fi
-  
-  # Fall back to environment variables
-  if [[ -z "$docker_username" ]] || [[ -z "$docker_token" ]]; then
-    docker_username="${DOCKER_HUB_USERNAME:-}"
-    docker_token="${DOCKER_HUB_TOKEN:-}"
-    if [[ -n "$docker_username" ]] && [[ -n "$docker_token" ]]; then
-      echo "✓ Using Docker credentials from environment variables"
-    fi
-  fi
-  
-  # Check if we have credentials
-  if [[ -z "$docker_username" ]] || [[ -z "$docker_token" ]]; then
-    echo "Error: Docker Hub credentials not found" >&2
-    echo "" >&2
-    echo "Please either:" >&2
-    echo "  1. Run 'docker login' to save credentials, OR" >&2
-    echo "  2. Set environment variables:" >&2
-    echo "     export DOCKER_HUB_USERNAME='your-username'" >&2
-    echo "     export DOCKER_HUB_TOKEN='your-token'" >&2
-    echo "" >&2
-    echo "To create a token: https://hub.docker.com/settings/security" >&2
-    exit 1
-  fi
-  
-  # Extract repository name (e.g., "saltedlolly/abs-network-shares-config-tool" -> "saltedlolly" and "abs-network-shares-config-tool")
-  local namespace=$(echo "$image_name" | cut -d'/' -f1)
-  local repo=$(echo "$image_name" | cut -d'/' -f2)
-  
-  echo "Fetching image tags from Docker Hub..."
-  
-  # Get authentication token
-  local auth_token=$(curl -s -H "Content-Type: application/json" \
-    -X POST \
-    -d "{\"username\": \"$docker_username\", \"password\": \"$docker_token\"}" \
-    https://hub.docker.com/v2/users/login/ | grep -o '"token":"[^"]*' | cut -d'"' -f4)
-  
-  if [[ -z "$auth_token" ]]; then
-    echo "Error: Failed to authenticate with Docker Hub" >&2
-    exit 1
-  fi
-  
-  # Fetch all tags
-  local tags=$(curl -s -H "Authorization: JWT $auth_token" \
-    "https://hub.docker.com/v2/repositories/${namespace}/${repo}/tags/?page_size=100" \
-    | grep -o '"name":"[^"]*' | cut -d'"' -f4 | sort -V -r)
-  
-  if [[ -z "$tags" ]]; then
-    echo "No tags found or failed to fetch tags" >&2
-    exit 1
-  fi
-  
-  local tag_count=$(echo "$tags" | wc -l | tr -d ' ')
-  echo "Found $tag_count tags"
-  echo ""
-  
-  if [[ $tag_count -le $KEEP_IMAGES ]]; then
-    echo "Only $tag_count tags exist (keeping $KEEP_IMAGES), nothing to delete"
-    exit 0
-  fi
-  
-  # Calculate how many to delete
-  local delete_count=$((tag_count - KEEP_IMAGES))
-  local tags_to_delete=$(echo "$tags" | tail -n "$delete_count")
-  
-  echo "Tags to keep (newest $KEEP_IMAGES):"
-  echo "$tags" | head -n "$KEEP_IMAGES" | sed 's/^/  ✓ /'
-  echo ""
-  echo "Tags to DELETE ($delete_count):"
-  echo "$tags_to_delete" | sed 's/^/  ✗ /'
-  echo ""
-  
-  # Confirm deletion
-  read -p "Delete these $delete_count old image(s)? [y/N] " -n 1 -r
-  echo
-  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "Cancelled"
-    exit 0
-  fi
-  
-  echo ""
-  echo "Deleting old images..."
-  local deleted=0
-  
-  while IFS= read -r tag; do
-    echo -n "  Deleting $tag... "
-    local response=$(curl -s -X DELETE \
-      -H "Authorization: JWT $auth_token" \
-      "https://hub.docker.com/v2/repositories/${namespace}/${repo}/tags/${tag}/")
-    
-    if [[ "$response" == "" ]]; then
-      echo "✓"
-      deleted=$((deleted + 1))
-    else
-      echo "✗ (error: $response)"
-    fi
-  done <<< "$tags_to_delete"
-  
-  echo ""
-  echo "✓ Deleted $deleted of $delete_count images"
-  echo "✓ Kept $KEEP_IMAGES most recent images"
-}
-
 # Parse arguments
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -609,14 +479,9 @@ while [[ $# -gt 0 ]]; do
       PUBLISH_TO_GITHUB=true
       shift
       ;;
-    --cleanup)
-      CLEANUP_IMAGES=true
-      if [[ -n "${2:-}" ]] && [[ "$2" =~ ^[0-9]+$ ]]; then
-        KEEP_IMAGES="$2"
-        shift 2
-      else
-        shift
-      fi
+    --abs-version)
+      ABS_VERSION_OVERRIDE="$2"
+      shift 2
       ;;
     *)
       echo "Unknown option: $1" >&2
@@ -625,32 +490,6 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
-
-# If cleanup mode, run cleanup for all repositories and exit
-if [[ "$CLEANUP_IMAGES" == true ]]; then
-  echo "========================================"
-  echo "Cleaning up old images from Docker Hub"
-  echo "========================================"
-  echo "This will clean up old images from all 3 repositories:"
-  echo "  1. $CONFIG_TOOL_UI_IMAGE_NAME"
-  echo "  2. $ABS_NETWORK_SHARES_CHECKER_IMAGE"
-  echo "  3. $ABS_MANAGER_IMAGE"
-  echo ""
-  
-  cleanup_docker_hub_images "$CONFIG_TOOL_UI_IMAGE_NAME"
-  echo ""
-  echo ""
-  cleanup_docker_hub_images "$ABS_NETWORK_SHARES_CHECKER_IMAGE"
-  echo ""
-  echo ""
-  cleanup_docker_hub_images "$ABS_MANAGER_IMAGE"
-  
-  echo ""
-  echo "========================================"
-  echo "✓ Cleanup complete for all repositories"
-  echo "========================================"
-  exit 0
-fi
 
 ensure_docker_runtime
 
@@ -822,7 +661,7 @@ else
   echo "Fetching existing manifest digest..."
   UI_DIGEST=$(docker buildx imagetools inspect "$CONFIG_TOOL_UI_IMAGE_NAME:$FULL_VERSION" 2>/dev/null | grep "^Digest:" | awk '{print $2}')
   if [[ -z "$UI_DIGEST" ]]; then
-    echo "Error: Failed to find existing image on Docker Hub" >&2
+    echo "Error: Failed to find existing image on GHCR" >&2
     echo "Image $CONFIG_TOOL_UI_IMAGE_NAME:$FULL_VERSION does not exist" >&2
     echo "You may need to build with UI changes first" >&2
     exit 1
@@ -892,7 +731,7 @@ else
   echo "Fetching existing manifest digest..."
   ABS_NETWORK_SHARES_CHECKER_DIGEST=$(docker buildx imagetools inspect "$ABS_NETWORK_SHARES_CHECKER_IMAGE:$FULL_VERSION" 2>/dev/null | grep "^Digest:" | awk '{print $2}')
   if [[ -z "$ABS_NETWORK_SHARES_CHECKER_DIGEST" ]]; then
-    echo "Error: Failed to find existing checker image on Docker Hub" >&2
+    echo "Error: Failed to find existing checker image on GHCR" >&2
     echo "Image $ABS_NETWORK_SHARES_CHECKER_IMAGE:$FULL_VERSION does not exist" >&2
     echo "You may need to build with checker changes first" >&2
     exit 1
@@ -964,7 +803,7 @@ else
   echo "Verifying docker-compose.yml has correct abs-manager digest..."
   ABS_MANAGER_DIGEST=$(docker buildx imagetools inspect "$ABS_MANAGER_IMAGE:$FULL_VERSION" 2>/dev/null | grep "^Digest:" | awk '{print $2}')
   if [[ -z "$ABS_MANAGER_DIGEST" ]]; then
-    echo "Warning: Could not fetch existing abs-manager digest from Docker Hub" >&2
+    echo "Warning: Could not fetch existing abs-manager digest from GHCR" >&2
   else
     update_compose_digest "$ABS_MANAGER_IMAGE" "$ABS_MANAGER_DIGEST"
   fi
@@ -1054,13 +893,13 @@ if $LOCAL_TEST; then
   echo "  1. REINSTALL from App Store:"
   echo "     • Go to App Store → Find 'Audiobookshelf'"
   echo "     • Click Install"
-  echo "     • This will pull the NEW image from Docker Hub"
+  echo "     • This will pull the NEW image from GHCR"
   echo ""
   echo "  2. TEST the app:"
   echo "     • Access at: http://$UMBREL_DEV_HOST/"
   echo "     • Configure network shares via Network Shares UI"
   echo ""
-  echo "Built image on Docker Hub:"
+  echo "Built image on GHCR:"
   echo "  • $CONFIG_TOOL_UI_IMAGE_NAME:$FULL_VERSION@$UI_DIGEST"
   echo ""
 elif $PUBLISH_TO_GITHUB; then
@@ -1095,7 +934,7 @@ elif $PUBLISH_TO_GITHUB; then
   echo ""
   echo "✓ Successfully published v${FULL_VERSION} to GitHub"
   echo ""
-  echo "Built image on Docker Hub:"
+  echo "Built image on GHCR:"
   echo "  • $CONFIG_TOOL_UI_IMAGE_NAME:$FULL_VERSION@$UI_DIGEST"
   echo ""
 else
