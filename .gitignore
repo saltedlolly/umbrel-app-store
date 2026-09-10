@@ -4,9 +4,6 @@
 **/cloudflare-ddns.env
 **/.env
 
-# Pre-built docker containers
-**/docker-containers/
-
 # Node and frontend artifacts
 **/node_modules/
 **/npm-debug.log*

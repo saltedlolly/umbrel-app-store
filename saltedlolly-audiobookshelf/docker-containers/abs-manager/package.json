@@ -1,0 +1,13 @@
+{
+  "name": "abs-manager",
+  "version": "1.0.0",
+  "description": "Audiobookshelf Orchestration Manager",
+  "main": "manager.js",
+  "type": "module",
+  "scripts": {
+    "start": "node manager.js"
+  },
+  "dependencies": {
+    "dockerode": "^4.0.0"
+  }
+}
