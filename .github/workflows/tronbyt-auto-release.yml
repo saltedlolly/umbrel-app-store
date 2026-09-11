@@ -1,0 +1,166 @@
+name: Tronbyt Server - Auto Release
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # every day 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: check upstream and log the plan only (no update/commit)'
+        type: boolean
+        default: false
+      force_version:
+        description: 'Optional: pretend the eligible tronbyt/server version is this (e.g. 2.3.8), for testing'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tronbyt-auto-release
+  cancel-in-progress: false
+
+jobs:
+  check-upstream:
+    name: Check tronbyt/server for an eligible release (5-day buffer)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      has_update: ${{ steps.compare.outputs.has_update }}
+      eligible_version: ${{ steps.latest.outputs.eligible_version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            saltedlolly-tronbyt/docker-compose.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Find newest tronbyt/server release that has cleared the 5-day buffer
+        id: latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cutoff="$(date -u -d '5 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+          releases="$(curl -sf \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/tronbyt/server/releases?per_page=20")"
+
+          version="$(echo "$releases" | jq -r --arg cutoff "$cutoff" '
+            [ .[] | select(.draft==false and .prerelease==false and .published_at <= $cutoff) ]
+            | sort_by(.published_at) | last | .tag_name // empty
+          ')"
+          version="${version#v}"
+
+          if [[ -n "${{ github.event.inputs.force_version }}" ]]; then
+            version="${{ github.event.inputs.force_version }}"
+            echo "::notice::Overriding with force_version input: $version"
+          fi
+
+          if [[ -z "$version" ]]; then
+            echo "::notice::No tronbyt/server release has cleared the 5-day buffer yet"
+            echo "eligible_version=" >> "$GITHUB_OUTPUT"
+          else
+            if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Unexpected version format: '$version'"
+              exit 1
+            fi
+            echo "eligible_version=$version" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Get currently pinned version
+        id: current
+        run: |
+          set -euo pipefail
+          current="$(grep -oE 'ghcr\.io/tronbyt/server:[0-9]+\.[0-9]+\.[0-9]+' \
+            saltedlolly-tronbyt/docker-compose.yml | head -1 | cut -d: -f3)"
+          if [[ -z "$current" ]]; then
+            echo "::error::Could not extract pinned version from docker-compose.yml"
+            exit 1
+          fi
+          echo "current_version=$current" >> "$GITHUB_OUTPUT"
+
+      - name: Compare
+        id: compare
+        run: |
+          eligible="${{ steps.latest.outputs.eligible_version }}"
+          current="${{ steps.current.outputs.current_version }}"
+          if [[ -z "$eligible" || "$eligible" == "$current" ]]; then
+            echo "has_update=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No update to publish. pinned=$current eligible=${eligible:-none}"
+          else
+            echo "has_update=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Publishing update. pinned=$current -> eligible=$eligible"
+          fi
+
+  release:
+    name: Smoke-test and publish new version
+    needs: check-upstream
+    if: needs.check-upstream.outputs.has_update == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      APP_DIR: saltedlolly-tronbyt
+      ELIGIBLE_VERSION: ${{ needs.check-upstream.outputs.eligible_version }}
+      # has_update==true only fires for a genuine upstream version change, so
+      # the app patch always resets to 0 - passing this explicitly (rather
+      # than leaving --version unset) skips tb-build.sh's interactive
+      # confirmation prompt, which would otherwise hang a CI run waiting on
+      # stdin that will never arrive.
+      TARGET_VERSION: v${{ needs.check-upstream.outputs.eligible_version }}.0
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: true   # required for tb-build.sh's `git push`
+
+      - name: Configure git identity for automated commits
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      # ---------- OPTIONAL SAFETY NET ----------
+      # We have zero control over upstream's contents - this is the only
+      # check standing between a breaking tronbyt/server release and
+      # production. Pulls the official image directly and confirms the
+      # container comes up and responds, using its own health CLI.
+      - name: "[Optional] Smoke-test tronbyt/server image"
+        run: |
+          set -euo pipefail
+          docker run -d --name tronbyt-smoke -p 8000:8000 \
+            "ghcr.io/tronbyt/server:${ELIGIBLE_VERSION}"
+          ok=false
+          for i in $(seq 1 15); do
+            docker exec tronbyt-smoke /app/tronbyt-server health >/dev/null 2>&1 && { ok=true; break; }
+            sleep 2
+          done
+          docker logs tronbyt-smoke || true
+          docker rm -f tronbyt-smoke || true
+          [[ "$ok" == "true" ]] || { echo "::error::tronbyt/server image failed smoke test"; exit 1; }
+      # ---------- END OPTIONAL SAFETY NET ----------
+
+      - name: Dry run summary (no update/commit)
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          echo "DRY RUN: would publish tronbyt/server v${ELIGIBLE_VERSION}"
+
+      - name: Update pin, bump version, and publish (tb-build.sh)
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          ./tb-build.sh --publish \
+            --version "${TARGET_VERSION}" \
+            --tronbyt-version "${ELIGIBLE_VERSION}" \
+            --notes "Automated update: bump bundled tronbyt/server to v${ELIGIBLE_VERSION}"
+
+      - name: Log published app version
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          echo "::notice::Published app version: $(grep '^version:' umbrel-app.yml)"

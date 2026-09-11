@@ -1,0 +1,39 @@
+manifestVersion: 1
+id: saltedlolly-tronbyt
+category: Automation
+name: Tronbyt Server
+version: "v2.3.7.0"
+tagline: Self-hosted server for managing Tidbyt/Tronbyt smart displays without the cloud
+description: >-
+  Tronbyt Server manages apps on Tidbyt/Tronbyt smart displays entirely on your own Umbrel, without depending on Tidbyt's cloud backend. It offers a web UI for browsing and configuring apps, generates firmware for flashing a Tidbyt into a Tronbyt, and keeps working even if Tidbyt's servers go offline.
+
+
+  This app has its own account system (create your account on first visit) and does not use Umbrel's single sign-on, since physical Tidbyt/Tronbyt displays connect to the server directly and can't complete an interactive login.
+
+
+  - Web UI for adding devices, browsing/configuring apps, and generating device firmware
+
+  - Works fully offline from Tidbyt's cloud, including some APIs Tidbyt's own servers block
+
+  - Supports Tidbyt Gen1/Gen2, Tronbyt S3/S3 Wide, MatrixPortal S3, and Raspberry Pi-driven LED matrix panels
+releaseNotes: >-
+  v2.3.7.0:
+
+  - Initial release
+
+developer: tronbyt
+website: https://github.com/tronbyt/server
+dependencies: []
+repo: https://github.com/tronbyt/server
+support: https://github.com/saltedlolly/umbrel-app-store/issues
+
+port: 19191
+gallery: []
+path: ""
+
+defaultUsername: ""
+defaultPassword: ""
+
+icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-tronbyt/icon.png
+submitter: saltedlolly
+submission: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-tronbyt

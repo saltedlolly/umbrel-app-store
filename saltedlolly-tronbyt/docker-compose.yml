@@ -1,0 +1,29 @@
+services:
+  app_proxy:
+    environment:
+      # The format here is: <app-id>_<docker-service-name>_1
+      APP_HOST: saltedlolly-tronbyt_server_1
+      APP_PORT: 8000
+      # Tronbyt has its own login system, and physical Tidbyt/Tronbyt devices
+      # poll this server directly (no browser, can't complete Umbrel SSO) -
+      # this is a permanent setting, not a local-test toggle.
+      PROXY_AUTH_ADD: "false"
+
+  server:
+    image: ghcr.io/tronbyt/server:2.3.7@sha256:5fee8e0565eb5a658b9b4de225f404e7adc4ff91136193dcdd97038a4167ee20
+    container_name: saltedlolly-tronbyt_server_1
+    hostname: saltedlolly-tronbyt_server_1
+    init: true
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ${APP_DATA_DIR}/data:/app/data
+      - /etc/localtime:/etc/localtime:ro
+    healthcheck:
+      test: ["CMD", "/app/tronbyt-server", "health"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
