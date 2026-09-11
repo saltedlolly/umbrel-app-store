@@ -1,8 +1,8 @@
 manifestVersion: 1
 id: saltedlolly-tronbyt
 category: Automation
-name: Tronbyt Server
-version: "v2.3.7.0"
+name: Tronbyt
+version: "v2.3.7.1"
 tagline: Self-hosted server for managing Tidbyt/Tronbyt smart displays without the cloud
 description: >-
   Tronbyt Server manages apps on Tidbyt/Tronbyt smart displays entirely on your own Umbrel, without depending on Tidbyt's cloud backend. It offers a web UI for browsing and configuring apps, generates firmware for flashing a Tidbyt into a Tronbyt, and keeps working even if Tidbyt's servers go offline.
@@ -17,6 +17,10 @@ description: >-
 
   - Supports Tidbyt Gen1/Gen2, Tronbyt S3/S3 Wide, MatrixPortal S3, and Raspberry Pi-driven LED matrix panels
 releaseNotes: >-
+  v2.3.7.1:
+
+  - Rename app to just 'Tronbyt' - 'Server' was redundant since all Umbrel apps are servers, and there are no other Tronbyt-org apps to disambiguate from
+
   v2.3.7.0:
 
   - Initial release

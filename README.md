@@ -34,8 +34,8 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
     </tr>
     <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-tronbyt/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
-      <td><a href="#tronbyt-server">Tronbyt Server</a></td>
-      <td nowrap id="saltedlolly-tronbyt-version"><code>v2.3.7.0</code></td>
+      <td><a href="#tronbyt">Tronbyt</a></td>
+      <td nowrap id="saltedlolly-tronbyt-version"><code>v2.3.7.1</code></td>
       <td nowrap id="saltedlolly-tronbyt-date">2026-09-11</td>
       <td>Self-hosted server for managing Tidbyt/Tronbyt smart displays without the cloud</td>
     </tr>
@@ -130,7 +130,7 @@ A dynamic DNS client for Cloudflare powered by [favonia/cloudflare-ddns](https:/
 
 ---
 
-### Tronbyt Server<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-tronbyt/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+### Tronbyt<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-tronbyt/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 A self-hosted server for managing [Tidbyt](https://tidbyt.com/) and [Tronbyt](https://tronbyt.com/) smart displays, powered by [tronbyt/server](https://github.com/tronbyt/server), entirely on your own Umbrel — no dependency on Tidbyt's cloud backend. Add devices, browse and configure apps, and generate firmware for flashing a Tidbyt into a Tronbyt, all from a web UI that keeps working even if Tidbyt's own servers go offline.
 
