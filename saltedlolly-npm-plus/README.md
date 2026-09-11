@@ -94,18 +94,27 @@ installations.
 
 NPMplus ships with a built-in CrowdSec bouncer (no extra container needed
 in this package) - it just needs a reachable CrowdSec engine + LAPI to
-query. This package doesn't include CrowdSec itself: a standalone CrowdSec
-Umbrel app is planned as a separate future package, so a single CrowdSec
-instance can protect multiple apps/services rather than being tied to
-this one.
+query. This package doesn't include CrowdSec itself - install
+[saltedlolly-crowdsec](../saltedlolly-crowdsec) for that, so a single
+CrowdSec instance can protect multiple apps/services rather than being
+tied to this one.
 
-Once you have a CrowdSec instance running (on this Umbrel or elsewhere on
-your network), configure the bouncer by editing
-`${APP_DATA_DIR}/data/crowdsec/crowdsec.conf` with your `API_URL`,
-`API_KEY`, and (if using AppSec/WAF checks) `APPSEC_URL`, then restart the
-app. See [NPMplus's own CrowdSec documentation](https://github.com/ZoeyVid/NPMplus)
-for the exact config format and for registering this app as a bouncer
-(`cscli bouncers add`) on the CrowdSec side.
+Install both apps and they're wired together automatically:
+`saltedlolly-crowdsec` generates a shared secret and registers a bouncer
+named `npmplus` with it on every startup - no manual `cscli` step needed
+on either side. To complete the connection, configure NPMplus's bouncer
+by editing `${APP_DATA_DIR}/data/crowdsec/crowdsec.conf` with:
+
+```
+API_URL=http://saltedlolly-crowdsec_crowdsec_1:8080
+API_KEY=<the same BOUNCER_KEY_npmplus value from saltedlolly-crowdsec's docker-compose.yml>
+ENABLED=true
+```
+
+then restart the app. See [saltedlolly-crowdsec's README](../saltedlolly-crowdsec/README.md#protecting-npmplus-or-other-apps)
+for more on how the two apps connect, and
+[NPMplus's own CrowdSec documentation](https://github.com/ZoeyVid/NPMplus)
+for the full config format (including optional `APPSEC_URL`).
 
 CrowdSec's *local log-based detection* scenarios (as opposed to its
 community IP-reputation blocklist and AppSec checks, which work over pure
