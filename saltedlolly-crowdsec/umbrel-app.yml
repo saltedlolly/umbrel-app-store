@@ -1,0 +1,42 @@
+manifestVersion: 1
+id: saltedlolly-crowdsec
+category: Networking
+name: CrowdSec
+version: "v1.8.1.1"
+tagline: Crowd-sourced intrusion detection and IP banning for your self-hosted apps
+description: >-
+  CrowdSec watches for attacks (brute-force logins, scans, known-bad IPs) against your self-hosted services and automatically bans them, sharing and benefiting from threat intelligence crowd-sourced across the whole CrowdSec community.
+
+
+  This app runs the CrowdSec engine plus a local web dashboard (crowdsec-web-ui) for browsing alerts, managing bans, and viewing metrics - no command line required.
+
+
+  On its own, CrowdSec doesn't protect anything: it needs a "bouncer" wired into whatever is facing your traffic. This app ships pre-configured to protect saltedlolly-npm-plus (its bouncer key is generated and shared automatically - install both apps and it's ready to go). Other apps or services can be protected too by pointing their own CrowdSec bouncer at this app.
+
+
+  ⚠️ Uninstalling this app deletes its persistent app data, including your ban history and dashboard account. Back it up before uninstalling.
+releaseNotes: >-
+  v1.8.1.1:
+
+  - Initial release
+
+  v1.8.1.0:
+
+  - Initial release
+
+developer: CrowdSec
+website: https://www.crowdsec.net/
+dependencies: []
+repo: https://github.com/crowdsecurity/crowdsec
+support: https://github.com/saltedlolly/umbrel-app-store/issues
+
+port: 5190
+gallery: []
+path: ""
+
+defaultUsername: ""
+defaultPassword: ""
+
+icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-crowdsec/icon.png
+submitter: saltedlolly
+submission: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-crowdsec

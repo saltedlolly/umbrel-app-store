@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CROWDSEC_CONTAINER="${APP_ID}_crowdsec_1"
+
+# crowdsec-web-ui doesn't support the env-var auto-registration bouncers get
+# (BOUNCER_KEY_<name>) - its own docs require a one-time `cscli machines add`
+# run against the crowdsec container. Doing that from inside a container
+# would need the Docker socket mounted in, which this store avoids; running
+# it here instead, directly on the host where hooks execute, needs no
+# socket access at all. Idempotent and safe to run on every start/restart.
+
+for _ in $(seq 1 30); do
+  docker exec "$CROWDSEC_CONTAINER" cscli lapi status >/dev/null 2>&1 && break
+  sleep 2
+done
+
+if ! docker exec "$CROWDSEC_CONTAINER" cscli machines list -o json 2>/dev/null | grep -q '"crowdsec-web-ui"'; then
+  docker exec "$CROWDSEC_CONTAINER" cscli machines add crowdsec-web-ui \
+    --password "${APP_SALTEDLOLLY_CROWDSEC_WEBUI_PASSWORD}" -f /dev/null || true
+fi

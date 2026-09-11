@@ -46,6 +46,13 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
       <td nowrap id="saltedlolly-npm-plus-date">2026-09-11</td>
       <td>A feature-rich reverse proxy with HTTP/3, CrowdSec support, and advanced access control</td>
     </tr>
+    <tr>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-crowdsec/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td><a href="#crowdsec">CrowdSec</a></td>
+      <td nowrap id="saltedlolly-crowdsec-version"><code>v1.8.1.1</code></td>
+      <td nowrap id="saltedlolly-crowdsec-date">2026-09-11</td>
+      <td>Crowd-sourced intrusion detection and IP banning for your self-hosted apps</td>
+    </tr>
   </tbody>
 </table>
 
@@ -163,3 +170,15 @@ NPMplus's administration interface is unconditionally served over HTTPS. Opening
 | Proxy HTTPS / HTTP/3     | `50443`      | —                                                         |               |
 
 ⚠️ NPMplus does not include Authentik or CrowdSec - both are planned as separate, complementary Umbrel apps rather than bundled in, so each can be installed, updated, and protect more than just NPMplus independently. See the [app's own README](saltedlolly-npm-plus/README.md) for CrowdSec integration steps and migrating from an existing Portainer-based NPMplus install.
+
+---
+
+### CrowdSec<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-crowdsec/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+
+Crowd-sourced intrusion detection and automatic IP banning, powered by [CrowdSec](https://www.crowdsec.net/). Watches for attacks (brute-force logins, scans, known-bad IPs) against services proxied through your Umbrel and bans them, sharing and benefiting from threat intelligence crowd-sourced across the whole CrowdSec community. Includes a local web dashboard ([crowdsec-web-ui](https://github.com/TheDuffman85/crowdsec-web-ui)) for browsing alerts and managing bans - no command line needed.
+
+On its own, CrowdSec doesn't protect anything - it needs a "bouncer" wired into whatever's facing your traffic. Install this alongside [NPMplus](#npmplus) and it's protected automatically (their bouncer key is generated and shared between the two apps with no manual setup). Other apps or services can be protected too by pointing their own CrowdSec bouncer at this app.
+
+| Name              | Port         | Local Address                                            | Umbrel SSO    |
+|-------------------| ------------ | --------------------------------------------------------- | ------------- |
+| CrowdSec Dashboard| `5190`       | [http://umbrel.local:5190](http://umbrel.local:5190/)    | ✅            |

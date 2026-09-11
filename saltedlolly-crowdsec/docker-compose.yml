@@ -1,0 +1,58 @@
+services:
+  app_proxy:
+    environment:
+      # The format here is: <app-id>_<docker-service-name>_1
+      APP_HOST: saltedlolly-crowdsec_crowdsec-web-ui_1
+      APP_PORT: 3000
+
+  crowdsec:
+    image: docker.io/crowdsecurity/crowdsec:v1.8.1@sha256:0f2523fa61ef507f15d953045cface490cc880670c62f2755ced17524107f71a
+    container_name: saltedlolly-crowdsec_crowdsec_1
+    hostname: saltedlolly-crowdsec_crowdsec_1
+    init: true
+    restart: unless-stopped
+    environment:
+      # Detection/enforcement rules tuned for saltedlolly-npm-plus's exact
+      # image (docker.io/zoeyvid/npmplus) - see this app's README for
+      # adding collections to protect other apps too.
+      - COLLECTIONS=ZoeyVid/npmplus
+      # Auto-registers a bouncer named "npmplus" with this key on every
+      # startup (idempotent) - no cscli/SSH step required. Share this same
+      # secret with saltedlolly-npm-plus's bouncer config to connect them.
+      - BOUNCER_KEY_npmplus=${APP_SALTEDLOLLY_CROWDSEC_NPMPLUS_BOUNCER_KEY}
+    volumes:
+      - ${APP_DATA_DIR}/data/crowdsec/config:/etc/crowdsec
+      # Required: the image refuses to fully start unless this is a real
+      # mounted volume (its own startup check, not an Umbrel requirement).
+      - ${APP_DATA_DIR}/data/crowdsec/data:/var/lib/crowdsec/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:6060/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  crowdsec-web-ui:
+    image: ghcr.io/theduffman85/crowdsec-web-ui:2026.8.3@sha256:bfadbab9a72c21bf906eca0bb9bfb894c28ab31d1aed5bc25d9d9c153903ef89
+    container_name: saltedlolly-crowdsec_crowdsec-web-ui_1
+    hostname: saltedlolly-crowdsec_crowdsec-web-ui_1
+    init: true
+    restart: unless-stopped
+    environment:
+      - CONFIG_INSTANCE_LAPI_URL=http://saltedlolly-crowdsec_crowdsec_1:8080
+      - CONFIG_INSTANCE_LAPI_AUTH_USERNAME=crowdsec-web-ui
+      # Registered against the crowdsec container by hooks/post-start on
+      # first boot (the web UI doesn't support the same env-var
+      # auto-registration bouncers get - see that hook for why).
+      - CONFIG_INSTANCE_LAPI_AUTH_PASSWORD=${APP_SALTEDLOLLY_CROWDSEC_WEBUI_PASSWORD}
+      - CONFIG_INSTANCE_METRICS_URL=http://saltedlolly-crowdsec_crowdsec_1:6060/metrics
+    volumes:
+      - ${APP_DATA_DIR}/data/web-ui:/app/data
+    depends_on:
+      - crowdsec
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
