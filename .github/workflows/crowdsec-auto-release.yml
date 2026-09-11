@@ -1,0 +1,170 @@
+name: CrowdSec - Auto Release
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # every day 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: check upstream and log the plan only (no update/commit)'
+        type: boolean
+        default: false
+      force_crowdsec_version:
+        description: 'Optional: pretend the eligible crowdsecurity/crowdsec version is this (e.g. 1.8.2), for testing'
+        required: false
+        type: string
+      force_webui_version:
+        description: 'Optional: pretend the eligible crowdsec-web-ui version is this (e.g. 2026.9.1), for testing'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crowdsec-auto-release
+  cancel-in-progress: false
+
+jobs:
+  check-upstream:
+    name: Check crowdsec and crowdsec-web-ui for an eligible release (5-day buffer)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      has_update: ${{ steps.compare.outputs.has_update }}
+      eligible_crowdsec_version: ${{ steps.latest.outputs.eligible_crowdsec_version }}
+      eligible_webui_version: ${{ steps.latest.outputs.eligible_webui_version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            saltedlolly-crowdsec/docker-compose.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Find newest eligible releases (5-day buffer) for both upstreams
+        id: latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cutoff="$(date -u -d '5 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+
+          crowdsec_releases="$(curl -sf \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/crowdsecurity/crowdsec/releases?per_page=20")"
+          crowdsec_version="$(echo "$crowdsec_releases" | jq -r --arg cutoff "$cutoff" '
+            [ .[] | select(.draft==false and .prerelease==false and .published_at <= $cutoff) ]
+            | sort_by(.published_at) | last | .tag_name // empty
+          ')"
+          crowdsec_version="${crowdsec_version#v}"
+
+          webui_releases="$(curl -sf \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/TheDuffman85/crowdsec-web-ui/releases?per_page=20")"
+          webui_version="$(echo "$webui_releases" | jq -r --arg cutoff "$cutoff" '
+            [ .[] | select(.draft==false and .prerelease==false and .published_at <= $cutoff) ]
+            | sort_by(.published_at) | last | .tag_name // empty
+          ')"
+
+          if [[ -n "${{ github.event.inputs.force_crowdsec_version }}" ]]; then
+            crowdsec_version="${{ github.event.inputs.force_crowdsec_version }}"
+            echo "::notice::Overriding crowdsec version with force_crowdsec_version input: $crowdsec_version"
+          fi
+          if [[ -n "${{ github.event.inputs.force_webui_version }}" ]]; then
+            webui_version="${{ github.event.inputs.force_webui_version }}"
+            echo "::notice::Overriding crowdsec-web-ui version with force_webui_version input: $webui_version"
+          fi
+
+          if [[ -z "$crowdsec_version" ]]; then
+            echo "::notice::No crowdsecurity/crowdsec release has cleared the 5-day buffer yet"
+          elif ! [[ "$crowdsec_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Unexpected crowdsec version format: '$crowdsec_version'"
+            exit 1
+          fi
+          echo "eligible_crowdsec_version=$crowdsec_version" >> "$GITHUB_OUTPUT"
+
+          if [[ -z "$webui_version" ]]; then
+            echo "::notice::No TheDuffman85/crowdsec-web-ui release has cleared the 5-day buffer yet"
+          fi
+          echo "eligible_webui_version=$webui_version" >> "$GITHUB_OUTPUT"
+
+      - name: Get currently pinned versions
+        id: current
+        run: |
+          set -euo pipefail
+          current_crowdsec="$(grep -oE 'crowdsecurity/crowdsec:v[0-9]+\.[0-9]+\.[0-9]+' \
+            saltedlolly-crowdsec/docker-compose.yml | head -1 | sed -E 's/.*:v//')"
+          current_webui="$(grep -oE 'crowdsec-web-ui:[0-9]+\.[0-9]+\.[0-9]+' \
+            saltedlolly-crowdsec/docker-compose.yml | head -1 | sed -E 's/.*://')"
+          if [[ -z "$current_crowdsec" || -z "$current_webui" ]]; then
+            echo "::error::Could not extract pinned versions from docker-compose.yml"
+            exit 1
+          fi
+          echo "current_crowdsec_version=$current_crowdsec" >> "$GITHUB_OUTPUT"
+          echo "current_webui_version=$current_webui" >> "$GITHUB_OUTPUT"
+
+      - name: Compare
+        id: compare
+        run: |
+          eligible_crowdsec="${{ steps.latest.outputs.eligible_crowdsec_version }}"
+          eligible_webui="${{ steps.latest.outputs.eligible_webui_version }}"
+          current_crowdsec="${{ steps.current.outputs.current_crowdsec_version }}"
+          current_webui="${{ steps.current.outputs.current_webui_version }}"
+
+          has_update=false
+          if [[ -n "$eligible_crowdsec" && "$eligible_crowdsec" != "$current_crowdsec" ]]; then
+            has_update=true
+          fi
+          if [[ -n "$eligible_webui" && "$eligible_webui" != "$current_webui" ]]; then
+            has_update=true
+          fi
+
+          echo "has_update=$has_update" >> "$GITHUB_OUTPUT"
+          echo "::notice::crowdsec pinned=$current_crowdsec eligible=${eligible_crowdsec:-none} | web-ui pinned=$current_webui eligible=${eligible_webui:-none} | has_update=$has_update"
+
+  release:
+    name: Smoke-test and publish new version
+    needs: check-upstream
+    if: needs.check-upstream.outputs.has_update == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      APP_DIR: saltedlolly-crowdsec
+      ELIGIBLE_CROWDSEC_VERSION: ${{ needs.check-upstream.outputs.eligible_crowdsec_version }}
+      ELIGIBLE_WEBUI_VERSION: ${{ needs.check-upstream.outputs.eligible_webui_version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: true   # required for crowdsec-build.sh's `git push`
+
+      - name: Configure git identity for automated commits
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Dry run summary (no update/commit)
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          echo "DRY RUN: would publish crowdsec=${ELIGIBLE_CROWDSEC_VERSION:-unchanged} web-ui=${ELIGIBLE_WEBUI_VERSION:-unchanged}"
+
+      - name: Update pins, bump version, and publish (crowdsec-build.sh)
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          args=(--publish --notes "Automated update: crowdsec ${ELIGIBLE_CROWDSEC_VERSION:-unchanged}, crowdsec-web-ui ${ELIGIBLE_WEBUI_VERSION:-unchanged}")
+          [[ -n "$ELIGIBLE_CROWDSEC_VERSION" ]] && args+=(--crowdsec-version "$ELIGIBLE_CROWDSEC_VERSION")
+          [[ -n "$ELIGIBLE_WEBUI_VERSION" ]] && args+=(--webui-version "$ELIGIBLE_WEBUI_VERSION")
+          ./crowdsec-build.sh "${args[@]}"
+
+      - name: Log published app version
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          echo "::notice::Published app version: $(grep '^version:' umbrel-app.yml)"
