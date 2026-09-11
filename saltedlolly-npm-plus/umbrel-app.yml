@@ -8,6 +8,9 @@ description: >-
   NPMplus makes it easy to publish services through a friendly web interface, with automatic TLS certificates, HTTP/3 support, access lists, stream forwarding, and advanced Nginx configuration.
 
 
+  NPMplus has a built-in CrowdSec bouncer for community-sourced intrusion protection - point it at a CrowdSec instance once you have one running (a standalone CrowdSec app is not included and is planned separately).
+
+
   ⚠️ Publishing a service makes it reachable from the internet. Protect every exposed service with appropriate authentication and keep both NPMplus and the upstream service updated.
 
 
@@ -29,7 +32,7 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
-  Initial standalone NPMplus package for umbrelOS
+  Rewrite package: fix icon hosting, remove stray files, add Portainer migration procedure and CrowdSec docs, sync root README
 
 
   This package pins the immutable multi-architecture NPMplus 2026-07-24-r1 image for amd64 and arm64.
@@ -51,6 +54,6 @@ defaultUsername: admin@umbrel.local
 defaultPassword: ""
 deterministicPassword: true
 
-icon: https://raw.githubusercontent.com/ZoeyVid/NPMplus/develop/frontend/public/images/logo-256.png
+icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-npm-plus/npmplusicon.svg
 submitter: saltedlolly
 submission: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-npm-plus

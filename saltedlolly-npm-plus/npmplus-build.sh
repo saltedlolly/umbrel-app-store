@@ -213,6 +213,47 @@ manifest_path.write_text(manifest)
 PY
 }
 
+update_readme_version() {
+  local new_version="$1"
+  local readme_file="$STORE_ROOT/README.md"
+  local today
+  today="$(date +%F)"
+
+  if [[ ! -f "$readme_file" ]]; then
+    echo "Warning: README.md not found at $readme_file, skipping README update" >&2
+    return
+  fi
+
+  python3 - "$readme_file" "$new_version" "$today" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+readme_path = Path(sys.argv[1])
+new_version = sys.argv[2]
+today = sys.argv[3]
+
+text = readme_path.read_text()
+
+text = re.sub(
+    r'(<td nowrap id="saltedlolly-npm-plus-version"><code>)[^<]*(</code></td>)',
+    rf"\g<1>{new_version}\g<2>",
+    text,
+    count=1,
+)
+
+text = re.sub(
+    r'id="saltedlolly-npm-plus-date">(\d{4}-\d{2}-\d{2})',
+    f'id="saltedlolly-npm-plus-date">{today}',
+    text,
+    count=1,
+)
+
+readme_path.write_text(text)
+PY
+  echo "Updated README.md version to $new_version and release date to $today"
+}
+
 validate_package() {
   echo "Validating package..."
   bash -n "$0"
@@ -311,7 +352,7 @@ publish_package() {
     fail "Unstage unrelated files before publishing"
   }
 
-  git -C "$STORE_ROOT" add -- "$APP_ROOT"
+  git -C "$STORE_ROOT" add -- "$APP_ROOT" "$STORE_ROOT/README.md"
   git -C "$STORE_ROOT" diff --cached --quiet && fail "There are no NPMplus changes to publish"
   git -C "$STORE_ROOT" commit -m "release: NPMplus $TARGET_VERSION - $RELEASE_NOTES"
   git -C "$STORE_ROOT" push
@@ -341,6 +382,7 @@ if [[ "$MODE" == "check" ]]; then
 fi
 
 update_package "$TARGET_VERSION" "$TARGET_DIGEST" "$RELEASE_NOTES"
+update_readme_version "$TARGET_VERSION"
 validate_package
 
 case "$MODE" in

@@ -39,6 +39,13 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
       <td nowrap id="saltedlolly-tronbyt-date">2026-09-11</td>
       <td>Self-hosted server for managing Tidbyt/Tronbyt smart displays without the cloud</td>
     </tr>
+    <tr>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-npm-plus/npmplusicon.svg" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td><a href="#npmplus">NPMplus</a></td>
+      <td nowrap id="saltedlolly-npm-plus-version"><code>2026-07-24-r1</code></td>
+      <td nowrap id="saltedlolly-npm-plus-date">2026-09-11</td>
+      <td>A feature-rich reverse proxy with HTTP/3, CrowdSec support, and advanced access control</td>
+    </tr>
   </tbody>
 </table>
 
@@ -139,3 +146,20 @@ This app has its own account system (create your account on first visit) rather 
 | Name           | Port         | Local Address                                              | Umbrel SSO    |
 |----------------| ------------ | ----------------------------------------------------------- | ------------- |
 | Tronbyt Server | `19191`      | [http://umbrel.local:19191](http://umbrel.local:19191/)     |               |
+
+---
+
+### NPMplus<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-npm-plus/npmplusicon.svg" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+
+A feature-rich reverse proxy powered by [NPMplus](https://github.com/ZoeyVid/NPMplus), a fork of Nginx Proxy Manager built on OpenResty. Beyond the usual proxy-host/SSL-certificate management, it adds HTTP/3 (QUIC), raw TCP/UDP stream forwarding, mTLS with per-host client certificates, geo-blocking, built-in `auth_request`/OIDC support (including pre-configured Authentik integration), and optional [CrowdSec](https://www.crowdsec.net/) support for community-sourced intrusion protection.
+
+NPMplus's administration interface is unconditionally served over HTTPS. Opening the app from the Umbrel dashboard takes you to a setup page with a button to launch the HTTPS admin UI (a self-signed-certificate warning on first visit is normal and expected) and instructions for router port forwarding and DNS.
+
+| Name                     | Port         | Local Address                                            | Umbrel SSO    |
+|--------------------------| ------------ | --------------------------------------------------------- | ------------- |
+| NPMplus Setup            | `5180`       | [http://umbrel.local:5180](http://umbrel.local:5180/)    | ✅            |
+| NPMplus Administration   | `5181`       | [https://umbrel.local:5181](https://umbrel.local:5181/)  |               |
+| Proxy HTTP               | `50080`      | —                                                         |               |
+| Proxy HTTPS / HTTP/3     | `50443`      | —                                                         |               |
+
+⚠️ NPMplus does not include Authentik or CrowdSec - both are planned as separate, complementary Umbrel apps rather than bundled in, so each can be installed, updated, and protect more than just NPMplus independently. See the [app's own README](saltedlolly-npm-plus/README.md) for CrowdSec integration steps and migrating from an existing Portainer-based NPMplus install.
