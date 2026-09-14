@@ -2,9 +2,12 @@ manifestVersion: 1
 id: saltedlolly-crowdsec
 category: Networking
 name: CrowdSec
-version: "v1.8.1.1"
+version: "v1.8.1.2"
 tagline: Crowd-sourced intrusion detection and IP banning for your self-hosted apps
 description: >-
+  ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
+
+
   CrowdSec watches for attacks (brute-force logins, scans, known-bad IPs) against your self-hosted services and automatically bans them, sharing and benefiting from threat intelligence crowd-sourced across the whole CrowdSec community.
 
 
@@ -16,6 +19,10 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data, including your ban history and dashboard account. Back it up before uninstalling.
 releaseNotes: >-
+  v1.8.1.2:
+
+  - Mark app as under construction while bouncer/enforcement chain is verified
+
   v1.8.1.1:
 
   - Initial release
