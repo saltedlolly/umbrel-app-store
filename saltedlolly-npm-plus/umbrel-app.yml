@@ -5,6 +5,9 @@ name: NPMplus
 version: "2026-07-24-r1"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
+  ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
+
+
   NPMplus makes it easy to publish services through a friendly web interface, with automatic TLS certificates, HTTP/3 support, access lists, stream forwarding, and advanced Nginx configuration.
 
 
@@ -32,7 +35,7 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
-  Rewrite package: fix icon hosting, remove stray files, add Portainer migration procedure and CrowdSec docs, sync root README
+  Mark app as under construction while install issue is investigated
 
 
   This package pins the immutable multi-architecture NPMplus 2026-07-24-r1 image for amd64 and arm64.
