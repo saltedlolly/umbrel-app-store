@@ -1,0 +1,146 @@
+name: netboot.xyz - Auto Release
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # every day 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: check upstream and log the plan only (no update/commit)'
+        type: boolean
+        default: false
+      force_version:
+        description: 'Optional: pretend the eligible netboot.xyz tag is this (e.g. 0.7.6-nbxyz25), for testing'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: netbootxyz-auto-release
+  cancel-in-progress: false
+
+jobs:
+  check-upstream:
+    name: Check netboot.xyz for an eligible release (14-day buffer)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      has_update: ${{ steps.compare.outputs.has_update }}
+      eligible_version: ${{ steps.latest.outputs.eligible_version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            saltedlolly-netbootxyz/docker-compose.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Find newest netboot.xyz tag that has cleared the 14-day buffer
+        id: latest
+        run: |
+          set -euo pipefail
+          # Plain ISO8601 string comparison rather than epoch conversion -
+          # Docker Hub's tag_last_pushed includes fractional seconds
+          # (e.g. "2026-08-17T05:06:56.310999Z"), which jq's
+          # fromdateiso8601 can't parse; string comparison sorts these
+          # correctly without needing to strip that.
+          cutoff="$(date -u -d '14 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+
+          # Docker Hub tags API, not GitHub Releases - netboot.xyz's GitHub
+          # releases don't map cleanly to its actual published image tags,
+          # matching netbootxyz-build.sh's own discovery mechanism.
+          tags="$(curl -sf "https://hub.docker.com/v2/repositories/netbootxyz/netbootxyz/tags?page_size=100")"
+
+          version="$(echo "$tags" | jq -r --arg cutoff "$cutoff" '
+            [ .results[]
+              | select(.name | test("^[0-9]+\\.[0-9]+\\.[0-9]+-nbxyz[0-9]+$"))
+              | select(.tag_last_pushed <= $cutoff)
+            ]
+            | sort_by(.name | capture("nbxyz(?<n>[0-9]+)$").n | tonumber)
+            | last | .name // empty
+          ')"
+
+          if [[ -n "${{ github.event.inputs.force_version }}" ]]; then
+            version="${{ github.event.inputs.force_version }}"
+            echo "::notice::Overriding with force_version input: $version"
+          fi
+
+          if [[ -z "$version" ]]; then
+            echo "::notice::No netboot.xyz release has cleared the 14-day buffer yet"
+            echo "eligible_version=" >> "$GITHUB_OUTPUT"
+          else
+            if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-nbxyz[0-9]+$ ]]; then
+              echo "::error::Unexpected version format: '$version'"
+              exit 1
+            fi
+            echo "eligible_version=$version" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Get currently pinned version
+        id: current
+        run: |
+          set -euo pipefail
+          current="$(grep -oE 'netbootxyz/netbootxyz:[0-9]+\.[0-9]+\.[0-9]+-nbxyz[0-9]+' \
+            saltedlolly-netbootxyz/docker-compose.yml | head -1 | sed -E 's/.*://')"
+          if [[ -z "$current" ]]; then
+            echo "::error::Could not extract pinned version from docker-compose.yml"
+            exit 1
+          fi
+          echo "current_version=$current" >> "$GITHUB_OUTPUT"
+
+      - name: Compare
+        id: compare
+        run: |
+          eligible="${{ steps.latest.outputs.eligible_version }}"
+          current="${{ steps.current.outputs.current_version }}"
+          if [[ -z "$eligible" || "$eligible" == "$current" ]]; then
+            echo "has_update=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No update to publish. pinned=$current eligible=${eligible:-none}"
+          else
+            echo "has_update=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Publishing update. pinned=$current -> eligible=$eligible"
+          fi
+
+  release:
+    name: Publish new version
+    needs: check-upstream
+    if: needs.check-upstream.outputs.has_update == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      APP_DIR: saltedlolly-netbootxyz
+      ELIGIBLE_VERSION: ${{ needs.check-upstream.outputs.eligible_version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: true   # required for netbootxyz-build.sh's `git push`
+
+      - name: Configure git identity for automated commits
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Dry run summary (no update/commit)
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          echo "DRY RUN: would publish netboot.xyz ${ELIGIBLE_VERSION}"
+
+      - name: Update pin, and publish (netbootxyz-build.sh)
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          ./netbootxyz-build.sh --publish \
+            --version "${ELIGIBLE_VERSION}" \
+            --notes "Automated update: bump netboot.xyz to ${ELIGIBLE_VERSION}"
+
+      - name: Log published app version
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          echo "::notice::Published app version: $(grep '^version:' umbrel-app.yml)"

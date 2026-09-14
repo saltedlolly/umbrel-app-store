@@ -53,6 +53,13 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
       <td nowrap id="saltedlolly-crowdsec-date">2026-09-14</td>
       <td>Crowd-sourced intrusion detection and IP banning for your self-hosted apps</td>
     </tr>
+    <tr>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-netbootxyz/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td><a href="#netbootxyz">netboot.xyz</a></td>
+      <td nowrap id="saltedlolly-netbootxyz-version"><code>0.7.6-nbxyz24</code></td>
+      <td nowrap id="saltedlolly-netbootxyz-date">2026-09-14</td>
+      <td>Network-boot a menu of OS installers and live images to any machine on your LAN</td>
+    </tr>
   </tbody>
 </table>
 
@@ -182,3 +189,17 @@ On its own, CrowdSec doesn't protect anything - it needs a "bouncer" wired into 
 | Name              | Port         | Local Address                                            | Umbrel SSO    |
 |-------------------| ------------ | --------------------------------------------------------- | ------------- |
 | CrowdSec Dashboard| `5190`       | [http://umbrel.local:5190](http://umbrel.local:5190/)    | ✅            |
+
+---
+
+### netboot.xyz<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-netbootxyz/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+
+A self-hosted [netboot.xyz](https://netboot.xyz/) server - network-boot (PXE) a menu of OS installers, live rescue/diagnostic tools, and utilities to any machine on your LAN, no USB stick needed.
+
+⚠️ Requires a one-time change to your router's DHCP settings (the "next-server"/"boot filename" fields) before any device can actually netboot from it - this app can't configure that for you. See the [app's own README](saltedlolly-netbootxyz/README.md) for step-by-step instructions.
+
+This app uses host networking (no Umbrel SSO, no app proxy) rather than the usual bridge networking, because TFTP - the protocol PXE clients use to fetch the initial boot file - doesn't work reliably through Docker's normal networking. Optional local/custom boot images live in your Umbrel's Home folder under `Home/netboot.xyz`, so they survive uninstalling the app.
+
+| Name          | Port         | Local Address                                            | Umbrel SSO    |
+|---------------| ------------ | --------------------------------------------------------- | ------------- |
+| Web Admin UI  | `30380`      | [http://umbrel.local:30380](http://umbrel.local:30380/)  |               |

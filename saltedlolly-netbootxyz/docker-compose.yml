@@ -1,0 +1,28 @@
+services:
+  netbootxyz:
+    image: ghcr.io/netbootxyz/netbootxyz:0.7.6-nbxyz24@sha256:7bd0964fd3648cd3323772ad6ad8b0a507afe797385e4c0f587a8c23972ee4e3
+    container_name: saltedlolly-netbootxyz_netbootxyz_1
+    hostname: saltedlolly-netbootxyz_netbootxyz_1
+    # Required for TFTP to work: it negotiates ephemeral UDP ports per
+    # transfer (RFC 1350) that Docker's bridge/NAT can't forward, a known,
+    # unresolved issue upstream. No app_proxy is possible for host-network
+    # apps - see this app's README for the port/access implications.
+    network_mode: host
+    init: true
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      # Avoid the image's own defaults (3000/80) where 80 would collide
+      # with Umbrel's own dashboard under host networking.
+      - WEB_APP_PORT=30380
+      - NGINX_PORT=30480
+    volumes:
+      - ${APP_DATA_DIR}/data/config:/config
+      - ${UMBREL_ROOT}/home/netboot.xyz:/assets
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:30380/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s

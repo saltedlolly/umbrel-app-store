@@ -1,0 +1,41 @@
+manifestVersion: 1
+id: saltedlolly-netbootxyz
+category: Networking
+name: netboot.xyz
+version: "0.7.6-nbxyz24"
+tagline: Network-boot a menu of OS installers and live images to any machine on your LAN
+description: >-
+  ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
+
+
+  ⚠️ Requires a one-time router change: netboot.xyz has no built-in DHCP server, so it needs your existing router's DHCP settings pointed at it (the "next-server"/"boot filename" fields, sometimes called DHCP options 66/67) before any device can actually netboot from it. See this app's README for step-by-step instructions - most home routers support this, but the exact settings screen varies.
+
+
+  Once set up, any machine on your network can boot (via PXE, no USB stick or install media needed) into a menu of OS installers, live rescue/diagnostic tools, and utilities, powered by netboot.xyz.
+
+
+  Boot images stream from netboot.xyz's own servers by default, so your Umbrel needs internet access the first time a client boots something. You can optionally mirror images locally (and add your own custom boot images) via the Home folder, from where they're also backed up and survive reinstalling this app.
+
+
+  ⚠️ Uninstalling this app deletes its menu configuration (but not any images you've placed in the Home folder).
+releaseNotes: >-
+  0.7.6-nbxyz24:
+
+  - Initial release
+
+developer: netboot.xyz
+website: https://netboot.xyz/
+dependencies: []
+repo: https://github.com/netbootxyz/docker-netbootxyz
+support: https://github.com/saltedlolly/umbrel-app-store/issues
+
+port: 30380
+gallery: []
+path: ""
+
+defaultUsername: ""
+defaultPassword: ""
+
+icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-netbootxyz/icon.png
+submitter: saltedlolly
+submission: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-netbootxyz
