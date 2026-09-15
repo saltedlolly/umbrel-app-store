@@ -1,0 +1,45 @@
+manifestVersion: 1
+id: saltedlolly-changedetection
+category: Automation
+name: changedetection.io
+version: "0.60.6.0"
+tagline: Monitor any website for changes and get notified
+description: >-
+  ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
+
+
+  changedetection.io watches web pages for changes and notifies you - by email, Discord, Slack, Telegram, and dozens of other services - the moment something changes: a price drop, a restock, a keyword appearing, or any part of a page you care about.
+
+
+  - Track as many pages as you like, each with its own check interval, notification targets, and diff rules (ignore specific page regions, whitespace, or numbers-only changes)
+
+  - Includes a bundled headless-Chrome sidecar so JavaScript-heavy pages (single-page apps, sites that build their content client-side) can be monitored accurately, not just static HTML - select "Playwright/Chromium" as the fetch method on a watch to use it
+
+  - Visual change detection, price tracking, and a browser extension for adding watches while you browse
+
+
+  ⚠️ Links inside notifications (e.g. "view the change") may not resolve correctly outside your home network, since this app has no single fixed external URL to embed in them.
+
+
+  All watches, settings, and page-snapshot history are stored under this app's persistent data directory and survive restarts and updates. Uninstalling this app deletes them - back up first if you want to keep your watch list.
+releaseNotes: >-
+  0.60.6.0:
+
+  - Initial release
+
+developer: dgtlmoon
+website: https://changedetection.io/
+dependencies: []
+repo: https://github.com/dgtlmoon/changedetection.io
+support: https://github.com/saltedlolly/umbrel-app-store/issues
+
+port: 5000
+gallery: []
+path: ""
+
+defaultUsername: ""
+defaultPassword: ""
+
+icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-changedetection/icon.png
+submitter: saltedlolly
+submission: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-changedetection

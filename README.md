@@ -60,6 +60,13 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
       <td nowrap id="saltedlolly-netbootxyz-date">2026-09-14</td>
       <td>Network-boot a menu of OS installers and live images to any machine on your LAN</td>
     </tr>
+    <tr>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-changedetection/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td><a href="#changedetectionio">changedetection.io</a></td>
+      <td nowrap id="saltedlolly-changedetection-version"><code>0.60.6.0</code></td>
+      <td nowrap id="saltedlolly-changedetection-date">2026-09-15</td>
+      <td>Monitor any website for changes and get notified</td>
+    </tr>
   </tbody>
 </table>
 
@@ -203,3 +210,17 @@ This app uses host networking (no Umbrel SSO, no app proxy) rather than the usua
 | Name          | Port         | Local Address                                            | Umbrel SSO    |
 |---------------| ------------ | --------------------------------------------------------- | ------------- |
 | Web Admin UI  | `30380`      | [http://umbrel.local:30380](http://umbrel.local:30380/)  |               |
+
+---
+
+### changedetection.io<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-changedetection/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+
+A self-hosted [changedetection.io](https://changedetection.io/) - watch any web page for changes and get notified (email, Discord, Slack, Telegram, and dozens more) the moment something changes: a price drop, a restock, a keyword appearing, or any part of a page you care about.
+
+Includes a bundled headless-Chrome sidecar ([sockpuppetbrowser](https://github.com/dgtlmoon/sockpuppetbrowser)) so JavaScript-heavy pages can be monitored accurately, not just static HTML - select "Playwright/Chromium" as the fetch method on a watch to use it. Its concurrency is capped below upstream's own default to bound RAM usage on typical Umbrel hardware.
+
+⚠️ Links inside notifications (e.g. "view the change") may not resolve correctly outside your home network, since this app has no single fixed external URL to embed in them. See the [app's own README](saltedlolly-changedetection/README.md) for details.
+
+| Name          | Port         | Local Address                                            | Umbrel SSO    |
+|---------------| ------------ | --------------------------------------------------------- | ------------- |
+| Web UI        | `5000`       | [http://umbrel.local:5000](http://umbrel.local:5000/)    | ✅            |

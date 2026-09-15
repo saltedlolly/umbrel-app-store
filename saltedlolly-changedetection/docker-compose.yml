@@ -1,0 +1,62 @@
+services:
+  app_proxy:
+    environment:
+      # The format here is: <app-id>_<docker-service-name>_1
+      APP_HOST: saltedlolly-changedetection_changedetection_1
+      APP_PORT: 5000
+
+  changedetection:
+    image: ghcr.io/dgtlmoon/changedetection.io:0.60.6@sha256:eb4a9f718801004e006ffef0ce35171f42ec8d45c9b5d20da572bc5febe107ff
+    container_name: saltedlolly-changedetection_changedetection_1
+    hostname: saltedlolly-changedetection_changedetection_1
+    init: true
+    restart: unless-stopped
+    depends_on:
+      sockpuppetbrowser:
+        condition: service_started
+    environment:
+      # Skips changedetection.io's own phone-home update check.
+      - DISABLE_VERSION_CHECK=true
+      # Wires up the sockpuppetbrowser sidecar so the "Playwright/Chromium"
+      # fetch method works out of the box for JS-rendered pages. Plain HTTP
+      # fetching (the default per watch) doesn't use this at all.
+      - PLAYWRIGHT_DRIVER_URL=ws://sockpuppetbrowser:3000?dumpio=true
+    volumes:
+      - ${APP_DATA_DIR}/data:/datastore
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  # Headless-Chrome sidecar used only when a watch's fetch method is set to
+  # Playwright/Chromium. MAX_CONCURRENT_CHROME_PROCESSES is capped well below
+  # upstream's own default of 10 to bound worst-case RAM on modest hardware -
+  # extra concurrent fetches queue for a free slot (up to 120s, sockpuppet-
+  # browser's own default CONNECTION_QUEUE_TIMEOUT) rather than failing.
+  #
+  # No cap_add: SYS_ADMIN here deliberately, even though upstream's own
+  # compose example includes it: sockpuppetbrowser already launches Chrome
+  # with --no-sandbox and --disable-dev-shm-usage baked in (confirmed in its
+  # own source), and upstream's own comment admits SYS_ADMIN "might be too
+  # much" and is platform-dependent. Add it back only if Chrome fails to
+  # start on real Umbrel hardware - its startup error names SYS_ADMIN
+  # specifically if that turns out to be the cause.
+  sockpuppetbrowser:
+    image: docker.io/dgtlmoon/sockpuppetbrowser:0.0.3@sha256:23a7be698216407648b6c78fc55de0411bde550635edc30347373c86a5176fad
+    container_name: saltedlolly-changedetection_sockpuppetbrowser_1
+    hostname: sockpuppetbrowser
+    init: true
+    restart: unless-stopped
+    environment:
+      - SCREEN_WIDTH=1920
+      - SCREEN_HEIGHT=1024
+      - SCREEN_DEPTH=16
+      - MAX_CONCURRENT_CHROME_PROCESSES=2
+    healthcheck:
+      test: ["CMD", "python3", "/usr/src/app/docker-health-check.py", "--host", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s

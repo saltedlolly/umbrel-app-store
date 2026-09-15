@@ -1,0 +1,229 @@
+name: changedetection.io - Auto Release
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # every day 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: check upstream and log the plan only (no update/commit)'
+        type: boolean
+        default: false
+      force_cdio_version:
+        description: 'Optional: pretend the eligible changedetection.io version is this (e.g. 0.60.7), for testing'
+        required: false
+        type: string
+      force_spb_version:
+        description: 'Optional: pretend the eligible sockpuppetbrowser version is this (e.g. 0.0.4), for testing'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: changedetection-auto-release
+  cancel-in-progress: false
+
+jobs:
+  check-upstream:
+    name: Check both upstream images for an eligible release (7-day buffer)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      has_update: ${{ steps.compare.outputs.has_update }}
+      eligible_cdio_version: ${{ steps.latest_cdio.outputs.eligible_version }}
+      eligible_spb_version: ${{ steps.latest_spb.outputs.eligible_version }}
+      cdio_changed: ${{ steps.compare.outputs.cdio_changed }}
+      spb_changed: ${{ steps.compare.outputs.spb_changed }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            saltedlolly-changedetection/docker-compose.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Find newest changedetection.io release that has cleared the 7-day buffer
+        id: latest_cdio
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cutoff="$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+          releases="$(curl -sf \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/dgtlmoon/changedetection.io/releases?per_page=20")"
+
+          version="$(echo "$releases" | jq -r --arg cutoff "$cutoff" '
+            [ .[] | select(.draft==false and .prerelease==false and .published_at <= $cutoff and (.tag_name | test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))) ]
+            | sort_by(.published_at) | last | .tag_name // empty
+          ')"
+
+          if [[ -n "${{ github.event.inputs.force_cdio_version }}" ]]; then
+            version="${{ github.event.inputs.force_cdio_version }}"
+            echo "::notice::Overriding with force_cdio_version input: $version"
+          fi
+
+          if [[ -z "$version" ]]; then
+            echo "::notice::No changedetection.io release has cleared the 7-day buffer yet"
+            echo "eligible_version=" >> "$GITHUB_OUTPUT"
+          else
+            if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Unexpected version format: '$version'"
+              exit 1
+            fi
+            echo "eligible_version=$version" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Find newest sockpuppetbrowser tag that has cleared the 7-day buffer
+        id: latest_spb
+        run: |
+          set -euo pipefail
+          cutoff="$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+
+          tags="$(curl -sf "https://hub.docker.com/v2/repositories/dgtlmoon/sockpuppetbrowser/tags?page_size=100")"
+
+          version="$(echo "$tags" | jq -r --arg cutoff "$cutoff" '
+            [ .results[]
+              | select(.name | test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))
+              | select(.tag_last_pushed <= $cutoff)
+            ]
+            | sort_by(.name | split(".") | map(tonumber))
+            | last | .name // empty
+          ')"
+
+          if [[ -n "${{ github.event.inputs.force_spb_version }}" ]]; then
+            version="${{ github.event.inputs.force_spb_version }}"
+            echo "::notice::Overriding with force_spb_version input: $version"
+          fi
+
+          if [[ -z "$version" ]]; then
+            echo "::notice::No sockpuppetbrowser release has cleared the 7-day buffer yet"
+            echo "eligible_version=" >> "$GITHUB_OUTPUT"
+          else
+            if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Unexpected version format: '$version'"
+              exit 1
+            fi
+            echo "eligible_version=$version" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Get currently pinned versions
+        id: current
+        run: |
+          set -euo pipefail
+          current_cdio="$(grep -oE 'ghcr\.io/dgtlmoon/changedetection\.io:[0-9]+\.[0-9]+\.[0-9]+' \
+            saltedlolly-changedetection/docker-compose.yml | head -1 | cut -d: -f2)"
+          current_spb="$(grep -oE 'docker\.io/dgtlmoon/sockpuppetbrowser:[0-9]+\.[0-9]+\.[0-9]+' \
+            saltedlolly-changedetection/docker-compose.yml | head -1 | cut -d: -f2)"
+          if [[ -z "$current_cdio" || -z "$current_spb" ]]; then
+            echo "::error::Could not extract pinned versions from docker-compose.yml"
+            exit 1
+          fi
+          echo "current_cdio=$current_cdio" >> "$GITHUB_OUTPUT"
+          echo "current_spb=$current_spb" >> "$GITHUB_OUTPUT"
+
+      - name: Compare
+        id: compare
+        run: |
+          eligible_cdio="${{ steps.latest_cdio.outputs.eligible_version }}"
+          eligible_spb="${{ steps.latest_spb.outputs.eligible_version }}"
+          current_cdio="${{ steps.current.outputs.current_cdio }}"
+          current_spb="${{ steps.current.outputs.current_spb }}"
+
+          cdio_changed=false
+          spb_changed=false
+          [[ -n "$eligible_cdio" && "$eligible_cdio" != "$current_cdio" ]] && cdio_changed=true
+          [[ -n "$eligible_spb" && "$eligible_spb" != "$current_spb" ]] && spb_changed=true
+
+          echo "cdio_changed=$cdio_changed" >> "$GITHUB_OUTPUT"
+          echo "spb_changed=$spb_changed" >> "$GITHUB_OUTPUT"
+
+          if [[ "$cdio_changed" == "true" || "$spb_changed" == "true" ]]; then
+            echo "has_update=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Publishing update. changedetection.io: $current_cdio -> ${eligible_cdio:-unchanged}; sockpuppetbrowser: $current_spb -> ${eligible_spb:-unchanged}"
+          else
+            echo "has_update=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No update to publish. changedetection.io=$current_cdio sockpuppetbrowser=$current_spb"
+          fi
+
+  release:
+    name: Smoke-test and publish new version
+    needs: check-upstream
+    if: needs.check-upstream.outputs.has_update == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      APP_DIR: saltedlolly-changedetection
+      ELIGIBLE_CDIO_VERSION: ${{ needs.check-upstream.outputs.eligible_cdio_version }}
+      ELIGIBLE_SPB_VERSION: ${{ needs.check-upstream.outputs.eligible_spb_version }}
+      CDIO_CHANGED: ${{ needs.check-upstream.outputs.cdio_changed }}
+      SPB_CHANGED: ${{ needs.check-upstream.outputs.spb_changed }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: true   # required for changedetection-build.sh's `git push`
+
+      - name: Configure git identity for automated commits
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      # ---------- OPTIONAL SAFETY NET ----------
+      # We have zero control over upstream's contents - this is the only
+      # check standing between a breaking changedetection.io release and
+      # production. Pulls the official image directly and confirms the
+      # container comes up and serves its web UI. Only the primary image is
+      # smoke-tested - the sockpuppetbrowser sidecar is optional/per-watch,
+      # not required for the app to function.
+      - name: "[Optional] Smoke-test changedetection.io image"
+        if: env.CDIO_CHANGED == 'true'
+        run: |
+          set -euo pipefail
+          docker run -d --name changedetection-smoke -p 5000:5000 \
+            "ghcr.io/dgtlmoon/changedetection.io:${ELIGIBLE_CDIO_VERSION}"
+          ok=false
+          for i in $(seq 1 15); do
+            curl -sf -o /dev/null "http://localhost:5000/" && { ok=true; break; }
+            sleep 2
+          done
+          docker logs changedetection-smoke || true
+          docker rm -f changedetection-smoke || true
+          [[ "$ok" == "true" ]] || { echo "::error::changedetection.io image failed smoke test"; exit 1; }
+      # ---------- END OPTIONAL SAFETY NET ----------
+
+      - name: Dry run summary (no update/commit)
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          echo "DRY RUN: would publish changedetection.io=${ELIGIBLE_CDIO_VERSION:-unchanged} sockpuppetbrowser=${ELIGIBLE_SPB_VERSION:-unchanged}"
+
+      - name: Compute release notes
+        if: github.event.inputs.dry_run != 'true'
+        id: notes
+        run: |
+          if [[ "$CDIO_CHANGED" == "true" ]]; then
+            echo "text=Update changedetection.io to upstream release ${ELIGIBLE_CDIO_VERSION}." >> "$GITHUB_OUTPUT"
+          else
+            echo "text=Update bundled sockpuppetbrowser sidecar to ${ELIGIBLE_SPB_VERSION}." >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update pins, bump version, and publish (changedetection-build.sh)
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          args=(--publish --notes "${{ steps.notes.outputs.text }}")
+          [[ -n "$ELIGIBLE_CDIO_VERSION" ]] && args+=(--cdio-version "$ELIGIBLE_CDIO_VERSION")
+          [[ -n "$ELIGIBLE_SPB_VERSION" ]] && args+=(--spb-version "$ELIGIBLE_SPB_VERSION")
+          ./changedetection-build.sh "${args[@]}"
+
+      - name: Log published app version
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          echo "::notice::Published app version: $(grep '^version:' umbrel-app.yml)"
