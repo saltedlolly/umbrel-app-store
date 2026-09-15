@@ -67,6 +67,13 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
       <td nowrap id="saltedlolly-changedetection-date">2026-09-15</td>
       <td>Monitor any website for changes and get notified</td>
     </tr>
+    <tr>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-kubo/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td><a href="#kubo-ipfs">Kubo (IPFS)</a></td>
+      <td nowrap id="saltedlolly-kubo-version"><code>v0.43.1.0</code></td>
+      <td nowrap id="saltedlolly-kubo-date">2026-09-15</td>
+      <td>Run a full IPFS node with the official WebUI for peers, pins, and files</td>
+    </tr>
   </tbody>
 </table>
 
@@ -224,3 +231,16 @@ Includes a bundled headless-Chrome sidecar ([sockpuppetbrowser](https://github.c
 | Name          | Port         | Local Address                                            | Umbrel SSO    |
 |---------------| ------------ | --------------------------------------------------------- | ------------- |
 | Web UI        | `5000`       | [http://umbrel.local:5000](http://umbrel.local:5000/)    | ✅            |
+
+---
+
+### Kubo (IPFS)<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-kubo/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+
+A self-hosted [Kubo](https://github.com/ipfs/kubo) node - the reference implementation of [IPFS](https://ipfs.tech/), a peer-to-peer network for storing and sharing content-addressed data. Includes the official WebUI for managing peers, pinning and browsing content, and monitoring bandwidth and repository usage. Built from scratch rather than derived from any existing community Kubo package - see the [app's own README](saltedlolly-kubo/README.md) for why.
+
+⚠️ Pinned/imported content is stored as Kubo's own internal block database, not as ordinary files - it can't be browsed through Umbrel's Files app, and it is deleted if you uninstall the app (take a Backup first if that matters to you).
+
+| Name          | Port         | Local Address                                            | Umbrel SSO    |
+|---------------| ------------ | --------------------------------------------------------- | ------------- |
+| WebUI + API   | `5001`       | [http://umbrel.local:5001](http://umbrel.local:5001/)    | ✅            |
+| Swarm (P2P)   | `4001`       | —                                                          |               |

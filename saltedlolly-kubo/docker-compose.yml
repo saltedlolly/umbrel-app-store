@@ -1,0 +1,55 @@
+services:
+  app_proxy:
+    environment:
+      # The format here is: <app-id>_<docker-service-name>_1
+      APP_HOST: saltedlolly-kubo_kubo_1
+      APP_PORT: 5001
+
+  kubo:
+    image: docker.io/ipfs/kubo:v0.43.1@sha256:b293923d66e490e70ced64df42ea7a6cf7eac2740e3fb29101df18070fa7be48
+    container_name: saltedlolly-kubo_kubo_1
+    hostname: saltedlolly-kubo_kubo_1
+    init: true
+    restart: unless-stopped
+    environment:
+      # Only takes effect on first `ipfs init` (a fresh repo) - tunes the
+      # node for a stable, always-on server rather than a laptop that roams
+      # networks (disables local-network mDNS discovery noise, assumes a
+      # fixed identity). Per upstream's own Docker docs.
+      - IPFS_PROFILE=server
+    # The P2P swarm port is published directly rather than through
+    # app_proxy - app_proxy is HTTP-only and doesn't apply to the p2p
+    # protocol. This is how any IPFS node finds and accepts peers; normal
+    # and expected to be reachable, same trust model as any P2P app.
+    #
+    # The API port (5001, serves both the RPC API and the WebUI) is
+    # deliberately NOT published here at all - upstream's own docs call it
+    # "admin-level access to your IPFS node" and say to bind it to
+    # localhost only, never expose it publicly. app_proxy reaches it over
+    # the internal Docker network instead, which is stricter than even
+    # that recommendation, with Umbrel SSO as the auth gate in front.
+    #
+    # The Gateway (8080) and swarm-over-websockets (8081) ports are not
+    # exposed at all in this initial release - the Gateway in particular
+    # lets anyone who reaches it fetch arbitrary content through this
+    # node's bandwidth, which shouldn't be on by default without a
+    # deliberate choice to do so.
+    ports:
+      - "4001:4001/tcp"
+      - "4001:4001/udp"
+    volumes:
+      # The Kubo repo (config, keys, and all pinned block data) is a
+      # flatfs-sharded content-addressed block store - opaque hash-named
+      # fragments, not recognizable files, even when a single logical file
+      # is split across many of them. It fails the test for Home-folder
+      # placement (browsable/actionable by the user) even though users
+      # care about not losing pinned content, so it lives here instead:
+      # covered by Umbrel's per-app Backup while installed, but deleted on
+      # uninstall - documented clearly in this app's description.
+      - ${APP_DATA_DIR}/data/ipfs:/data/ipfs
+    healthcheck:
+      test: ["CMD", "ipfs", "--api=/ip4/127.0.0.1/tcp/5001", "diag", "healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s

@@ -1,0 +1,157 @@
+name: Kubo (IPFS) - Auto Release
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # every day 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: check upstream and log the plan only (no update/commit)'
+        type: boolean
+        default: false
+      force_version:
+        description: 'Optional: pretend the eligible ipfs/kubo tag is this (e.g. v0.43.2), for testing'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kubo-auto-release
+  cancel-in-progress: false
+
+jobs:
+  check-upstream:
+    name: Check ipfs/kubo for an eligible release (7-day buffer)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      has_update: ${{ steps.compare.outputs.has_update }}
+      eligible_version: ${{ steps.latest.outputs.eligible_version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            saltedlolly-kubo/docker-compose.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Find newest ipfs/kubo release that has cleared the 7-day buffer
+        id: latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cutoff="$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+          releases="$(curl -sf \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/ipfs/kubo/releases?per_page=20")"
+
+          version="$(echo "$releases" | jq -r --arg cutoff "$cutoff" '
+            [ .[] | select(.draft==false and .prerelease==false and .published_at <= $cutoff and (.tag_name | test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))) ]
+            | sort_by(.published_at) | last | .tag_name // empty
+          ')"
+
+          if [[ -n "${{ github.event.inputs.force_version }}" ]]; then
+            version="${{ github.event.inputs.force_version }}"
+            echo "::notice::Overriding with force_version input: $version"
+          fi
+
+          if [[ -z "$version" ]]; then
+            echo "::notice::No ipfs/kubo release has cleared the 7-day buffer yet"
+            echo "eligible_version=" >> "$GITHUB_OUTPUT"
+          else
+            if ! [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Unexpected version format: '$version'"
+              exit 1
+            fi
+            echo "eligible_version=$version" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Get currently pinned tag
+        id: current
+        run: |
+          set -euo pipefail
+          current="$(grep -oE 'ipfs/kubo:v[0-9]+\.[0-9]+\.[0-9]+' \
+            saltedlolly-kubo/docker-compose.yml | head -1 | cut -d: -f2)"
+          if [[ -z "$current" ]]; then
+            echo "::error::Could not extract pinned tag from docker-compose.yml"
+            exit 1
+          fi
+          echo "current_tag=$current" >> "$GITHUB_OUTPUT"
+
+      - name: Compare
+        id: compare
+        run: |
+          eligible="${{ steps.latest.outputs.eligible_version }}"
+          current="${{ steps.current.outputs.current_tag }}"
+          if [[ -z "$eligible" || "$eligible" == "$current" ]]; then
+            echo "has_update=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No update to publish. pinned=$current eligible=${eligible:-none}"
+          else
+            echo "has_update=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Publishing update. pinned=$current -> eligible=$eligible"
+          fi
+
+  release:
+    name: Smoke-test and publish new version
+    needs: check-upstream
+    if: needs.check-upstream.outputs.has_update == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      APP_DIR: saltedlolly-kubo
+      ELIGIBLE_VERSION: ${{ needs.check-upstream.outputs.eligible_version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: true   # required for kubo-build.sh's `git push`
+
+      - name: Configure git identity for automated commits
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      # ---------- OPTIONAL SAFETY NET ----------
+      # We have zero control over upstream's contents - this is the only
+      # check standing between a breaking ipfs/kubo release and production.
+      # Pulls the official image directly and confirms the container comes
+      # up and reports itself healthy via its own built-in health command.
+      - name: "[Optional] Smoke-test ipfs/kubo image"
+        run: |
+          set -euo pipefail
+          docker run -d --name kubo-smoke "docker.io/ipfs/kubo:${ELIGIBLE_VERSION}"
+          ok=false
+          for i in $(seq 1 15); do
+            docker exec kubo-smoke ipfs --api=/ip4/127.0.0.1/tcp/5001 diag healthy >/dev/null 2>&1 && { ok=true; break; }
+            sleep 2
+          done
+          docker logs kubo-smoke || true
+          docker rm -f kubo-smoke || true
+          [[ "$ok" == "true" ]] || { echo "::error::ipfs/kubo image failed smoke test"; exit 1; }
+      # ---------- END OPTIONAL SAFETY NET ----------
+
+      - name: Dry run summary (no update/commit)
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          echo "DRY RUN: would publish ipfs/kubo ${ELIGIBLE_VERSION}"
+
+      - name: Update pin, bump version, and publish (kubo-build.sh)
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          ./kubo-build.sh --publish \
+            --version "${ELIGIBLE_VERSION}" \
+            --notes "Automated update: bump Kubo to ${ELIGIBLE_VERSION}"
+
+      - name: Log published app version
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          echo "::notice::Published app version: $(grep '^version:' umbrel-app.yml)"

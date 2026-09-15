@@ -1,0 +1,44 @@
+manifestVersion: 1
+id: saltedlolly-kubo
+category: Files
+name: Kubo (IPFS)
+version: "v0.43.1.0"
+tagline: Run a full IPFS node with the official WebUI for peers, pins, and files
+description: >-
+  ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
+
+
+  Kubo is the reference implementation of IPFS (InterPlanetary File System) - a peer-to-peer network for storing and sharing content-addressed data. This app runs a full Kubo node with its official web interface for managing peers, pinning and browsing content, and monitoring bandwidth and repository usage.
+
+
+  This is a from-scratch package, built independently rather than derived from any existing community Kubo package.
+
+
+  ⚠️ The node's admin interface (WebUI + API) is only reachable through Umbrel's own login - it is never exposed directly, matching upstream's own guidance that this port grants full admin-level control of the node.
+
+
+  ⚠️ Pinned and imported content is stored as Kubo's own internal block database, not as ordinary files - it cannot be browsed, previewed, or copied through Umbrel's Files app. This data is backed up by Umbrel's Backup tool while the app is installed, but - unlike this app's own settings - it is deleted if you uninstall the app. Take a Backup first if you want to keep it.
+
+
+  The peer-to-peer (swarm) port is published normally so this node can find and be found by other IPFS peers. The public Gateway, which lets anyone who reaches it fetch content through this node, is not exposed in this initial release.
+releaseNotes: >-
+  v0.43.1.0:
+
+  - Initial release
+
+developer: IPFS
+website: https://ipfs.tech/
+dependencies: []
+repo: https://github.com/ipfs/kubo
+support: https://github.com/saltedlolly/umbrel-app-store/issues
+
+port: 5001
+gallery: []
+path: ""
+
+defaultUsername: ""
+defaultPassword: ""
+
+icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-kubo/icon.png
+submitter: saltedlolly
+submission: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-kubo
