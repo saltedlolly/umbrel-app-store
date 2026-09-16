@@ -134,10 +134,22 @@ jobs:
           current_cdio="${{ steps.current.outputs.current_cdio }}"
           current_spb="${{ steps.current.outputs.current_spb }}"
 
+          # sort -V (not just !=) so a buffer-cleared release that's OLDER
+          # than what's already pinned (e.g. pinned was fast-tracked past
+          # the buffer via a manual --publish) is never treated as an
+          # update - this previously caused a real downgrade in production.
+          is_newer() {
+            local current="$1" eligible="$2"
+            [[ -n "$eligible" && "$eligible" != "$current" ]] || return 1
+            local newest
+            newest="$(printf '%s\n%s\n' "$current" "$eligible" | sort -V | tail -1)"
+            [[ "$newest" == "$eligible" ]]
+          }
+
           cdio_changed=false
           spb_changed=false
-          [[ -n "$eligible_cdio" && "$eligible_cdio" != "$current_cdio" ]] && cdio_changed=true
-          [[ -n "$eligible_spb" && "$eligible_spb" != "$current_spb" ]] && spb_changed=true
+          is_newer "$current_cdio" "$eligible_cdio" && cdio_changed=true
+          is_newer "$current_spb" "$eligible_spb" && spb_changed=true
 
           echo "cdio_changed=$cdio_changed" >> "$GITHUB_OUTPUT"
           echo "spb_changed=$spb_changed" >> "$GITHUB_OUTPUT"

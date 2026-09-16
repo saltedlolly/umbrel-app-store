@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-changedetection
 category: Automation
 name: changedetection.io
-version: "0.60.3.0"
+version: "0.60.6.0"
 tagline: Monitor any website for changes and get notified
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -23,9 +23,9 @@ description: >-
 
   All watches, settings, and page-snapshot history are stored under this app's persistent data directory and survive restarts and updates. Uninstalling this app deletes them - back up first if you want to keep your watch list.
 releaseNotes: >-
-  0.60.3.0:
+  0.60.6.0:
 
-  - Update changedetection.io to upstream release 0.60.3.
+  - Restore 0.60.6 after an auto-release workflow bug incorrectly downgraded this app to 0.60.3 (fixed in this same push - see .github/workflows/changedetection-auto-release.yml)
 
 developer: dgtlmoon
 website: https://changedetection.io/
