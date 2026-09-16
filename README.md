@@ -26,25 +26,18 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
       <td>Audiobookshelf with added support for network shares - access media stored on your local network</td>
     </tr>
     <tr>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-changedetection/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td><a href="#changedetectionio">changedetection.io</a></td>
+      <td nowrap id="saltedlolly-changedetection-version"><code>0.60.6.0</code></td>
+      <td nowrap id="saltedlolly-changedetection-date">2026-09-15</td>
+      <td>Monitor any website for changes and get notified</td>
+    </tr>
+    <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/logo.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#cloudflare-ddns">Cloudflare DDNS</a></td>
       <td nowrap id="saltedlolly-cloudflare-ddns-version"><code>v1.15.1.4</code></td>
       <td nowrap id="saltedlolly-cloudflare-ddns-date">2026-09-10</td>
       <td>A dynamic DNS client for domains hosted on Cloudflare</td>
-    </tr>
-    <tr>
-      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-tronbyt/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
-      <td><a href="#tronbyt">Tronbyt</a></td>
-      <td nowrap id="saltedlolly-tronbyt-version"><code>v2.3.7.1</code></td>
-      <td nowrap id="saltedlolly-tronbyt-date">2026-09-11</td>
-      <td>Self-hosted server for managing Tidbyt/Tronbyt smart displays without the cloud</td>
-    </tr>
-    <tr>
-      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-npm-plus/npmplusicon.svg" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
-      <td><a href="#npmplus">NPMplus</a></td>
-      <td nowrap id="saltedlolly-npm-plus-version"><code>2026-07-24-r1</code></td>
-      <td nowrap id="saltedlolly-npm-plus-date">2026-09-14</td>
-      <td>A feature-rich reverse proxy with HTTP/3, CrowdSec support, and advanced access control</td>
     </tr>
     <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-crowdsec/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
@@ -54,6 +47,13 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
       <td>Crowd-sourced intrusion detection and IP banning for your self-hosted apps</td>
     </tr>
     <tr>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-kubo/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td><a href="#kubo-ipfs">Kubo (IPFS)</a></td>
+      <td nowrap id="saltedlolly-kubo-version"><code>v0.43.1.0</code></td>
+      <td nowrap id="saltedlolly-kubo-date">2026-09-15</td>
+      <td>Run a full IPFS node with the official WebUI for peers, pins, and files</td>
+    </tr>
+    <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-netbootxyz/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#netbootxyz">netboot.xyz</a></td>
       <td nowrap id="saltedlolly-netbootxyz-version"><code>0.7.6-nbxyz24</code></td>
@@ -61,18 +61,18 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
       <td>Network-boot a menu of OS installers and live images to any machine on your LAN</td>
     </tr>
     <tr>
-      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-changedetection/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
-      <td><a href="#changedetectionio">changedetection.io</a></td>
-      <td nowrap id="saltedlolly-changedetection-version"><code>0.60.6.0</code></td>
-      <td nowrap id="saltedlolly-changedetection-date">2026-09-15</td>
-      <td>Monitor any website for changes and get notified</td>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-npm-plus/npmplusicon.svg" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td><a href="#npmplus">NPMplus</a></td>
+      <td nowrap id="saltedlolly-npm-plus-version"><code>2026-07-24-r1</code></td>
+      <td nowrap id="saltedlolly-npm-plus-date">2026-09-14</td>
+      <td>A feature-rich reverse proxy with HTTP/3, CrowdSec support, and advanced access control</td>
     </tr>
     <tr>
-      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-kubo/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
-      <td><a href="#kubo-ipfs">Kubo (IPFS)</a></td>
-      <td nowrap id="saltedlolly-kubo-version"><code>v0.43.1.0</code></td>
-      <td nowrap id="saltedlolly-kubo-date">2026-09-15</td>
-      <td>Run a full IPFS node with the official WebUI for peers, pins, and files</td>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-tronbyt/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td><a href="#tronbyt">Tronbyt</a></td>
+      <td nowrap id="saltedlolly-tronbyt-version"><code>v2.3.7.1</code></td>
+      <td nowrap id="saltedlolly-tronbyt-date">2026-09-11</td>
+      <td>Self-hosted server for managing Tidbyt/Tronbyt smart displays without the cloud</td>
     </tr>
   </tbody>
 </table>
@@ -154,6 +154,20 @@ The folders below contain your user accounts, libraries and associated metadata.
 
 ---
 
+### changedetection.io<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-changedetection/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+
+A self-hosted [changedetection.io](https://changedetection.io/) - watch any web page for changes and get notified (email, Discord, Slack, Telegram, and dozens more) the moment something changes: a price drop, a restock, a keyword appearing, or any part of a page you care about.
+
+Includes a bundled headless-Chrome sidecar ([sockpuppetbrowser](https://github.com/dgtlmoon/sockpuppetbrowser)) so JavaScript-heavy pages can be monitored accurately, not just static HTML - select "Playwright/Chromium" as the fetch method on a watch to use it. Its concurrency is capped below upstream's own default to bound RAM usage on typical Umbrel hardware.
+
+⚠️ Links inside notifications (e.g. "view the change") may not resolve correctly outside your home network, since this app has no single fixed external URL to embed in them. See the [app's own README](saltedlolly-changedetection/README.md) for details.
+
+| Name          | Port         | Local Address                                            | Umbrel SSO    |
+|---------------| ------------ | --------------------------------------------------------- | ------------- |
+| Web UI        | `5000`       | [http://umbrel.local:5000](http://umbrel.local:5000/)    | ✅            |
+
+---
+
 ### Cloudflare DDNS<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/logo.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 
@@ -165,15 +179,42 @@ A dynamic DNS client for Cloudflare powered by [favonia/cloudflare-ddns](https:/
 
 ---
 
-### Tronbyt<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-tronbyt/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+### CrowdSec<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-crowdsec/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
-A self-hosted server for managing [Tidbyt](https://tidbyt.com/) and [Tronbyt](https://tronbyt.com/) smart displays, powered by [tronbyt/server](https://github.com/tronbyt/server), entirely on your own Umbrel — no dependency on Tidbyt's cloud backend. Add devices, browse and configure apps, and generate firmware for flashing a Tidbyt into a Tronbyt, all from a web UI that keeps working even if Tidbyt's own servers go offline.
+Crowd-sourced intrusion detection and automatic IP banning, powered by [CrowdSec](https://www.crowdsec.net/). Watches for attacks (brute-force logins, scans, known-bad IPs) against services proxied through your Umbrel and bans them, sharing and benefiting from threat intelligence crowd-sourced across the whole CrowdSec community. Includes a local web dashboard ([crowdsec-web-ui](https://github.com/TheDuffman85/crowdsec-web-ui)) for browsing alerts and managing bans - no command line needed.
 
-This app has its own account system (create your account on first visit) rather than using Umbrel's single sign-on, since physical Tidbyt/Tronbyt displays connect to the server directly to poll for content and can't complete an interactive browser login.
+On its own, CrowdSec doesn't protect anything - it needs a "bouncer" wired into whatever's facing your traffic. Install this alongside [NPMplus](#npmplus) and it's protected automatically (their bouncer key is generated and shared between the two apps with no manual setup). Other apps or services can be protected too by pointing their own CrowdSec bouncer at this app.
 
-| Name           | Port         | Local Address                                              | Umbrel SSO    |
-|----------------| ------------ | ----------------------------------------------------------- | ------------- |
-| Tronbyt Server | `19191`      | [http://umbrel.local:19191](http://umbrel.local:19191/)     |               |
+| Name              | Port         | Local Address                                            | Umbrel SSO    |
+|-------------------| ------------ | --------------------------------------------------------- | ------------- |
+| CrowdSec Dashboard| `5190`       | [http://umbrel.local:5190](http://umbrel.local:5190/)    | ✅            |
+
+---
+
+### Kubo (IPFS)<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-kubo/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+
+A self-hosted [Kubo](https://github.com/ipfs/kubo) node - the reference implementation of [IPFS](https://ipfs.tech/), a peer-to-peer network for storing and sharing content-addressed data. Includes the official WebUI for managing peers, pinning and browsing content, and monitoring bandwidth and repository usage. Built from scratch rather than derived from any existing community Kubo package - see the [app's own README](saltedlolly-kubo/README.md) for why.
+
+⚠️ Pinned/imported content is stored as Kubo's own internal block database, not as ordinary files - it can't be browsed through Umbrel's Files app, and it is deleted if you uninstall the app (take a Backup first if that matters to you).
+
+| Name          | Port         | Local Address                                            | Umbrel SSO    |
+|---------------| ------------ | --------------------------------------------------------- | ------------- |
+| WebUI + API   | `5001`       | [http://umbrel.local:5001](http://umbrel.local:5001/)    | ✅            |
+| Swarm (P2P)   | `4001`       | —                                                          |               |
+
+---
+
+### netboot.xyz<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-netbootxyz/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+
+A self-hosted [netboot.xyz](https://netboot.xyz/) server - network-boot (PXE) a menu of OS installers, live rescue/diagnostic tools, and utilities to any machine on your LAN, no USB stick needed.
+
+⚠️ Requires a one-time change to your router's DHCP settings (the "next-server"/"boot filename" fields) before any device can actually netboot from it - this app can't configure that for you. See the [app's own README](saltedlolly-netbootxyz/README.md) for step-by-step instructions.
+
+This app uses host networking (no Umbrel SSO, no app proxy) rather than the usual bridge networking, because TFTP - the protocol PXE clients use to fetch the initial boot file - doesn't work reliably through Docker's normal networking. Optional local/custom boot images live in your Umbrel's Home folder under `Home/netboot.xyz`, so they survive uninstalling the app.
+
+| Name          | Port         | Local Address                                            | Umbrel SSO    |
+|---------------| ------------ | --------------------------------------------------------- | ------------- |
+| Web Admin UI  | `30380`      | [http://umbrel.local:30380](http://umbrel.local:30380/)  |               |
 
 ---
 
@@ -194,53 +235,12 @@ NPMplus's administration interface is unconditionally served over HTTPS. Opening
 
 ---
 
-### CrowdSec<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-crowdsec/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+### Tronbyt<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-tronbyt/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
-Crowd-sourced intrusion detection and automatic IP banning, powered by [CrowdSec](https://www.crowdsec.net/). Watches for attacks (brute-force logins, scans, known-bad IPs) against services proxied through your Umbrel and bans them, sharing and benefiting from threat intelligence crowd-sourced across the whole CrowdSec community. Includes a local web dashboard ([crowdsec-web-ui](https://github.com/TheDuffman85/crowdsec-web-ui)) for browsing alerts and managing bans - no command line needed.
+A self-hosted server for managing [Tidbyt](https://tidbyt.com/) and [Tronbyt](https://tronbyt.com/) smart displays, powered by [tronbyt/server](https://github.com/tronbyt/server), entirely on your own Umbrel — no dependency on Tidbyt's cloud backend. Add devices, browse and configure apps, and generate firmware for flashing a Tidbyt into a Tronbyt, all from a web UI that keeps working even if Tidbyt's own servers go offline.
 
-On its own, CrowdSec doesn't protect anything - it needs a "bouncer" wired into whatever's facing your traffic. Install this alongside [NPMplus](#npmplus) and it's protected automatically (their bouncer key is generated and shared between the two apps with no manual setup). Other apps or services can be protected too by pointing their own CrowdSec bouncer at this app.
+This app has its own account system (create your account on first visit) rather than using Umbrel's single sign-on, since physical Tidbyt/Tronbyt displays connect to the server directly to poll for content and can't complete an interactive browser login.
 
-| Name              | Port         | Local Address                                            | Umbrel SSO    |
-|-------------------| ------------ | --------------------------------------------------------- | ------------- |
-| CrowdSec Dashboard| `5190`       | [http://umbrel.local:5190](http://umbrel.local:5190/)    | ✅            |
-
----
-
-### netboot.xyz<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-netbootxyz/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
-
-A self-hosted [netboot.xyz](https://netboot.xyz/) server - network-boot (PXE) a menu of OS installers, live rescue/diagnostic tools, and utilities to any machine on your LAN, no USB stick needed.
-
-⚠️ Requires a one-time change to your router's DHCP settings (the "next-server"/"boot filename" fields) before any device can actually netboot from it - this app can't configure that for you. See the [app's own README](saltedlolly-netbootxyz/README.md) for step-by-step instructions.
-
-This app uses host networking (no Umbrel SSO, no app proxy) rather than the usual bridge networking, because TFTP - the protocol PXE clients use to fetch the initial boot file - doesn't work reliably through Docker's normal networking. Optional local/custom boot images live in your Umbrel's Home folder under `Home/netboot.xyz`, so they survive uninstalling the app.
-
-| Name          | Port         | Local Address                                            | Umbrel SSO    |
-|---------------| ------------ | --------------------------------------------------------- | ------------- |
-| Web Admin UI  | `30380`      | [http://umbrel.local:30380](http://umbrel.local:30380/)  |               |
-
----
-
-### changedetection.io<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-changedetection/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
-
-A self-hosted [changedetection.io](https://changedetection.io/) - watch any web page for changes and get notified (email, Discord, Slack, Telegram, and dozens more) the moment something changes: a price drop, a restock, a keyword appearing, or any part of a page you care about.
-
-Includes a bundled headless-Chrome sidecar ([sockpuppetbrowser](https://github.com/dgtlmoon/sockpuppetbrowser)) so JavaScript-heavy pages can be monitored accurately, not just static HTML - select "Playwright/Chromium" as the fetch method on a watch to use it. Its concurrency is capped below upstream's own default to bound RAM usage on typical Umbrel hardware.
-
-⚠️ Links inside notifications (e.g. "view the change") may not resolve correctly outside your home network, since this app has no single fixed external URL to embed in them. See the [app's own README](saltedlolly-changedetection/README.md) for details.
-
-| Name          | Port         | Local Address                                            | Umbrel SSO    |
-|---------------| ------------ | --------------------------------------------------------- | ------------- |
-| Web UI        | `5000`       | [http://umbrel.local:5000](http://umbrel.local:5000/)    | ✅            |
-
----
-
-### Kubo (IPFS)<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-kubo/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
-
-A self-hosted [Kubo](https://github.com/ipfs/kubo) node - the reference implementation of [IPFS](https://ipfs.tech/), a peer-to-peer network for storing and sharing content-addressed data. Includes the official WebUI for managing peers, pinning and browsing content, and monitoring bandwidth and repository usage. Built from scratch rather than derived from any existing community Kubo package - see the [app's own README](saltedlolly-kubo/README.md) for why.
-
-⚠️ Pinned/imported content is stored as Kubo's own internal block database, not as ordinary files - it can't be browsed through Umbrel's Files app, and it is deleted if you uninstall the app (take a Backup first if that matters to you).
-
-| Name          | Port         | Local Address                                            | Umbrel SSO    |
-|---------------| ------------ | --------------------------------------------------------- | ------------- |
-| WebUI + API   | `5001`       | [http://umbrel.local:5001](http://umbrel.local:5001/)    | ✅            |
-| Swarm (P2P)   | `4001`       | —                                                          |               |
+| Name           | Port         | Local Address                                              | Umbrel SSO    |
+|----------------| ------------ | ----------------------------------------------------------- | ------------- |
+| Tronbyt Server | `19191`      | [http://umbrel.local:19191](http://umbrel.local:19191/)     |               |
