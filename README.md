@@ -70,8 +70,8 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
     <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-kubo/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#kubo-ipfs">Kubo (IPFS)</a></td>
-      <td nowrap id="saltedlolly-kubo-version"><code>v0.43.1.0</code></td>
-      <td nowrap id="saltedlolly-kubo-date">2026-09-15</td>
+      <td nowrap id="saltedlolly-kubo-version"><code>v0.43.0.0</code></td>
+      <td nowrap id="saltedlolly-kubo-date">2026-09-16</td>
       <td>Run a full IPFS node with the official WebUI for peers, pins, and files</td>
     </tr>
   </tbody>
