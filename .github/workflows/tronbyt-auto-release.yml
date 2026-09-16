@@ -89,7 +89,12 @@ jobs:
         run: |
           eligible="${{ steps.latest.outputs.eligible_version }}"
           current="${{ steps.current.outputs.current_version }}"
-          if [[ -z "$eligible" || "$eligible" == "$current" ]]; then
+          # sort -V (not just !=) so a buffer-cleared release that's OLDER
+          # than what's already pinned (e.g. pinned was fast-tracked past
+          # the buffer via a manual --publish) is never treated as an
+          # update - this previously caused a real downgrade in production.
+          newest="$(printf '%s\n%s\n' "$current" "$eligible" | sort -V | tail -1)"
+          if [[ -z "$eligible" || "$eligible" == "$current" || "$newest" != "$eligible" ]]; then
             echo "has_update=false" >> "$GITHUB_OUTPUT"
             echo "::notice::No update to publish. pinned=$current eligible=${eligible:-none}"
           else
