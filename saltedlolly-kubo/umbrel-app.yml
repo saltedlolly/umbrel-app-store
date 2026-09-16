@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-kubo
 category: Files
 name: Kubo (IPFS)
-version: "v0.43.0.0"
+version: "v0.43.1.0"
 tagline: Run a full IPFS node with the official WebUI for peers, pins, and files
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -22,9 +22,9 @@ description: >-
 
   The peer-to-peer (swarm) port is published normally so this node can find and be found by other IPFS peers. The public Gateway, which lets anyone who reaches it fetch content through this node, is not exposed in this initial release.
 releaseNotes: >-
-  v0.43.0.0:
+  v0.43.1.0:
 
-  - Automated update: bump Kubo to v0.43.0
+  - Restore v0.43.1 after an auto-release workflow bug incorrectly downgraded this app to v0.43.0 (fixed in this same push - see .github/workflows/kubo-auto-release.yml)
 
 developer: IPFS
 website: https://ipfs.tech/
