@@ -1,0 +1,191 @@
+name: nito-core - Prepare update PR
+
+# Unlike every other auto-release workflow in this store, this one does
+# NOT publish directly to master - it only prepares a pull request for
+# manual review and approval. Nito is early-stage enough (see
+# saltedlolly-nito/README.md's Background section) that Olly wants to
+# personally look over each upstream update before it goes live, rather
+# than trusting the same buffer-then-auto-publish flow used for more
+# established upstreams elsewhere in this store.
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # every day 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: check upstream and log the plan only (no PR)'
+        type: boolean
+        default: false
+      force_version:
+        description: 'Optional: pretend the eligible Nito-core tag is this (e.g. v3.0.2), for testing'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nito-core-update-pr
+  cancel-in-progress: false
+
+jobs:
+  check-upstream:
+    name: Check Nito-core for an eligible release (3-day buffer)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      has_update: ${{ steps.compare.outputs.has_update }}
+      eligible_version: ${{ steps.latest.outputs.eligible_version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            saltedlolly-nito/docker-compose.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Find newest Nito-core release that has cleared the 3-day buffer
+        id: latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cutoff="$(date -u -d '3 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+          releases="$(curl -sf \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/NitoNetwork/Nito-core/releases?per_page=20")"
+
+          version="$(echo "$releases" | jq -r --arg cutoff "$cutoff" '
+            [ .[] | select(.draft==false and .prerelease==false and .published_at <= $cutoff and (.tag_name | test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))) ]
+            | sort_by(.published_at) | last | .tag_name // empty
+          ')"
+
+          if [[ -n "${{ github.event.inputs.force_version }}" ]]; then
+            version="${{ github.event.inputs.force_version }}"
+            echo "::notice::Overriding with force_version input: $version"
+          fi
+
+          if [[ -z "$version" ]]; then
+            echo "::notice::No Nito-core release has cleared the 3-day buffer yet"
+            echo "eligible_version=" >> "$GITHUB_OUTPUT"
+          else
+            if ! [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Unexpected version format: '$version'"
+              exit 1
+            fi
+            echo "eligible_version=$version" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Get currently pinned version
+        id: current
+        run: |
+          set -euo pipefail
+          current="$(grep -oE 'ghcr\.io/nito-tools/docker-nito:v[0-9]+\.[0-9]+\.[0-9]+' \
+            saltedlolly-nito/docker-compose.yml | head -1 | cut -d: -f2)"
+          if [[ -z "$current" ]]; then
+            echo "::error::Could not extract pinned version from docker-compose.yml"
+            exit 1
+          fi
+          echo "current_version=$current" >> "$GITHUB_OUTPUT"
+
+      - name: Compare
+        id: compare
+        run: |
+          eligible="${{ steps.latest.outputs.eligible_version }}"
+          current="${{ steps.current.outputs.current_version }}"
+          # sort -V (not just !=) so a buffer-cleared release that's OLDER
+          # than what's already pinned is never treated as an update - see
+          # the CI-conventions note on this exact class of bug.
+          newest="$(printf '%s\n%s\n' "$current" "$eligible" | sort -V | tail -1)"
+          if [[ -z "$eligible" || "$eligible" == "$current" || "$newest" != "$eligible" ]]; then
+            echo "has_update=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No update to prepare. pinned=$current eligible=${eligible:-none}"
+          else
+            echo "has_update=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Preparing PR. pinned=$current -> eligible=$eligible"
+          fi
+
+  prepare-pr:
+    name: Smoke-test and prepare update PR
+    needs: check-upstream
+    if: needs.check-upstream.outputs.has_update == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      APP_DIR: saltedlolly-nito
+      ELIGIBLE_VERSION: ${{ needs.check-upstream.outputs.eligible_version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # ---------- OPTIONAL SAFETY NET ----------
+      # docker-nito's own CI doesn't automatically watch Nito-core releases
+      # (it only rebuilds on pushes to that repo, or manual dispatch), so
+      # the buffer-cleared version might not be published there yet. Skip
+      # cleanly rather than fail - tomorrow's scheduled run tries again.
+      - name: Check docker-nito has published this version
+        id: image_check
+        run: |
+          set -euo pipefail
+          if docker buildx imagetools inspect "ghcr.io/nito-tools/docker-nito:${ELIGIBLE_VERSION}" >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::ghcr.io/nito-tools/docker-nito:${ELIGIBLE_VERSION} isn't published yet (docker-nito's own build hasn't been triggered for this tag) - skipping, will retry tomorrow"
+          fi
+
+      - name: Smoke-test the eligible docker-nito image
+        if: steps.image_check.outputs.published == 'true'
+        run: |
+          set -euo pipefail
+          docker run -d --name nito-smoke \
+            -e NITO_RPC_USER=smoke -e NITO_RPC_PASSWORD=smoketest12345 -e NITO_NETWORK=regtest \
+            "ghcr.io/nito-tools/docker-nito:${ELIGIBLE_VERSION}"
+          ok=false
+          for i in $(seq 1 15); do
+            docker exec nito-smoke nito-cli -regtest -rpcport=8825 -rpcuser=smoke -rpcpassword=smoketest12345 getnetworkinfo >/dev/null 2>&1 && { ok=true; break; }
+            sleep 2
+          done
+          docker logs nito-smoke || true
+          docker rm -f nito-smoke || true
+          [[ "$ok" == "true" ]] || { echo "::error::docker-nito image failed smoke test"; exit 1; }
+      # ---------- END OPTIONAL SAFETY NET ----------
+
+      - name: Dry run summary (no PR)
+        if: github.event.inputs.dry_run == 'true' || steps.image_check.outputs.published != 'true'
+        run: |
+          echo "DRY RUN or image not yet published: would prepare a PR for Nito-core ${ELIGIBLE_VERSION}"
+
+      - name: Update pin and version locally (no commit - nito-build.sh --update only)
+        if: github.event.inputs.dry_run != 'true' && steps.image_check.outputs.published == 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          ./nito-build.sh --update \
+            --nito-version "${ELIGIBLE_VERSION}" \
+            --notes "Update to Nito-core ${ELIGIBLE_VERSION}."
+
+      - name: Open a pull request with the changes
+        if: github.event.inputs.dry_run != 'true' && steps.image_check.outputs.published == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "release: Nito - update to Nito-core ${{ env.ELIGIBLE_VERSION }}"
+          title: "release: Nito - update to Nito-core ${{ env.ELIGIBLE_VERSION }}"
+          body: |
+            Automated update, cleared its 3-day adoption buffer.
+
+            Nito-core release: https://github.com/NitoNetwork/Nito-core/releases/tag/${{ env.ELIGIBLE_VERSION }}
+
+            This PR was prepared by `nito-core-update-pr.yml` and needs manual review/approval before merging - it is not auto-merged.
+          branch: nito-update-${{ env.ELIGIBLE_VERSION }}
+          delete-branch: true
+          add-paths: |
+            saltedlolly-nito/**
+            README.md
