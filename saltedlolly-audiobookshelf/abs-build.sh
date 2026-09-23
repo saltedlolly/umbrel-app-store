@@ -468,8 +468,8 @@ def format_body(body: str) -> str:
     lines = body.replace("\r\n", "\n").strip("\n").split("\n")
     out = []
     for line in lines:
-        line = re.sub(r"^#{2,4}\s*", "", line)
-        out.append(("    " + line) if line.strip() else "")
+        line = re.sub(r"^#{2,4}\s*", "", line).rstrip()
+        out.append(("    " + line) if line else "")
     return "\n".join(out)
 
 
