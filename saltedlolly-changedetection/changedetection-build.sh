@@ -11,11 +11,13 @@ set -euo pipefail
 # like netbootxyz-build.sh and tb-build.sh there's nothing to actually build
 # here - no Dockerfile, no docker buildx build, no push, no registry login.
 #
-# Version scheme: the manifest version is "<changedetection.io tag>.<patch>"
-# (e.g. 0.60.6.0), matching tb-build.sh's approach for a clean-semver
-# upstream. A changedetection.io bump resets the trailing patch to 0; a
-# sockpuppetbrowser-only bump (changedetection.io unchanged) increments it,
-# so the manifest version always changes even when only the sidecar moves.
+# Version scheme: the manifest version is the changedetection.io tag
+# verbatim (e.g. 0.60.7) when there's no patch on top of it, matching
+# upstream exactly. A changedetection.io bump always resets to that bare
+# tag. A sockpuppetbrowser-only bump (changedetection.io unchanged), or an
+# explicit --patch for a local-only packaging fix, appends/increments a
+# trailing patch number instead (e.g. 0.60.7.1), so the manifest version
+# still changes even when only the sidecar moves or nothing upstream has.
 #
 # Requirements:
 # - Docker (for `docker buildx imagetools inspect`, no login needed - both
@@ -34,9 +36,16 @@ CDIO_RELEASES_API="https://api.github.com/repos/dgtlmoon/changedetection.io/rele
 SPB_IMAGE="docker.io/dgtlmoon/sockpuppetbrowser"
 SPB_TAGS_API="https://hub.docker.com/v2/repositories/dgtlmoon/sockpuppetbrowser/tags?page_size=100"
 
+# Everything in umbrel-app.yml's releaseNotes field ABOVE this marker is
+# preserved untouched (manually-written notes); everything from the marker
+# down is fully regenerated from changedetection.io's own last two
+# releases on every run.
+RELEASE_NOTES_MARKER="--- dgtlmoon/changedetection.io upstream release notes (auto-updated) ---"
+
 MODE="check"
 REQUESTED_CDIO_VERSION=""
 REQUESTED_SPB_VERSION=""
+FORCE_PATCH=false
 RELEASE_NOTES=""
 UMBREL_DEV_HOST="${UMBREL_DEV_HOST:-192.168.215.2}"
 UMBREL_USER="${UMBREL_USER:-umbrel}"
@@ -54,6 +63,8 @@ Modes (choose one; default is --check):
 Options:
   --cdio-version <tag>    Use a specific changedetection.io tag, for example 0.60.6
   --spb-version <tag>     Use a specific sockpuppetbrowser tag, for example 0.0.3
+  --patch                 Bump the trailing patch number for a local-only fix (neither
+                          upstream image has changed)
   --notes <text>          Release notes used in umbrel-app.yml and the release commit
   --host <host-or-ip>     umbrel-dev host for --localtest (default: $UMBREL_DEV_HOST)
   -h, --help              Show this help
@@ -142,19 +153,25 @@ inspect_upstream_image() {
 }
 
 # Computes the manifest version for a given upstream change: a
-# changedetection.io bump always resets the trailing patch to 0; a
-# sockpuppetbrowser-only bump increments whatever patch is currently there.
+# changedetection.io bump always resets to the bare upstream tag. A
+# sockpuppetbrowser-only bump (or an explicit local-only --patch, with
+# neither upstream changed) appends/increments a trailing patch number
+# instead, since the manifest version must still change to reflect it.
 compute_manifest_version() {
   local cdio_changed="$1"
   local spb_changed="$2"
   local current="$3"
   local target_cdio="$4"
+  local force_patch="$5"
 
   if [[ "$cdio_changed" == "true" ]]; then
-    printf '%s.0\n' "$target_cdio"
-  elif [[ "$spb_changed" == "true" ]]; then
-    local patch="${current##*.}"
-    printf '%s.%s\n' "${current%.*}" "$((patch + 1))"
+    printf '%s\n' "$target_cdio"
+  elif [[ "$spb_changed" == "true" || "$force_patch" == "true" ]]; then
+    if [[ "$current" =~ ^([0-9]+\.[0-9]+\.[0-9]+)\.([0-9]+)$ ]]; then
+      printf '%s.%s\n' "${BASH_REMATCH[1]}" "$((BASH_REMATCH[2] + 1))"
+    else
+      printf '%s.1\n' "$current"
+    fi
   else
     printf '%s\n' "$current"
   fi
@@ -225,6 +242,82 @@ if count != 1:
     raise SystemExit("Could not update releaseNotes in umbrel-app.yml")
 manifest_path.write_text(manifest)
 PY
+}
+
+# Fetches dgtlmoon/changedetection.io's own release notes for the two most
+# recent stable releases and regenerates the auto-updated portion of
+# umbrel-app.yml's releaseNotes field, preserving any manually-written
+# notes above RELEASE_NOTES_MARKER byte-for-byte. Matches the pattern
+# established in saltedlolly-audiobookshelf/abs-build.sh and
+# saltedlolly-kubo/kubo-build.sh. Only the primary (changedetection.io)
+# upstream's notes are fetched - the sockpuppetbrowser sidecar's own
+# release, when that's what triggered the bump, is still called out via
+# the short manual bullet from update_package's release_block.
+update_release_notes() {
+  local target_tag="$1"
+  echo "Fetching changedetection.io's own release notes for $target_tag and the preceding release..."
+  local releases_file
+  releases_file="$(mktemp)"
+  if ! curl -sf "$CDIO_RELEASES_API" -o "$releases_file"; then
+    echo "⚠️  Could not fetch upstream release notes, leaving releaseNotes as-is" >&2
+    rm -f "$releases_file"
+    return
+  fi
+
+  python3 - "$MANIFEST_FILE" "$target_tag" "$RELEASE_NOTES_MARKER" "$releases_file" "dgtlmoon/changedetection.io" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+manifest_path = Path(sys.argv[1])
+target_tag = sys.argv[2]
+marker = sys.argv[3]
+releases = json.loads(Path(sys.argv[4]).read_text())
+repo_label = sys.argv[5]
+
+stable = [r for r in releases if not r["draft"] and not r["prerelease"]]
+stable.sort(key=lambda r: r["published_at"], reverse=True)
+
+idx = next((i for i, r in enumerate(stable) if r["tag_name"] == target_tag), None)
+selected = stable[idx : idx + 2] if idx is not None else stable[:2]
+if not selected:
+    sys.exit(f"Could not find release {target_tag} (or any stable release) to build notes from")
+
+
+def format_body(body: str) -> str:
+    lines = body.replace("\r\n", "\n").strip("\n").split("\n")
+    out = []
+    for line in lines:
+        line = re.sub(r"^#{2,4}\s*", "", line)
+        out.append(("    " + line) if line.strip() else "")
+    return "\n".join(out)
+
+
+sections = []
+for r in selected:
+    sections.append(f"  {repo_label} {r['tag_name']}\n\n{format_body(r.get('body') or '(no notes provided)')}")
+
+upstream_block = "\n\n\n".join(sections)
+upstream_block += f"\n\n\n  See the full release history: https://github.com/{repo_label}/releases"
+
+text = manifest_path.read_text()
+m = re.search(r"^releaseNotes:\s*>-\n((?:.*\n)*?)(?=^\S)", text, re.MULTILINE)
+if not m:
+    sys.exit("Could not find releaseNotes block in umbrel-app.yml")
+
+existing_block = m.group(1)
+if marker in existing_block:
+    manual_part = existing_block.split(marker, 1)[0].rstrip("\n")
+else:
+    manual_part = existing_block.rstrip("\n")
+
+new_block = (manual_part.rstrip() + "\n\n\n" if manual_part.strip() else "") + f"  {marker}\n\n\n" + upstream_block + "\n\n"
+new_text = text[: m.start(1)] + new_block + text[m.end(1) :]
+manifest_path.write_text(new_text)
+print(f"✓ Updated releaseNotes with {[r['tag_name'] for r in selected]}")
+PY
+  rm -f "$releases_file"
 }
 
 update_readme_version() {
@@ -386,6 +479,7 @@ while [[ $# -gt 0 ]]; do
     --publish) MODE="publish"; shift ;;
     --cdio-version) REQUESTED_CDIO_VERSION="$2"; shift 2 ;;
     --spb-version) REQUESTED_SPB_VERSION="$2"; shift 2 ;;
+    --patch) FORCE_PATCH=true; shift ;;
     --notes) RELEASE_NOTES="$2"; shift 2 ;;
     --host) UMBREL_DEV_HOST="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
@@ -409,7 +503,7 @@ CURRENT_SPB="$(current_pinned_tag "$SPB_IMAGE")"
 CDIO_CHANGED="false"; [[ "$TARGET_CDIO" != "$CURRENT_CDIO" ]] && CDIO_CHANGED="true"
 SPB_CHANGED="false"; [[ "$TARGET_SPB" != "$CURRENT_SPB" ]] && SPB_CHANGED="true"
 
-TARGET_MANIFEST_VERSION="$(compute_manifest_version "$CDIO_CHANGED" "$SPB_CHANGED" "$CURRENT_MANIFEST_VERSION" "$TARGET_CDIO")"
+TARGET_MANIFEST_VERSION="$(compute_manifest_version "$CDIO_CHANGED" "$SPB_CHANGED" "$CURRENT_MANIFEST_VERSION" "$TARGET_CDIO" "$FORCE_PATCH")"
 
 echo
 echo "Current manifest version:      $CURRENT_MANIFEST_VERSION"
@@ -429,6 +523,11 @@ if [[ "$MODE" == "check" ]]; then
   exit 0
 fi
 
+if [[ "$CDIO_CHANGED" == "false" && "$SPB_CHANGED" == "false" && "$FORCE_PATCH" != "true" ]]; then
+  echo "Nothing to update (pass --patch to publish a local-only packaging fix)."
+  exit 0
+fi
+
 CDIO_DIGEST="$(inspect_upstream_image "$CDIO_IMAGE" "$TARGET_CDIO")"
 SPB_DIGEST="$(inspect_upstream_image "$SPB_IMAGE" "$TARGET_SPB")"
 
@@ -437,10 +536,13 @@ if [[ -z "$RELEASE_NOTES" ]]; then
     RELEASE_NOTES="Update changedetection.io to upstream release $TARGET_CDIO."
   elif [[ "$SPB_CHANGED" == "true" ]]; then
     RELEASE_NOTES="Update bundled sockpuppetbrowser sidecar to $TARGET_SPB."
+  else
+    RELEASE_NOTES="Local-only packaging fix."
   fi
 fi
 
 update_package "$TARGET_CDIO" "$CDIO_DIGEST" "$TARGET_SPB" "$SPB_DIGEST" "$TARGET_MANIFEST_VERSION" "$RELEASE_NOTES"
+update_release_notes "$TARGET_CDIO"
 update_readme_version "$TARGET_MANIFEST_VERSION"
 validate_package
 
