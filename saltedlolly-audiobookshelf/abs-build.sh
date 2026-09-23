@@ -338,48 +338,63 @@ update_abs_version() {
 # Update UI version in version.json
 update_ui_version() {
   local VERSION_FILE="$CONFIG_TOOL_UI_REPO/public/version.json"
-  
+
   # Get current ABS version from abs-server-image.txt (source of truth)
   local abs_version=""
   if [[ -f "$ABS_SERVER_LOCAL_TXT_FILE" ]]; then
     abs_version=$(grep -o ':[0-9]\+\.[0-9]\+\.[0-9]\+' "$ABS_SERVER_LOCAL_TXT_FILE" | cut -d':' -f2)
   fi
-  
+
+  # uiVersion 0 means "no NAS-Edition-only patch on top of this ABS
+  # version" - the published version is then the bare 3-part ABS version,
+  # matching upstream exactly (e.g. "2.36.2"), so users can tell at a
+  # glance which stock Audiobookshelf release they're running. A 4th
+  # number only appears (starting at .1) once a NAS-Edition-specific fix
+  # is published for the *same* ABS version, from local machine.
+  write_version_json() {
+    local ui_version="$1"
+    local full_version
+    if [[ "$ui_version" -eq 0 ]]; then
+      full_version="$abs_version"
+    else
+      full_version="${abs_version}.${ui_version}"
+    fi
+    echo "{" > "$VERSION_FILE"
+    echo "  \"version\": \"${full_version}\"," >> "$VERSION_FILE"
+    echo "  \"absVersion\": \"${abs_version}\"," >> "$VERSION_FILE"
+    echo "  \"uiVersion\": ${ui_version}" >> "$VERSION_FILE"
+    echo "}" >> "$VERSION_FILE"
+    echo "✓ Updated version.json to v${full_version}"
+  }
+
   # Check if version.json exists
   if [[ ! -f "$VERSION_FILE" ]]; then
     echo "Creating version.json..."
-    echo "{" > "$VERSION_FILE"
-    echo "  \"version\": \"${abs_version}.1\"," >> "$VERSION_FILE"
-    echo "  \"absVersion\": \"${abs_version}\"," >> "$VERSION_FILE"
-    echo "  \"uiVersion\": 1" >> "$VERSION_FILE"
-    echo "}" >> "$VERSION_FILE"
-    echo "✓ Created version.json with v${abs_version}.1"
+    write_version_json 0
+    echo ""
     return
   fi
-  
+
   # Read current ABS version from version.json
   local stored_abs_version=$(grep '"absVersion"' "$VERSION_FILE" | cut -d'"' -f4)
   local ui_version=$(grep '"uiVersion"' "$VERSION_FILE" | cut -d':' -f2 | tr -d ' ,')
-  
-  # Compare version.json's absVersion with docker-compose.yml's version
-  # If ABS version changed (in docker-compose.yml), reset UI version to 1
+
+  # Compare version.json's absVersion with docker-compose.yml's version.
+  # If ABS version changed, this is a fresh upstream release with no
+  # NAS-Edition-specific patch yet - publish the bare ABS version, not a
+  # carried-over or reset-to-1 suffix. Never applies retroactively to a
+  # version already published with a 4th number (e.g. the live 2.36.1.1) -
+  # only from here forward, since a published version must never appear to
+  # decrease.
   if [[ "$stored_abs_version" != "$abs_version" ]]; then
-    ui_version=1
-    echo "ABS version changed from $stored_abs_version to $abs_version, resetting UI version to 1"
+    echo "ABS version changed from $stored_abs_version to $abs_version - publishing bare v${abs_version} (no NAS-Edition patch yet)"
+    write_version_json 0
   else
-    # Increment UI version
+    # ABS version unchanged - this is a NAS-Edition-only fix, append/increment the 4th number.
     ui_version=$((ui_version + 1))
-    echo "Incrementing UI version to $ui_version"
+    echo "ABS version unchanged ($abs_version) - NAS-Edition-only fix, incrementing to .${ui_version}"
+    write_version_json "$ui_version"
   fi
-  
-  # Update version.json
-  echo "{" > "$VERSION_FILE"
-  echo "  \"version\": \"${abs_version}.${ui_version}\"," >> "$VERSION_FILE"
-  echo "  \"absVersion\": \"${abs_version}\"," >> "$VERSION_FILE"
-  echo "  \"uiVersion\": ${ui_version}" >> "$VERSION_FILE"
-  echo "}" >> "$VERSION_FILE"
-  
-  echo "✓ Updated version.json to v${abs_version}.${ui_version}"
   echo ""
 }
 
