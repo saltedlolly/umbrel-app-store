@@ -17,6 +17,63 @@ services:
       # networks (disables local-network mDNS discovery noise, assumes a
       # fixed identity). Per upstream's own Docker docs.
       - IPFS_PROFILE=server
+    # Kubo's bundled WebUI calls its own RPC API as a separate absolute-
+    # origin request, so the browser treats it as cross-origin - and
+    # Kubo's API refuses any request carrying an Origin header that isn't
+    # explicitly allow-listed, even one a browser would consider
+    # same-origin. Without this, the WebUI loads but immediately shows
+    # "Could not connect to the Kubo RPC" for every user.
+    #
+    # A wildcard is safe here: the API is never published directly (see
+    # ports below) - the only path to it at all is through app_proxy,
+    # which requires an authenticated Umbrel SSO session first.
+    #
+    # This replaces the image's default entrypoint rather than using its
+    # /container-init.d hook (Kubo's own official mechanism for exactly
+    # this) - a bind-mounted init script there depends on Umbrel re-
+    # syncing a newly-added file into an already-running container on
+    # update, which isn't reliable in practice (confirmed: the hook never
+    # ran after a real update, only after a fresh install). Inlining the
+    # init sequence directly in the compose file itself has no such
+    # dependency, since compose-file changes are what Umbrel's update
+    # mechanism reliably re-applies. Matches the approach independently
+    # arrived at by github.com/dennysubke/dennys-umbrel-app-store's own
+    # Kubo package.
+    entrypoint:
+      - /sbin/tini
+      - --
+      - /bin/sh
+      - -c
+    command:
+      # $ is doubled ($$) everywhere below - Compose interpolates a bare
+      # $VAR/${VAR} in any string value in this file (confirmed: without
+      # the doubling, `docker compose config` silently substituted these
+      # with blank before the string ever reached the container's own
+      # shell). $(command substitution) is unaffected and left singular.
+      - |
+        set -eu
+
+        # A bind-mounted host directory (e.g. Umbrel's
+        # ${APP_DATA_DIR}/data/ipfs) is created owned by whatever UID the
+        # host runs as, not the image's ipfs user - skip the chown once
+        # ownership is already correct, so a large existing repo doesn't
+        # pay a recursive chown on every restart.
+        if [ "$(stat -c '%u' "$${IPFS_PATH}")" != "$(id -u ipfs)" ]; then
+          chown -R ipfs:users "$${IPFS_PATH}"
+        fi
+
+        if [ ! -f "$${IPFS_PATH}/config" ]; then
+          gosu ipfs ipfs init $${IPFS_PROFILE:+"--profile=$${IPFS_PROFILE}"}
+          # `ipfs init` defaults both to 127.0.0.1-only - app_proxy (a
+          # separate container) couldn't reach either at all otherwise.
+          gosu ipfs ipfs config Addresses.API /ip4/0.0.0.0/tcp/5001
+          gosu ipfs ipfs config Addresses.Gateway /ip4/0.0.0.0/tcp/8080
+        fi
+
+        gosu ipfs ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["*"]'
+        gosu ipfs ipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '["PUT", "POST"]'
+
+        exec gosu ipfs ipfs daemon --migrate=true --agent-version-suffix=docker
     # The P2P swarm port is published directly rather than through
     # app_proxy - app_proxy is HTTP-only and doesn't apply to the p2p
     # protocol. This is how any IPFS node finds and accepts peers; normal
@@ -29,14 +86,16 @@ services:
     # the internal Docker network instead, which is stricter than even
     # that recommendation, with Umbrel SSO as the auth gate in front.
     #
-    # The Gateway (8080) and swarm-over-websockets (8081) ports are not
-    # exposed at all in this initial release - the Gateway in particular
-    # lets anyone who reaches it fetch arbitrary content through this
-    # node's bandwidth, which shouldn't be on by default without a
-    # deliberate choice to do so.
+    # The Gateway (8080, mapped to a less common host port to reduce
+    # collision risk with other apps/services already using 8080) lets
+    # anyone who reaches it fetch content through this node's bandwidth -
+    # a deliberate choice, matching the same tradeoff made by
+    # dennysubke/dennys-umbrel-app-store's own Kubo package.
+    # Swarm-over-websockets (8081) is still not exposed.
     ports:
       - "4001:4001/tcp"
       - "4001:4001/udp"
+      - "8395:8080/tcp"
     volumes:
       # The Kubo repo (config, keys, and all pinned block data) is a
       # flatfs-sharded content-addressed block store - opaque hash-named
@@ -47,10 +106,6 @@ services:
       # covered by Umbrel's per-app Backup while installed, but deleted on
       # uninstall - documented clearly in this app's description.
       - ${APP_DATA_DIR}/data/ipfs:/data/ipfs
-      # Runs on every container start via Kubo's own official
-      # /container-init.d hook - see the script itself for why this is
-      # needed (the bundled WebUI can't reach its own API without it).
-      - ./container-init.d/enable-webui-cors.sh:/container-init.d/enable-webui-cors.sh:ro
     healthcheck:
       test: ["CMD", "ipfs", "--api=/ip4/127.0.0.1/tcp/5001", "diag", "healthy"]
       interval: 30s

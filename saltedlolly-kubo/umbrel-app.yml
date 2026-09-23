@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-kubo
 category: Files
 name: Kubo (IPFS)
-version: "v0.43.1.4"
+version: "v0.43.1.7"
 tagline: Run a full IPFS node with the official WebUI for peers, pins, and files
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -20,7 +20,7 @@ description: >-
   ⚠️ Pinned and imported content is stored as Kubo's own internal block database, not as ordinary files - it cannot be browsed, previewed, or copied through Umbrel's Files app. This data is backed up by Umbrel's Backup tool while the app is installed, but - unlike this app's own settings - it is deleted if you uninstall the app. Take a Backup first if you want to keep it.
 
 
-  The peer-to-peer (swarm) port is published normally so this node can find and be found by other IPFS peers. The public Gateway, which lets anyone who reaches it fetch content through this node, is not exposed in this initial release.
+  The peer-to-peer (swarm) port is published normally so this node can find and be found by other IPFS peers. The public Gateway (port 8395) is also exposed, so anyone who reaches it can fetch content through this node - a deliberate tradeoff for being able to actually use IPFS links, not an oversight.
 releaseNotes: >-
   v0.43.1.0:
 
