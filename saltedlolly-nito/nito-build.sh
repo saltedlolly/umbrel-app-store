@@ -20,9 +20,12 @@ set -euo pipefail
 #   already-resolved version into their own build scripts rather than
 #   having the script re-discover it.
 #
-# Manifest version = "<nito-core tag>.<patch>": a docker-nito bump resets
-# the trailing patch to 0; a dashboard-only update increments it instead,
-# matching changedetection-build.sh's dual-tracking scheme.
+# Manifest version = the Nito-core tag verbatim (e.g. v3.0.1) when there's
+# no patch on top of it, matching upstream exactly. A dashboard-only
+# update (or an explicit --patch for a local-only fix, with neither
+# changed) appends/increments a trailing patch number instead (e.g.
+# v3.0.1.1), matching the scheme used everywhere else in this store
+# (see changedetection-build.sh/crowdsec-build.sh for the same pattern).
 #
 # Requirements:
 # - Docker (for `docker buildx imagetools inspect`, no login needed - both
@@ -39,10 +42,17 @@ NITO_CORE_RELEASES_API="https://api.github.com/repos/NitoNetwork/Nito-core/relea
 NITO_IMAGE="ghcr.io/nito-tools/docker-nito"
 DASHBOARD_IMAGE="ghcr.io/saltedlolly/nito-dashboard"
 
+# Everything in umbrel-app.yml's releaseNotes field ABOVE this marker is
+# preserved untouched (manually-written notes); everything from the
+# marker down is fully regenerated from NitoNetwork/Nito-core's own last
+# two releases on every run.
+RELEASE_NOTES_MARKER="--- NitoNetwork/Nito-core upstream release notes (auto-updated) ---"
+
 MODE="check"
 REQUESTED_NITO_VERSION=""
 DASHBOARD_TAG=""
 DASHBOARD_DIGEST=""
+FORCE_PATCH=false
 RELEASE_NOTES=""
 UMBREL_DEV_HOST="${UMBREL_DEV_HOST:-192.168.215.2}"
 UMBREL_USER="${UMBREL_USER:-umbrel}"
@@ -61,6 +71,8 @@ Options:
   --nito-version <tag>       Use a specific Nito-core tag, for example v3.0.1
   --dashboard-tag <tag>      Pin nito-dashboard to this tag (used by CI - see nito-dashboard-build.yml)
   --dashboard-digest <sha>   The matching digest for --dashboard-tag (sha256:...)
+  --patch                    Bump the trailing patch number for a local-only fix (neither
+                             docker-nito nor the dashboard has changed)
   --notes <text>             Release notes used in umbrel-app.yml and the release commit
   --host <host-or-ip>        umbrel-dev host for --localtest (default: $UMBREL_DEV_HOST)
   -h, --help                 Show this help
@@ -146,6 +158,79 @@ if count != 1:
     raise SystemExit("Could not update releaseNotes in umbrel-app.yml")
 manifest_path.write_text(manifest)
 PY
+}
+
+# Fetches NitoNetwork/Nito-core's own release notes for the two most
+# recent stable releases and regenerates the auto-updated portion of
+# umbrel-app.yml's releaseNotes field, preserving any manually-written
+# notes above RELEASE_NOTES_MARKER byte-for-byte. Matches the pattern
+# established in saltedlolly-audiobookshelf/abs-build.sh and
+# saltedlolly-kubo/kubo-build.sh.
+update_release_notes() {
+  local target_tag="$1"
+  echo "Fetching Nito-core's own release notes for $target_tag and the preceding release..."
+  local releases_file
+  releases_file="$(mktemp)"
+  if ! curl -sf "${NITO_CORE_RELEASES_API}?per_page=10" -o "$releases_file"; then
+    echo "⚠️  Could not fetch upstream release notes, leaving releaseNotes as-is" >&2
+    rm -f "$releases_file"
+    return
+  fi
+
+  python3 - "$MANIFEST_FILE" "$target_tag" "$RELEASE_NOTES_MARKER" "$releases_file" "NitoNetwork/Nito-core" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+manifest_path = Path(sys.argv[1])
+target_tag = sys.argv[2]
+marker = sys.argv[3]
+releases = json.loads(Path(sys.argv[4]).read_text())
+repo_label = sys.argv[5]
+
+stable = [r for r in releases if not r["draft"] and not r["prerelease"]]
+stable.sort(key=lambda r: r["published_at"], reverse=True)
+
+idx = next((i for i, r in enumerate(stable) if r["tag_name"] == target_tag), None)
+selected = stable[idx : idx + 2] if idx is not None else stable[:2]
+if not selected:
+    sys.exit(f"Could not find release {target_tag} (or any stable release) to build notes from")
+
+
+def format_body(body: str) -> str:
+    lines = body.replace("\r\n", "\n").strip("\n").split("\n")
+    out = []
+    for line in lines:
+        line = re.sub(r"^#{2,4}\s*", "", line)
+        out.append(("    " + line) if line.strip() else "")
+    return "\n".join(out)
+
+
+sections = []
+for r in selected:
+    sections.append(f"  {repo_label} {r['tag_name']}\n\n{format_body(r.get('body') or '(no notes provided)')}")
+
+upstream_block = "\n\n\n".join(sections)
+upstream_block += f"\n\n\n  See the full release history: https://github.com/{repo_label}/releases"
+
+text = manifest_path.read_text()
+m = re.search(r"^releaseNotes:\s*>-\n((?:.*\n)*?)(?=^\S)", text, re.MULTILINE)
+if not m:
+    sys.exit("Could not find releaseNotes block in umbrel-app.yml")
+
+existing_block = m.group(1)
+if marker in existing_block:
+    manual_part = existing_block.split(marker, 1)[0].rstrip("\n")
+else:
+    manual_part = existing_block.rstrip("\n")
+
+new_block = (manual_part.rstrip() + "\n\n\n" if manual_part.strip() else "") + f"  {marker}\n\n\n" + upstream_block + "\n\n"
+new_text = text[: m.start(1)] + new_block + text[m.end(1) :]
+manifest_path.write_text(new_text)
+print(f"✓ Updated releaseNotes with {[r['tag_name'] for r in selected]}")
+PY
+  rm -f "$releases_file"
 }
 
 update_readme_version() {
@@ -244,6 +329,7 @@ while [[ $# -gt 0 ]]; do
     --nito-version) REQUESTED_NITO_VERSION="$2"; shift 2 ;;
     --dashboard-tag) DASHBOARD_TAG="$2"; shift 2 ;;
     --dashboard-digest) DASHBOARD_DIGEST="$2"; shift 2 ;;
+    --patch) FORCE_PATCH=true; shift ;;
     --notes) RELEASE_NOTES="$2"; shift 2 ;;
     --host) UMBREL_DEV_HOST="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
@@ -281,10 +367,15 @@ CURRENT_DASHBOARD_TAG="$(current_pinned_tag "$DASHBOARD_IMAGE")"
 DASHBOARD_CHANGED="false"; [[ -n "$DASHBOARD_TAG" && "$DASHBOARD_TAG" != "$CURRENT_DASHBOARD_TAG" ]] && DASHBOARD_CHANGED="true"
 
 if [[ "$NITO_CHANGED" == "true" ]]; then
-  TARGET_MANIFEST_VERSION="${TARGET_NITO_TAG}.0"
-elif [[ "$DASHBOARD_CHANGED" == "true" ]]; then
-  patch="${CURRENT_MANIFEST_VERSION##*.}"
-  TARGET_MANIFEST_VERSION="${CURRENT_MANIFEST_VERSION%.*}.$((patch + 1))"
+  # Genuine docker-nito bump - publish the bare tag, matching upstream
+  # exactly, regardless of what patch number (if any) was live before.
+  TARGET_MANIFEST_VERSION="$TARGET_NITO_TAG"
+elif [[ "$DASHBOARD_CHANGED" == "true" || "$FORCE_PATCH" == "true" ]]; then
+  if [[ "$CURRENT_MANIFEST_VERSION" =~ ^(v[0-9]+\.[0-9]+\.[0-9]+)\.([0-9]+)$ ]]; then
+    TARGET_MANIFEST_VERSION="${BASH_REMATCH[1]}.$((BASH_REMATCH[2] + 1))"
+  else
+    TARGET_MANIFEST_VERSION="${CURRENT_MANIFEST_VERSION}.1"
+  fi
 else
   TARGET_MANIFEST_VERSION="$CURRENT_MANIFEST_VERSION"
 fi
@@ -298,11 +389,16 @@ echo "Resulting manifest version: $TARGET_MANIFEST_VERSION"
 echo
 
 if [[ "$MODE" == "check" ]]; then
-  if [[ "$NITO_CHANGED" == "false" && "$DASHBOARD_CHANGED" == "false" ]]; then
+  if [[ "$NITO_CHANGED" == "false" && "$DASHBOARD_CHANGED" == "false" && "$FORCE_PATCH" != "true" ]]; then
     echo "Nothing to update."
   else
     echo "An update is available. Run with --update to prepare it."
   fi
+  exit 0
+fi
+
+if [[ "$NITO_CHANGED" == "false" && "$DASHBOARD_CHANGED" == "false" && "$FORCE_PATCH" != "true" ]]; then
+  echo "Nothing to update (pass --patch to publish a local-only packaging fix)."
   exit 0
 fi
 
@@ -320,13 +416,14 @@ if [[ -z "$RELEASE_NOTES" ]]; then
     RELEASE_NOTES="Update to Nito-core $TARGET_NITO_TAG."
   elif [[ "$DASHBOARD_CHANGED" == "true" ]]; then
     RELEASE_NOTES="Update the dashboard."
+  else
+    RELEASE_NOTES="Local-only packaging fix."
   fi
 fi
 
-if [[ "$NITO_CHANGED" == "true" || "$DASHBOARD_CHANGED" == "true" ]]; then
-  update_manifest_version_and_notes "$TARGET_MANIFEST_VERSION" "$RELEASE_NOTES"
-  update_readme_version "$TARGET_MANIFEST_VERSION"
-fi
+update_manifest_version_and_notes "$TARGET_MANIFEST_VERSION" "$RELEASE_NOTES"
+update_release_notes "$TARGET_NITO_TAG"
+update_readme_version "$TARGET_MANIFEST_VERSION"
 
 validate_package
 
