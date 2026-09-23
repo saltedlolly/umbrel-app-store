@@ -10,8 +10,11 @@ set -euo pipefail
 # public and multi-arch - no Dockerfile, no docker buildx build, no push,
 # no registry login required. Unlike tb-build.sh, there are two independent
 # upstream projects to track; the crowdsec engine is treated as primary
-# (it drives the app's own vX.Y.Z.N version), the web UI is pinned
-# independently and just bumps the app patch when it updates on its own.
+# (it drives the app's own version) - a crowdsec bump publishes its bare
+# tag verbatim (e.g. v1.8.2), matching upstream exactly. The web UI is
+# pinned independently: an update to it alone (crowdsec unchanged), or an
+# explicit --bump for a local-only packaging fix, appends/increments a
+# trailing patch number instead (e.g. v1.8.2.1).
 #
 # Requirements:
 # - Docker (for `docker buildx imagetools inspect`, no login needed - both
@@ -40,6 +43,12 @@ APP_YML_FILE="$APP_ROOT/umbrel-app.yml"
 CROWDSEC_IMAGE="docker.io/crowdsecurity/crowdsec"
 WEBUI_IMAGE="ghcr.io/theduffman85/crowdsec-web-ui"
 
+# Everything in umbrel-app.yml's releaseNotes field ABOVE this marker is
+# preserved untouched (manually-written notes); everything from the
+# marker down is fully regenerated from crowdsecurity/crowdsec's own last
+# two releases on every run.
+RELEASE_NOTES_MARKER="--- crowdsecurity/crowdsec upstream release notes (auto-updated) ---"
+
 # Explicit version overrides (for CI/automation): skip the GitHub releases
 # lookup and use these exact versions directly.
 CROWDSEC_VERSION_OVERRIDE=""
@@ -61,8 +70,9 @@ Usage: $0 [OPTIONS]
 
 Options:
   -h, --help                 : Show this help message
-  --version <vx.x.x.x>       : Set explicit app version (e.g., v1.8.1.1)
-  --bump                     : Force increment app patch version
+  --version <vx.x.x[.x]>     : Set explicit app version (e.g., v1.8.1 or v1.8.1.1)
+  --bump                     : Publish a local-only packaging fix (neither upstream
+                               changed) - appends/increments a trailing patch number
   --notes <text>             : Custom release notes
   --crowdsec-version <X.Y.Z> : Skip the crowdsecurity/crowdsec release check and use
                                this exact version (for CI/automation)
@@ -71,11 +81,12 @@ Options:
   --localtest                : Update files and deploy to local umbrel-dev ($UMBREL_DEV_HOST)
   --publish                  : Update files, commit, and push to GitHub
 
-Version numbering: vX.Y.Z.N where:
-  X.Y.Z = crowdsecurity/crowdsec upstream version (auto-reset app patch when it updates)
-  N     = app patch number (increments on publish, resets to 0 when the engine version updates)
-crowdsec-web-ui is pinned independently and doesn't drive the reset - an
-update to it alone still bumps the app patch on publish.
+Version numbering: vX.Y.Z when there's no patch on top of it (matches
+crowdsecurity/crowdsec's own version exactly). crowdsec-web-ui is pinned
+independently: an update to it alone, or an explicit --bump for a
+local-only fix, appends/increments a trailing patch number instead (e.g.
+v1.8.1.1), which resets to bare vX.Y.Z on the next genuine crowdsec
+engine update.
 EOF
 }
 
@@ -92,35 +103,6 @@ extract_current_webui_version() {
 # Extract full app version from umbrel-app.yml
 extract_full_version() {
   awk -F'"' '/^version:/ {print $2; exit}' "$APP_YML_FILE"
-}
-
-# Extract app patch version (last component) from full version
-extract_app_patch() {
-  local full_version="$1"
-  echo "$full_version" | awk -F'.' '{print $NF}'
-}
-
-# Compare versions and reset app patch if the crowdsec engine version changed
-check_and_reset_app_version() {
-  local current_crowdsec_version=$(extract_current_crowdsec_version)
-  local full_version=$(extract_full_version)
-  local version_prefix=$(echo "$full_version" | sed -E 's/^v//' | cut -d'.' -f1-3)
-
-  if [[ "$version_prefix" != "$current_crowdsec_version" ]]; then
-    echo "✓ crowdsec engine version changed to $current_crowdsec_version, resetting app patch to 0" >&2
-    echo "v${current_crowdsec_version}.0"
-  else
-    echo "$full_version"
-  fi
-}
-
-# Increment the app patch version (last component)
-increment_app_patch() {
-  local full_version="$1"
-  local prefix=$(echo "$full_version" | cut -d'.' -f1-3)
-  local patch=$(extract_app_patch "$full_version")
-  local new_patch=$((patch + 1))
-  echo "${prefix}.${new_patch}"
 }
 
 set_version_in_app_yml() {
@@ -144,6 +126,81 @@ prepend_release_notes() {
     {print}
   ' "$APP_YML_FILE" > "$APP_YML_FILE.tmp"
   mv "$APP_YML_FILE.tmp" "$APP_YML_FILE"
+}
+
+# Fetches crowdsecurity/crowdsec's own release notes for the two most
+# recent stable releases and regenerates the auto-updated portion of
+# umbrel-app.yml's releaseNotes field, preserving any manually-written
+# notes above RELEASE_NOTES_MARKER byte-for-byte. Matches the pattern
+# established in saltedlolly-audiobookshelf/abs-build.sh and
+# saltedlolly-kubo/kubo-build.sh. Only the primary (crowdsec engine)
+# upstream's notes are fetched - a web-ui-only bump is still called out
+# via the short manual bullet from prepend_release_notes.
+update_release_notes() {
+  local target_tag="v$1"
+  echo "Fetching crowdsecurity/crowdsec's own release notes for $target_tag and the preceding release..."
+  local releases_file
+  releases_file="$(mktemp)"
+  if ! curl -sf "https://api.github.com/repos/crowdsecurity/crowdsec/releases?per_page=10" -o "$releases_file"; then
+    echo "⚠️  Could not fetch upstream release notes, leaving releaseNotes as-is" >&2
+    rm -f "$releases_file"
+    return
+  fi
+
+  python3 - "$APP_YML_FILE" "$target_tag" "$RELEASE_NOTES_MARKER" "$releases_file" "crowdsecurity/crowdsec" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+manifest_path = Path(sys.argv[1])
+target_tag = sys.argv[2]
+marker = sys.argv[3]
+releases = json.loads(Path(sys.argv[4]).read_text())
+repo_label = sys.argv[5]
+
+stable = [r for r in releases if not r["draft"] and not r["prerelease"]]
+stable.sort(key=lambda r: r["published_at"], reverse=True)
+
+idx = next((i for i, r in enumerate(stable) if r["tag_name"] == target_tag), None)
+selected = stable[idx : idx + 2] if idx is not None else stable[:2]
+if not selected:
+    sys.exit(f"Could not find release {target_tag} (or any stable release) to build notes from")
+
+
+def format_body(body: str) -> str:
+    lines = body.replace("\r\n", "\n").strip("\n").split("\n")
+    out = []
+    for line in lines:
+        line = re.sub(r"^#{2,4}\s*", "", line)
+        out.append(("    " + line) if line.strip() else "")
+    return "\n".join(out)
+
+
+sections = []
+for r in selected:
+    sections.append(f"  {repo_label} {r['tag_name']}\n\n{format_body(r.get('body') or '(no notes provided)')}")
+
+upstream_block = "\n\n\n".join(sections)
+upstream_block += f"\n\n\n  See the full release history: https://github.com/{repo_label}/releases"
+
+text = manifest_path.read_text()
+m = re.search(r"^releaseNotes:\s*>-\n((?:.*\n)*?)(?=^\S)", text, re.MULTILINE)
+if not m:
+    sys.exit("Could not find releaseNotes block in umbrel-app.yml")
+
+existing_block = m.group(1)
+if marker in existing_block:
+    manual_part = existing_block.split(marker, 1)[0].rstrip("\n")
+else:
+    manual_part = existing_block.rstrip("\n")
+
+new_block = (manual_part.rstrip() + "\n\n\n" if manual_part.strip() else "") + f"  {marker}\n\n\n" + upstream_block + "\n\n"
+new_text = text[: m.start(1)] + new_block + text[m.end(1) :]
+manifest_path.write_text(new_text)
+print(f"✓ Updated releaseNotes with {[r['tag_name'] for r in selected]}")
+PY
+  rm -f "$releases_file"
 }
 
 # Update app store README.md with the app version and release date
@@ -321,6 +378,9 @@ done
 ########################################
 # Check for upstream updates
 ########################################
+PRE_CROWDSEC_VER="$(extract_current_crowdsec_version)"
+PRE_WEBUI_VER="$(extract_current_webui_version)"
+
 update_crowdsec_pin
 update_webui_pin
 
@@ -332,36 +392,6 @@ if [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
   if [[ -z "$current_full_v" ]]; then
     echo "Error: Could not read current version from $APP_YML_FILE" >&2
     exit 1
-  fi
-
-  if [[ -z "$SET_VERSION" ]]; then
-    echo "Current version: $current_full_v"
-    echo
-    bumped_v=$(increment_app_patch "$(check_and_reset_app_version)")
-
-    if [[ ! -t 0 ]]; then
-      # Non-interactive (CI/automation): no TTY to prompt, so just take the
-      # normal-publish path rather than hang waiting for input that will
-      # never arrive.
-      echo "Non-interactive shell detected, auto-selecting: increment app patch to $bumped_v"
-      SET_VERSION="$bumped_v"
-    else
-      echo "Select action:"
-      echo "  1) Increment app patch: $bumped_v (normal publish)"
-      echo "  2) Cancel"
-      echo
-      read -p "Enter choice (1-2): " -n 1 -r
-      echo
-
-      case "$REPLY" in
-        1) SET_VERSION="$bumped_v" ;;
-        2) echo "Cancelled."; exit 0 ;;
-        *) echo "Invalid choice. Cancelled."; exit 1 ;;
-      esac
-    fi
-
-    echo "Selected version: $SET_VERSION"
-    echo
   fi
 
   if [[ "$RELEASE_NOTES" == "Update crowdsec/crowdsec-web-ui to latest upstream release" ]]; then
@@ -380,19 +410,32 @@ fi
 ########################################
 # Determine version
 ########################################
-current_full_v=$(check_and_reset_app_version)
+current_full_v=$(extract_full_version)
+crowdsec_ver=$(extract_current_crowdsec_version)
+webui_ver=$(extract_current_webui_version)
+
+CROWDSEC_CHANGED=false; [[ "$crowdsec_ver" != "$PRE_CROWDSEC_VER" ]] && CROWDSEC_CHANGED=true
+WEBUI_CHANGED=false; [[ "$webui_ver" != "$PRE_WEBUI_VER" ]] && WEBUI_CHANGED=true
+
+if [[ "$current_full_v" =~ ^v[0-9]+\.[0-9]+\.[0-9]+\.([0-9]+)$ ]]; then
+  current_app_patch="${BASH_REMATCH[1]}"
+else
+  current_app_patch="0"
+fi
 
 target_v="$SET_VERSION"
 if [[ -z "$target_v" ]]; then
-  if [[ "$FORCE_BUMP" == "true" ]] || [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
-    target_v=$(increment_app_patch "$current_full_v")
+  if [[ "$CROWDSEC_CHANGED" == "true" ]]; then
+    # Genuine crowdsec engine bump - publish the bare tag, matching
+    # upstream exactly, regardless of what patch number was live before.
+    target_v="v${crowdsec_ver}"
+  elif [[ "$WEBUI_CHANGED" == "true" || "$FORCE_BUMP" == "true" ]]; then
+    target_v="v${crowdsec_ver}.$((current_app_patch + 1))"
   else
     target_v="$current_full_v"
   fi
 fi
 
-crowdsec_ver=$(extract_current_crowdsec_version)
-webui_ver=$(extract_current_webui_version)
 echo "Current crowdsec version: $crowdsec_ver"
 echo "Current web-ui version:   $webui_ver"
 echo "Current app version:      $current_full_v"
@@ -412,6 +455,7 @@ update_readme_version "$target_v"
 if [[ "$LOCAL_TEST" != "true" ]]; then
   echo "Updating release notes..."
   prepend_release_notes "$target_v" "$RELEASE_NOTES"
+  update_release_notes "$crowdsec_ver"
 fi
 
 echo
