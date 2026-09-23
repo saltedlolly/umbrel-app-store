@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-kubo
 category: Files
 name: Kubo (IPFS)
-version: "v0.43.1.2"
+version: "v0.43.1.4"
 tagline: Run a full IPFS node with the official WebUI for peers, pins, and files
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.

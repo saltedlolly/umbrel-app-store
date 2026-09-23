@@ -47,6 +47,10 @@ services:
       # covered by Umbrel's per-app Backup while installed, but deleted on
       # uninstall - documented clearly in this app's description.
       - ${APP_DATA_DIR}/data/ipfs:/data/ipfs
+      # Runs on every container start via Kubo's own official
+      # /container-init.d hook - see the script itself for why this is
+      # needed (the bundled WebUI can't reach its own API without it).
+      - ./container-init.d/enable-webui-cors.sh:/container-init.d/enable-webui-cors.sh:ro
     healthcheck:
       test: ["CMD", "ipfs", "--api=/ip4/127.0.0.1/tcp/5001", "diag", "healthy"]
       interval: 30s
