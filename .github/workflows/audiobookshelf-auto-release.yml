@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   check-upstream:
-    name: Check advplyr/audiobookshelf for an eligible release (5-day buffer)
+    name: Check advplyr/audiobookshelf for an eligible release (3-day buffer)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -38,13 +38,13 @@ jobs:
             saltedlolly-audiobookshelf/docker-containers/abs-manager/abs-server-image.txt
           sparse-checkout-cone-mode: false
 
-      - name: Find newest advplyr/audiobookshelf release that has cleared the 5-day buffer
+      - name: Find newest advplyr/audiobookshelf release that has cleared the 3-day buffer
         id: latest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          cutoff="$(date -u -d '5 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+          cutoff="$(date -u -d '3 days ago' +%Y-%m-%dT%H:%M:%SZ)"
           releases="$(curl -sf \
             -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" \
@@ -62,7 +62,7 @@ jobs:
           fi
 
           if [[ -z "$version" ]]; then
-            echo "::notice::No advplyr/audiobookshelf release has cleared the 5-day buffer yet"
+            echo "::notice::No advplyr/audiobookshelf release has cleared the 3-day buffer yet"
             echo "eligible_version=" >> "$GITHUB_OUTPUT"
           else
             if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
