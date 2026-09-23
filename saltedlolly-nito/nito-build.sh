@@ -91,6 +91,11 @@ current_pinned_tag() {
   grep -oE "${image}:[^@[:space:]]+" "$COMPOSE_FILE" | head -1 | cut -d: -f2
 }
 
+current_pinned_digest() {
+  local image="$1"
+  grep -oE "${image}:[^@[:space:]]+@sha256:[a-f0-9]{64}" "$COMPOSE_FILE" | head -1 | grep -oE 'sha256:[a-f0-9]{64}'
+}
+
 resolve_latest_nito_core_tag() {
   curl -sf "$NITO_CORE_RELEASES_API?per_page=20" | python3 -c "
 import json, re, sys
@@ -202,8 +207,8 @@ def format_body(body: str) -> str:
     lines = body.replace("\r\n", "\n").strip("\n").split("\n")
     out = []
     for line in lines:
-        line = re.sub(r"^#{2,4}\s*", "", line)
-        out.append(("    " + line) if line.strip() else "")
+        line = re.sub(r"^#{2,4}\s*", "", line).rstrip()
+        out.append(("    " + line) if line else "")
     return "\n".join(out)
 
 
@@ -359,6 +364,16 @@ fi
 [[ "$TARGET_NITO_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "Unsupported Nito-core tag format: $TARGET_NITO_TAG"
 NITO_CHANGED="false"; [[ "$TARGET_NITO_TAG" != "$CURRENT_NITO_TAG" ]] && NITO_CHANGED="true"
 
+# Always resolve the digest for the target tag, even when the tag itself
+# is unchanged - Nito-Tools/docker-nito can republish a corrected build
+# under the SAME Nito-core tag (e.g. fixing a packaging bug in the image
+# itself), and this self-heals that pin instead of silently leaving a
+# known-bad digest live. Matches kubo-build.sh/netbootxyz-build.sh's own
+# digest-correction behavior.
+NITO_DIGEST="$(inspect_image_digest "$NITO_IMAGE" "$TARGET_NITO_TAG")"
+CURRENT_NITO_DIGEST="$(current_pinned_digest "$NITO_IMAGE")"
+NITO_PIN_CHANGED="false"; [[ "$NITO_DIGEST" != "$CURRENT_NITO_DIGEST" ]] && NITO_PIN_CHANGED="true"
+
 # Dashboard changes are only ever known because nito-dashboard-build.yml
 # just built one and told us via --dashboard-tag/--dashboard-digest - this
 # script has no way to detect a dashboard source change on its own, since
@@ -370,7 +385,7 @@ if [[ "$NITO_CHANGED" == "true" ]]; then
   # Genuine docker-nito bump - publish the bare tag, matching upstream
   # exactly, regardless of what patch number (if any) was live before.
   TARGET_MANIFEST_VERSION="$TARGET_NITO_TAG"
-elif [[ "$DASHBOARD_CHANGED" == "true" || "$FORCE_PATCH" == "true" ]]; then
+elif [[ "$NITO_PIN_CHANGED" == "true" || "$DASHBOARD_CHANGED" == "true" || "$FORCE_PATCH" == "true" ]]; then
   if [[ "$CURRENT_MANIFEST_VERSION" =~ ^(v[0-9]+\.[0-9]+\.[0-9]+)\.([0-9]+)$ ]]; then
     TARGET_MANIFEST_VERSION="${BASH_REMATCH[1]}.$((BASH_REMATCH[2] + 1))"
   else
@@ -383,13 +398,13 @@ fi
 echo
 echo "Current manifest version:   $CURRENT_MANIFEST_VERSION"
 echo "Current docker-nito tag:    $CURRENT_NITO_TAG"
-echo "Target docker-nito tag:     $TARGET_NITO_TAG (changed: $NITO_CHANGED)"
+echo "Target docker-nito tag:     $TARGET_NITO_TAG (changed: $NITO_CHANGED, digest corrected: $NITO_PIN_CHANGED)"
 echo "Dashboard pin requested:    ${DASHBOARD_TAG:-none} (changed: $DASHBOARD_CHANGED)"
 echo "Resulting manifest version: $TARGET_MANIFEST_VERSION"
 echo
 
 if [[ "$MODE" == "check" ]]; then
-  if [[ "$NITO_CHANGED" == "false" && "$DASHBOARD_CHANGED" == "false" && "$FORCE_PATCH" != "true" ]]; then
+  if [[ "$NITO_CHANGED" == "false" && "$NITO_PIN_CHANGED" == "false" && "$DASHBOARD_CHANGED" == "false" && "$FORCE_PATCH" != "true" ]]; then
     echo "Nothing to update."
   else
     echo "An update is available. Run with --update to prepare it."
@@ -397,13 +412,12 @@ if [[ "$MODE" == "check" ]]; then
   exit 0
 fi
 
-if [[ "$NITO_CHANGED" == "false" && "$DASHBOARD_CHANGED" == "false" && "$FORCE_PATCH" != "true" ]]; then
+if [[ "$NITO_CHANGED" == "false" && "$NITO_PIN_CHANGED" == "false" && "$DASHBOARD_CHANGED" == "false" && "$FORCE_PATCH" != "true" ]]; then
   echo "Nothing to update (pass --patch to publish a local-only packaging fix)."
   exit 0
 fi
 
-if [[ "$NITO_CHANGED" == "true" ]]; then
-  NITO_DIGEST="$(inspect_image_digest "$NITO_IMAGE" "$TARGET_NITO_TAG")"
+if [[ "$NITO_CHANGED" == "true" || "$NITO_PIN_CHANGED" == "true" ]]; then
   update_compose_image "$NITO_IMAGE" "$TARGET_NITO_TAG" "$NITO_DIGEST"
 fi
 
@@ -414,6 +428,8 @@ fi
 if [[ -z "$RELEASE_NOTES" ]]; then
   if [[ "$NITO_CHANGED" == "true" ]]; then
     RELEASE_NOTES="Update to Nito-core $TARGET_NITO_TAG."
+  elif [[ "$NITO_PIN_CHANGED" == "true" ]]; then
+    RELEASE_NOTES="Republish the docker-nito image for $TARGET_NITO_TAG (packaging fix, Nito-core unchanged)."
   elif [[ "$DASHBOARD_CHANGED" == "true" ]]; then
     RELEASE_NOTES="Update the dashboard."
   else
