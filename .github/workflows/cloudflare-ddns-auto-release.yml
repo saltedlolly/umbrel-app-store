@@ -108,7 +108,11 @@ jobs:
       packages: write   # required to push to and prune GHCR
     env:
       APP_DIR: saltedlolly-cloudflare-ddns
-      TARGET_VERSION: v${{ needs.check-upstream.outputs.eligible_version }}.0
+      # has_update==true only fires for a genuine upstream version change,
+      # so cf-build.sh's own versioning logic will publish this bare tag -
+      # only used here for the smoke-test build-arg, not passed as
+      # --version (cf-build.sh derives that itself).
+      TARGET_VERSION: v${{ needs.check-upstream.outputs.eligible_version }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -206,7 +210,6 @@ jobs:
         working-directory: ${{ env.APP_DIR }}
         run: |
           ./cf-build.sh --publish \
-            --version "${TARGET_VERSION}" \
             --ddns-version "${{ needs.check-upstream.outputs.eligible_version }}" \
             --notes "Automated update: bump bundled favonia/cloudflare-ddns to v${{ needs.check-upstream.outputs.eligible_version }}"
 
