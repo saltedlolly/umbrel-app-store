@@ -3,8 +3,10 @@ set -euo pipefail
 
 # Track the latest ipfs/kubo release and pin docker-compose.yml to its
 # multi-arch manifest digest. Version = the upstream tag verbatim (e.g.
-# v0.43.1) plus an appended app-patch number (e.g. v0.43.1.0), matching
-# tb-build.sh's approach for a clean, v-prefixed semver upstream.
+# v0.43.1) when there's no packaging-only patch, matching upstream exactly
+# so users can tell at a glance which Kubo release they're running. A 4th
+# number only appears (starting at .1) for a local-only packaging fix
+# published while upstream is unchanged - use --patch for that.
 #
 # Nothing to build here: the image is already public and multi-arch
 # (amd64/arm64/arm-v7) - no Dockerfile, no docker buildx build, no push, no
@@ -24,9 +26,16 @@ MANIFEST_FILE="$APP_ROOT/umbrel-app.yml"
 UPSTREAM_IMAGE="docker.io/ipfs/kubo"
 UPSTREAM_RELEASES_API="https://api.github.com/repos/ipfs/kubo/releases?per_page=20"
 
+# Everything in umbrel-app.yml's releaseNotes field ABOVE this marker is
+# preserved untouched (any manually-written notes); everything from the
+# marker down is fully regenerated from ipfs/kubo's own last two releases
+# on every run.
+RELEASE_NOTES_MARKER="--- ipfs/kubo upstream release notes (auto-updated) ---"
+
 MODE="check"
 REQUESTED_VERSION=""
 RELEASE_NOTES=""
+FORCE_PATCH=false
 UMBREL_DEV_HOST="${UMBREL_DEV_HOST:-192.168.215.2}"
 UMBREL_USER="${UMBREL_USER:-umbrel}"
 
@@ -42,6 +51,7 @@ Modes (choose one; default is --check):
 
 Options:
   --version <tag>         Use a specific stable tag, for example v0.43.1
+  --patch                 Publish a local-only packaging fix (upstream unchanged) - appends/increments a 4th version number
   --notes <text>          Release notes used in umbrel-app.yml and the release commit
   --host <host-or-ip>     umbrel-dev host for --localtest (default: $UMBREL_DEV_HOST)
   -h, --help              Show this help
@@ -109,18 +119,15 @@ inspect_upstream_image() {
 update_package() {
   local tag="$1"
   local digest="$2"
-  local notes="$3"
+  local target_version="$3"
 
-  python3 - "$COMPOSE_FILE" "$MANIFEST_FILE" "$tag" "$digest" "$notes" <<'PY'
+  python3 - "$COMPOSE_FILE" "$tag" "$digest" <<'PY'
 from pathlib import Path
 import re
 import sys
 
 compose_path = Path(sys.argv[1])
-manifest_path = Path(sys.argv[2])
-tag = sys.argv[3]
-digest = sys.argv[4]
-notes = sys.argv[5] or f"Update Kubo to upstream release {tag}."
+tag, digest = sys.argv[2], sys.argv[3]
 
 compose = compose_path.read_text()
 image_pattern = re.compile(
@@ -130,9 +137,17 @@ compose, count = image_pattern.subn(rf"\g<1>{tag}\g<2>{digest.removeprefix('sha2
 if count != 1:
     raise SystemExit("Could not update the ipfs/kubo image reference in docker-compose.yml")
 compose_path.write_text(compose)
+PY
+
+  python3 - "$MANIFEST_FILE" "$target_version" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+manifest_path = Path(sys.argv[1])
+new_manifest_version = sys.argv[2]
 
 manifest = manifest_path.read_text()
-new_manifest_version = f"{tag}.0"
 manifest, count = re.subn(
     r'^version:\s*"[^"]+"$',
     f'version: "{new_manifest_version}"',
@@ -142,23 +157,80 @@ manifest, count = re.subn(
 )
 if count != 1:
     raise SystemExit("Could not update version in umbrel-app.yml")
-
-release_block = (
-    "releaseNotes: >-\n"
-    f"  {new_manifest_version}:\n\n"
-    f"  - {notes}\n\n"
-)
-manifest, count = re.subn(
-    r"releaseNotes:\s*>-\n.*?\ndeveloper:",
-    release_block + "developer:",
-    manifest,
-    count=1,
-    flags=re.DOTALL,
-)
-if count != 1:
-    raise SystemExit("Could not update releaseNotes in umbrel-app.yml")
 manifest_path.write_text(manifest)
 PY
+}
+
+# Fetches ipfs/kubo's own release notes for the two most recent stable
+# releases and regenerates the auto-updated portion of umbrel-app.yml's
+# releaseNotes field, preserving any manually-written notes above
+# RELEASE_NOTES_MARKER byte-for-byte. Matches the pattern established in
+# saltedlolly-audiobookshelf/abs-build.sh.
+update_release_notes() {
+  local target_tag="$1"
+  echo "Fetching ipfs/kubo's own release notes for $target_tag and the preceding release..."
+  local releases_file
+  releases_file="$(mktemp)"
+  if ! curl -sf "https://api.github.com/repos/ipfs/kubo/releases?per_page=10" -o "$releases_file"; then
+    echo "⚠️  Could not fetch upstream release notes, leaving releaseNotes as-is" >&2
+    rm -f "$releases_file"
+    return
+  fi
+
+  python3 - "$MANIFEST_FILE" "$target_tag" "$RELEASE_NOTES_MARKER" "$releases_file" "ipfs/kubo" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+manifest_path = Path(sys.argv[1])
+target_tag = sys.argv[2]
+marker = sys.argv[3]
+releases = json.loads(Path(sys.argv[4]).read_text())
+repo_label = sys.argv[5]
+
+stable = [r for r in releases if not r["draft"] and not r["prerelease"]]
+stable.sort(key=lambda r: r["published_at"], reverse=True)
+
+idx = next((i for i, r in enumerate(stable) if r["tag_name"] == target_tag), None)
+selected = stable[idx : idx + 2] if idx is not None else stable[:2]
+if not selected:
+    sys.exit(f"Could not find release {target_tag} (or any stable release) to build notes from")
+
+
+def format_body(body: str) -> str:
+    lines = body.replace("\r\n", "\n").strip("\n").split("\n")
+    out = []
+    for line in lines:
+        line = re.sub(r"^#{2,4}\s*", "", line)
+        out.append(("    " + line) if line.strip() else "")
+    return "\n".join(out)
+
+
+sections = []
+for r in selected:
+    sections.append(f"  {repo_label} {r['tag_name']}\n\n{format_body(r.get('body') or '(no notes provided)')}")
+
+upstream_block = "\n\n\n".join(sections)
+upstream_block += f"\n\n\n  See the full release history: https://github.com/{repo_label}/releases"
+
+text = manifest_path.read_text()
+m = re.search(r"^releaseNotes:\s*>-\n((?:.*\n)*?)(?=^\S)", text, re.MULTILINE)
+if not m:
+    sys.exit("Could not find releaseNotes block in umbrel-app.yml")
+
+existing_block = m.group(1)
+if marker in existing_block:
+    manual_part = existing_block.split(marker, 1)[0].rstrip("\n")
+else:
+    manual_part = existing_block.rstrip("\n")
+
+new_block = (manual_part.rstrip() + "\n\n\n" if manual_part.strip() else "") + f"  {marker}\n\n\n" + upstream_block + "\n\n"
+new_text = text[: m.start(1)] + new_block + text[m.end(1) :]
+manifest_path.write_text(new_text)
+print(f"✓ Updated releaseNotes with {[r['tag_name'] for r in selected]}")
+PY
+  rm -f "$releases_file"
 }
 
 update_readme_version() {
@@ -311,6 +383,7 @@ while [[ $# -gt 0 ]]; do
     --localtest) MODE="localtest"; shift ;;
     --publish) MODE="publish"; shift ;;
     --version) REQUESTED_VERSION="$2"; shift 2 ;;
+    --patch) FORCE_PATCH=true; shift ;;
     --notes) RELEASE_NOTES="$2"; shift 2 ;;
     --host) UMBREL_DEV_HOST="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
@@ -325,7 +398,27 @@ require_command docker
 TARGET_TAG="${REQUESTED_VERSION:-$(resolve_latest_tag)}"
 validate_release_tag "$TARGET_TAG"
 CURRENT_VERSION="$(current_version)"
-TARGET_VERSION="${TARGET_TAG}.0"
+
+# CURRENT_VERSION may be bare (vX.Y.Z, no local patch yet) or suffixed
+# (vX.Y.Z.N, a prior local-only packaging fix) - derive both parts.
+if [[ "$CURRENT_VERSION" =~ ^(v[0-9]+\.[0-9]+\.[0-9]+)\.([0-9]+)$ ]]; then
+  CURRENT_TAG="${BASH_REMATCH[1]}"
+  CURRENT_PATCH="${BASH_REMATCH[2]}"
+else
+  CURRENT_TAG="$CURRENT_VERSION"
+  CURRENT_PATCH="0"
+fi
+
+if [[ "$TARGET_TAG" != "$CURRENT_TAG" ]]; then
+  # Genuine upstream bump - publish the bare tag, matching upstream
+  # exactly, regardless of what patch number (if any) was live before.
+  TARGET_VERSION="$TARGET_TAG"
+elif [[ "$FORCE_PATCH" == "true" ]]; then
+  TARGET_VERSION="${TARGET_TAG}.$((CURRENT_PATCH + 1))"
+else
+  TARGET_VERSION="$CURRENT_VERSION"
+fi
+
 TARGET_DIGEST="$(inspect_upstream_image "$TARGET_TAG")"
 
 echo
@@ -346,7 +439,13 @@ if [[ "$MODE" == "check" ]]; then
   exit 0
 fi
 
-update_package "$TARGET_TAG" "$TARGET_DIGEST" "$RELEASE_NOTES"
+if [[ "$CURRENT_VERSION" == "$TARGET_VERSION" ]]; then
+  echo "Nothing to update (pass --patch to publish a local-only packaging fix)."
+  exit 0
+fi
+
+update_package "$TARGET_TAG" "$TARGET_DIGEST" "$TARGET_VERSION"
+update_release_notes "$TARGET_TAG"
 update_readme_version "$TARGET_VERSION"
 validate_package
 

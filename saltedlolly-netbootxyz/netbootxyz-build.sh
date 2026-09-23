@@ -3,9 +3,14 @@ set -euo pipefail
 
 # Track the latest netbootxyz/docker-netbootxyz release and pin
 # docker-compose.yml to its multi-arch manifest digest. Version = the
-# upstream tag verbatim (e.g. 0.7.6-nbxyz24) - no appended app-patch
-# number, matching saltedlolly-npm-plus's approach for an upstream whose
-# own tag scheme isn't clean semver.
+# upstream tag verbatim (e.g. 0.7.6-nbxyz24) whenever the tag itself has
+# changed. A local-only packaging fix (no upstream tag change) instead
+# appends/increments a 4th number via --patch (e.g. 0.7.6-nbxyz24.1) so a
+# genuine upstream bump can never look like a version decrease. Note: no
+# rich upstream release notes are fetched here - docker-netbootxyz
+# publishes zero GitHub releases (confirmed directly against its API), so
+# there is no upstream notes source to pull from, unlike this store's
+# other auto-release scripts.
 #
 # Like npmplus-build.sh, nothing to build here: the image is already
 # public and multi-arch - no Dockerfile, no docker buildx build, no push,
@@ -33,6 +38,7 @@ UPSTREAM_TAGS_API="https://hub.docker.com/v2/repositories/netbootxyz/netbootxyz/
 
 MODE="check"
 REQUESTED_VERSION=""
+FORCE_PATCH=false
 RELEASE_NOTES=""
 UMBREL_DEV_HOST="${UMBREL_DEV_HOST:-192.168.215.2}"
 UMBREL_USER="${UMBREL_USER:-umbrel}"
@@ -49,6 +55,8 @@ Modes (choose one; default is --check):
 
 Options:
   --version <tag>         Use a specific stable tag, for example 0.7.6-nbxyz24
+  --patch                 Bump the local-only patch number (no upstream change) instead
+                          of publishing the bare upstream tag as the app version
   --notes <text>          Release notes used in umbrel-app.yml and the release commit
   --host <host-or-ip>     umbrel-dev host for --localtest (default: $UMBREL_DEV_HOST)
   -h, --help              Show this help
@@ -126,8 +134,9 @@ update_package() {
   local tag="$1"
   local digest="$2"
   local notes="$3"
+  local target_version="$4"
 
-  python3 - "$COMPOSE_FILE" "$MANIFEST_FILE" "$tag" "$digest" "$notes" <<'PY'
+  python3 - "$COMPOSE_FILE" "$MANIFEST_FILE" "$tag" "$digest" "$notes" "$target_version" <<'PY'
 from pathlib import Path
 import re
 import sys
@@ -137,6 +146,7 @@ manifest_path = Path(sys.argv[2])
 tag = sys.argv[3]
 digest = sys.argv[4]
 notes = sys.argv[5] or f"Update netboot.xyz to upstream release {tag}."
+target_version = sys.argv[6]
 
 compose = compose_path.read_text()
 image_pattern = re.compile(
@@ -150,7 +160,7 @@ compose_path.write_text(compose)
 manifest = manifest_path.read_text()
 manifest, count = re.subn(
     r'^version:\s*"[^"]+"$',
-    f'version: "{tag}"',
+    f'version: "{target_version}"',
     manifest,
     count=1,
     flags=re.MULTILINE,
@@ -158,9 +168,13 @@ manifest, count = re.subn(
 if count != 1:
     raise SystemExit("Could not update version in umbrel-app.yml")
 
+# No upstream release-notes source exists for this app - docker-netbootxyz
+# has zero GitHub releases (confirmed directly), which is exactly why
+# version tracking uses Docker Hub tags instead. Notes stay a short
+# manually/automatically-supplied bullet rather than fetched content.
 release_block = (
     "releaseNotes: >-\n"
-    f"  {tag}:\n\n"
+    f"  {target_version}:\n\n"
     f"  - {notes}\n\n"
 )
 manifest, count = re.subn(
@@ -322,6 +336,7 @@ while [[ $# -gt 0 ]]; do
     --localtest) MODE="localtest"; shift ;;
     --publish) MODE="publish"; shift ;;
     --version) REQUESTED_VERSION="$2"; shift 2 ;;
+    --patch) FORCE_PATCH=true; shift ;;
     --notes) RELEASE_NOTES="$2"; shift 2 ;;
     --host) UMBREL_DEV_HOST="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
@@ -333,21 +348,41 @@ require_command curl
 require_command python3
 require_command docker
 
-TARGET_VERSION="${REQUESTED_VERSION:-$(resolve_latest_tag)}"
-validate_release_tag "$TARGET_VERSION"
+TARGET_TAG="${REQUESTED_VERSION:-$(resolve_latest_tag)}"
+validate_release_tag "$TARGET_TAG"
 CURRENT_VERSION="$(current_version)"
-TARGET_DIGEST="$(inspect_upstream_image "$TARGET_VERSION")"
+
+# CURRENT_VERSION may be the bare upstream tag (no local patch yet) or that
+# tag with an appended .N (a prior local-only packaging fix).
+if [[ "$CURRENT_VERSION" =~ ^([0-9]+\.[0-9]+\.[0-9]+-nbxyz[0-9]+)\.([0-9]+)$ ]]; then
+  CURRENT_TAG="${BASH_REMATCH[1]}"
+  CURRENT_PATCH="${BASH_REMATCH[2]}"
+else
+  CURRENT_TAG="$CURRENT_VERSION"
+  CURRENT_PATCH="0"
+fi
+
+if [[ "$TARGET_TAG" != "$CURRENT_TAG" ]]; then
+  TARGET_VERSION="$TARGET_TAG"
+elif [[ "$FORCE_PATCH" == "true" ]]; then
+  TARGET_VERSION="${TARGET_TAG}.$((CURRENT_PATCH + 1))"
+else
+  TARGET_VERSION="$CURRENT_VERSION"
+fi
+
+TARGET_DIGEST="$(inspect_upstream_image "$TARGET_TAG")"
 
 echo
 echo "Current package version: $CURRENT_VERSION"
-echo "Target upstream version: $TARGET_VERSION"
+echo "Target upstream version: $TARGET_TAG"
+echo "Resulting version:       $TARGET_VERSION"
 echo "Target image digest:     $TARGET_DIGEST"
 echo "Architectures:           linux/amd64, linux/arm64"
 echo
 
 if [[ "$MODE" == "check" ]]; then
   if [[ "$CURRENT_VERSION" == "$TARGET_VERSION" ]] && \
-     grep -q "$UPSTREAM_IMAGE:$TARGET_VERSION@$TARGET_DIGEST" "$COMPOSE_FILE"; then
+     grep -q "$UPSTREAM_IMAGE:$TARGET_TAG@$TARGET_DIGEST" "$COMPOSE_FILE"; then
     echo "netboot.xyz is already pinned to the requested release and digest."
   else
     echo "An update or digest correction is available. Run with --update to prepare it."
@@ -355,7 +390,12 @@ if [[ "$MODE" == "check" ]]; then
   exit 0
 fi
 
-update_package "$TARGET_VERSION" "$TARGET_DIGEST" "$RELEASE_NOTES"
+if [[ "$CURRENT_VERSION" == "$TARGET_VERSION" ]]; then
+  echo "Nothing to update (pass --patch to publish a local-only packaging fix)."
+  exit 0
+fi
+
+update_package "$TARGET_TAG" "$TARGET_DIGEST" "$RELEASE_NOTES" "$TARGET_VERSION"
 update_readme_version "$TARGET_VERSION"
 validate_package
 
