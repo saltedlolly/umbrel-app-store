@@ -9,9 +9,6 @@ services:
   # built from source and why it's a separate image from the dashboard
   # below (that image is meant to be generically useful outside Umbrel
   # too, so it doesn't carry any Umbrel-specific dashboard code).
-  #
-  # PENDING: awaiting a real tag+digest pin - Nito-Tools/docker-nito needs
-  # its GHCR package visibility set to Public before it can be resolved.
   nito:
     image: ghcr.io/nito-tools/docker-nito:v3.0.1@sha256:094cc7cfae6bbddc4850ab75a1a10652556f5c4fa985af0400152892cbf45b9b
     container_name: saltedlolly-nito_nito_1
@@ -55,10 +52,8 @@ services:
   # uptime) - source lives in docker-containers/nito-dashboard. Not
   # derived from getumbrel/umbrel-bitcoin's code (PolyForm Noncommercial
   # licensed); inspired by its general approach but sharing none of it.
-  #
-  # PENDING: awaiting first build+push to ghcr.io/saltedlolly/nito-dashboard.
   dashboard:
-    image: ghcr.io/saltedlolly/nito-dashboard:PENDING@sha256:PENDING
+    image: ghcr.io/saltedlolly/nito-dashboard:818df03@sha256:4b6115938dfbc3cdbb76b0a71c76faa6c8bb27d2275762f2801c64343d1d1ec9
     container_name: saltedlolly-nito_dashboard_1
     hostname: saltedlolly-nito_dashboard_1
     init: true

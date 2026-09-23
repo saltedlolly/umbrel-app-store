@@ -184,10 +184,12 @@ if not re.search(rf"^id:\s*{re.escape(app_id)}$", manifest, re.MULTILINE):
     raise SystemExit("Manifest ID does not match the app directory")
 if re.search(r"^\s*image:.*:latest(?:@|\s|$)", compose, re.MULTILINE):
     raise SystemExit("Compose contains a latest image tag")
-if "PENDING" in compose:
-    raise SystemExit("Compose still contains a PENDING image placeholder")
 images = re.findall(r"^\s*image:\s*(\S+)", compose, re.MULTILINE)
+if not images:
+    raise SystemExit("Compose contains no runtime images")
 for image in images:
+    if "PENDING" in image:
+        raise SystemExit(f"Image still has a PENDING placeholder: {image}")
     if not re.search(r":[^@\s]+@sha256:[a-f0-9]{64}$", image):
         raise SystemExit(f"Image is not pinned by tag and digest: {image}")
 if not re.search(r'^\s*-\s*"8820:8820/tcp"', compose, re.MULTILINE):
