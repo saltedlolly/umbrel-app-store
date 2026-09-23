@@ -34,6 +34,13 @@ ABS_NETWORK_SHARES_CHECKER_TXT_FILE="$APP_ROOT/docker-containers/abs-manager/abs
 ABS_SERVER_IMAGE="ghcr.io/advplyr/audiobookshelf"
 ABS_SERVER_LOCAL_TXT_FILE="$APP_ROOT/docker-containers/abs-manager/abs-server-image.txt"
 
+# Everything in umbrel-app.yml's releaseNotes field ABOVE this marker is
+# preserved untouched (manually-written NAS-Edition-specific notes, added
+# locally by Olly); everything from the marker down is fully regenerated
+# from Audiobookshelf's own upstream release notes on every run, so this
+# stays current when run unattended in CI.
+ABS_RELEASE_NOTES_MARKER="--- Audiobookshelf upstream release notes (auto-updated) ---"
+
 # Development / publishing options
 RELEASE_NOTES="Update abs-network-shares-config-tool multi-arch image for Umbrel Home compatibility"
 LOCAL_TEST=false
@@ -391,6 +398,96 @@ update_app_yml_version() {
   echo ""
 }
 
+# Regenerates the auto-updated portion of umbrel-app.yml's releaseNotes
+# field from Audiobookshelf's own last two stable releases, preserving any
+# manually-written NAS-Edition-specific notes above ABS_RELEASE_NOTES_MARKER
+# byte-for-byte. Safe to call on every run, whether or not the ABS version
+# actually changed, since it always reflects "current + previous" upstream
+# release regardless.
+update_release_notes() {
+  local abs_version=""
+  if [[ -f "$ABS_SERVER_LOCAL_TXT_FILE" ]]; then
+    abs_version=$(grep -o ':[0-9]\+\.[0-9]\+\.[0-9]\+' "$ABS_SERVER_LOCAL_TXT_FILE" | cut -d':' -f2)
+  fi
+  if [[ -z "$abs_version" ]]; then
+    echo "⚠️  Could not determine current ABS version, skipping release notes update"
+    return
+  fi
+
+  echo "Fetching Audiobookshelf's own release notes for v$abs_version and the preceding release..."
+  local releases_file
+  releases_file="$(mktemp)"
+  if ! curl -sf "https://api.github.com/repos/advplyr/audiobookshelf/releases?per_page=10" -o "$releases_file"; then
+    echo "⚠️  Could not fetch upstream release notes, leaving releaseNotes as-is" >&2
+    rm -f "$releases_file"
+    return
+  fi
+
+  python3 - "$APP_YML_FILE" "$abs_version" "$ABS_RELEASE_NOTES_MARKER" "$releases_file" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+app_yml_path = Path(sys.argv[1])
+target_version = sys.argv[2]
+marker = sys.argv[3]
+releases = json.loads(Path(sys.argv[4]).read_text())
+
+stable = [r for r in releases if not r["draft"] and not r["prerelease"]]
+stable.sort(key=lambda r: r["published_at"], reverse=True)
+
+target_tag = f"v{target_version}"
+idx = next((i for i, r in enumerate(stable) if r["tag_name"] == target_tag), None)
+selected = stable[idx : idx + 2] if idx is not None else stable[:2]
+if not selected:
+    sys.exit(f"Could not find release {target_tag} (or any stable release) to build notes from")
+
+
+def format_body(body: str) -> str:
+    # Strip markdown heading markers ("### Fixed" -> "Fixed") - matches the
+    # plain-text style already used for hand-curated notes in this file.
+    # Every line goes at 4-space indent (2 more than the block's own 2-space
+    # base) so YAML's folded-scalar "more-indented lines are literal" rule
+    # keeps each line separate instead of folding them into one paragraph.
+    lines = body.replace("\r\n", "\n").strip("\n").split("\n")
+    out = []
+    for line in lines:
+        line = re.sub(r"^#{2,4}\s*", "", line)
+        out.append(("    " + line) if line.strip() else "")
+    return "\n".join(out)
+
+
+sections = []
+for r in selected:
+    sections.append(f"  Audiobookshelf {r['tag_name']}\n\n{format_body(r.get('body') or '(no notes provided)')}")
+
+upstream_block = "\n\n\n".join(sections)
+upstream_block += "\n\n\n  See the full release history: https://github.com/advplyr/audiobookshelf/releases"
+
+text = app_yml_path.read_text()
+m = re.search(r"^releaseNotes:\s*>-\n((?:.*\n)*?)(?=^\S)", text, re.MULTILINE)
+if not m:
+    sys.exit("Could not find releaseNotes block in umbrel-app.yml")
+
+existing_block = m.group(1)
+if marker in existing_block:
+    manual_part = existing_block.split(marker, 1)[0].rstrip("\n")
+else:
+    # First run with this marker - preserve whatever was already there
+    # (e.g. hand-written NAS notes plus stale upstream notes from before
+    # this automation existed) as the one-time "manual" baseline.
+    manual_part = existing_block.rstrip("\n")
+
+new_block = manual_part.rstrip() + f"\n\n\n  {marker}\n\n\n" + upstream_block + "\n\n"
+new_text = text[: m.start(1)] + new_block + text[m.end(1) :]
+app_yml_path.write_text(new_text)
+print(f"✓ Updated releaseNotes with {[r['tag_name'] for r in selected]}")
+PY
+  rm -f "$releases_file"
+  echo ""
+}
+
 # Update app store README.md with the app version
 update_readme_version() {
   local new_version="$1"
@@ -598,6 +695,9 @@ fi
 # Update umbrel-app.yml with the full 4-part version
 echo "[DEBUG] Calling update_app_yml_version"
 update_app_yml_version
+
+echo "[DEBUG] Calling update_release_notes"
+update_release_notes
 
 # Get the full version from version.json for everything (e.g., "2.31.0.13")
 echo "[DEBUG] Reading FULL_VERSION from version.json"
