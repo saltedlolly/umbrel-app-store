@@ -65,8 +65,11 @@ services:
       - NITO_RPC_HOST=nito
       - NITO_RPC_USER=${APP_SALTEDLOLLY_NITO_RPC_USER}
       - NITO_RPC_PASSWORD=${APP_SALTEDLOLLY_NITO_RPC_PASSWORD}
+    # node:22-slim has neither wget nor curl installed - use Node's own
+    # built-in http client instead (caught by actually running this
+    # healthcheck, not by inspection: it silently never became healthy).
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 5
