@@ -277,7 +277,8 @@ NITO_CHANGED="false"; [[ "$TARGET_NITO_TAG" != "$CURRENT_NITO_TAG" ]] && NITO_CH
 # just built one and told us via --dashboard-tag/--dashboard-digest - this
 # script has no way to detect a dashboard source change on its own, since
 # building it is deliberately not this script's job any more.
-DASHBOARD_CHANGED="false"; [[ -n "$DASHBOARD_TAG" ]] && DASHBOARD_CHANGED="true"
+CURRENT_DASHBOARD_TAG="$(current_pinned_tag "$DASHBOARD_IMAGE")"
+DASHBOARD_CHANGED="false"; [[ -n "$DASHBOARD_TAG" && "$DASHBOARD_TAG" != "$CURRENT_DASHBOARD_TAG" ]] && DASHBOARD_CHANGED="true"
 
 if [[ "$NITO_CHANGED" == "true" ]]; then
   TARGET_MANIFEST_VERSION="${TARGET_NITO_TAG}.0"
