@@ -1,0 +1,78 @@
+services:
+  app_proxy:
+    environment:
+      # The format here is: <app-id>_<docker-service-name>_1
+      APP_HOST: saltedlolly-nito_dashboard_1
+      APP_PORT: 3000
+
+  # The compiled Nito node itself - see Nito-Tools/docker-nito for why it's
+  # built from source and why it's a separate image from the dashboard
+  # below (that image is meant to be generically useful outside Umbrel
+  # too, so it doesn't carry any Umbrel-specific dashboard code).
+  #
+  # PENDING: awaiting a real tag+digest pin - Nito-Tools/docker-nito needs
+  # its GHCR package visibility set to Public before it can be resolved.
+  nito:
+    image: ghcr.io/nito-tools/docker-nito:v3.0.1@sha256:094cc7cfae6bbddc4850ab75a1a10652556f5c4fa985af0400152892cbf45b9b
+    container_name: saltedlolly-nito_nito_1
+    hostname: saltedlolly-nito_nito_1
+    init: true
+    restart: unless-stopped
+    environment:
+      - NITO_RPC_USER=${APP_SALTEDLOLLY_NITO_RPC_USER}
+      - NITO_RPC_PASSWORD=${APP_SALTEDLOLLY_NITO_RPC_PASSWORD}
+      # Scopes the RPC allowlist to this Umbrel's own app subnet (Umbrel's
+      # documented mechanism for exactly this) rather than the image's own
+      # default of allowing any IP - RPC is still gated by the generated
+      # credentials above either way, matching how the official
+      # Bitcoin/Lightning apps already handle their own inter-app RPC
+      # reachability, but this narrows the network surface further.
+      - NITO_RPC_ALLOW_IP=${NETWORK_IP}/16
+    # The swarm (P2P) port is published directly - app_proxy is HTTP-only
+    # and doesn't apply to the p2p protocol. This is how the node finds
+    # and accepts peers; normal and expected to be reachable, same trust
+    # model as any P2P app. The RPC port is deliberately NOT published
+    # here - it's only reachable by the dashboard container below, over
+    # the internal Docker network.
+    ports:
+      - "8820:8820/tcp"
+      - "8820:8820/udp"
+    volumes:
+      # Chain data is an opaque, content-addressed database, not
+      # recognizable/browsable files - same rubric already applied to
+      # Kubo's repo in this store, so it lives in APP_DATA_DIR (covered by
+      # Backup while installed, deleted on uninstall) rather than the Home
+      # folder, even though users clearly care about not losing it.
+      - ${APP_DATA_DIR}/data/nito:/data
+    healthcheck:
+      test: ["CMD", "nito-cli", "-rpcport=8825", "-rpcuser=${APP_SALTEDLOLLY_NITO_RPC_USER}", "-rpcpassword=${APP_SALTEDLOLLY_NITO_RPC_PASSWORD}", "getnetworkinfo"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Original dashboard (block height, sync progress, peers, mempool,
+  # uptime) - source lives in docker-containers/nito-dashboard. Not
+  # derived from getumbrel/umbrel-bitcoin's code (PolyForm Noncommercial
+  # licensed); inspired by its general approach but sharing none of it.
+  #
+  # PENDING: awaiting first build+push to ghcr.io/saltedlolly/nito-dashboard.
+  dashboard:
+    image: ghcr.io/saltedlolly/nito-dashboard:PENDING@sha256:PENDING
+    container_name: saltedlolly-nito_dashboard_1
+    hostname: saltedlolly-nito_dashboard_1
+    init: true
+    restart: unless-stopped
+    depends_on:
+      nito:
+        condition: service_started
+    environment:
+      - NITO_RPC_HOST=nito
+      - NITO_RPC_USER=${APP_SALTEDLOLLY_NITO_RPC_USER}
+      - NITO_RPC_PASSWORD=${APP_SALTEDLOLLY_NITO_RPC_PASSWORD}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s

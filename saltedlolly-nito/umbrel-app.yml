@@ -1,0 +1,48 @@
+manifestVersion: 1
+id: saltedlolly-nito
+category: Bitcoin
+name: Nito
+version: "v3.0.1.0"
+tagline: A fair-launch, SHA-256 proof-of-work blockchain built for 200-year longevity
+description: >-
+  ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
+
+
+  Nito is a decentralized, SHA-256 proof-of-work blockchain built around fairness and longevity: no premine, no ICO, no VC allocation - just open, permissionless mining from block one. This app runs a full Nito node with the standard nito-cli/JSON-RPC interface, alongside a dashboard showing block height, sync progress, peers, and mempool activity.
+
+
+  - Faster, more responsive than Bitcoin - 1-minute blocks with real-time, per-block damped difficulty adjustment, rather than Bitcoin's ~2-week retarget window
+
+  - Genuinely scarce, unlike Dogecoin - a 200-year emission schedule with a hard cap (~1.28B NITO) that reaches zero, rather than Dogecoin's permanent, uncapped inflation
+
+  - Bitcoin's mining ecosystem, not Litecoin's - SHA-256 proof-of-work taps the same mature, efficient ASIC hardware market Bitcoin uses, rather than Litecoin's Scrypt
+
+  - Deliberately simple, unlike DigiByte - a single mining algorithm by design, on the premise that a smaller consensus surface is easier to secure and reason about than coordinating five
+
+  - Taproot and Schnorr signatures (BIP 340-342) have been active since genesis
+
+  - Protocol changes go through a public Nito Improvement Proposal (NIP) process, with miner signaling required for activation
+
+
+  All node data (chain state) is stored under this app's persistent data directory and survives restarts and updates. Uninstalling this app deletes it - back up first if you want to keep it.
+releaseNotes: >-
+  v3.0.1.0:
+
+  - Initial release
+
+developer: Nito
+website: https://nito.network/
+dependencies: []
+repo: https://github.com/NitoNetwork/Nito-core
+support: https://github.com/saltedlolly/umbrel-app-store/issues
+
+port: 3000
+gallery: []
+path: ""
+
+defaultUsername: ""
+defaultPassword: ""
+
+icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-nito/icon.png
+submitter: saltedlolly
+submission: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-nito
