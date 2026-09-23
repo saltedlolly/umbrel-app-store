@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   check-upstream:
-    name: Check ipfs/kubo for an eligible release (7-day buffer)
+    name: Check ipfs/kubo for an eligible release (2-day buffer)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -38,13 +38,13 @@ jobs:
             saltedlolly-kubo/docker-compose.yml
           sparse-checkout-cone-mode: false
 
-      - name: Find newest ipfs/kubo release that has cleared the 7-day buffer
+      - name: Find newest ipfs/kubo release that has cleared the 2-day buffer
         id: latest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          cutoff="$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+          cutoff="$(date -u -d '2 days ago' +%Y-%m-%dT%H:%M:%SZ)"
           releases="$(curl -sf \
             -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" \
@@ -61,7 +61,7 @@ jobs:
           fi
 
           if [[ -z "$version" ]]; then
-            echo "::notice::No ipfs/kubo release has cleared the 7-day buffer yet"
+            echo "::notice::No ipfs/kubo release has cleared the 2-day buffer yet"
             echo "eligible_version=" >> "$GITHUB_OUTPUT"
           else
             if ! [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then

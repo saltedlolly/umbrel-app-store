@@ -27,7 +27,7 @@ concurrency:
 
 jobs:
   check-upstream:
-    name: Check crowdsec and crowdsec-web-ui for an eligible release (5-day buffer)
+    name: Check crowdsec and crowdsec-web-ui for an eligible release (2-day buffer)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -43,13 +43,13 @@ jobs:
             saltedlolly-crowdsec/docker-compose.yml
           sparse-checkout-cone-mode: false
 
-      - name: Find newest eligible releases (5-day buffer) for both upstreams
+      - name: Find newest eligible releases (2-day buffer) for both upstreams
         id: latest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          cutoff="$(date -u -d '5 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+          cutoff="$(date -u -d '2 days ago' +%Y-%m-%dT%H:%M:%SZ)"
 
           crowdsec_releases="$(curl -sf \
             -H "Authorization: Bearer ${GH_TOKEN}" \
@@ -80,7 +80,7 @@ jobs:
           fi
 
           if [[ -z "$crowdsec_version" ]]; then
-            echo "::notice::No crowdsecurity/crowdsec release has cleared the 5-day buffer yet"
+            echo "::notice::No crowdsecurity/crowdsec release has cleared the 2-day buffer yet"
           elif ! [[ "$crowdsec_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Unexpected crowdsec version format: '$crowdsec_version'"
             exit 1
@@ -88,7 +88,7 @@ jobs:
           echo "eligible_crowdsec_version=$crowdsec_version" >> "$GITHUB_OUTPUT"
 
           if [[ -z "$webui_version" ]]; then
-            echo "::notice::No TheDuffman85/crowdsec-web-ui release has cleared the 5-day buffer yet"
+            echo "::notice::No TheDuffman85/crowdsec-web-ui release has cleared the 2-day buffer yet"
           fi
           echo "eligible_webui_version=$webui_version" >> "$GITHUB_OUTPUT"
 

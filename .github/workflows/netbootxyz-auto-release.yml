@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   check-upstream:
-    name: Check netboot.xyz for an eligible release (14-day buffer)
+    name: Check netboot.xyz for an eligible release (2-day buffer)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -38,7 +38,7 @@ jobs:
             saltedlolly-netbootxyz/docker-compose.yml
           sparse-checkout-cone-mode: false
 
-      - name: Find newest netboot.xyz tag that has cleared the 14-day buffer
+      - name: Find newest netboot.xyz tag that has cleared the 2-day buffer
         id: latest
         run: |
           set -euo pipefail
@@ -47,7 +47,7 @@ jobs:
           # (e.g. "2026-08-17T05:06:56.310999Z"), which jq's
           # fromdateiso8601 can't parse; string comparison sorts these
           # correctly without needing to strip that.
-          cutoff="$(date -u -d '14 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+          cutoff="$(date -u -d '2 days ago' +%Y-%m-%dT%H:%M:%SZ)"
 
           # Docker Hub tags API, not GitHub Releases - netboot.xyz's GitHub
           # releases don't map cleanly to its actual published image tags,
@@ -69,7 +69,7 @@ jobs:
           fi
 
           if [[ -z "$version" ]]; then
-            echo "::notice::No netboot.xyz release has cleared the 14-day buffer yet"
+            echo "::notice::No netboot.xyz release has cleared the 2-day buffer yet"
             echo "eligible_version=" >> "$GITHUB_OUTPUT"
           else
             if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-nbxyz[0-9]+$ ]]; then

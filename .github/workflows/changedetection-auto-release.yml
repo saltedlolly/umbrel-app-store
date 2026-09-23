@@ -27,7 +27,7 @@ concurrency:
 
 jobs:
   check-upstream:
-    name: Check both upstream images for an eligible release (7-day buffer)
+    name: Check both upstream images for an eligible release (2-day buffer)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -45,13 +45,13 @@ jobs:
             saltedlolly-changedetection/docker-compose.yml
           sparse-checkout-cone-mode: false
 
-      - name: Find newest changedetection.io release that has cleared the 7-day buffer
+      - name: Find newest changedetection.io release that has cleared the 2-day buffer
         id: latest_cdio
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          cutoff="$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+          cutoff="$(date -u -d '2 days ago' +%Y-%m-%dT%H:%M:%SZ)"
           releases="$(curl -sf \
             -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" \
@@ -68,7 +68,7 @@ jobs:
           fi
 
           if [[ -z "$version" ]]; then
-            echo "::notice::No changedetection.io release has cleared the 7-day buffer yet"
+            echo "::notice::No changedetection.io release has cleared the 2-day buffer yet"
             echo "eligible_version=" >> "$GITHUB_OUTPUT"
           else
             if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -78,11 +78,11 @@ jobs:
             echo "eligible_version=$version" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Find newest sockpuppetbrowser tag that has cleared the 7-day buffer
+      - name: Find newest sockpuppetbrowser tag that has cleared the 2-day buffer
         id: latest_spb
         run: |
           set -euo pipefail
-          cutoff="$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+          cutoff="$(date -u -d '2 days ago' +%Y-%m-%dT%H:%M:%SZ)"
 
           tags="$(curl -sf "https://hub.docker.com/v2/repositories/dgtlmoon/sockpuppetbrowser/tags?page_size=100")"
 
@@ -101,7 +101,7 @@ jobs:
           fi
 
           if [[ -z "$version" ]]; then
-            echo "::notice::No sockpuppetbrowser release has cleared the 7-day buffer yet"
+            echo "::notice::No sockpuppetbrowser release has cleared the 2-day buffer yet"
             echo "eligible_version=" >> "$GITHUB_OUTPUT"
           else
             if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
