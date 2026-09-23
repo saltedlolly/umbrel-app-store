@@ -113,12 +113,6 @@ jobs:
     env:
       APP_DIR: saltedlolly-tronbyt
       ELIGIBLE_VERSION: ${{ needs.check-upstream.outputs.eligible_version }}
-      # has_update==true only fires for a genuine upstream version change, so
-      # the app patch always resets to 0 - passing this explicitly (rather
-      # than leaving --version unset) skips tb-build.sh's interactive
-      # confirmation prompt, which would otherwise hang a CI run waiting on
-      # stdin that will never arrive.
-      TARGET_VERSION: v${{ needs.check-upstream.outputs.eligible_version }}.0
     steps:
       - uses: actions/checkout@v7
         with:
@@ -159,8 +153,12 @@ jobs:
         if: github.event.inputs.dry_run != 'true'
         working-directory: ${{ env.APP_DIR }}
         run: |
+          # has_update==true only fires for a genuine upstream version
+          # change, so tb-build.sh's own versioning logic will publish the
+          # bare v${ELIGIBLE_VERSION} tag - no --version override needed.
+          # --notes is always supplied, so tb-build.sh's interactive notes
+          # prompt (the only remaining prompt) never triggers here either.
           ./tb-build.sh --publish \
-            --version "${TARGET_VERSION}" \
             --tronbyt-version "${ELIGIBLE_VERSION}" \
             --notes "Automated update: bump bundled tronbyt/server to v${ELIGIBLE_VERSION}"
 

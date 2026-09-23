@@ -2,8 +2,12 @@
 set -euo pipefail
 
 # Track the latest tronbyt/server release and pin docker-compose.yml to its
-# multi-arch manifest digest. Also auto-bumps umbrel-app.yml version (unless
-# overridden) and prepends release notes.
+# multi-arch manifest digest. Version = the upstream tag verbatim (e.g.
+# v2.4.1) when there's no packaging-only patch, matching upstream exactly
+# so users can tell at a glance which tronbyt/server release they're
+# running. A 4th number only appears (starting at .1) for a local-only
+# packaging fix published while upstream is unchanged - use --bump for
+# that.
 #
 # Unlike cf-build.sh/abs-build.sh, this app has nothing to build: tronbyt/server
 # already publishes official multi-arch images to ghcr.io/tronbyt/server, so
@@ -37,6 +41,12 @@ APP_YML_FILE="$APP_ROOT/umbrel-app.yml"
 
 TRONBYT_IMAGE="ghcr.io/tronbyt/server"
 
+# Everything in umbrel-app.yml's releaseNotes field ABOVE this marker is
+# preserved untouched (manually-written per-version notes); everything
+# from the marker down is fully regenerated from tronbyt/server's own last
+# two releases on every run.
+RELEASE_NOTES_MARKER="--- tronbyt/server upstream release notes (auto-updated) ---"
+
 # Explicit tronbyt/server version override (for CI/automation): skips the
 # GitHub releases lookup in update_tronbyt_pin() and uses this version
 # directly.
@@ -58,17 +68,19 @@ Usage: $0 [OPTIONS]
 
 Options:
   -h, --help               : Show this help message
-  --version <vx.x.x.x>     : Set explicit app version (e.g., v2.3.7.1)
-  --bump                   : Force increment app patch version
+  --version <vx.x.x[.x]>   : Set explicit app version (e.g., v2.3.7 or v2.3.7.1)
+  --bump                   : Publish a local-only packaging fix (upstream unchanged) -
+                             appends/increments a 4th version number
   --notes <text>           : Custom release notes
   --tronbyt-version <X.Y.Z>: Skip the upstream GitHub release check and use this exact
                              tronbyt/server version (for CI/automation)
   --localtest               : Update files and deploy to local umbrel-dev ($UMBREL_DEV_HOST)
   --publish                 : Update files, commit, and push to GitHub
 
-Version numbering: vX.Y.Z.N where:
-  X.Y.Z = tronbyt/server upstream version (auto-reset app patch when upstream updates)
-  N     = app patch number (increments on publish, resets to 0 when upstream updates)
+Version numbering: vX.Y.Z when there's no packaging-only patch (matches
+tronbyt/server's own version exactly), or vX.Y.Z.N for a local-only
+packaging fix (N starts at 1, and resets to bare vX.Y.Z on the next
+genuine upstream update).
 EOF
 }
 
@@ -80,35 +92,6 @@ extract_current_version() {
 # Extract full app version from umbrel-app.yml
 extract_full_version() {
   awk -F'"' '/^version:/ {print $2; exit}' "$APP_YML_FILE"
-}
-
-# Extract app patch version (last component) from full version
-extract_app_patch() {
-  local full_version="$1"
-  echo "$full_version" | awk -F'.' '{print $NF}'
-}
-
-# Compare versions and reset app patch if upstream changed
-check_and_reset_app_version() {
-  local current_tronbyt_version=$(extract_current_version)
-  local full_version=$(extract_full_version)
-  local version_prefix=$(echo "$full_version" | cut -d'.' -f1-3)
-
-  if [[ "$version_prefix" != "$current_tronbyt_version" ]]; then
-    echo "✓ tronbyt/server version changed to $current_tronbyt_version, resetting app patch to 0" >&2
-    echo "v${current_tronbyt_version}.0"
-  else
-    echo "$full_version"
-  fi
-}
-
-# Increment the app patch version (last component)
-increment_app_patch() {
-  local full_version="$1"
-  local prefix=$(echo "$full_version" | cut -d'.' -f1-3)
-  local patch=$(extract_app_patch "$full_version")
-  local new_patch=$((patch + 1))
-  echo "${prefix}.${new_patch}"
 }
 
 set_version_in_app_yml() {
@@ -132,6 +115,79 @@ prepend_release_notes() {
     {print}
   ' "$APP_YML_FILE" > "$APP_YML_FILE.tmp"
   mv "$APP_YML_FILE.tmp" "$APP_YML_FILE"
+}
+
+# Fetches tronbyt/server's own release notes for the two most recent
+# stable releases and regenerates the auto-updated portion of
+# umbrel-app.yml's releaseNotes field, preserving any manually-written
+# notes above RELEASE_NOTES_MARKER byte-for-byte. Matches the pattern
+# established in saltedlolly-audiobookshelf/abs-build.sh and
+# saltedlolly-kubo/kubo-build.sh.
+update_release_notes() {
+  local target_tag="v$1"
+  echo "Fetching tronbyt/server's own release notes for $target_tag and the preceding release..."
+  local releases_file
+  releases_file="$(mktemp)"
+  if ! curl -sf "https://api.github.com/repos/tronbyt/server/releases?per_page=10" -o "$releases_file"; then
+    echo "⚠️  Could not fetch upstream release notes, leaving releaseNotes as-is" >&2
+    rm -f "$releases_file"
+    return
+  fi
+
+  python3 - "$APP_YML_FILE" "$target_tag" "$RELEASE_NOTES_MARKER" "$releases_file" "tronbyt/server" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+manifest_path = Path(sys.argv[1])
+target_tag = sys.argv[2]
+marker = sys.argv[3]
+releases = json.loads(Path(sys.argv[4]).read_text())
+repo_label = sys.argv[5]
+
+stable = [r for r in releases if not r["draft"] and not r["prerelease"]]
+stable.sort(key=lambda r: r["published_at"], reverse=True)
+
+idx = next((i for i, r in enumerate(stable) if r["tag_name"] == target_tag), None)
+selected = stable[idx : idx + 2] if idx is not None else stable[:2]
+if not selected:
+    sys.exit(f"Could not find release {target_tag} (or any stable release) to build notes from")
+
+
+def format_body(body: str) -> str:
+    lines = body.replace("\r\n", "\n").strip("\n").split("\n")
+    out = []
+    for line in lines:
+        line = re.sub(r"^#{2,4}\s*", "", line)
+        out.append(("    " + line) if line.strip() else "")
+    return "\n".join(out)
+
+
+sections = []
+for r in selected:
+    sections.append(f"  {repo_label} {r['tag_name']}\n\n{format_body(r.get('body') or '(no notes provided)')}")
+
+upstream_block = "\n\n\n".join(sections)
+upstream_block += f"\n\n\n  See the full release history: https://github.com/{repo_label}/releases"
+
+text = manifest_path.read_text()
+m = re.search(r"^releaseNotes:\s*>-\n((?:.*\n)*?)(?=^\S)", text, re.MULTILINE)
+if not m:
+    sys.exit("Could not find releaseNotes block in umbrel-app.yml")
+
+existing_block = m.group(1)
+if marker in existing_block:
+    manual_part = existing_block.split(marker, 1)[0].rstrip("\n")
+else:
+    manual_part = existing_block.rstrip("\n")
+
+new_block = (manual_part.rstrip() + "\n\n\n" if manual_part.strip() else "") + f"  {marker}\n\n\n" + upstream_block + "\n\n"
+new_text = text[: m.start(1)] + new_block + text[m.end(1) :]
+manifest_path.write_text(new_text)
+print(f"✓ Updated releaseNotes with {[r['tag_name'] for r in selected]}")
+PY
+  rm -f "$releases_file"
 }
 
 # Update app store README.md with the app version and release date
@@ -273,28 +329,6 @@ if [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
     exit 1
   fi
 
-  if [[ -z "$SET_VERSION" ]]; then
-    echo "Current version: $current_full_v"
-    echo
-    bumped_v=$(increment_app_patch "$(check_and_reset_app_version)")
-
-    echo "Select action:"
-    echo "  1) Increment app patch: $bumped_v (normal publish)"
-    echo "  2) Cancel"
-    echo
-    read -p "Enter choice (1-2): " -n 1 -r
-    echo
-
-    case "$REPLY" in
-      1) SET_VERSION="$bumped_v" ;;
-      2) echo "Cancelled."; exit 0 ;;
-      *) echo "Invalid choice. Cancelled."; exit 1 ;;
-    esac
-
-    echo "Selected version: $SET_VERSION"
-    echo
-  fi
-
   if [[ "$RELEASE_NOTES" == "Update tronbyt/server to latest upstream release" ]]; then
     echo "Enter release notes (used for commit message and umbrel-app.yml):"
     read -r RELEASE_NOTES
@@ -311,18 +345,32 @@ fi
 ########################################
 # Determine version
 ########################################
-current_full_v=$(check_and_reset_app_version)
+current_full_v=$(extract_full_version)
+tronbyt_ver=$(extract_current_version)
+
+# current_full_v may be bare (vX.Y.Z, no local patch yet) or suffixed
+# (vX.Y.Z.N, a prior local-only packaging fix) - derive both parts.
+if [[ "$current_full_v" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)\.([0-9]+)$ ]]; then
+  current_app_tag="${BASH_REMATCH[1]}"
+  current_app_patch="${BASH_REMATCH[2]}"
+else
+  current_app_tag="${current_full_v#v}"
+  current_app_patch="0"
+fi
 
 target_v="$SET_VERSION"
 if [[ -z "$target_v" ]]; then
-  if [[ "$FORCE_BUMP" == "true" ]] || [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
-    target_v=$(increment_app_patch "$current_full_v")
+  if [[ "$tronbyt_ver" != "$current_app_tag" ]]; then
+    # Genuine upstream bump - publish the bare tag, matching upstream
+    # exactly, regardless of what patch number (if any) was live before.
+    target_v="v${tronbyt_ver}"
+  elif [[ "$FORCE_BUMP" == "true" ]]; then
+    target_v="v${tronbyt_ver}.$((current_app_patch + 1))"
   else
     target_v="$current_full_v"
   fi
 fi
 
-tronbyt_ver=$(extract_current_version)
 echo "Current tronbyt/server version: $tronbyt_ver"
 echo "Current app version:            $current_full_v"
 echo "Target app version:             $target_v"
@@ -341,6 +389,7 @@ update_readme_version "$target_v"
 if [[ "$LOCAL_TEST" != "true" ]]; then
   echo "Updating release notes..."
   prepend_release_notes "$target_v" "$RELEASE_NOTES"
+  update_release_notes "$tronbyt_ver"
 fi
 
 echo
