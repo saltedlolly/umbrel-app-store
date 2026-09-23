@@ -61,6 +61,13 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
       <td>Network-boot a menu of OS installers and live images to any machine on your LAN</td>
     </tr>
     <tr>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-nito/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td><a href="#nito">Nito</a></td>
+      <td nowrap id="saltedlolly-nito-version"><code>v3.0.1.2</code></td>
+      <td nowrap id="saltedlolly-nito-date">2026-09-23</td>
+      <td>A fair-launch, SHA-256 proof-of-work blockchain built for 200-year longevity</td>
+    </tr>
+    <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-npm-plus/npmplusicon.svg" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#npmplus">NPMplus</a></td>
       <td nowrap id="saltedlolly-npm-plus-version"><code>2026-07-24-r1</code></td>
@@ -215,6 +222,19 @@ This app uses host networking (no Umbrel SSO, no app proxy) rather than the usua
 | Name          | Port         | Local Address                                            | Umbrel SSO    |
 |---------------| ------------ | --------------------------------------------------------- | ------------- |
 | Web Admin UI  | `30380`      | [http://umbrel.local:30380](http://umbrel.local:30380/)  |               |
+
+---
+
+### Nito<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-nito/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+
+A self-hosted [Nito](https://nito.network/) node - a fair-launch, SHA-256 proof-of-work blockchain built around fairness and longevity: no premine, no ICO, no VC allocation, a 200-year emission schedule with a hard cap, and Taproot/Schnorr active since genesis. Includes an original dashboard showing block height, sync progress, peers, and mempool activity. Built from scratch, compiling the node from source rather than trusting upstream's unattested pre-built binaries - see the [app's own README](saltedlolly-nito/README.md) for why, and for what was found reviewing the project's history along the way.
+
+There is no Lightning Network support for Nito, and none is possible - Bitcoin's own Lightning implementations are tied to Bitcoin's specific chain and cannot connect to a different network like this one.
+
+| Name          | Port         | Local Address                                            | Umbrel SSO    |
+|---------------| ------------ | --------------------------------------------------------- | ------------- |
+| Dashboard     | `3000`       | [http://umbrel.local:3000](http://umbrel.local:3000/)    | ✅            |
+| Swarm (P2P)   | `8820`       | —                                                          |               |
 
 ---
 
