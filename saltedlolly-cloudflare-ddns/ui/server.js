@@ -347,7 +347,16 @@ function readEnv() {
         const content = fs.readFileSync(ENV_FILE, 'utf8');
         const obj = {};
         content.split('\n').filter(Boolean).forEach(line => {
-            const [k, v] = line.split('=');
+            // Split on the FIRST "=" only - a value containing further "="
+            // characters (e.g. an Uptime Kuma push URL's own query string,
+            // `?status=up&msg=OK&ping=`) would otherwise be silently
+            // truncated right after the second "=" in the line, since
+            // line.split('=') with no limit returns every piece and only
+            // the first two survive being destructured into k/v.
+            const eq = line.indexOf('=');
+            if (eq === -1) return;
+            const k = line.slice(0, eq);
+            const v = line.slice(eq + 1);
             obj[k] = (v === 'undefined' || v === 'null') ? '' : v;
         });
         if (obj.API_KEY && !obj.CLOUDFLARE_API_TOKEN) obj.CLOUDFLARE_API_TOKEN = obj.API_KEY;
