@@ -51,7 +51,13 @@ app.get('/api/config', (req, res) => {
     const content = fs.readFileSync(ENV_FILE, 'utf8');
     const obj = {};
     content.split('\n').filter(Boolean).forEach(line => {
-        const [k, v] = line.split('=');
+        // Split on the FIRST "=" only to avoid truncating values that contain
+        // "=" characters (e.g. Uptime Kuma URLs with query strings like
+        // "?status=up&msg=OK&ping="). Must match the logic in readEnv() below.
+        const eq = line.indexOf('=');
+        if (eq === -1) return;
+        const k = line.slice(0, eq);
+        const v = line.slice(eq + 1);
         obj[k] = (v === 'undefined' || v === 'null') ? '' : v;
     });
     // Support older env var names and provide a user-friendly config
