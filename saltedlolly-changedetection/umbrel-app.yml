@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-changedetection
 category: Automation
 name: changedetection.io
-version: "0.60.6.0"
+version: "0.60.7"
 tagline: Monitor any website for changes and get notified
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -23,9 +23,43 @@ description: >-
 
   All watches, settings, and page-snapshot history are stored under this app's persistent data directory and survive restarts and updates. Uninstalling this app deletes them - back up first if you want to keep your watch list.
 releaseNotes: >-
-  0.60.6.0:
+  0.60.7:
 
-  - Restore 0.60.6 after an auto-release workflow bug incorrectly downgraded this app to 0.60.3 (fixed in this same push - see .github/workflows/changedetection-auto-release.yml)
+  - Update changedetection.io to upstream release 0.60.7.
+
+
+  --- dgtlmoon/changedetection.io upstream release notes (auto-updated) ---
+
+
+  dgtlmoon/changedetection.io 0.60.7
+
+    What's Changed
+    * Fetch favicon candidates in parallel under one deadline, and fix two ways it could hang by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4435
+    * Keep history diff title and controls visible while scrolling by @jhedlund in https://github.com/dgtlmoon/changedetection.io/pull/4412
+    * General licence cleanups by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4445
+    * Add watch UI tweaks by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4446
+    * fix(http): send a single Date header on werkzeug built-in server by @Huang-404-Q in https://github.com/dgtlmoon/changedetection.io/pull/4372
+    * UI - Make the 'share watch' optional, reduces visual noise, not really used by non-power users by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4448
+    * Set Cache-Control: no-store on dynamic responses by default by @DennisGaida in https://github.com/dgtlmoon/changedetection.io/pull/4319
+
+    New Contributors
+    * @Huang-404-Q made their first contribution in https://github.com/dgtlmoon/changedetection.io/pull/4372
+    * @DennisGaida made their first contribution in https://github.com/dgtlmoon/changedetection.io/pull/4319
+
+    **Full Changelog**: https://github.com/dgtlmoon/changedetection.io/compare/0.60.6...0.60.7
+
+
+  dgtlmoon/changedetection.io 0.60.6
+
+    What's Changed
+    * Puppeteer fetcher - Re-navigation cap must not mean "extract right now" by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4439
+    * xPath filters - Stop LC_COLLATE deciding what contains() means (#4437), breaks xpath filters by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4438
+
+
+    **Full Changelog**: https://github.com/dgtlmoon/changedetection.io/compare/0.60.5...0.60.6
+
+
+  See the full release history: https://github.com/dgtlmoon/changedetection.io/releases
 
 developer: dgtlmoon
 website: https://changedetection.io/

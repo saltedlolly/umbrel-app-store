@@ -28,8 +28,8 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
     <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-changedetection/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#changedetectionio">changedetection.io</a></td>
-      <td nowrap id="saltedlolly-changedetection-version"><code>0.60.6.0</code></td>
-      <td nowrap id="saltedlolly-changedetection-date">2026-09-16</td>
+      <td nowrap id="saltedlolly-changedetection-version"><code>0.60.7</code></td>
+      <td nowrap id="saltedlolly-changedetection-date">2026-09-24</td>
       <td>Monitor any website for changes and get notified</td>
     </tr>
     <tr>
