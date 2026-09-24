@@ -7,6 +7,7 @@ set -e
 # lifecycle events to /data/cloudflare-ddns.log
 
 LOGFILE=/data/cloudflare-ddns.log
+LOGPOSFILE=/data/.cloudflare-ddns-log-pos
 ENVFILE=/data/cloudflare-ddns.env
 STATUSFILE=/data/status.json
 ERROR_MSG=
@@ -190,32 +191,64 @@ check_for_update() {
   if [ ! -f "$LOGFILE" ]; then
     return 1
   fi
-  txt=$(tail -n 200 "$LOGFILE" 2>/dev/null || true)
+
+  # Scan only lines ADDED since the last check, not a sliding "last N
+  # lines" window - re-scanning the same window every 3-second poll kept
+  # re-detecting the SAME already-counted event for as long as it stayed
+  # within that window (up to hours, at this log's growth rate), repeatedly
+  # re-stamping "now" and making "Cloudflare Last Updated" tick upward
+  # forever even when nothing new had actually happened.
+  # `wc -l`'s output can be padded with leading whitespace (BSD wc always
+  # does this; some GNU wc invocations do too) - strip it before the digit
+  # check below, or a padded-but-valid number gets wrongly treated as
+  # invalid and silently reset to 0 on every single call.
+  total_lines=$(wc -l < "$LOGFILE" 2>/dev/null | tr -d '[:space:]')
+  [ -n "$total_lines" ] || total_lines=0
+  last_pos=0
+  if [ -f "$LOGPOSFILE" ]; then
+    last_pos=$(cat "$LOGPOSFILE" 2>/dev/null | tr -d '[:space:]')
+    case "$last_pos" in ''|*[!0-9]*) last_pos=0 ;; esac
+  fi
+  # prune_log() can shrink the file out from under our position - restart
+  # from the top rather than using a position past the end of the file.
+  if [ "$total_lines" -lt "$last_pos" ]; then
+    last_pos=0
+  fi
+  if [ "$total_lines" -le "$last_pos" ]; then
+    return 1
+  fi
+  txt=$(tail -n "+$((last_pos + 1))" "$LOGFILE" 2>/dev/null || true)
+  echo "$total_lines" > "$LOGPOSFILE"
   found_something=1
 
   # A confirmed "already up to date" check, or a genuine record change,
   # both prove the updater is alive and successfully talking to Cloudflare
-  # right now - update this on EVERY cycle (not just once at startup), since
-  # long stretches with nothing to update are the normal, healthy state for
-  # a stable home IP, not a sign anything is stuck.
+  # right now - refresh this on every batch of new activity, since long
+  # stretches with nothing to update are the normal, healthy state for a
+  # stable home IP, not a sign anything is stuck.
   if echo "$txt" | grep -Eqi "already up to date|(a records.*were|updated.*record|record.*updated|set the ip|successfully updated|update successful)"; then
     LAST_SUCCESSFUL_CHECK=$(date --iso-8601=seconds)
     ERROR_MSG=""
     found_something=0
   fi
 
-  # Detect a GENUINE record change specifically, for the separate "Cloudflare
-  # Last Updated" display: find lines matching the positive pattern, then
-  # filter OUT any of those specific lines that also read "already up to
-  # date" etc. (this must run per-line, not against the whole multi-line
-  # $txt block - a cycle routinely has one record type unchanged while
-  # another genuinely changes, e.g. a stable A record alongside a rotating
-  # IPv6 privacy address, and checking the whole block for the SAME up-to-
-  # date phrase used by a DIFFERENT, unrelated line would wrongly veto a
-  # real change). The original bug here was using `grep -q` on the first
-  # grep, which suppresses all stdout, so the second grep always received
-  # empty input and the pipeline could never match at all.
-  if echo "$txt" | grep -Ei "(a records.*were|updated.*record|record.*updated|set the ip|successfully updated|update successful)" \
+  # "Cloudflare Last Updated" should reflect the last time a record
+  # GENUINELY changed - except the very first successful confirmation ever
+  # seen (LAST_SUCCESSFUL_UPDATE still unset), when even a plain "already
+  # up to date" counts: the record may already have matched from an
+  # earlier run (or the very first fetch, if nothing has ever needed
+  # changing), and startup time is the most honest "last updated" value
+  # available in that case. After that first confirmation, only a genuine
+  # change moves this forward again - the per-line positive-then-negative
+  # filter (not a whole-block check) matters because a single cycle
+  # routinely has one record type unchanged while another genuinely
+  # changes (e.g. a stable A record alongside a rotating IPv6 privacy
+  # address), and checking the whole block for the SAME up-to-date phrase
+  # used by a different, unrelated line would wrongly veto a real change.
+  if [ -z "$LAST_SUCCESSFUL_UPDATE" ] && echo "$txt" | grep -Eqi "already up to date|(a records.*were|updated.*record|record.*updated|set the ip|successfully updated|update successful)"; then
+    LAST_SUCCESSFUL_UPDATE=$(date --iso-8601=seconds)
+    found_something=0
+  elif echo "$txt" | grep -Ei "(a records.*were|updated.*record|record.*updated|set the ip|successfully updated|update successful)" \
      | grep -Eqvi "already up to date|unchanged|no change"; then
     LAST_SUCCESSFUL_UPDATE=$(date --iso-8601=seconds)
     found_something=0

@@ -4,7 +4,7 @@ name: Cloudflare DDNS Client
 tagline: Dynamic DNS client for Cloudflare to keep your domain updated with your changing IP address.
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/logo.png
 category: Networking
-version: "v1.17.1.1"
+version: "v1.17.1.2"
 port: 4100
 description: >-  
   Dynamic DDNS client for Cloudflare to keep your domain or sub-domain updated with your current public IP address.
@@ -36,6 +36,10 @@ support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery:
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/1.png
 releaseNotes: >-
+  v1.17.1.2:
+
+  - Fix "Cloudflare Last Updated" ticking upward every few seconds: the update-detection logic re-scanned a sliding window of recent log lines on every 3-second poll, re-stamping the same already-counted event as "just now" for as long as it stayed in that window. Now scans only lines added since the last check, and treats the first successful confirmation after startup as the update time (matching startup time when records already matched), updating thereafter only on a genuine record change.
+
   v1.17.1.1:
 
   - Set a DNS record comment ("Updated by Cloudflare DDNS for Umbrel") on managed A/AAAA records, so it's clear in the Cloudflare dashboard which app manages them
