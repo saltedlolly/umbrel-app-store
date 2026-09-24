@@ -4,7 +4,7 @@ name: Cloudflare DDNS Client
 tagline: Dynamic DNS client for Cloudflare to keep your domain updated with your changing IP address.
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/logo.png
 category: Networking
-version: "v1.17.1"
+version: "v1.17.1.1"
 port: 4100
 description: >-  
   Dynamic DDNS client for Cloudflare to keep your domain or sub-domain updated with your current public IP address.
@@ -36,6 +36,10 @@ support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery:
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/1.png
 releaseNotes: >-
+  v1.17.1.1:
+
+  - Set a DNS record comment ("Updated by Cloudflare DDNS for Umbrel") on managed A/AAAA records, so it's clear in the Cloudflare dashboard which app manages them
+
   v1.17.1:
 
   - Update to favonia/cloudflare-ddns v1.17.1; fix the staleness warning going stale forever after the first check, and IPv6 status detection breaking against a favonia/cloudflare-ddns wording change
