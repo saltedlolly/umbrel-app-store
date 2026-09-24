@@ -261,11 +261,12 @@ set_version_in_package_json() {
 prepend_release_notes() {
   local newv="$1" notes="$2"
   # Insert new section right after the 'releaseNotes: >-' line
+  # Use bold for version headers to make them stand out from bullet points
   awk -v ver="$newv" -v msg="$notes" '
     BEGIN{inserted=0}
     /^releaseNotes:[[:space:]]*>-/ {
       if (!inserted) {
-        print; print "  " ver ":\n\n  - " msg "\n"; inserted=1; next
+        print; print "  **" ver "**\n\n  - " msg "\n"; inserted=1; next
       }
     }
     {print}

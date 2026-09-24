@@ -36,83 +36,83 @@ support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery:
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/1.png
 releaseNotes: >-
-  v1.17.1.7:
+  **v1.17.1.7**
 
   - Add helpful log message when notifier requests fail due to umbrel.local hostname resolution issues. When connection failures are detected and any notifier URL uses 'umbrel.local', the log now suggests switching to 'localhost' for better reliability. Applies to all notifiers (Uptime Kuma, Healthchecks, Shoutrrr).
 
-  v1.17.1.6:
+  **v1.17.1.6**
 
   - Fix critical bug where GET /api/config endpoint truncated notifier URLs at the second '=' character (e.g. Uptime Kuma push URLs with query strings like ?status=up&msg=OK&ping= were silently cut to just ?status). This is a second instance of the same bug fixed in v1.17.1.4 - that fix only covered the readEnv() function but missed the GET endpoint.
 
-  v1.17.1.5:
+  **v1.17.1.5**
 
   - Add clear error messages for HTTPS certificate validation failures with local URLs (localhost/umbrel.local). UI now warns when saving HTTPS localhost URLs; logs show helpful guidance to switch to HTTP for self-signed certificates.
 
-  v1.17.1.4:
+  **v1.17.1.4**
 
   - Fix a real bug where any config value containing more than one '=' character (e.g. an Uptime Kuma push URL's own query string, ?status=up&msg=OK&ping=) got silently truncated right after the second '=' every time the config was read back - readEnv() split each line on every '=' instead of just the first one. Values with multiple '=' now round-trip intact.
 
-  v1.17.1.3:
+  **v1.17.1.3**
 
   - Fix a real race condition where saving notifier settings could silently wipe out a just-configured Uptime Kuma/Healthchecks/Shoutrrr URL: the config-save endpoint now does a true partial merge (a field the client doesn't send keeps its existing value) instead of requiring every save to resend a complete snapshot. Also stop logging "NEW TOKEN CONFIGURED" on saves that don't actually change the token, and add blank-line separators around each child process restart in the log for readability.
 
-  v1.17.1.2:
+  **v1.17.1.2**
 
   - Fix "Cloudflare Last Updated" ticking upward every few seconds: the update-detection logic re-scanned a sliding window of recent log lines on every 3-second poll, re-stamping the same already-counted event as "just now" for as long as it stayed in that window. Now scans only lines added since the last check, and treats the first successful confirmation after startup as the update time (matching startup time when records already matched), updating thereafter only on a genuine record change.
 
-  v1.17.1.1:
+  **v1.17.1.1**
 
   - Set a DNS record comment ("Updated by Cloudflare DDNS for Umbrel") on managed A/AAAA records, so it's clear in the Cloudflare dashboard which app manages them
 
-  v1.17.1:
+  **v1.17.1**
 
   - Update to favonia/cloudflare-ddns v1.17.1; fix the staleness warning going stale forever after the first check, and IPv6 status detection breaking against a favonia/cloudflare-ddns wording change
 
-  v1.17.1:
+  **v1.17.1**
 
   - Update to favonia/cloudflare-ddns v1.17.1; fix the staleness warning going stale forever after the first check, and IPv6 status detection breaking against a favonia/cloudflare-ddns wording change
 
-  v1.15.1.4:
+  **v1.15.1.4**
 
   - Migrate image hosting to GitHub Container Registry
 
-  v1.15.1.3:
+  **v1.15.1.3**
 
   - Fix bug in version badge in ui
 
-  v1.15.1.2:
+  **v1.15.1.2**
 
   - Switch to new versioning build system
 
 
-  v1.2.6:
+  **v1.2.6**
 
   - move images to app store gallery repo. add app store screenshot.
   - move logo inside ui. 
   - tweak dashboard icon. 
 
 
-  v1.2.5:
+  **v1.2.5**
 
   - Improve status display to better support IPv6 addresses.
 
 
-  v1.2.0:
+  **v1.2.0**
 
   - Add support for detecting IPv6 addresses, if the system supports it. Required the container to use `network_mode: host`.
 
 
-  v1.1.0:
+  **v1.1.0**
 
   - Fix Notifier section - URLs now save correctly. Hopefully Notifiers should now be working.
 
 
-  v1.0.8:
+  **v1.0.8**
 
   - Add version badge in footer for easier debugging; gets baked into the image at build time.
 
 
-  v1.0.7:
+  **v1.0.7**
 
   - Add IPv4/IPv6 support toggles in UI
 
