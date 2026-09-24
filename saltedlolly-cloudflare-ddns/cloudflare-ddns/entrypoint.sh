@@ -14,6 +14,7 @@ ERROR_MSG=
 LAST_SUCCESSFUL_UPDATE=
 LAST_SUCCESSFUL_CHECK=
 CERT_ERROR_WARNED=
+UMBREL_LOCAL_WARNED=
 
 log() {
   echo "$(date --iso-8601=seconds) $*" >> "$LOGFILE" 2>/dev/null || true
@@ -241,6 +242,53 @@ check_for_cert_error() {
   return 1
 }
 
+check_for_umbrel_local_error() {
+  # Detect failed notifier requests when using umbrel.local hostnames
+  # and suggest switching to localhost for better reliability
+  if [ ! -f "$LOGFILE" ]; then
+    return 1
+  fi
+
+  # Only scan recent lines
+  txt=$(tail -n 100 "$LOGFILE" 2>/dev/null || true)
+
+  # Look for notifier failures (timeout, connection errors, etc.)
+  if echo "$txt" | grep -Ei "Failed to send HTTP.*request to (Uptime Kuma|Healthchecks|Shoutrrr)|Failed to send.*to monitor|context deadline exceeded|connection (refused|timed out|reset)|no route to host|network.*unreachable" >/dev/null 2>&1; then
+    # Check if any notifier URLs use umbrel.local
+    load_env
+    uses_umbrel_local=false
+
+    if echo "${UPTIMEKUMA:-}${UPTIMEKUMA_DISABLED:-}" | grep -qi "umbrel\.local"; then
+      uses_umbrel_local=true
+    fi
+    if echo "${HEALTHCHECKS:-}${HEALTHCHECKS_DISABLED:-}" | grep -qi "umbrel\.local"; then
+      uses_umbrel_local=true
+    fi
+    if echo "${SHOUTRRR:-}${SHOUTRRR_DISABLED:-}" | grep -qi "umbrel\.local"; then
+      uses_umbrel_local=true
+    fi
+
+    if [ "$uses_umbrel_local" = "true" ] && [ "$UMBREL_LOCAL_WARNED" != "true" ]; then
+      log "════════════════════════════════════════════════════════════════════════════════"
+      log "NOTIFIER CONNECTION FAILED: One or more notifier URLs use 'umbrel.local'"
+      log ""
+      log "⚠️  umbrel.local may not resolve correctly inside this container"
+      log ""
+      log "SOLUTION: Replace 'umbrel.local' with 'localhost' in your notifier URLs"
+      log "Example: Change http://umbrel.local:8385/... to http://localhost:8385/..."
+      log ""
+      log "Both point to the same device, but localhost is more reliable for local services."
+      log "════════════════════════════════════════════════════════════════════════════════"
+      UMBREL_LOCAL_WARNED=true
+      return 0
+    fi
+  else
+    # Reset warning flag when errors clear
+    UMBREL_LOCAL_WARNED=
+  fi
+  return 1
+}
+
 check_for_update() {
   if [ ! -f "$LOGFILE" ]; then
     return 1
@@ -430,6 +478,8 @@ while true; do
   check_for_token_error || true
   # scan logs for certificate errors and log helpful guidance
   check_for_cert_error || true
+  # scan logs for umbrel.local connection failures and suggest localhost
+  check_for_umbrel_local_error || true
   check_for_update || true
   if [ "$cur_mtime" != "$last_mtime" ]; then
     log "Config changed, reloading"
