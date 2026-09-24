@@ -488,14 +488,17 @@
                             ipv6UpdateContainer.style.display = ipv6Enabled ? '' : 'none';
                         }
 
-                        // Check for stale updates (using most recent of the two)
-                        const mostRecent = lu.lastUpdate;
-                        if (mostRecent) {
-                            const age = (Date.now() - new Date(mostRecent).getTime()) / 1000 / 60; // minutes
+                        // Check for staleness using the last successful CHECK (change
+                        // or confirmed no-op), not the last genuine record change - a
+                        // stable home IP can legitimately go unchanged for days, which
+                        // isn't a sign anything is broken.
+                        const lastCheck = lu.lastSuccessfulCheck;
+                        if (lastCheck) {
+                            const age = (Date.now() - new Date(lastCheck).getTime()) / 1000 / 60; // minutes
                             if (age > 15 && info.running) {
                                 const warn = document.getElementById('warning');
                                 warn.style.display = 'block';
-                                warn.innerText = `No successful update in the last ${Math.round(age)} minutes.`;
+                                warn.innerText = `No successful check in the last ${Math.round(age)} minutes.`;
                             } else {
                                 const warn = document.getElementById('warning');
                                 if (!info.error) { warn.style.display = 'none'; warn.innerText = ''; }

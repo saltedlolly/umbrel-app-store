@@ -11,6 +11,7 @@ ENVFILE=/data/cloudflare-ddns.env
 STATUSFILE=/data/status.json
 ERROR_MSG=
 LAST_SUCCESSFUL_UPDATE=
+LAST_SUCCESSFUL_CHECK=
 
 log() {
   echo "$(date --iso-8601=seconds) $*" >> "$LOGFILE" 2>/dev/null || true
@@ -70,11 +71,22 @@ EOF
   else
     status="disabled"
   fi
-  # include lastSuccessfulUpdate and error if present
+  # include lastSuccessfulUpdate/lastSuccessfulCheck and error if present.
+  # lastSuccessfulUpdate tracks the last GENUINE DNS record change (for the
+  # "Cloudflare Last Updated" display); lastSuccessfulCheck tracks the last
+  # time the checker successfully confirmed state with Cloudflare AT ALL,
+  # whether or not a change was needed - this is what the UI's staleness
+  # warning should use, since long stretches with nothing to update are
+  # the normal, healthy state for a stable home IP.
   if [ -n "${LAST_SUCCESSFUL_UPDATE}" ]; then
     lastSuccessJson="\"${LAST_SUCCESSFUL_UPDATE}\""
   else
     lastSuccessJson=null
+  fi
+  if [ -n "${LAST_SUCCESSFUL_CHECK}" ]; then
+    lastCheckJson="\"${LAST_SUCCESSFUL_CHECK}\""
+  else
+    lastCheckJson=null
   fi
   if [ -n "${ERROR_MSG}" ]; then
     errorJson="\"${ERROR_MSG}\""
@@ -82,7 +94,7 @@ EOF
     errorJson=null
   fi
   cat > "$STATUSFILE" <<EOF
-{"enabled": $enabled, "running": $running, "status": "$status", "pid": $pidval, "lastStartedAt": "${LAST_STARTED_AT:-null}", "lastSuccessfulUpdate": ${lastSuccessJson}, "error": ${errorJson}}
+{"enabled": $enabled, "running": $running, "status": "$status", "pid": $pidval, "lastStartedAt": "${LAST_STARTED_AT:-null}", "lastSuccessfulUpdate": ${lastSuccessJson}, "lastSuccessfulCheck": ${lastCheckJson}, "error": ${errorJson}}
 EOF
 }
 
@@ -179,22 +191,37 @@ check_for_update() {
     return 1
   fi
   txt=$(tail -n 200 "$LOGFILE" 2>/dev/null || true)
-  # detect lines indicating a successful *change* (not 'already up to date')
-  # match patterns like: "record was updated", "set the IP address", "A records.*updated" etc.
-  # exclude: "already up to date", "unchanged", "no change"
-  if echo "$txt" | grep -Eqi "(a records.*were|updated.*record|record.*updated|set the ip|successfully updated|update successful)" | grep -Eqvi "already up to date|unchanged|no change"; then
-    # Use current time as success time
-    LAST_SUCCESSFUL_UPDATE=$(date --iso-8601=seconds)
+  found_something=1
+
+  # A confirmed "already up to date" check, or a genuine record change,
+  # both prove the updater is alive and successfully talking to Cloudflare
+  # right now - update this on EVERY cycle (not just once at startup), since
+  # long stretches with nothing to update are the normal, healthy state for
+  # a stable home IP, not a sign anything is stuck.
+  if echo "$txt" | grep -Eqi "already up to date|(a records.*were|updated.*record|record.*updated|set the ip|successfully updated|update successful)"; then
+    LAST_SUCCESSFUL_CHECK=$(date --iso-8601=seconds)
     ERROR_MSG=""
-    write_status
-    return 0
+    found_something=0
   fi
-  # If records were already in sync and we've never recorded a successful update yet,
-  # treat this first confirmation as the update time. This covers the case where the
-  # records already matched Cloudflare from the moment the service started.
-  if [ -z "$LAST_SUCCESSFUL_UPDATE" ] && echo "$txt" | grep -Eqi "already up to date"; then
+
+  # Detect a GENUINE record change specifically, for the separate "Cloudflare
+  # Last Updated" display: find lines matching the positive pattern, then
+  # filter OUT any of those specific lines that also read "already up to
+  # date" etc. (this must run per-line, not against the whole multi-line
+  # $txt block - a cycle routinely has one record type unchanged while
+  # another genuinely changes, e.g. a stable A record alongside a rotating
+  # IPv6 privacy address, and checking the whole block for the SAME up-to-
+  # date phrase used by a DIFFERENT, unrelated line would wrongly veto a
+  # real change). The original bug here was using `grep -q` on the first
+  # grep, which suppresses all stdout, so the second grep always received
+  # empty input and the pipeline could never match at all.
+  if echo "$txt" | grep -Ei "(a records.*were|updated.*record|record.*updated|set the ip|successfully updated|update successful)" \
+     | grep -Eqvi "already up to date|unchanged|no change"; then
     LAST_SUCCESSFUL_UPDATE=$(date --iso-8601=seconds)
-    ERROR_MSG=""
+    found_something=0
+  fi
+
+  if [ "$found_something" -eq 0 ]; then
     write_status
     return 0
   fi

@@ -1,4 +1,4 @@
-FROM favonia/cloudflare-ddns:1.17.0 AS favonia
+FROM favonia/cloudflare-ddns:1.17.1 AS favonia
 
 # Use an Alpine base with a shell for the wrapper script, and copy the favonia
 # ddns binary into it using a multi-stage build. Alpine provides busybox and

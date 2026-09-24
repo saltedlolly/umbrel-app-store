@@ -94,11 +94,16 @@ function detectPublicIPsFromLogs() {
     for (let i = lines.length - 1; i >= 0 && (!ipv4 || !ipv6); i--) {
         const l = lines[i];
         if (!ipv4) {
-            const v4 = l.match(/Detected the IPv4 address\s+([0-9.]+)/i);
+            // "the" and the colon after "address" are both optional - current
+            // favonia/cloudflare-ddns versions log "Detected IPv4 address: X"
+            // (no "the", with a colon); older versions logged "Detected the
+            // IPv4 address X". The stricter, "the"-requiring pattern this used
+            // to be never matched current log output at all.
+            const v4 = l.match(/Detected (?:the )?IPv4 address:?\s+([0-9.]+)/i);
             if (v4) ipv4 = v4[1];
         }
         if (!ipv6) {
-            const v6 = l.match(/Detected the IPv6 address\s+([0-9a-f:]+)/i);
+            const v6 = l.match(/Detected (?:the )?IPv6 address:?\s+([0-9a-f:]+)/i);
             if (v6) ipv6 = v6[1];
         }
     }
@@ -414,15 +419,22 @@ app.get('/api/last-update', (req, res) => {
         // A persisted lastSuccessfulUpdate from the status file covers the case where
         // records already matched Cloudflare from the moment the service started (no
         // genuine DNS change was ever logged, so the log scan below would find nothing).
+        // lastSuccessfulCheck is the last time the wrapper confirmed state with
+        // Cloudflare at all (change or no-op) - updated every cycle, so it's the
+        // right signal for "is this still working," unlike lastSuccessfulUpdate
+        // which only reflects genuine record changes and can legitimately go
+        // unchanged for days on a stable connection.
         let statusLastSuccessful = null;
+        let statusLastCheck = null;
         if (fs.existsSync(STATUS_FILE)) {
             try {
                 const s = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8'));
                 statusLastSuccessful = s.lastSuccessfulUpdate || null;
+                statusLastCheck = s.lastSuccessfulCheck || null;
             } catch (e) { /* ignore malformed status file */ }
         }
         if (!fs.existsSync(LOG_FILE)) {
-            return res.json({ lastUpdate: statusLastSuccessful, ipv4Update: statusLastSuccessful, ipv6Update: statusLastSuccessful });
+            return res.json({ lastUpdate: statusLastSuccessful, ipv4Update: statusLastSuccessful, ipv6Update: statusLastSuccessful, lastSuccessfulCheck: statusLastCheck });
         }
         const txt = fs.readFileSync(LOG_FILE, 'utf8');
         const lines = txt.split(/\r?\n/).filter(Boolean);
@@ -459,7 +471,7 @@ app.get('/api/last-update', (req, res) => {
 
         // For backward compatibility, return the most recent of the two as lastUpdate
         const mostRecent = [ipv4Update, ipv6Update].filter(Boolean).sort().reverse()[0] || null;
-        res.json({ lastUpdate: mostRecent, ipv4Update, ipv6Update });
+        res.json({ lastUpdate: mostRecent, ipv4Update, ipv6Update, lastSuccessfulCheck: statusLastCheck });
     } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
@@ -471,12 +483,13 @@ app.get('/api/public-ip', (req, res) => {
         const lines = txt.split(/\r?\n/).filter(Boolean);
         let lastIpv4 = null;
         let lastIpv6 = null;
-        // Lines contain phrases like: "Detected the IPv4 address 81.153.46.239"
+        // "the" and the colon after "address" are both optional - see the
+        // matching comment in detectPublicIPsFromLogs() above for why.
         for (let i = lines.length - 1; i >= 0; i--) {
             const l = lines[i];
-            const v4 = l.match(/IPv4 address ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/i) || l.match(/Detected the IPv4 address ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/i);
+            const v4 = l.match(/Detected (?:the )?IPv4 address:?\s+([0-9.]+)/i);
             if (v4 && !lastIpv4) lastIpv4 = v4[1];
-            const v6 = l.match(/IPv6 address ([0-9a-f:]+)/i) || l.match(/Detected the IPv6 address ([0-9a-f:]+)/i);
+            const v6 = l.match(/Detected (?:the )?IPv6 address:?\s+([0-9a-f:]+)/i);
             if (v6 && !lastIpv6) lastIpv6 = v6[1];
             if (lastIpv4 && lastIpv6) break;
         }
