@@ -13,6 +13,7 @@ STATUSFILE=/data/status.json
 ERROR_MSG=
 LAST_SUCCESSFUL_UPDATE=
 LAST_SUCCESSFUL_CHECK=
+CERT_ERROR_WARNED=
 
 log() {
   echo "$(date --iso-8601=seconds) $*" >> "$LOGFILE" 2>/dev/null || true
@@ -190,6 +191,52 @@ check_for_token_error() {
   if [ -n "$ERROR_MSG" ]; then
     ERROR_MSG=""
     write_status
+  fi
+  return 1
+}
+
+check_for_cert_error() {
+  # Scan for TLS/certificate errors from notifier URLs (UPTIMEKUMA, HEALTHCHECKS, SHOUTRRR)
+  # and log helpful guidance when self-signed certificates are rejected
+  if [ ! -f "$LOGFILE" ]; then
+    return 1
+  fi
+  # Only scan recent lines to avoid re-warning about old errors
+  txt=$(tail -n 100 "$LOGFILE" 2>/dev/null || true)
+
+  # Common TLS/certificate error patterns from Go's HTTP client
+  if echo "$txt" | grep -Ei "x509:.*certificate|tls.*certificate|certificate.*verify.*failed|certificate signed by unknown authority|certificate is not trusted|certificate has expired|bad certificate" >/dev/null 2>&1; then
+    # Only log the warning once per session (don't spam every 3 seconds)
+    if [ "$CERT_ERROR_WARNED" != "true" ]; then
+      # Extract the problematic URL if possible (look for https://localhost or https://umbrel.local patterns)
+      problem_url=$(echo "$txt" | grep -Eio "https://(localhost|127\.0\.0\.1|umbrel\.local|::1)[^[:space:]\"']*" | head -1)
+
+      if [ -n "$problem_url" ]; then
+        log "════════════════════════════════════════════════════════════════════════════════"
+        log "CERTIFICATE ERROR DETECTED: Notifier URL is using HTTPS with a self-signed certificate"
+        log "Problematic URL: $problem_url"
+        log ""
+        log "SOLUTION: Change HTTPS to HTTP for local URLs (localhost/umbrel.local)"
+        log "Example: Change https://localhost:8385/... to http://localhost:8385/..."
+        log ""
+        log "This is safe because the traffic never leaves your device (local-only communication)."
+        log "════════════════════════════════════════════════════════════════════════════════"
+      else
+        log "════════════════════════════════════════════════════════════════════════════════"
+        log "CERTIFICATE ERROR DETECTED: A notifier URL is rejecting an HTTPS certificate"
+        log ""
+        log "If you're using HTTPS with localhost/umbrel.local, change to HTTP instead:"
+        log "Example: Change https://localhost:8385/... to http://localhost:8385/..."
+        log ""
+        log "This is safe for local URLs because the traffic never leaves your device."
+        log "════════════════════════════════════════════════════════════════════════════════"
+      fi
+      CERT_ERROR_WARNED=true
+    fi
+    return 0
+  else
+    # Reset the warning flag when errors clear (allow re-warning if issue happens again later)
+    CERT_ERROR_WARNED=
   fi
   return 1
 }
@@ -381,6 +428,8 @@ while true; do
   fi
   # scan logs for token/auth problems and disable the service if detected
   check_for_token_error || true
+  # scan logs for certificate errors and log helpful guidance
+  check_for_cert_error || true
   check_for_update || true
   if [ "$cur_mtime" != "$last_mtime" ]; then
     log "Config changed, reloading"

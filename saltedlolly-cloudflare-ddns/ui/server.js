@@ -249,6 +249,26 @@ app.post('/api/config', async (req, res) => {
     const SHOUTRRR = pick('SHOUTRRR', existing.SHOUTRRR || existing.SHOUTRRR_DISABLED);
     const SHOUTRRR_ENABLED = pick('SHOUTRRR_ENABLED', existing.SHOUTRRR_ENABLED);
 
+    // Validate notifier URLs and collect warnings (don't block save, just warn)
+    const warnings = [];
+    const localHostPatterns = /^https:\/\/(localhost|127\.0\.0\.1|umbrel\.local|::1)(:|\/)/i;
+    if (UPTIMEKUMA && localHostPatterns.test(UPTIMEKUMA)) {
+        warnings.push('Uptime Kuma URL uses HTTPS with a local hostname (localhost/umbrel.local), which may fail due to self-signed certificate validation. Consider using HTTP instead (e.g., http://localhost:8385/...)');
+    }
+    if (HEALTHCHECKS && localHostPatterns.test(HEALTHCHECKS)) {
+        warnings.push('Healthchecks URL uses HTTPS with a local hostname, which may fail due to self-signed certificate validation. Consider using HTTP instead.');
+    }
+    // SHOUTRRR can be comma-separated, check each
+    if (SHOUTRRR) {
+        const shoutUrls = SHOUTRRR.split(',').map(s => s.trim()).filter(Boolean);
+        for (const url of shoutUrls) {
+            if (localHostPatterns.test(url)) {
+                warnings.push('Shoutrrr URL uses HTTPS with a local hostname, which may fail due to self-signed certificate validation. Consider using HTTP instead.');
+                break; // Only warn once
+            }
+        }
+    }
+
     // Use DOMAINS as the single authoritative list
     const DOMAINS = (DOMAINS_IN || '').split(',').map(s => s.trim()).filter(Boolean).join(',');
     const shout = (SHOUTRRR || '').split('\n').map(s => s.trim()).filter(Boolean).join(',');
@@ -327,7 +347,11 @@ app.post('/api/config', async (req, res) => {
         } else {
             setEnabled(false);
         }
-        res.json({ success: true });
+        // Log warnings to help users diagnose issues
+        if (warnings.length > 0) {
+            warnings.forEach(w => appendLog(`CONFIG WARNING: ${w}`));
+        }
+        res.json({ success: true, warnings: warnings.length > 0 ? warnings : undefined });
     } catch (e) {
         console.error(`[POST /api/config] ERROR: ${String(e)}`);
         console.error(`[POST /api/config] Stack:`, e.stack);

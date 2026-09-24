@@ -4,7 +4,7 @@ name: Cloudflare DDNS Client
 tagline: Dynamic DNS client for Cloudflare to keep your domain updated with your changing IP address.
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/logo.png
 category: Networking
-version: "v1.17.1.4"
+version: "v1.17.1.5"
 port: 4100
 description: >-  
   Dynamic DDNS client for Cloudflare to keep your domain or sub-domain updated with your current public IP address.
@@ -36,6 +36,10 @@ support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery:
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/1.png
 releaseNotes: >-
+  v1.17.1.5:
+
+  - Add clear error messages for HTTPS certificate validation failures with local URLs (localhost/umbrel.local). UI now warns when saving HTTPS localhost URLs; logs show helpful guidance to switch to HTTP for self-signed certificates.
+
   v1.17.1.4:
 
   - Fix a real bug where any config value containing more than one '=' character (e.g. an Uptime Kuma push URL's own query string, ?status=up&msg=OK&ping=) got silently truncated right after the second '=' every time the config was read back - readEnv() split each line on every '=' instead of just the first one. Values with multiple '=' now round-trip intact.
