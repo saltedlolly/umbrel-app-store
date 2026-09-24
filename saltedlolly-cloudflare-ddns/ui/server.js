@@ -216,7 +216,39 @@ app.get('/api/domain-status', async (req, res) => {
 });
 
 app.post('/api/config', async (req, res) => {
-    const { CLOUDFLARE_API_TOKEN, DOMAINS: DOMAINS_IN, PROXIED, IP4_PROVIDER, IP6_PROVIDER, HEALTHCHECKS, HEALTHCHECKS_ENABLED, UPTIMEKUMA, UPTIMEKUMA_ENABLED, SHOUTRRR, SHOUTRRR_ENABLED } = req.body;
+    const existing = readEnv();
+    const body = req.body || {};
+
+    // True partial-merge semantics: a field the client's request body
+    // doesn't mention at all keeps its existing stored value, rather than
+    // being silently cleared to empty. Several independent parts of the UI
+    // (each notifier's own on/off switch, the notifiers "Save" button, the
+    // main config form) each do their own "read current config, tweak one
+    // thing, POST" round trip - if two of those overlap (e.g. a switch
+    // toggled right before clicking Save), the request whose read
+    // happened to land first would silently wipe out whatever the other
+    // had already saved, because every field not in ITS payload used to
+    // default to empty rather than to what was actually stored. Confirmed
+    // as the cause of a real incident: toggling the Uptime Kuma switch and
+    // clicking Save in quick succession lost the just-pasted push URL.
+    const has = (key) => Object.prototype.hasOwnProperty.call(body, key);
+    const pick = (key, fallback) => (has(key) ? body[key] : fallback);
+
+    const CLOUDFLARE_API_TOKEN = pick('CLOUDFLARE_API_TOKEN', existing.CLOUDFLARE_API_TOKEN);
+    const DOMAINS_IN = pick('DOMAINS', existing.DOMAINS);
+    const PROXIED = pick('PROXIED', existing.PROXIED);
+    const IP4_PROVIDER = pick('IP4_PROVIDER', existing.IP4_PROVIDER);
+    const IP6_PROVIDER = pick('IP6_PROVIDER', existing.IP6_PROVIDER);
+    // The URL itself can be sitting in either the active or the _DISABLED
+    // slot depending on current toggle state - fall back to whichever one
+    // actually has it when the client didn't send this field at all.
+    const HEALTHCHECKS = pick('HEALTHCHECKS', existing.HEALTHCHECKS || existing.HEALTHCHECKS_DISABLED);
+    const HEALTHCHECKS_ENABLED = pick('HEALTHCHECKS_ENABLED', existing.HEALTHCHECKS_ENABLED);
+    const UPTIMEKUMA = pick('UPTIMEKUMA', existing.UPTIMEKUMA || existing.UPTIMEKUMA_DISABLED);
+    const UPTIMEKUMA_ENABLED = pick('UPTIMEKUMA_ENABLED', existing.UPTIMEKUMA_ENABLED);
+    const SHOUTRRR = pick('SHOUTRRR', existing.SHOUTRRR || existing.SHOUTRRR_DISABLED);
+    const SHOUTRRR_ENABLED = pick('SHOUTRRR_ENABLED', existing.SHOUTRRR_ENABLED);
+
     // Use DOMAINS as the single authoritative list
     const DOMAINS = (DOMAINS_IN || '').split(',').map(s => s.trim()).filter(Boolean).join(',');
     const shout = (SHOUTRRR || '').split('\n').map(s => s.trim()).filter(Boolean).join(',');
@@ -228,7 +260,6 @@ app.post('/api/config', async (req, res) => {
     const uk_enabled = UPTIMEKUMA_ENABLED === 'yes';
     const sr_enabled = SHOUTRRR_ENABLED === 'yes';
 
-    const existing = readEnv();
     const token = (CLOUDFLARE_API_TOKEN === '***') ? existing.CLOUDFLARE_API_TOKEN : CLOUDFLARE_API_TOKEN;
     const lines = [
         `CLOUDFLARE_API_TOKEN=${token || ''}`,
@@ -254,7 +285,6 @@ app.post('/api/config', async (req, res) => {
         ensureDirs();
 
         // preserve `ENABLED` flag if present
-        const existing = readEnv();
         if (existing.ENABLED !== undefined) {
             lines.push(`ENABLED=${existing.ENABLED}`);
         }
@@ -283,8 +313,15 @@ app.post('/api/config', async (req, res) => {
         const savedEnv = readEnv();
         const hasToken = !!(savedEnv.CLOUDFLARE_API_TOKEN || savedEnv.API_KEY);
         if (hasToken) {
-            // Write a marker to help wrapper know to ignore old errors before this point
-            appendLog('──── NEW TOKEN CONFIGURED ────');
+            // The wrapper's own error-scanning treats this exact marker as
+            // "ignore any auth errors logged before this point" - only
+            // write it when the token genuinely changed value, not on
+            // every unrelated config save (e.g. adding a notifier URL),
+            // which used to claim "NEW TOKEN CONFIGURED" even though
+            // nothing about the token had changed at all.
+            if (token !== existing.CLOUDFLARE_API_TOKEN) {
+                appendLog('──── NEW TOKEN CONFIGURED ────');
+            }
             setEnabled(true);
             appendLog('Service auto-enabled after saving config with API token');
         } else {

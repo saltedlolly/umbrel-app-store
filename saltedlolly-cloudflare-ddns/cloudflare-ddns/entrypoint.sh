@@ -18,6 +18,13 @@ log() {
   echo "$(date --iso-8601=seconds) $*" >> "$LOGFILE" 2>/dev/null || true
 }
 
+# Blank lines (no timestamp) around a stop/start boundary, so it's obvious
+# at a glance in the raw log where one child process's output ends and the
+# next one's begins, rather than everything running together.
+log_separator() {
+  printf '\n\n' >> "$LOGFILE" 2>/dev/null || true
+}
+
 # Prune the log file when it grows too large to avoid unbounded disk usage.
 # Configurable via LOG_MAX_SIZE_MB and LOG_MAX_LINES; defaults are safe for Umbrel devices.
 prune_log() {
@@ -313,6 +320,7 @@ stop_child() {
     wait "$child" 2>/dev/null || true
     child=""
     write_status
+    log_separator
   fi
 }
 
@@ -396,6 +404,7 @@ while true; do
   if [ -n "$child" ]; then
       if ! kill -0 "$child" 2>/dev/null; then
       log "Child $child exited unexpectedly, restarting"
+      log_separator
       # If the log shows a token/auth issue, disable and don't restart
       if check_for_token_error; then
         log "Token/auth error detected; not restarting child"
