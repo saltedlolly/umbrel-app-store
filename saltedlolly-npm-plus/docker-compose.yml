@@ -5,9 +5,7 @@ services:
       APP_PORT: 8080
 
   launcher:
-    build:
-      context: ./launcher
-      dockerfile: Dockerfile
+    image: ghcr.io/saltedlolly/npmplus-launcher@sha256:c64e02d82d4f49688084a55aba3dc586e1a774766ffe6f6812d4ee0ca3beba15
     user: "1000:1000"
     init: true
     restart: on-failure
