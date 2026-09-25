@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NPMplus for Umbrel - Setup</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">N+</div>
+            <h1>NPMplus for Umbrel</h1>
+            <p class="subtitle">Reverse Proxy with SSL Certificate Management</p>
+        </header>
+
+        <!-- Trusted Proxy Configuration -->
+        <section class="card">
+            <h2>⚙️ Trusted Proxy Configuration</h2>
+
+            <p class="info-text">
+                Configure how NPMplus handles client IP addresses when behind a reverse proxy.
+                <strong>Only enable this if traffic is proxied before reaching NPMplus.</strong>
+            </p>
+
+            <form id="proxyConfigForm">
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="proxyMode" value="none" checked>
+                        <div class="radio-content">
+                            <strong>None (Default)</strong>
+                            <p class="help-text">Direct connections to NPMplus. No upstream proxy.</p>
+                        </div>
+                    </label>
+
+                    <label class="radio-label">
+                        <input type="radio" name="proxyMode" value="cloudflare">
+                        <div class="radio-content">
+                            <strong>Cloudflare Proxy</strong>
+                            <p class="help-text">
+                                Enable this if your DNS records use Cloudflare's proxy (orange cloud ☁️).
+                                This allows NPMplus to see the real visitor IP instead of Cloudflare's edge servers.
+                            </p>
+                            <div class="warning-box">
+                                ⚠️ <strong>Only enable if you use Cloudflare's proxied DNS.</strong><br>
+                                Using Cloudflare DNS alone (gray cloud) does not require this setting.
+                            </div>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="primary-button">Save Settings</button>
+                </div>
+            </form>
+
+            <div id="statusMessage" class="status-message" style="display: none;"></div>
+        </section>
+
+        <!-- NPMplus Admin Interface -->
+        <section class="card">
+            <h2>🔗 NPMplus Admin Interface</h2>
+            <p>Configure proxy hosts, SSL certificates, and access control.</p>
+
+            <div class="admin-url-box">
+                <code id="adminUrl">Loading...</code>
+                <button onclick="copyAdminUrl()" class="icon-button" title="Copy URL">📋</button>
+            </div>
+
+            <p class="help-text">
+                <strong>Default credentials:</strong><br>
+                Email: <code>admin@umbrel.local</code><br>
+                Password: Your unique Umbrel app password
+            </p>
+
+            <div class="button-group">
+                <button onclick="openAdmin()" class="primary-button">Open NPMplus Admin</button>
+            </div>
+        </section>
+
+        <!-- Quick Setup Guide -->
+        <section class="card">
+            <h2>🚀 Quick Setup Guide</h2>
+
+            <ol class="setup-steps">
+                <li>
+                    <strong>Point your domain to your public IP</strong>
+                    <p>Create DNS records (A/AAAA) pointing to your router's public IP address.</p>
+                </li>
+
+                <li>
+                    <strong>Forward ports on your router</strong>
+                    <table class="port-table">
+                        <tr>
+                            <th>Protocol</th>
+                            <th>External Port</th>
+                            <th>Internal Port</th>
+                            <th>Purpose</th>
+                        </tr>
+                        <tr>
+                            <td>TCP</td>
+                            <td>80</td>
+                            <td>50080</td>
+                            <td>HTTP (redirect to HTTPS)</td>
+                        </tr>
+                        <tr>
+                            <td>TCP</td>
+                            <td>443</td>
+                            <td>50443</td>
+                            <td>HTTPS</td>
+                        </tr>
+                        <tr>
+                            <td>UDP</td>
+                            <td>443</td>
+                            <td>50443</td>
+                            <td>HTTP/3</td>
+                        </tr>
+                    </table>
+                </li>
+
+                <li>
+                    <strong>Create proxy hosts in NPMplus</strong>
+                    <p>Open the NPMplus admin interface and configure your proxy hosts with SSL certificates.</p>
+                </li>
+            </ol>
+        </section>
+
+        <footer>
+            <p>NPMplus for Umbrel by Olly Stedall</p>
+        </footer>
+    </div>
+
+    <script>
+        // Load admin URL dynamically
+        window.addEventListener('DOMContentLoaded', async () => {
+            const hostname = window.location.hostname;
+            const adminUrl = `https://${hostname}:5181`;
+            document.getElementById('adminUrl').textContent = adminUrl;
+
+            // Load current configuration
+            await loadConfig();
+        });
+
+        // Load current configuration
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const config = await response.json();
+
+                // Set radio button based on current config
+                const radioButton = document.querySelector(`input[name="proxyMode"][value="${config.proxyMode}"]`);
+                if (radioButton) {
+                    radioButton.checked = true;
+                }
+            } catch (error) {
+                console.error('Failed to load config:', error);
+            }
+        }
+
+        // Handle form submission
+        document.getElementById('proxyConfigForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const proxyMode = formData.get('proxyMode');
+
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ proxyMode })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    statusMessage.className = 'status-message success';
+                    statusMessage.innerHTML = `
+                        ✅ ${result.message}<br>
+                        <strong>Action required:</strong> Go to your Umbrel dashboard and restart the NPMplus app.
+                    `;
+                } else {
+                    statusMessage.className = 'status-message error';
+                    statusMessage.textContent = '❌ ' + (result.error || 'Failed to save settings');
+                }
+
+                statusMessage.style.display = 'block';
+            } catch (error) {
+                statusMessage.className = 'status-message error';
+                statusMessage.textContent = '❌ Network error: ' + error.message;
+                statusMessage.style.display = 'block';
+            }
+        });
+
+        // Open admin interface
+        function openAdmin() {
+            const hostname = window.location.hostname;
+            const adminUrl = `https://${hostname}:5181`;
+            window.open(adminUrl, '_blank');
+        }
+
+        // Copy admin URL to clipboard
+        async function copyAdminUrl() {
+            const adminUrl = document.getElementById('adminUrl').textContent;
+            try {
+                await navigator.clipboard.writeText(adminUrl);
+                alert('Admin URL copied to clipboard!');
+            } catch (error) {
+                console.error('Failed to copy:', error);
+            }
+        }
+    </script>
+</body>
+</html>

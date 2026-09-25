@@ -5,24 +5,27 @@ services:
       APP_PORT: 8080
 
   launcher:
-    image: docker.io/library/busybox:1.37.0@sha256:9db7b59979c38555a39def84a31fb98b5296952f9e3afd4f6f11f05b07adfab0
-    command: ["httpd", "-f", "-p", "8080", "-h", "/www"]
+    build:
+      context: ./launcher
+      dockerfile: Dockerfile
     user: "1000:1000"
     init: true
     restart: on-failure
-    read_only: true
     security_opt:
       - no-new-privileges:true
+    environment:
+      CONFIG_DIR: /data/config
     volumes:
-      - ${APP_DATA_DIR}/launcher.html:/www/index.html:ro
+      - npm-plus-config:/data/config
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/health"]
       interval: 30s
       timeout: 5s
       retries: 5
 
   npmplus:
     image: docker.io/zoeyvid/npmplus:2026-07-24-r1@sha256:f7f6ca26082036ee6387a7da336267fe61f16b1eb8087dd964237238b59479ef
+    entrypoint: ["/entrypoint-wrapper.sh"]
     restart: on-failure
     stop_grace_period: 30s
     cap_drop:
@@ -52,6 +55,8 @@ services:
       - "${APP_SALTEDLOLLY_NPM_PLUS_HTTPS_PORT}:443/udp"
     volumes:
       - ${APP_SALTEDLOLLY_NPM_PLUS_DATA_DIR}:/data
+      - npm-plus-config:/data/config:ro
+      - ./npmplus/entrypoint-wrapper.sh:/entrypoint-wrapper.sh:ro
 
   # Makes the Umbrel host resolvable as $DEVICE_DOMAIN_NAME from NPMplus,
   # matching the official Umbrel Nginx Proxy Manager package.
@@ -62,3 +67,6 @@ services:
       - NET_ADMIN
       - NET_RAW
     restart: on-failure
+
+volumes:
+  npm-plus-config:
