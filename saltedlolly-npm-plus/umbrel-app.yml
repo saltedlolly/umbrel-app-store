@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-npm-plus
 category: networking
 name: NPMplus
-version: "2026-07-24-r1"
+version: "2026-09-25"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
@@ -35,7 +35,29 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
-  Mark app as under construction while install issue is investigated
+  Add trusted proxy configuration UI (Umbrel packaging update)
+
+
+  New features:
+
+  - Web-based configuration for Cloudflare proxy mode (TRUST_CLOUDFLARE setting)
+
+  - No terminal access required to configure trusted proxy settings
+
+  - Configuration persists across app restarts and updates
+
+  - Simplified launcher page focused on setup workflow
+
+
+  How to use:
+
+  1. Open the NPMplus app (port 5180)
+
+  2. Configure "Trusted Proxy Configuration" if using Cloudflare's proxy (orange cloud)
+
+  3. Click "Save Settings"
+
+  4. Restart the app via Umbrel dashboard
 
 
   This package pins the immutable multi-architecture NPMplus 2026-07-24-r1 image for amd64 and arm64.
