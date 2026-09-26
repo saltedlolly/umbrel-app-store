@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-npm-plus
 category: networking
 name: NPMplus
-version: "2026-09-25.07"
+version: "2026-09-25.08"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
@@ -35,16 +35,33 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
-  Fix configuration save permissions - Use bind mount instead of named volume
+  Add Custom Trusted IP Ranges option - Full trusted proxy feature set complete
 
 
-  This release fixes the "Failed to save configuration" error by replacing the Docker named volume with a bind mount to a subdirectory of the app's data directory. This ensures correct permissions for both reading (NPMplus) and writing (launcher).
+  This release adds a third configuration option allowing users to specify custom IP addresses or CIDR ranges to trust. This is useful for users running their own reverse proxies (Caddy, Traefik, nginx, etc.) in front of NPMplus.
 
 
-  The configuration is now stored at {APP_DATA_DIR}/launcher-config/npm-settings.env and inherits proper permissions from the parent directory.
+  New features:
+
+  - Custom IP Ranges mode with text input for IP addresses/CIDR blocks
+
+  - Client-side validation ensures custom mode has valid input
+
+  - Dynamic UI showing/hiding the IP input field based on selected mode
+
+  - Full support for space-separated IP ranges (e.g., "192.168.1.0/24 10.0.0.0/8")
 
 
-  Features (Trusted Proxy Configuration UI):
+  All three trusted proxy modes now available:
+
+  - None (Default) - Direct connections, no upstream proxy
+
+  - Cloudflare Proxy - Trust Cloudflare's IP ranges for proxied DNS
+
+  - Custom IP Ranges - Trust specific IPs/CIDRs you control
+
+
+  Complete features (Trusted Proxy Configuration UI):
 
   - Web-based configuration for Cloudflare proxy mode (TRUST_CLOUDFLARE setting)
 

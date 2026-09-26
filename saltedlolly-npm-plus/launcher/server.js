@@ -109,23 +109,28 @@ app.get('/api/config', (req, res) => {
 // API: Save configuration
 app.post('/api/config', (req, res) => {
     try {
-        const { proxyMode } = req.body;
+        const { proxyMode, trustIp } = req.body;
 
         // Validate proxy mode
         if (!['none', 'cloudflare', 'custom'].includes(proxyMode)) {
             return res.status(400).json({ error: 'Invalid proxy mode' });
         }
 
+        // Validate custom mode has trustIp
+        if (proxyMode === 'custom' && (!trustIp || !trustIp.trim())) {
+            return res.status(400).json({ error: 'Custom proxy mode requires trusted IP addresses' });
+        }
+
         const config = {
             PROXY_MODE: proxyMode,
             TRUST_CLOUDFLARE: proxyMode === 'cloudflare' ? 'true' : 'false',
-            TRUST_IP: '', // For future use
+            TRUST_IP: proxyMode === 'custom' ? (trustIp || '').trim() : '',
             CONFIG_VERSION: '1'
         };
 
         writeConfig(config);
 
-        console.log(`Configuration saved: PROXY_MODE=${proxyMode}`);
+        console.log(`Configuration saved: PROXY_MODE=${proxyMode}, TRUST_IP=${config.TRUST_IP || '(none)'}`);
 
         res.json({
             success: true,

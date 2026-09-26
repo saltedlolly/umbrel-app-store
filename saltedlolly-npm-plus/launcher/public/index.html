@@ -47,6 +47,35 @@
                             </div>
                         </div>
                     </label>
+
+                    <label class="radio-label">
+                        <input type="radio" name="proxyMode" value="custom">
+                        <div class="radio-content">
+                            <strong>Custom Trusted IP Ranges</strong>
+                            <p class="help-text">
+                                Specify custom IP addresses or CIDR ranges to trust (e.g., for Caddy, Traefik, or other reverse proxies).
+                            </p>
+                            <div class="custom-ip-input" id="customIpInput" style="display: none; margin-top: 10px;">
+                                <label for="trustIp" style="display: block; margin-bottom: 5px; font-size: 0.9em;">
+                                    <strong>Trusted IP Ranges:</strong>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="trustIp"
+                                    name="trustIp"
+                                    placeholder="e.g., 192.168.1.0/24 10.0.0.0/8"
+                                    style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace;"
+                                >
+                                <p class="help-text" style="margin-top: 5px; font-size: 0.85em;">
+                                    Enter space-separated IP addresses or CIDR blocks. NPMplus will trust X-Forwarded-For headers from these IPs.
+                                </p>
+                            </div>
+                            <div class="warning-box">
+                                ⚠️ <strong>Advanced users only.</strong><br>
+                                Only trust IPs from reverse proxies you control. Incorrect configuration can expose visitor IPs to spoofing.
+                            </div>
+                        </div>
+                    </label>
                 </div>
 
                 <div class="button-group">
@@ -139,7 +168,25 @@
 
             // Load current configuration
             await loadConfig();
+
+            // Setup radio button change listeners to show/hide custom IP input
+            setupProxyModeListeners();
         });
+
+        // Setup listeners for proxy mode radio buttons
+        function setupProxyModeListeners() {
+            const radioButtons = document.querySelectorAll('input[name="proxyMode"]');
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    const customIpInput = document.getElementById('customIpInput');
+                    if (radio.value === 'custom' && radio.checked) {
+                        customIpInput.style.display = 'block';
+                    } else {
+                        customIpInput.style.display = 'none';
+                    }
+                });
+            });
+        }
 
         // Load current configuration
         async function loadConfig() {
@@ -152,6 +199,17 @@
                 if (radioButton) {
                     radioButton.checked = true;
                 }
+
+                // Set custom IP value and show input if custom mode
+                const trustIpInput = document.getElementById('trustIp');
+                if (trustIpInput && config.trustIp) {
+                    trustIpInput.value = config.trustIp;
+                }
+
+                // Show custom IP input if custom mode is selected
+                if (config.proxyMode === 'custom') {
+                    document.getElementById('customIpInput').style.display = 'block';
+                }
             } catch (error) {
                 console.error('Failed to load config:', error);
             }
@@ -163,9 +221,18 @@
 
             const formData = new FormData(e.target);
             const proxyMode = formData.get('proxyMode');
+            const trustIp = formData.get('trustIp') || '';
 
             const statusMessage = document.getElementById('statusMessage');
             statusMessage.style.display = 'none';
+
+            // Validate custom IP input if custom mode is selected
+            if (proxyMode === 'custom' && !trustIp.trim()) {
+                statusMessage.className = 'status-message error';
+                statusMessage.textContent = '❌ Please enter at least one trusted IP address or CIDR range for custom mode.';
+                statusMessage.style.display = 'block';
+                return;
+            }
 
             try {
                 const response = await fetch('/api/config', {
@@ -173,7 +240,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ proxyMode })
+                    body: JSON.stringify({ proxyMode, trustIp: trustIp.trim() })
                 });
 
                 const result = await response.json();
