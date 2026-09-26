@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-npm-plus
 category: networking
 name: NPMplus
-version: "2026-09-25.11"
+version: "2026-07-24-r1.1"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
@@ -35,19 +35,33 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
-  Improved wording for "None" proxy mode
+  ## 2026-07-24-r1.1
+
+  Companion Apps Integration Framework - Major feature release
+
+  - Zero-configuration auto-discovery of CrowdSec and Authentik companion apps
+  - Smart notifications when companion apps installed after NPMplus
+  - Web UI for managing integrations (enable/disable, view status)
+  - Auto-configures CrowdSec bouncer, LAPI, and AppSec connections
+  - Auto-configures Authentik SSO when available
+  - Three-state integration control (auto/enabled/disabled)
+  - Maintains full functionality when companion apps not installed
+  - Trusted proxy configuration (Cloudflare, custom IPs)
+  - Comprehensive logging and troubleshooting
+
+  **Breaking Change**: Version numbering now follows standard convention (vUPSTREAM.LOCAL)
+  Previous versions used date-based numbering (2026-09-25.XX) which has been discontinued.
 
 
-  Minor text update to clarify the "None (Default)" option in trusted proxy configuration:
-
-  - Changed description from "Direct connections to NPMplus. No upstream proxy."
-
-  - To: "Do not trust forwarded client IP information from an upstream proxy."
-
-  - This makes it clearer that this option actively rejects X-Forwarded-For headers
+  --- zoeyvid/npmplus upstream release notes (auto-updated) ---
 
 
-  All features from v2026-09-25.10 remain unchanged.
+  zoeyvid/npmplus 2026-07-24-r1
+
+    This package pins the immutable multi-architecture NPMplus 2026-07-24-r1
+    image for amd64 and arm64.
+
+    Full upstream release notes: https://github.com/ZoeyVid/NPMplus/releases/tag/2026-07-24-r1
 
 
   Full features (Trusted Proxy Configuration UI):

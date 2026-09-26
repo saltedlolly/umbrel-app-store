@@ -16,6 +16,10 @@
 # macOS junk
 .DS_Store
 
+# AI context management (repo-level)
+CLAUDE.md
+.claude/
+
 # Documentation
 saltedlolly-audiobookshelf/IMPLEMENTATION.md
 saltedlolly-audiobookshelf/QUICKSTART.md

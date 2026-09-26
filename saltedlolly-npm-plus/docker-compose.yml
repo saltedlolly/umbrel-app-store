@@ -5,7 +5,7 @@ services:
       APP_PORT: 8080
 
   launcher:
-    image: ghcr.io/saltedlolly/npmplus-launcher@sha256:325d7209dd9eeadcff61fa0c3894bf54a415ec79a35bea448572c10f958e86a6
+    image: ghcr.io/saltedlolly/npmplus-launcher@sha256:f184f5cfe84148e326d925b69648001e7a329e6d51f3626e7b2cfebb09914016
     init: true
     restart: on-failure
     security_opt:
@@ -21,7 +21,7 @@ services:
       retries: 5
 
   npmplus:
-    image: ghcr.io/saltedlolly/npmplus-wrapper@sha256:7322b7b76bc68ac8a189cdaabeb3cb7586e2cdb43026595fcdf89c4fc75c2d31
+    image: ghcr.io/saltedlolly/npmplus-wrapper@sha256:1488b1c7203f0d1836ef1817edeffaebb9ec480c7905df1bc425dfddaeeeab33
     restart: on-failure
     stop_grace_period: 30s
     cap_drop:
@@ -44,6 +44,13 @@ services:
       COOKIE_SECRET: ${APP_SALTEDLOLLY_NPM_PLUS_COOKIE_SECRET}
       INITIAL_DEFAULT_PAGE: "444"
       DISABLE_GRAVATAR: "true"
+      # Integration secrets (passed to wrapper script)
+      APP_SALTEDLOLLY_CROWDSEC_NPMPLUS_BOUNCER_KEY: ${APP_SALTEDLOLLY_CROWDSEC_NPMPLUS_BOUNCER_KEY}
+      APP_SALTEDLOLLY_NPM_PLUS_AUTHENTIK_CLIENT_ID: ${APP_SALTEDLOLLY_NPM_PLUS_AUTHENTIK_CLIENT_ID}
+      APP_SALTEDLOLLY_NPM_PLUS_AUTHENTIK_CLIENT_SECRET: ${APP_SALTEDLOLLY_NPM_PLUS_AUTHENTIK_CLIENT_SECRET}
+    extra_hosts:
+      # Allow NPMplus to access companion apps via host.docker.internal
+      - "host.docker.internal:host-gateway"
     ports:
       - "${APP_SALTEDLOLLY_NPM_PLUS_ADMIN_PORT}:81/tcp"
       - "${APP_SALTEDLOLLY_NPM_PLUS_HTTP_PORT}:80/tcp"

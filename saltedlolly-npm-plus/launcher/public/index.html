@@ -14,6 +14,28 @@
             <p class="subtitle">Reverse Proxy with SSL Certificate Management</p>
         </header>
 
+        <!-- Integration Change Notification -->
+        <div id="integrationNotification" class="notification-banner" style="display: none;">
+            <div class="notification-content">
+                <div class="notification-icon">🎉</div>
+                <div class="notification-message">
+                    <strong id="notificationTitle"></strong>
+                    <p id="notificationText"></p>
+                </div>
+                <button class="notification-dismiss" onclick="dismissNotification()">×</button>
+            </div>
+            <div class="notification-instructions">
+                <p><strong>How to restart NPMplus:</strong></p>
+                <ol>
+                    <li>Go to your <strong>Umbrel dashboard</strong></li>
+                    <li>Click on the <strong>NPMplus app tile</strong></li>
+                    <li>Click the <strong>⋮</strong> (three dots) menu in the top right</li>
+                    <li>Select <strong>"Restart"</strong></li>
+                    <li>Return here to see the integration enabled</li>
+                </ol>
+            </div>
+        </div>
+
         <!-- NPMplus Admin Interface -->
         <section class="card compact">
             <h2>🔗 NPMplus Admin Interface</h2>
@@ -99,6 +121,133 @@
             <div id="statusMessage" class="status-message" style="display: none;"></div>
         </section>
 
+        <!-- Security & Authentication Integrations -->
+        <section class="card compact">
+            <h2>🛡️ Security & Authentication Integrations</h2>
+            <p class="info-text compact">NPMplus can integrate with companion apps for enhanced security and authentication.</p>
+
+            <form id="integrationsForm">
+                <!-- CrowdSec Integration -->
+                <div class="integration-section" id="crowdsecSection">
+                    <div class="integration-header">
+                        <div class="integration-icon">🚨</div>
+                        <div class="integration-title">
+                            <h3>CrowdSec Security Engine</h3>
+                            <p class="integration-status" id="crowdsecStatus">
+                                <span class="status-icon">⏳</span> Checking...
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="integration-body" id="crowdsecBody" style="display: none;">
+                        <p class="help-text">
+                            CrowdSec provides intrusion detection, IP reputation blocking, and WAF protection
+                            for your proxy hosts using community-sourced threat intelligence.
+                        </p>
+
+                        <div class="integration-controls">
+                            <label class="toggle-label">
+                                <input type="checkbox" id="crowdsecEnabled" name="crowdsecEnabled">
+                                <span class="toggle-text">Enable CrowdSec Protection</span>
+                            </label>
+                        </div>
+
+                        <div class="integration-metrics" id="crowdsecMetrics" style="display: none;">
+                            <div class="metric-grid">
+                                <div class="metric-item">
+                                    <span class="metric-label">Threats Blocked (24h)</span>
+                                    <span class="metric-value" id="crowdsecBlocked">-</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Active Bans</span>
+                                    <span class="metric-value" id="crowdsecBans">-</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Last Sync</span>
+                                    <span class="metric-value" id="crowdsecLastSync">-</span>
+                                </div>
+                            </div>
+                            <div class="integration-actions">
+                                <button type="button" class="secondary-button" onclick="openCrowdSec()">
+                                    Open CrowdSec Dashboard
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="integration-install" id="crowdsecInstall" style="display: none;">
+                            <p class="help-text">
+                                Install the CrowdSec app from the Umbrel App Store to enable security protection.
+                            </p>
+                            <button type="button" class="secondary-button" onclick="window.open('https://github.com/saltedlolly/umbrel-app-store', '_blank')">
+                                View App Store
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Authentik Integration -->
+                <div class="integration-section" id="authentikSection">
+                    <div class="integration-header">
+                        <div class="integration-icon">🔐</div>
+                        <div class="integration-title">
+                            <h3>Authentik SSO Provider</h3>
+                            <p class="integration-status" id="authentikStatus">
+                                <span class="status-icon">⏳</span> Checking...
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="integration-body" id="authentikBody" style="display: none;">
+                        <p class="help-text">
+                            Authentik enables single sign-on (SSO) authentication across all your services,
+                            with support for OIDC, SAML, LDAP, and more.
+                        </p>
+
+                        <div class="integration-controls">
+                            <label class="toggle-label">
+                                <input type="checkbox" id="authentikEnabled" name="authentikEnabled">
+                                <span class="toggle-text">Enable Authentik SSO</span>
+                            </label>
+                        </div>
+
+                        <div class="integration-metrics" id="authentikMetrics" style="display: none;">
+                            <div class="metric-grid">
+                                <div class="metric-item">
+                                    <span class="metric-label">Protected Hosts</span>
+                                    <span class="metric-value" id="authentikHosts">-</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Active Sessions</span>
+                                    <span class="metric-value" id="authentikSessions">-</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Last Sync</span>
+                                    <span class="metric-value" id="authentikLastSync">-</span>
+                                </div>
+                            </div>
+                            <div class="integration-actions">
+                                <button type="button" class="secondary-button" onclick="openAuthentik()">
+                                    Open Authentik Dashboard
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="integration-install" id="authentikInstall" style="display: none;">
+                            <p class="help-text">
+                                The Authentik app is coming soon. Check back later for SSO integration support.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="primary-button">Save Integration Settings</button>
+                </div>
+            </form>
+
+            <div id="integrationsStatusMessage" class="status-message" style="display: none;"></div>
+        </section>
+
         <!-- Quick Setup Guide -->
         <section class="card">
             <h2>🚀 Quick Setup Guide</h2>
@@ -157,7 +306,7 @@
                     <strong>NPMplus for Umbrel</strong> by <a href="https://github.com/saltedlolly" target="_blank">Olly Stedall</a><br>
                     Based on <a href="https://github.com/ZoeyVid/NPMplus" target="_blank">NPMplus</a> by <a href="https://github.com/ZoeyVid" target="_blank">ZoeyVid</a>
                 </p>
-                <p class="version">Version 2026-09-25.11</p>
+                <p class="version">Version 2026-07-24-r1.1</p>
             </div>
             <div class="footer-right">
                 <a href="https://github.com/sponsors/saltedlolly" target="_blank" class="footer-button sponsor">
@@ -168,6 +317,12 @@
     </div>
 
     <script>
+        // Track previous detection state to detect changes
+        let previousDetectionState = {
+            crowdsec: null,  // null = unknown, true = detected, false = not detected
+            authentik: null
+        };
+
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', async () => {
             // Load current configuration
@@ -175,6 +330,15 @@
 
             // Setup radio button change listeners to show/hide custom IP input
             setupProxyModeListeners();
+
+            // Load integrations status
+            await loadIntegrationsStatus();
+
+            // Setup integration section click handlers
+            setupIntegrationToggles();
+
+            // Poll for integration metrics every 30 seconds
+            setInterval(loadIntegrationsStatus, 30000);
         });
 
         // Setup listeners for proxy mode radio buttons
@@ -190,6 +354,136 @@
                     }
                 });
             });
+        }
+
+        // Setup integration section toggle handlers
+        function setupIntegrationToggles() {
+            // CrowdSec header toggle
+            const crowdsecHeader = document.querySelector('#crowdsecSection .integration-header');
+            crowdsecHeader.addEventListener('click', () => {
+                const body = document.getElementById('crowdsecBody');
+                body.style.display = body.style.display === 'none' ? 'block' : 'none';
+            });
+
+            // Authentik header toggle
+            const authentikHeader = document.querySelector('#authentikSection .integration-header');
+            authentikHeader.addEventListener('click', () => {
+                const body = document.getElementById('authentikBody');
+                body.style.display = body.style.display === 'none' ? 'block' : 'none';
+            });
+        }
+
+        // Load integrations status
+        async function loadIntegrationsStatus() {
+            try {
+                const response = await fetch('/api/integrations/status');
+                const data = await response.json();
+
+                // Check for newly detected integrations
+                checkForNewIntegrations(data);
+
+                // Update CrowdSec status
+                updateIntegrationStatus('crowdsec', data.crowdsec);
+
+                // Update Authentik status
+                updateIntegrationStatus('authentik', data.authentik);
+            } catch (error) {
+                console.error('Failed to load integrations status:', error);
+            }
+        }
+
+        // Check if any integration was newly detected
+        function checkForNewIntegrations(data) {
+            // Check CrowdSec
+            if (previousDetectionState.crowdsec === false && data.crowdsec.detected === true) {
+                showIntegrationNotification('CrowdSec', 'crowdsec');
+            }
+
+            // Check Authentik
+            if (previousDetectionState.authentik === false && data.authentik.detected === true) {
+                showIntegrationNotification('Authentik', 'authentik');
+            }
+
+            // Update state for next check
+            previousDetectionState = {
+                crowdsec: data.crowdsec.detected,
+                authentik: data.authentik.detected
+            };
+        }
+
+        // Show notification when new integration is detected
+        function showIntegrationNotification(appName, appId) {
+            const banner = document.getElementById('integrationNotification');
+            const title = document.getElementById('notificationTitle');
+            const text = document.getElementById('notificationText');
+
+            // Set notification content based on app
+            if (appId === 'crowdsec') {
+                title.textContent = 'CrowdSec Security Engine Detected!';
+                text.textContent = 'CrowdSec is now available and can protect your proxy hosts from attacks. Restart NPMplus to enable security protection.';
+            } else if (appId === 'authentik') {
+                title.textContent = 'Authentik SSO Provider Detected!';
+                text.textContent = 'Authentik is now available and can provide single sign-on for your services. Restart NPMplus to enable SSO integration.';
+            }
+
+            // Show the banner with animation
+            banner.style.display = 'block';
+
+            // Scroll to notification
+            banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Dismiss notification
+        function dismissNotification() {
+            const banner = document.getElementById('integrationNotification');
+            banner.style.display = 'none';
+        }
+
+        // Update individual integration status
+        function updateIntegrationStatus(integration, status) {
+            const statusElem = document.getElementById(`${integration}Status`);
+            const bodyElem = document.getElementById(`${integration}Body`);
+            const enabledCheckbox = document.getElementById(`${integration}Enabled`);
+            const metricsElem = document.getElementById(`${integration}Metrics`);
+            const installElem = document.getElementById(`${integration}Install`);
+
+            if (status.detected) {
+                // Integration detected
+                statusElem.innerHTML = '<span class="status-icon status-detected">✓</span> Detected and available';
+                bodyElem.style.display = 'block';
+                installElem.style.display = 'none';
+
+                // Update enabled checkbox
+                enabledCheckbox.checked = status.enabled;
+
+                // Show/hide metrics based on enabled state
+                if (status.enabled && status.metrics) {
+                    metricsElem.style.display = 'block';
+
+                    // Update CrowdSec metrics
+                    if (integration === 'crowdsec') {
+                        document.getElementById('crowdsecBlocked').textContent = status.metrics.blocked || '0';
+                        document.getElementById('crowdsecBans').textContent = status.metrics.bans || '0';
+                        document.getElementById('crowdsecLastSync').textContent = status.metrics.lastSync || 'Never';
+                    }
+
+                    // Update Authentik metrics
+                    if (integration === 'authentik') {
+                        document.getElementById('authentikHosts').textContent = status.metrics.hosts || '0';
+                        document.getElementById('authentikSessions').textContent = status.metrics.sessions || '0';
+                        document.getElementById('authentikLastSync').textContent = status.metrics.lastSync || 'Never';
+                    }
+                } else {
+                    metricsElem.style.display = 'none';
+                }
+            } else {
+                // Integration not detected
+                statusElem.innerHTML = '<span class="status-icon status-not-detected">○</span> Not detected';
+                bodyElem.style.display = 'block';
+                installElem.style.display = 'block';
+                metricsElem.style.display = 'none';
+                enabledCheckbox.checked = false;
+            }
         }
 
         // Load current configuration
@@ -268,11 +562,71 @@
             }
         });
 
+        // Handle integrations form submission
+        document.getElementById('integrationsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const crowdsecEnabled = document.getElementById('crowdsecEnabled').checked;
+            const authentikEnabled = document.getElementById('authentikEnabled').checked;
+
+            const statusMessage = document.getElementById('integrationsStatusMessage');
+            statusMessage.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/integrations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        crowdsec: { enabled: crowdsecEnabled },
+                        authentik: { enabled: authentikEnabled }
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    statusMessage.className = 'status-message success';
+                    statusMessage.innerHTML = `
+                        ✅ ${result.message}<br>
+                        <strong>Action required:</strong> Go to your Umbrel dashboard and restart the NPMplus app.
+                    `;
+
+                    // Reload status after save
+                    setTimeout(loadIntegrationsStatus, 1000);
+                } else {
+                    statusMessage.className = 'status-message error';
+                    statusMessage.textContent = '❌ ' + (result.error || 'Failed to save integration settings');
+                }
+
+                statusMessage.style.display = 'block';
+            } catch (error) {
+                statusMessage.className = 'status-message error';
+                statusMessage.textContent = '❌ Network error: ' + error.message;
+                statusMessage.style.display = 'block';
+            }
+        });
+
         // Open admin interface
         function openAdmin() {
             const hostname = window.location.hostname;
             const adminUrl = `https://${hostname}:5181`;
             window.open(adminUrl, '_blank');
+        }
+
+        // Open CrowdSec dashboard
+        function openCrowdSec() {
+            const hostname = window.location.hostname;
+            const crowdsecUrl = `http://${hostname}:5182`;
+            window.open(crowdsecUrl, '_blank');
+        }
+
+        // Open Authentik dashboard
+        function openAuthentik() {
+            const hostname = window.location.hostname;
+            const authentikUrl = `http://${hostname}:9000`;
+            window.open(authentikUrl, '_blank');
         }
     </script>
 </body>
