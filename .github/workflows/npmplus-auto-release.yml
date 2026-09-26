@@ -1,0 +1,208 @@
+name: NPMplus - Auto Release
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # every day 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: check upstream and log the plan only (no build/push/commit)'
+        type: boolean
+        default: false
+      force_version:
+        description: 'Optional: pretend the eligible upstream version is this (e.g. 2026-07-24-r1), for testing'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npmplus-auto-release
+  cancel-in-progress: false   # never cancel mid docker-push/git-push
+
+jobs:
+  check-upstream:
+    name: Check ZoeyVid/NPMplus for an eligible release (2-day buffer)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      has_update: ${{ steps.compare.outputs.has_update }}
+      eligible_version: ${{ steps.latest.outputs.eligible_version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            saltedlolly-npm-plus/npmplus/Dockerfile
+          sparse-checkout-cone-mode: false
+
+      - name: Find newest ZoeyVid release that has cleared the 2-day buffer
+        id: latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cutoff="$(date -u -d '2 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+          releases="$(curl -sf \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/ZoeyVid/NPMplus/releases?per_page=20")"
+
+          version="$(echo "$releases" | jq -r --arg cutoff "$cutoff" '
+            [ .[] | select(.draft==false and .prerelease==false and .published_at <= $cutoff) ]
+            | sort_by(.published_at) | last | .tag_name // empty
+          ')"
+
+          if [[ -n "${{ github.event.inputs.force_version }}" ]]; then
+            version="${{ github.event.inputs.force_version }}"
+            echo "::notice::Overriding with force_version input: $version"
+          fi
+
+          if [[ -z "$version" ]]; then
+            echo "::notice::No ZoeyVid/NPMplus release has cleared the 2-day buffer yet"
+            echo "eligible_version=" >> "$GITHUB_OUTPUT"
+          else
+            # NPMplus uses date-based versioning like 2026-07-24-r1
+            if ! [[ "$version" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}-r[0-9]+$ ]]; then
+              echo "::error::Unexpected version format: '$version'"
+              exit 1
+            fi
+            echo "eligible_version=$version" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Get currently pinned version
+        id: current
+        run: |
+          set -euo pipefail
+          current="$(grep -oE 'zoeyvid/npmplus:[0-9]{4}-[0-9]{2}-[0-9]{2}-r[0-9]+' \
+            saltedlolly-npm-plus/npmplus/Dockerfile | cut -d: -f2)"
+          if [[ -z "$current" ]]; then
+            echo "::error::Could not extract pinned version from Dockerfile"
+            exit 1
+          fi
+          echo "current_version=$current" >> "$GITHUB_OUTPUT"
+
+      - name: Compare
+        id: compare
+        run: |
+          eligible="${{ steps.latest.outputs.eligible_version }}"
+          current="${{ steps.current.outputs.current_version }}"
+          if [[ -z "$eligible" || "$eligible" == "$current" ]]; then
+            echo "has_update=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No update to publish. pinned=$current eligible=${eligible:-none}"
+          else
+            echo "has_update=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Publishing update. pinned=$current -> eligible=$eligible"
+          fi
+
+  release:
+    name: Build, smoke-test, and publish new version
+    needs: check-upstream
+    if: needs.check-upstream.outputs.has_update == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      packages: write   # required to push to and prune GHCR
+    env:
+      APP_DIR: saltedlolly-npm-plus
+      TARGET_VERSION: ${{ needs.check-upstream.outputs.eligible_version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: true   # required for npmplus-build.sh's `git push`
+
+      - name: Configure git identity for automated commits
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Set up QEMU (for linux/arm64 cross-build)
+        uses: docker/setup-qemu-action@v4
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+        # Creates a docker-container-driver builder that npmplus-build.sh's
+        # ensure_buildx() will auto-detect and reuse via `docker buildx ls`.
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ---------- OPTIONAL SAFETY NET ----------
+      # Single-arch (amd64), --load-only builds, never pushed or committed.
+      # Aborts BEFORE npmplus-build.sh touches GHCR or git if either fails.
+      # Note: buildx --load can't load a multi-arch manifest, so this only
+      # smoke-tests linux/amd64 — an arm64-only regression would ship undetected.
+      - name: "[Optional] Smoke-test launcher image (linux/amd64)"
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          set -euo pipefail
+          docker buildx build --platform linux/amd64 \
+            -t smoketest/npmplus-launcher:test -f launcher/Dockerfile --load .
+          docker run -d --name launcher-smoke -p 8080:8080 \
+            -e CONFIG_DIR=/data/config \
+            -v /tmp/launcher-smoke-config:/data/config \
+            smoketest/npmplus-launcher:test
+          ok=false
+          for i in $(seq 1 15); do
+            curl -sf http://localhost:8080/health >/dev/null && { ok=true; break; }
+            sleep 2
+          done
+          docker logs launcher-smoke || true
+          docker rm -f launcher-smoke || true
+          [[ "$ok" == "true" ]] || { echo "::error::Launcher image failed smoke test"; exit 1; }
+
+      - name: "[Optional] Smoke-test wrapper image (linux/amd64)"
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          set -euo pipefail
+          docker buildx build --platform linux/amd64 \
+            --build-arg UPSTREAM_VERSION="${TARGET_VERSION}" \
+            -t smoketest/npmplus-wrapper:test -f npmplus/Dockerfile --load .
+          mkdir -p /tmp/npmplus-smoke-data
+          docker run -d --name npmplus-smoke \
+            -e PUID=1000 -e PGID=1000 \
+            -e INITIAL_ADMIN_EMAIL=admin@test.local \
+            -e INITIAL_ADMIN_PASSWORD=testpass123 \
+            -v /tmp/npmplus-smoke-data:/data \
+            smoketest/npmplus-wrapper:test
+          sleep 10
+          running="$(docker inspect -f '{{.State.Running}}' npmplus-smoke || echo false)"
+          docker logs npmplus-smoke || true
+          docker rm -f npmplus-smoke || true
+          if [[ "$running" != "true" ]]; then
+            echo "::error::NPMplus wrapper image crashed during startup"
+            exit 1
+          fi
+          # Only proves the container starts cleanly; does not validate full
+          # proxy functionality or integration framework.
+      # ---------- END OPTIONAL SAFETY NET ----------
+
+      - name: Dry run summary (no build/push/commit)
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          echo "DRY RUN: would publish ${TARGET_VERSION}"
+
+      - name: Build, push, pin digests, and publish (npmplus-build.sh)
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          ./npmplus-build.sh --publish \
+            --version "${{ needs.check-upstream.outputs.eligible_version }}" \
+            --notes "Automated update: bump bundled zoeyvid/npmplus to ${{ needs.check-upstream.outputs.eligible_version }}"
+
+      - name: Prune old GHCR versions (keep last 5 tagged)
+        if: github.event.inputs.dry_run != 'true'
+        uses: dataaxiom/ghcr-cleanup-action@v1.2.2
+        with:
+          package: 'npmplus-launcher,npmplus-wrapper'
+          keep-n-tagged: 5
