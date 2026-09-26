@@ -15,8 +15,8 @@ echo ""
 echo "[Auto-Discovery] Detecting companion apps..."
 
 # Check CrowdSec LAPI (port 8080)
-# Use wget to check if port is accessible (more reliable than nc which may not be installed)
-if wget -q -T 2 --spider http://host.docker.internal:8080 2>/dev/null; then
+# Use bash's built-in /dev/tcp/ to check if port is open (most reliable method)
+if timeout 2 bash -c ': < /dev/tcp/host.docker.internal/8080' 2>/dev/null; then
     CROWDSEC_DETECTED=true
     echo "[Auto-Discovery] ✓ CrowdSec detected (LAPI responding on :8080)"
 else

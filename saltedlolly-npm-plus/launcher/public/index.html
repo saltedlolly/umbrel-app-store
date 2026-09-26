@@ -448,13 +448,14 @@
             const installElem = document.getElementById(`${integration}Install`);
 
             if (status.detected) {
-                // Integration detected
+                // Integration detected - enable checkbox
                 statusElem.innerHTML = '<span class="status-icon status-detected">✓</span> Detected and available';
                 bodyElem.style.display = 'block';
                 installElem.style.display = 'none';
 
-                // Update enabled checkbox
+                // Update enabled checkbox - enable it since app is detected
                 enabledCheckbox.checked = status.enabled;
+                enabledCheckbox.disabled = false;
 
                 // Show/hide metrics based on enabled state
                 if (status.enabled && status.metrics) {
@@ -477,12 +478,13 @@
                     metricsElem.style.display = 'none';
                 }
             } else {
-                // Integration not detected
+                // Integration not detected - disable checkbox
                 statusElem.innerHTML = '<span class="status-icon status-not-detected">○</span> Not detected';
                 bodyElem.style.display = 'block';
                 installElem.style.display = 'block';
                 metricsElem.style.display = 'none';
                 enabledCheckbox.checked = false;
+                enabledCheckbox.disabled = true;  // Gray out checkbox when not detected
             }
         }
 
