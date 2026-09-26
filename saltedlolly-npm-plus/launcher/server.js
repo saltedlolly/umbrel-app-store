@@ -50,10 +50,15 @@ function readConfig() {
 
 // Write configuration to file
 function writeConfig(config) {
-    ensureConfigDir();
+    try {
+        console.log(`[writeConfig] Starting write to ${CONFIG_FILE}`);
+        console.log(`[writeConfig] CONFIG_DIR=${CONFIG_DIR}`);
 
-    const timestamp = new Date().toISOString();
-    const content = `# NPMplus Trusted Proxy Configuration
+        ensureConfigDir();
+        console.log(`[writeConfig] Config directory verified`);
+
+        const timestamp = new Date().toISOString();
+        const content = `# NPMplus Trusted Proxy Configuration
 # Managed by NPMplus for Umbrel Configuration UI
 # Last updated: ${timestamp}
 
@@ -72,7 +77,18 @@ TRUST_IP=${config.TRUST_IP || ''}
 CONFIG_VERSION=${config.CONFIG_VERSION || '1'}
 `;
 
-    fs.writeFileSync(CONFIG_FILE, content);
+        console.log(`[writeConfig] Writing ${content.length} bytes to ${CONFIG_FILE}`);
+        fs.writeFileSync(CONFIG_FILE, content);
+        console.log(`[writeConfig] Write successful`);
+
+        // Verify the file was written
+        const stats = fs.statSync(CONFIG_FILE);
+        console.log(`[writeConfig] File size: ${stats.size} bytes, owner: ${stats.uid}:${stats.gid}`);
+    } catch (error) {
+        console.error(`[writeConfig] ERROR: ${error.message}`);
+        console.error(`[writeConfig] Error details:`, error);
+        throw error;
+    }
 }
 
 // API: Get current configuration
