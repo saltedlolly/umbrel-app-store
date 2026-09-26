@@ -22,8 +22,7 @@ services:
       retries: 5
 
   npmplus:
-    image: docker.io/zoeyvid/npmplus:2026-07-24-r1@sha256:f7f6ca26082036ee6387a7da336267fe61f16b1eb8087dd964237238b59479ef
-    entrypoint: ["/entrypoint-wrapper.sh"]
+    image: ghcr.io/saltedlolly/npmplus-wrapper@sha256:f52f7e520bcd6f79c1008089067731fff1558cb755c6c5543613499d874cd4e7
     restart: on-failure
     stop_grace_period: 30s
     cap_drop:
@@ -54,7 +53,6 @@ services:
     volumes:
       - ${APP_SALTEDLOLLY_NPM_PLUS_DATA_DIR}:/data
       - npm-plus-config:/data/config:ro
-      - ./npmplus/entrypoint-wrapper.sh:/entrypoint-wrapper.sh:ro
 
   # Makes the Umbrel host resolvable as $DEVICE_DOMAIN_NAME from NPMplus,
   # matching the official Umbrel Nginx Proxy Manager package.
