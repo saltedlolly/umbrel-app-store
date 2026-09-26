@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-npm-plus
 category: networking
 name: NPMplus
-version: "2026-09-25.10"
+version: "2026-09-25.11"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
@@ -35,33 +35,19 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
-  Compact UI design - Reduced vertical space usage
+  Improved wording for "None" proxy mode
 
 
-  This release makes the launcher interface more compact and efficient:
+  Minor text update to clarify the "None (Default)" option in trusted proxy configuration:
 
-  - Admin interface block significantly reduced in height
+  - Changed description from "Direct connections to NPMplus. No upstream proxy."
 
-  - Removed admin URL display (button navigates directly)
+  - To: "Do not trust forwarded client IP information from an upstream proxy."
 
-  - Credentials on left, "Open NPMplus Admin" button on right
-
-  - Trusted proxy configuration section made more compact
-
-  - Reduced padding and margins throughout for better space efficiency
-
-  - Removed Ko-fi button (kept GitHub Sponsor only)
-
-  - Mobile-responsive layout for admin interface section
+  - This makes it clearer that this option actively rejects X-Forwarded-For headers
 
 
-  All features from v2026-09-25.08-09 remain fully functional:
-
-  - Three trusted proxy modes (None, Cloudflare, Custom IPs)
-
-  - Web-based configuration with persistence
-
-  - Professional footer with credits and GitHub sponsor link
+  All features from v2026-09-25.10 remain unchanged.
 
 
   Full features (Trusted Proxy Configuration UI):
