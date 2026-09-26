@@ -9,10 +9,30 @@
 <body>
     <div class="container">
         <header>
-            <div class="logo">N+</div>
+            <img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-npm-plus/npmplusicon.svg" alt="NPMplus Logo" class="logo">
             <h1>NPMplus for Umbrel</h1>
             <p class="subtitle">Reverse Proxy with SSL Certificate Management</p>
         </header>
+
+        <!-- NPMplus Admin Interface -->
+        <section class="card">
+            <h2>🔗 NPMplus Admin Interface</h2>
+
+            <div class="admin-url-box">
+                <code id="adminUrl">Loading...</code>
+                <button onclick="copyAdminUrl()" class="icon-button" title="Copy URL">📋</button>
+            </div>
+
+            <p class="help-text">
+                <strong>Default credentials:</strong><br>
+                Email: <code>admin@umbrel.local</code><br>
+                Password: Your unique Umbrel app password
+            </p>
+
+            <div class="button-group">
+                <button onclick="openAdmin()" class="primary-button">Open NPMplus Admin</button>
+            </div>
+        </section>
 
         <!-- Trusted Proxy Configuration -->
         <section class="card">
@@ -86,27 +106,6 @@
             <div id="statusMessage" class="status-message" style="display: none;"></div>
         </section>
 
-        <!-- NPMplus Admin Interface -->
-        <section class="card">
-            <h2>🔗 NPMplus Admin Interface</h2>
-            <p>Configure proxy hosts, SSL certificates, and access control.</p>
-
-            <div class="admin-url-box">
-                <code id="adminUrl">Loading...</code>
-                <button onclick="copyAdminUrl()" class="icon-button" title="Copy URL">📋</button>
-            </div>
-
-            <p class="help-text">
-                <strong>Default credentials:</strong><br>
-                Email: <code>admin@umbrel.local</code><br>
-                Password: Your unique Umbrel app password
-            </p>
-
-            <div class="button-group">
-                <button onclick="openAdmin()" class="primary-button">Open NPMplus Admin</button>
-            </div>
-        </section>
-
         <!-- Quick Setup Guide -->
         <section class="card">
             <h2>🚀 Quick Setup Guide</h2>
@@ -155,7 +154,26 @@
         </section>
 
         <footer>
-            <p>NPMplus for Umbrel by Olly Stedall</p>
+            <div class="footer-left">
+                <a href="https://github.com/saltedlolly/umbrel-app-store/issues" target="_blank" class="footer-button">
+                    🐛 Report an Issue
+                </a>
+            </div>
+            <div class="footer-center">
+                <p class="credits">
+                    <strong>NPMplus for Umbrel</strong> by <a href="https://github.com/saltedlolly" target="_blank">Olly Stedall</a><br>
+                    Based on <a href="https://github.com/ZoeyVid/NPMplus" target="_blank">NPMplus</a> by <a href="https://github.com/ZoeyVid" target="_blank">ZoeyVid</a>
+                </p>
+                <p class="version">Version 2026-09-25.09</p>
+            </div>
+            <div class="footer-right">
+                <a href="https://github.com/sponsors/saltedlolly" target="_blank" class="footer-button sponsor">
+                    ❤️ Sponsor
+                </a>
+                <a href="https://ko-fi.com/saltedlolly" target="_blank" class="footer-button">
+                    ☕ Ko-fi
+                </a>
+            </div>
         </footer>
     </div>
 

@@ -26,16 +26,10 @@ header {
 .logo {
     width: 80px;
     height: 80px;
-    background: white;
     border-radius: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 36px;
-    font-weight: bold;
-    color: #667eea;
     margin: 0 auto 20px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    display: block;
 }
 
 h1 {
@@ -279,11 +273,98 @@ h1 {
 }
 
 footer {
-    text-align: center;
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 20px;
+    align-items: center;
     color: white;
     margin-top: 30px;
-    opacity: 0.8;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+}
+
+.footer-left {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.footer-center {
+    text-align: center;
+}
+
+.footer-right {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.footer-button {
+    display: inline-block;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
     font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.footer-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.footer-button.sponsor {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.footer-button.sponsor:hover {
+    background: linear-gradient(135deg, #ee5a6f 0%, #ff6b6b 100%);
+}
+
+.credits {
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 8px;
+    opacity: 0.95;
+}
+
+.credits a {
+    color: white;
+    text-decoration: underline;
+    opacity: 0.9;
+}
+
+.credits a:hover {
+    opacity: 1;
+}
+
+.version {
+    font-size: 12px;
+    opacity: 0.7;
+    margin-top: 5px;
+}
+
+@media (max-width: 768px) {
+    footer {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .footer-left,
+    .footer-right {
+        justify-content: center;
+    }
+
+    .footer-right {
+        flex-wrap: wrap;
+    }
 }
 
 code {

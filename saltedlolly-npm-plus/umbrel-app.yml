@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-npm-plus
 category: networking
 name: NPMplus
-version: "2026-09-25.08"
+version: "2026-09-25.09"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
@@ -35,33 +35,34 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
-  Add Custom Trusted IP Ranges option - Full trusted proxy feature set complete
+  UI Improvements - Better layout and branding
 
 
-  This release adds a third configuration option allowing users to specify custom IP addresses or CIDR ranges to trust. This is useful for users running their own reverse proxies (Caddy, Traefik, nginx, etc.) in front of NPMplus.
+  This release includes cosmetic improvements to the launcher page:
+
+  - NPMplus logo now displays in the header instead of "N+" text
+
+  - "NPMplus Admin Interface" moved to the top for quick access
+
+  - Simplified admin interface card showing only credentials and launch button
+
+  - Professional footer with Report an Issue, Sponsor, and Ko-fi buttons
+
+  - Footer includes credits to ZoeyVid (NPMplus upstream) and version number
+
+  - Responsive footer layout for mobile devices
 
 
-  New features:
+  The feature set from v2026-09-25.08 remains complete:
 
-  - Custom IP Ranges mode with text input for IP addresses/CIDR blocks
+  - All three trusted proxy modes (None, Cloudflare, Custom IPs)
 
-  - Client-side validation ensures custom mode has valid input
+  - Web-based configuration with no terminal access required
 
-  - Dynamic UI showing/hiding the IP input field based on selected mode
-
-  - Full support for space-separated IP ranges (e.g., "192.168.1.0/24 10.0.0.0/8")
+  - Configuration persists across restarts and updates
 
 
-  All three trusted proxy modes now available:
-
-  - None (Default) - Direct connections, no upstream proxy
-
-  - Cloudflare Proxy - Trust Cloudflare's IP ranges for proxied DNS
-
-  - Custom IP Ranges - Trust specific IPs/CIDRs you control
-
-
-  Complete features (Trusted Proxy Configuration UI):
+  Full features (Trusted Proxy Configuration UI):
 
   - Web-based configuration for Cloudflare proxy mode (TRUST_CLOUDFLARE setting)
 
