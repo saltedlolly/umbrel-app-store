@@ -14,8 +14,9 @@ echo "========================================"
 echo ""
 echo "[Auto-Discovery] Detecting companion apps..."
 
-# Check CrowdSec LAPI
-if wget -q --spider --timeout=2 http://host.docker.internal:8080/health 2>/dev/null; then
+# Check CrowdSec LAPI (port 8080)
+# CrowdSec LAPI doesn't have a /health endpoint, so we check if port is accessible
+if timeout 2 nc -z host.docker.internal 8080 2>/dev/null; then
     CROWDSEC_DETECTED=true
     echo "[Auto-Discovery] ✓ CrowdSec detected (LAPI responding on :8080)"
 else
