@@ -5,7 +5,7 @@ services:
       APP_PORT: 8080
 
   launcher:
-    image: ghcr.io/saltedlolly/npmplus-launcher@sha256:c64e02d82d4f49688084a55aba3dc586e1a774766ffe6f6812d4ee0ca3beba15
+    image: ghcr.io/saltedlolly/npmplus-launcher@sha256:c71dde74a12bf75f7014fe16cdde4cbdba5bc2e5c58e830b4d75f857315837b7
     user: "1000:1000"
     init: true
     restart: on-failure

@@ -102,6 +102,8 @@ echo "Building and pushing launcher image..."
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
   --tag "$IMAGE_NAME:$VERSION" \
+  --label "org.opencontainers.image.source=https://github.com/saltedlolly/umbrel-app-store" \
+  --label "org.opencontainers.image.description=NPMplus configuration launcher for Umbrel" \
   --push \
   "$LAUNCHER_DIR"
 

@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-npm-plus
 category: networking
 name: NPMplus
-version: "2026-09-25.02"
+version: "2026-09-25.03"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
@@ -35,13 +35,13 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
-  Fix launcher image packaging issue - Use pre-built launcher image from GHCR instead of local build
+  Fix missing Trusted Proxy Configuration UI - Rebuilt launcher image with updated HTML
 
 
-  This release fixes the "unable to prepare context" error that occurred when updating to the previous version. The launcher is now built and pushed to GitHub Container Registry as a proper multi-architecture image.
+  This release fixes the launcher page showing an incomplete UI without the trusted proxy configuration section. The launcher image has been rebuilt with the correct HTML content that includes the configuration form.
 
 
-  Previous release features (Trusted Proxy Configuration UI):
+  Features (Trusted Proxy Configuration UI):
 
   - Web-based configuration for Cloudflare proxy mode (TRUST_CLOUDFLARE setting)
 
