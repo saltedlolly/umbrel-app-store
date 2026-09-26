@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+
+# Git sync check (before building)
+if [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
+  check_git_sync
+  echo ""
+fi
+
 # Build and push multi-arch images for UI and DDNS, then pin compose to new manifest digests.
 # Also auto-bump umbrel-app.yml version (unless overridden), tag images to match, and prepend release notes.
 #
@@ -406,6 +413,53 @@ update_compose_digest() {
 }
 
 ########################################
+
+# Git sync pre-flight check - prevents pushing to stale branch
+check_git_sync() {
+  echo "Checking repository sync status..."
+  
+  # Determine STORE_ROOT if not set
+  local store_root="${STORE_ROOT:-$(cd "$APP_ROOT/.." && pwd)}"
+  
+  # 1. Check for uncommitted changes
+  if ! git -C "$store_root" diff-index --quiet HEAD --; then
+    echo "❌ Error: You have uncommitted changes"
+    echo "Commit or stash them first, then try again"
+    exit 1
+  fi
+  
+  # 2. Fetch remote state (quietly)
+  git -C "$store_root" fetch origin >/dev/null 2>&1
+  
+  # 3. Get current branch
+  local current_branch=$(git -C "$store_root" rev-parse --abbrev-ref HEAD)
+  
+  # 4. Check if behind remote
+  local behind=$(git -C "$store_root" rev-list HEAD..origin/$current_branch --count 2>/dev/null || echo "0")
+  if [[ "$behind" -gt 0 ]]; then
+    echo "❌ Error: Local branch is $behind commit(s) behind origin/$current_branch"
+    echo ""
+    echo "Your local repository is outdated. This can happen when:"
+    echo "  • GitHub Actions auto-release ran overnight"
+    echo "  • Changes were made on another machine"
+    echo "  • A collaborator pushed changes"
+    echo ""
+    echo "To fix:"
+    echo "  git pull"
+    echo ""
+    echo "Then run this build script again."
+    exit 1
+  fi
+  
+  # 5. Check if ahead (informational only)
+  local ahead=$(git -C "$store_root" rev-list origin/$current_branch..HEAD --count 2>/dev/null || echo "0")
+  if [[ "$ahead" -gt 0 ]]; then
+    echo "ℹ️  Note: You have $ahead unpushed commit(s)"
+  fi
+  
+  echo "✓ Repository is in sync with origin/$current_branch"
+}
+
 # Parse arguments
 ########################################
 while [[ $# -gt 0 ]]; do
