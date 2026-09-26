@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-npm-plus
 category: networking
 name: NPMplus
-version: "2026-09-25.03"
+version: "2026-09-25.04"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
@@ -35,10 +35,10 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
-  Fix missing Trusted Proxy Configuration UI - Rebuilt launcher image with updated HTML
+  Fix configuration save permissions issue
 
 
-  This release fixes the launcher page showing an incomplete UI without the trusted proxy configuration section. The launcher image has been rebuilt with the correct HTML content that includes the configuration form.
+  This release fixes the "Failed to save configuration" error by removing the user restriction from the launcher container, allowing it to properly write configuration files to the shared volume.
 
 
   Features (Trusted Proxy Configuration UI):
