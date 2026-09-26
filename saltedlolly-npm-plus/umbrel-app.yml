@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-npm-plus
 category: networking
 name: NPMplus
-version: "2026-07-24-r1.3"
+version: "2026-07-24-r1.4"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
@@ -35,6 +35,11 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
+  ## 2026-07-24-r1.4
+
+  - Fix App Store button to not include port number in URL
+  - Fix CrowdSec detection using wget instead of nc command
+
   ## 2026-07-24-r1.3
 
   - Change "View App Store" button to link to app listing on local Umbrel device
