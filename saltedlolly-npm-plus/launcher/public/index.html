@@ -444,18 +444,19 @@
             const statusElem = document.getElementById(`${integration}Status`);
             const bodyElem = document.getElementById(`${integration}Body`);
             const enabledCheckbox = document.getElementById(`${integration}Enabled`);
+            const controlsElem = bodyElem.querySelector('.integration-controls');
             const metricsElem = document.getElementById(`${integration}Metrics`);
             const installElem = document.getElementById(`${integration}Install`);
 
             if (status.detected) {
-                // Integration detected - enable checkbox
+                // Integration detected - show controls, hide install message
                 statusElem.innerHTML = '<span class="status-icon status-detected">✓</span> Detected and available';
                 bodyElem.style.display = 'block';
+                controlsElem.style.display = 'block';  // Show checkbox controls
                 installElem.style.display = 'none';
 
-                // Update enabled checkbox - enable it since app is detected
+                // Update enabled checkbox
                 enabledCheckbox.checked = status.enabled;
-                enabledCheckbox.disabled = false;
 
                 // Show/hide metrics based on enabled state
                 if (status.enabled && status.metrics) {
@@ -478,13 +479,12 @@
                     metricsElem.style.display = 'none';
                 }
             } else {
-                // Integration not detected - disable checkbox
+                // Integration not detected - hide controls, show install message
                 statusElem.innerHTML = '<span class="status-icon status-not-detected">○</span> Not detected';
                 bodyElem.style.display = 'block';
+                controlsElem.style.display = 'none';  // Hide checkbox controls entirely
                 installElem.style.display = 'block';
                 metricsElem.style.display = 'none';
-                enabledCheckbox.checked = false;
-                enabledCheckbox.disabled = true;  // Gray out checkbox when not detected
             }
         }
 
