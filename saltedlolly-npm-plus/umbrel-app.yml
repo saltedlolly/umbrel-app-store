@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-npm-plus
 category: networking
 name: NPMplus
-version: "2026-09-25.05"
+version: "2026-09-25.06"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
@@ -35,10 +35,13 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
-  Add detailed error logging to diagnose save failures
+  CRITICAL FIX: NPMplus wrapper entrypoint corrected
 
 
-  This release adds comprehensive logging to help identify the root cause of configuration save failures. The launcher now logs detailed information about file writes, permissions, and errors.
+  This release fixes a critical bug where NPMplus was crash-looping with "/init: not found" errors. The wrapper was calling the wrong entrypoint - now correctly calls "tini -- entrypoint.sh" matching the upstream NPMplus image.
+
+
+  This fix allows NPMplus to actually start and serve traffic. Previous versions had NPMplus constantly restarting.
 
 
   Features (Trusted Proxy Configuration UI):

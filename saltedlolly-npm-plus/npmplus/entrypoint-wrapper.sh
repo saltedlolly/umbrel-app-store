@@ -47,5 +47,5 @@ echo "[NPMplus Wrapper] Starting NPMplus..."
 echo "----------------------------------------"
 
 # Execute original NPMplus entrypoint
-# The NPMplus image uses /init as its entrypoint
-exec /init
+# The NPMplus image uses tini with entrypoint.sh
+exec tini -- entrypoint.sh
