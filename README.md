@@ -42,8 +42,8 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
     <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-crowdsec/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#crowdsec">CrowdSec</a></td>
-      <td nowrap id="saltedlolly-crowdsec-version"><code>v1.8.1.2</code></td>
-      <td nowrap id="saltedlolly-crowdsec-date">2026-09-14</td>
+      <td nowrap id="saltedlolly-crowdsec-version"><code>v1.8.1.3</code></td>
+      <td nowrap id="saltedlolly-crowdsec-date">2026-09-26</td>
       <td>Crowd-sourced intrusion detection and IP banning for your self-hosted apps</td>
     </tr>
     <tr>
@@ -70,8 +70,8 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
     <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-npm-plus/npmplusicon.svg" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#npmplus">NPMplus</a></td>
-      <td nowrap id="saltedlolly-npm-plus-version"><code>2026-07-24-r1</code></td>
-      <td nowrap id="saltedlolly-npm-plus-date">2026-09-14</td>
+      <td nowrap id="saltedlolly-npm-plus-version"><code>2026-07-24-r1.5</code></td>
+      <td nowrap id="saltedlolly-npm-plus-date">2026-09-26</td>
       <td>A feature-rich reverse proxy with HTTP/3, CrowdSec support, and advanced access control</td>
     </tr>
     <tr>
