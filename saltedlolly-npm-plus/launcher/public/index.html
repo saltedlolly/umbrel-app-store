@@ -15,33 +15,26 @@
         </header>
 
         <!-- NPMplus Admin Interface -->
-        <section class="card">
+        <section class="card compact">
             <h2>🔗 NPMplus Admin Interface</h2>
-
-            <div class="admin-url-box">
-                <code id="adminUrl">Loading...</code>
-                <button onclick="copyAdminUrl()" class="icon-button" title="Copy URL">📋</button>
-            </div>
-
-            <p class="help-text">
-                <strong>Default credentials:</strong><br>
-                Email: <code>admin@umbrel.local</code><br>
-                Password: Your unique Umbrel app password
-            </p>
-
-            <div class="button-group">
-                <button onclick="openAdmin()" class="primary-button">Open NPMplus Admin</button>
+            <div class="admin-layout">
+                <div class="admin-credentials">
+                    <p class="help-text">
+                        <strong>Default credentials:</strong><br>
+                        Email: <code>admin@umbrel.local</code><br>
+                        Password: Your unique Umbrel app password
+                    </p>
+                </div>
+                <div class="admin-button">
+                    <button onclick="openAdmin()" class="primary-button">Open NPMplus Admin</button>
+                </div>
             </div>
         </section>
 
         <!-- Trusted Proxy Configuration -->
-        <section class="card">
+        <section class="card compact">
             <h2>⚙️ Trusted Proxy Configuration</h2>
-
-            <p class="info-text">
-                Configure how NPMplus handles client IP addresses when behind a reverse proxy.
-                <strong>Only enable this if traffic is proxied before reaching NPMplus.</strong>
-            </p>
+            <p class="info-text compact">Configure how NPMplus handles client IP addresses when behind a reverse proxy.</p>
 
             <form id="proxyConfigForm">
                 <div class="radio-group">
@@ -164,26 +157,19 @@
                     <strong>NPMplus for Umbrel</strong> by <a href="https://github.com/saltedlolly" target="_blank">Olly Stedall</a><br>
                     Based on <a href="https://github.com/ZoeyVid/NPMplus" target="_blank">NPMplus</a> by <a href="https://github.com/ZoeyVid" target="_blank">ZoeyVid</a>
                 </p>
-                <p class="version">Version 2026-09-25.09</p>
+                <p class="version">Version 2026-09-25.10</p>
             </div>
             <div class="footer-right">
                 <a href="https://github.com/sponsors/saltedlolly" target="_blank" class="footer-button sponsor">
                     ❤️ Sponsor
-                </a>
-                <a href="https://ko-fi.com/saltedlolly" target="_blank" class="footer-button">
-                    ☕ Ko-fi
                 </a>
             </div>
         </footer>
     </div>
 
     <script>
-        // Load admin URL dynamically
+        // Initialize on page load
         window.addEventListener('DOMContentLoaded', async () => {
-            const hostname = window.location.hostname;
-            const adminUrl = `https://${hostname}:5181`;
-            document.getElementById('adminUrl').textContent = adminUrl;
-
             // Load current configuration
             await loadConfig();
 
@@ -287,17 +273,6 @@
             const hostname = window.location.hostname;
             const adminUrl = `https://${hostname}:5181`;
             window.open(adminUrl, '_blank');
-        }
-
-        // Copy admin URL to clipboard
-        async function copyAdminUrl() {
-            const adminUrl = document.getElementById('adminUrl').textContent;
-            try {
-                await navigator.clipboard.writeText(adminUrl);
-                alert('Admin URL copied to clipboard!');
-            } catch (error) {
-                console.error('Failed to copy:', error);
-            }
         }
     </script>
 </body>

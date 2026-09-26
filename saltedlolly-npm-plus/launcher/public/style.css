@@ -50,10 +50,20 @@ h1 {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
+.card.compact {
+    padding: 20px;
+    margin-bottom: 15px;
+}
+
 .card h2 {
     font-size: 22px;
     margin-bottom: 15px;
     color: #667eea;
+}
+
+.card.compact h2 {
+    font-size: 20px;
+    margin-bottom: 10px;
 }
 
 .info-text {
@@ -62,18 +72,58 @@ h1 {
     margin-bottom: 20px;
 }
 
+.info-text.compact {
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
 .info-text strong {
     color: #333;
 }
 
+.admin-layout {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.admin-credentials {
+    flex: 1;
+}
+
+.admin-credentials .help-text {
+    margin: 0;
+    font-size: 14px;
+}
+
+.admin-button {
+    flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+    .admin-layout {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .admin-button {
+        width: 100%;
+    }
+
+    .admin-button button {
+        width: 100%;
+    }
+}
+
 .radio-group {
-    margin: 20px 0;
+    margin: 12px 0;
 }
 
 .radio-label {
     display: block;
-    padding: 15px;
-    margin-bottom: 15px;
+    padding: 12px;
+    margin-bottom: 10px;
     border: 2px solid #e0e0e0;
     border-radius: 8px;
     cursor: pointer;
@@ -122,7 +172,7 @@ h1 {
 }
 
 .button-group {
-    margin-top: 20px;
+    margin-top: 15px;
     display: flex;
     gap: 10px;
 }

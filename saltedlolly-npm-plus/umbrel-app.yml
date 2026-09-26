@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-npm-plus
 category: networking
 name: NPMplus
-version: "2026-09-25.09"
+version: "2026-09-25.10"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
@@ -35,31 +35,33 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
-  UI Improvements - Better layout and branding
+  Compact UI design - Reduced vertical space usage
 
 
-  This release includes cosmetic improvements to the launcher page:
+  This release makes the launcher interface more compact and efficient:
 
-  - NPMplus logo now displays in the header instead of "N+" text
+  - Admin interface block significantly reduced in height
 
-  - "NPMplus Admin Interface" moved to the top for quick access
+  - Removed admin URL display (button navigates directly)
 
-  - Simplified admin interface card showing only credentials and launch button
+  - Credentials on left, "Open NPMplus Admin" button on right
 
-  - Professional footer with Report an Issue, Sponsor, and Ko-fi buttons
+  - Trusted proxy configuration section made more compact
 
-  - Footer includes credits to ZoeyVid (NPMplus upstream) and version number
+  - Reduced padding and margins throughout for better space efficiency
 
-  - Responsive footer layout for mobile devices
+  - Removed Ko-fi button (kept GitHub Sponsor only)
+
+  - Mobile-responsive layout for admin interface section
 
 
-  The feature set from v2026-09-25.08 remains complete:
+  All features from v2026-09-25.08-09 remain fully functional:
 
-  - All three trusted proxy modes (None, Cloudflare, Custom IPs)
+  - Three trusted proxy modes (None, Cloudflare, Custom IPs)
 
-  - Web-based configuration with no terminal access required
+  - Web-based configuration with persistence
 
-  - Configuration persists across restarts and updates
+  - Professional footer with credits and GitHub sponsor link
 
 
   Full features (Trusted Proxy Configuration UI):
