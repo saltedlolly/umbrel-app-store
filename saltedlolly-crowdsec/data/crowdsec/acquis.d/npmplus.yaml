@@ -1,0 +1,18 @@
+# NPMplus log acquisition configuration
+# Watches NPMplus access and error logs for attack patterns
+# Only active when saltedlolly-npm-plus is installed (log directory exists)
+
+filenames:
+  - /var/log/npmplus/*.log
+
+labels:
+  type: npmplus
+
+---
+# Stream logs (if available)
+source: docker
+container_name:
+  - saltedlolly-npm-plus_npmplus_1
+
+labels:
+  type: npmplus
