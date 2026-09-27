@@ -155,16 +155,17 @@
                         <div class="integration-metrics" id="crowdsecMetrics" style="display: none;">
                             <div class="metric-grid">
                                 <div class="metric-item">
-                                    <span class="metric-label">Threats Blocked (24h)</span>
-                                    <span class="metric-value" id="crowdsecBlocked">-</span>
-                                </div>
-                                <div class="metric-item">
                                     <span class="metric-label">Active Bans</span>
                                     <span class="metric-value" id="crowdsecBans">-</span>
+                                    <span class="metric-detail" id="crowdsecBansDetail"></span>
                                 </div>
                                 <div class="metric-item">
-                                    <span class="metric-label">Last Sync</span>
-                                    <span class="metric-value" id="crowdsecLastSync">-</span>
+                                    <span class="metric-label">Protection</span>
+                                    <span class="metric-value" id="crowdsecProtection">-</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Connected Since</span>
+                                    <span class="metric-value" id="crowdsecSince">-</span>
                                 </div>
                             </div>
                             <div class="integration-actions">
@@ -448,6 +449,11 @@
             const metricsElem = document.getElementById(`${integration}Metrics`);
             const installElem = document.getElementById(`${integration}Install`);
 
+            if (integration === 'crowdsec' && status.state) {
+                updateCrowdSecStatus(status, statusElem, bodyElem, controlsElem, metricsElem, installElem, enabledCheckbox);
+                return;
+            }
+
             if (status.detected) {
                 // Integration detected - show controls, hide install message
                 statusElem.innerHTML = '<span class="status-icon status-detected">✓</span> Detected and available';
@@ -461,13 +467,6 @@
                 // Show/hide metrics based on enabled state
                 if (status.enabled && status.metrics) {
                     metricsElem.style.display = 'block';
-
-                    // Update CrowdSec metrics
-                    if (integration === 'crowdsec') {
-                        document.getElementById('crowdsecBlocked').textContent = status.metrics.blocked || '0';
-                        document.getElementById('crowdsecBans').textContent = status.metrics.bans || '0';
-                        document.getElementById('crowdsecLastSync').textContent = status.metrics.lastSync || 'Never';
-                    }
 
                     // Update Authentik metrics
                     if (integration === 'authentik') {
@@ -486,6 +485,56 @@
                 installElem.style.display = 'block';
                 metricsElem.style.display = 'none';
             }
+        }
+
+        // CrowdSec status comes from what the npmplus wrapper actually configured
+        // at startup, not just whether CrowdSec's LAPI answers
+        const CROWDSEC_STATES = {
+            'connected':      { icon: '✓', cls: 'status-detected',     text: 'Connected' },
+            'available':      { icon: '✓', cls: 'status-detected',     text: 'Detected and available' },
+            'restart-needed': { icon: '!', cls: 'status-warning',      text: 'Detected – restart NPMplus to connect' },
+            'disabled':       { icon: '○', cls: 'status-not-detected', text: 'Disabled by user' },
+            'unreachable':    { icon: '✕', cls: 'status-error',        text: 'Enabled, but CrowdSec is not responding' },
+            'not-detected':   { icon: '○', cls: 'status-not-detected', text: 'Not detected' }
+        };
+
+        function updateCrowdSecStatus(status, statusElem, bodyElem, controlsElem, metricsElem, installElem, enabledCheckbox) {
+            const s = CROWDSEC_STATES[status.state] || CROWDSEC_STATES['not-detected'];
+            let text = s.text;
+            if (status.state === 'connected') {
+                text += status.appsecEnabled ? ' · blocklist + WAF' : ' · blocklist only';
+            }
+            if (status.pendingRestart) {
+                text += ' (restart NPMplus to apply your saved changes)';
+            }
+            statusElem.innerHTML = `<span class="status-icon ${s.cls}">${s.icon}</span> `;
+            statusElem.appendChild(document.createTextNode(text));
+
+            bodyElem.style.display = 'block';
+            const showControls = status.state !== 'not-detected';
+            controlsElem.style.display = showControls ? 'block' : 'none';
+            installElem.style.display = showControls ? 'none' : 'block';
+            enabledCheckbox.checked = status.enabled;
+
+            if (status.state !== 'connected') {
+                metricsElem.style.display = 'none';
+                return;
+            }
+            metricsElem.style.display = 'block';
+
+            const bans = document.getElementById('crowdsecBans');
+            const bansDetail = document.getElementById('crowdsecBansDetail');
+            if (status.decisions) {
+                bans.textContent = status.decisions.total.toLocaleString();
+                bansDetail.textContent = `${status.decisions.local.toLocaleString()} local · ${status.decisions.community.toLocaleString()} community`;
+            } else {
+                bans.textContent = '–';
+                bansDetail.textContent = 'Could not reach CrowdSec';
+            }
+            document.getElementById('crowdsecProtection').textContent = status.appsecEnabled ? 'Blocklist + WAF' : 'Blocklist';
+            document.getElementById('crowdsecSince').textContent = status.connectedSince
+                ? new Date(status.connectedSince).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
+                : '–';
         }
 
         // Load current configuration

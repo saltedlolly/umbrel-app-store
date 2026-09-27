@@ -142,6 +142,25 @@ else
     echo "[CrowdSec] ⚠ Warning: crowdsec.conf not found at $CROWDSEC_CONF"
 fi
 
+# Publish the bouncer state for the launcher, which can't see crowdsec.conf.
+# No secrets here - the launcher mounts this directory read-only.
+STATUS_DIR="/data/integration-status"
+mkdir -p "$STATUS_DIR"
+if [ -f "$CROWDSEC_CONF" ] && [ "$CROWDSEC_EFFECTIVE" = "true" ]; then
+    CROWDSEC_BOUNCER_ENABLED=true
+else
+    CROWDSEC_BOUNCER_ENABLED=false
+fi
+cat > "$STATUS_DIR/crowdsec.env.tmp" <<EOF
+BOUNCER_ENABLED=${CROWDSEC_BOUNCER_ENABLED}
+MODE=${CROWDSEC_ENABLED:-auto}
+DETECTED_AT_START=${CROWDSEC_DETECTED}
+LAPI_URL=${CROWDSEC_LAPI_URL:-}
+APPSEC_ENABLED=false
+UPDATED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+EOF
+mv "$STATUS_DIR/crowdsec.env.tmp" "$STATUS_DIR/crowdsec.env"
+
 # ============================================================
 # Configure Authentik Integration
 # ============================================================

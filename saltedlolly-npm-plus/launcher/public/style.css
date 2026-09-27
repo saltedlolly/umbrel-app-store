@@ -591,6 +591,10 @@ code {
     color: #dc3545;
 }
 
+.status-warning {
+    color: #d97706;
+}
+
 .integration-body {
     padding: 15px;
     border-top: 1px solid #e0e0e0;
@@ -657,6 +661,11 @@ code {
     font-size: 18px;
     font-weight: 700;
     color: #667eea;
+}
+
+.metric-detail {
+    font-size: 11px;
+    color: #666;
 }
 
 .integration-actions {

@@ -12,11 +12,16 @@ services:
       - no-new-privileges:true
     environment:
       CONFIG_DIR: /data/config
+      STATUS_DIR: /data/status
+      # Read-only LAPI access to count active decisions for the status card
+      CROWDSEC_BOUNCER_KEY: ${APP_SALTEDLOLLY_CROWDSEC_NPMPLUS_BOUNCER_KEY}
     extra_hosts:
       # Allow launcher to detect companion apps via host.docker.internal
       - "host.docker.internal:host-gateway"
     volumes:
       - ${APP_SALTEDLOLLY_NPM_PLUS_DATA_DIR}/launcher-config:/data/config
+      # Integration state written by the npmplus wrapper at startup
+      - ${APP_SALTEDLOLLY_NPM_PLUS_DATA_DIR}/integration-status:/data/status:ro
 
   npmplus:
     image: ghcr.io/saltedlolly/npmplus-wrapper@sha256:92f3127ee1f561a44d0e5cc8f77a3f7c266b2b9d89c2808b44990eee21538ecb

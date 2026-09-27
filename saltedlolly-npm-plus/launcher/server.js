@@ -9,6 +9,11 @@ const PORT = 8080;
 const CONFIG_DIR = process.env.CONFIG_DIR || '/data/config';
 const CONFIG_FILE = path.join(CONFIG_DIR, 'npm-settings.env');
 
+// Integration state written by the npmplus wrapper at startup (read-only here)
+const STATUS_DIR = process.env.STATUS_DIR || '/data/status';
+const CROWDSEC_STATUS_FILE = path.join(STATUS_DIR, 'crowdsec.env');
+const CROWDSEC_BOUNCER_KEY = process.env.CROWDSEC_BOUNCER_KEY || '';
+
 // Integration endpoints
 const CROWDSEC_LAPI = 'host.docker.internal:8080';
 const CROWDSEC_APPSEC = 'host.docker.internal:7422';
@@ -46,6 +51,84 @@ function checkServiceAvailable(host, port, path = '/health', timeout = 3000) {
 
         req.end();
     });
+}
+
+// Read the CrowdSec bouncer state the npmplus wrapper published at startup.
+// Returns null if the wrapper hasn't written it (older wrapper, first start).
+function readCrowdSecStatus() {
+    try {
+        const status = {};
+        for (const line of fs.readFileSync(CROWDSEC_STATUS_FILE, 'utf8').split('\n')) {
+            const match = line.match(/^([A-Z_]+)=(.*)$/);
+            if (match) status[match[1]] = match[2];
+        }
+        return {
+            bouncerEnabled: status.BOUNCER_ENABLED === 'true',
+            mode: status.MODE || 'auto',
+            lapiUrl: status.LAPI_URL || '',
+            appsecEnabled: status.APPSEC_ENABLED === 'true',
+            updatedAt: status.UPDATED_AT || null
+        };
+    } catch {
+        return null;
+    }
+}
+
+// Count active LAPI decisions with the bouncer key. The community blocklist
+// can hold thousands of entries, so cache the result rather than fetching
+// on every 30s poll.
+const DECISIONS_CACHE_MS = 5 * 60 * 1000;
+let decisionsCache = { at: 0, value: null };
+
+function fetchCrowdSecDecisions(lapiUrl) {
+    if (!CROWDSEC_BOUNCER_KEY) return Promise.resolve(null);
+    if (decisionsCache.value && Date.now() - decisionsCache.at < DECISIONS_CACHE_MS) {
+        return Promise.resolve(decisionsCache.value);
+    }
+
+    return new Promise((resolve) => {
+        const req = http.get(`${lapiUrl}/v1/decisions`, {
+            headers: { 'X-Api-Key': CROWDSEC_BOUNCER_KEY },
+            timeout: 5000
+        }, (res) => {
+            let body = '';
+            res.setEncoding('utf8');
+            res.on('data', (chunk) => { body += chunk; });
+            res.on('end', () => {
+                if (res.statusCode !== 200) return resolve(null);
+                try {
+                    // LAPI returns null (not []) when there are no decisions
+                    const decisions = JSON.parse(body) || [];
+                    const community = decisions.filter(d => d.origin === 'CAPI' || d.origin === 'lists').length;
+                    const value = {
+                        total: decisions.length,
+                        local: decisions.length - community,
+                        community,
+                        checkedAt: new Date().toISOString()
+                    };
+                    decisionsCache = { at: Date.now(), value };
+                    resolve(value);
+                } catch {
+                    resolve(null);
+                }
+            });
+        });
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
+    });
+}
+
+// Work out what the CrowdSec card should say, from what's reachable now
+// (detected), what the wrapper actually configured at startup (status) and
+// what the user has asked for (configured mode).
+function crowdSecState(detected, status, configuredMode) {
+    if (!detected) {
+        return status && status.bouncerEnabled ? 'unreachable' : 'not-detected';
+    }
+    if (!status) return 'available';
+    if (status.bouncerEnabled) return 'connected';
+    if (configuredMode === 'false') return 'disabled';
+    return 'restart-needed';
 }
 
 // Read configuration from file
@@ -180,15 +263,23 @@ app.get('/api/integrations/status', async (req, res) => {
             ? authentikDetected
             : config.AUTHENTIK_ENABLED === 'true';
 
+        const crowdsecStatus = readCrowdSecStatus();
+        const crowdsecConfiguredMode = config.CROWDSEC_ENABLED || 'auto';
+        const crowdsecState = crowdSecState(crowdsecDetected, crowdsecStatus, crowdsecConfiguredMode);
+        const crowdsecDecisions = crowdsecState === 'connected'
+            ? await fetchCrowdSecDecisions(crowdsecStatus.lapiUrl || `http://${CROWDSEC_LAPI}`)
+            : null;
+
         res.json({
             crowdsec: {
                 detected: crowdsecDetected,
                 enabled: crowdsecEnabled,
-                metrics: crowdsecEnabled ? {
-                    blocked: 0,  // TODO: Fetch from CrowdSec API
-                    bans: 0,     // TODO: Fetch from CrowdSec API
-                    lastSync: 'Just now'
-                } : null
+                state: crowdsecState,
+                // Settings saved since NPMplus started only apply after a restart
+                pendingRestart: !!crowdsecStatus && crowdsecStatus.mode !== crowdsecConfiguredMode,
+                appsecEnabled: !!crowdsecStatus && crowdsecStatus.appsecEnabled,
+                connectedSince: crowdsecState === 'connected' ? crowdsecStatus.updatedAt : null,
+                decisions: crowdsecDecisions
             },
             authentik: {
                 detected: authentikDetected,
