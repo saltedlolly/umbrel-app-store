@@ -12,6 +12,9 @@ services:
       - no-new-privileges:true
     environment:
       CONFIG_DIR: /data/config
+    extra_hosts:
+      # Allow launcher to detect companion apps via host.docker.internal
+      - "host.docker.internal:host-gateway"
     volumes:
       - ${APP_SALTEDLOLLY_NPM_PLUS_DATA_DIR}/launcher-config:/data/config
     healthcheck:
