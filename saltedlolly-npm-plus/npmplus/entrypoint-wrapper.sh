@@ -120,19 +120,34 @@ if [ -f "$CROWDSEC_CONF" ]; then
 
         # Always use detected gateway IP (ignore any env vars with old host.docker.internal)
         CROWDSEC_LAPI_URL="http://${DOCKER_HOST_IP}:8080"
-        # NOTE: AppSec disabled - not yet configured in CrowdSec container
-        # CROWDSEC_APPSEC_URL="http://${DOCKER_HOST_IP}:7422"
+
+        # Only use AppSec (WAF) if CrowdSec's listener is actually up - older
+        # CrowdSec app versions don't run it
+        if nc -z -w 2 "$DOCKER_HOST_IP" 7422 2>/dev/null; then
+            CROWDSEC_APPSEC_ENABLED=true
+            CROWDSEC_APPSEC_URL="http://${DOCKER_HOST_IP}:7422"
+        else
+            CROWDSEC_APPSEC_ENABLED=false
+            CROWDSEC_APPSEC_URL=""
+        fi
 
         # Write the config
         sed -i 's/^ENABLED=.*/ENABLED=true/' "$CROWDSEC_CONF"
         sed -i "s|^API_URL=.*|API_URL=${CROWDSEC_LAPI_URL}|" "$CROWDSEC_CONF"
         sed -i "s|^API_KEY=.*|API_KEY=${APP_SALTEDLOLLY_CROWDSEC_NPMPLUS_BOUNCER_KEY}|" "$CROWDSEC_CONF"
-        # Disable AppSec - it's not running in CrowdSec yet
-        sed -i "s|^APPSEC_URL=.*|APPSEC_URL=|" "$CROWDSEC_CONF"
+        sed -i "s|^APPSEC_URL=.*|APPSEC_URL=${CROWDSEC_APPSEC_URL}|" "$CROWDSEC_CONF"
+        # If AppSec is unreachable or errors, let the request through rather
+        # than blocking it. NPMplus ships `deny`, which banned every visitor
+        # while AppSec wasn't running (r1.12).
+        sed -i "s|^APPSEC_FAILURE_ACTION=.*|APPSEC_FAILURE_ACTION=passthrough|" "$CROWDSEC_CONF"
 
-        echo "[CrowdSec] ✓ Bouncer enabled (LAPI only)"
+        echo "[CrowdSec] ✓ Bouncer enabled"
         echo "[CrowdSec]   LAPI: ${CROWDSEC_LAPI_URL}"
-        echo "[CrowdSec]   AppSec: disabled (not yet configured in CrowdSec)"
+        if [ "$CROWDSEC_APPSEC_ENABLED" = "true" ]; then
+            echo "[CrowdSec]   AppSec: ${CROWDSEC_APPSEC_URL} (on failure: passthrough)"
+        else
+            echo "[CrowdSec]   AppSec: disabled (not listening on ${DOCKER_HOST_IP}:7422)"
+        fi
     else
         echo "[CrowdSec] Disabling bouncer integration"
         sed -i 's/^ENABLED=.*/ENABLED=false/' "$CROWDSEC_CONF"
@@ -156,7 +171,7 @@ BOUNCER_ENABLED=${CROWDSEC_BOUNCER_ENABLED}
 MODE=${CROWDSEC_ENABLED:-auto}
 DETECTED_AT_START=${CROWDSEC_DETECTED}
 LAPI_URL=${CROWDSEC_LAPI_URL:-}
-APPSEC_ENABLED=false
+APPSEC_ENABLED=${CROWDSEC_APPSEC_ENABLED:-false}
 UPDATED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 EOF
 mv "$STATUS_DIR/crowdsec.env.tmp" "$STATUS_DIR/crowdsec.env"
