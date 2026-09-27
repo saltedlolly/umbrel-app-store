@@ -118,15 +118,19 @@ if [ -f "$CROWDSEC_CONF" ]; then
     if [ "$CROWDSEC_EFFECTIVE" = "true" ]; then
         echo "[CrowdSec] Enabling bouncer integration"
 
-        # Read the existing config template
+        # Always use detected gateway IP (ignore any env vars with old host.docker.internal)
+        CROWDSEC_LAPI_URL="http://${DOCKER_HOST_IP}:8080"
+        CROWDSEC_APPSEC_URL="http://${DOCKER_HOST_IP}:7422"
+
+        # Write the config
         sed -i 's/^ENABLED=.*/ENABLED=true/' "$CROWDSEC_CONF"
-        sed -i "s|^API_URL=.*|API_URL=${CROWDSEC_LAPI_URL:-http://${DOCKER_HOST_IP}:8080}|" "$CROWDSEC_CONF"
+        sed -i "s|^API_URL=.*|API_URL=${CROWDSEC_LAPI_URL}|" "$CROWDSEC_CONF"
         sed -i "s|^API_KEY=.*|API_KEY=${APP_SALTEDLOLLY_CROWDSEC_NPMPLUS_BOUNCER_KEY}|" "$CROWDSEC_CONF"
-        sed -i "s|^APPSEC_URL=.*|APPSEC_URL=${CROWDSEC_APPSEC_URL:-http://${DOCKER_HOST_IP}:7422}|" "$CROWDSEC_CONF"
+        sed -i "s|^APPSEC_URL=.*|APPSEC_URL=${CROWDSEC_APPSEC_URL}|" "$CROWDSEC_CONF"
 
         echo "[CrowdSec] ✓ Bouncer enabled"
-        echo "[CrowdSec]   LAPI: ${CROWDSEC_LAPI_URL:-http://${DOCKER_HOST_IP}:8080}"
-        echo "[CrowdSec]   AppSec: ${CROWDSEC_APPSEC_URL:-http://${DOCKER_HOST_IP}:7422}"
+        echo "[CrowdSec]   LAPI: ${CROWDSEC_LAPI_URL}"
+        echo "[CrowdSec]   AppSec: ${CROWDSEC_APPSEC_URL}"
     else
         echo "[CrowdSec] Disabling bouncer integration"
         sed -i 's/^ENABLED=.*/ENABLED=false/' "$CROWDSEC_CONF"
@@ -164,11 +168,13 @@ esac
 
 if [ "$AUTHENTIK_EFFECTIVE" = "true" ]; then
     echo "[Authentik] Enabling SSO integration"
-    export AUTHENTIK_URL="${AUTHENTIK_URL:-http://${DOCKER_HOST_IP}:9000}"
+    # Always use detected gateway IP (ignore any env vars with old host.docker.internal)
+    AUTHENTIK_URL="http://${DOCKER_HOST_IP}:9000"
+    export AUTHENTIK_URL
     export AUTHENTIK_CLIENT_ID="${APP_SALTEDLOLLY_NPM_PLUS_AUTHENTIK_CLIENT_ID}"
     export AUTHENTIK_CLIENT_SECRET="${APP_SALTEDLOLLY_NPM_PLUS_AUTHENTIK_CLIENT_SECRET}"
     echo "[Authentik] ✓ SSO enabled"
-    export "[Authentik]   URL: $AUTHENTIK_URL"
+    echo "[Authentik]   URL: $AUTHENTIK_URL"
 else
     echo "[Authentik] ○ SSO disabled"
 fi
