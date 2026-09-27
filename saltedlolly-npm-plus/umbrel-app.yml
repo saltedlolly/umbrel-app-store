@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-npm-plus
 category: networking
 name: NPMplus
-version: "2026-07-24-r1.8"
+version: "2026-07-24-r1.9"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
@@ -35,6 +35,13 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
+  ## 2026-07-24-r1.9
+
+  - Fix CrowdSec/Authentik integration - always use detected gateway IP
+  - Ignore stale environment variables from old npm-settings.env
+  - Resolves "host.docker.internal could not be resolved" errors
+  - Ensures NPMplus uses correct gateway IP even after config updates
+
   ## 2026-07-24-r1.8
 
   - Fix CrowdSec detection - use gateway IP instead of host.docker.internal
