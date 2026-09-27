@@ -21,10 +21,11 @@ services:
       # secret with saltedlolly-npm-plus's bouncer config to connect them.
       - BOUNCER_KEY_npmplus=${APP_SALTEDLOLLY_CROWDSEC_NPMPLUS_BOUNCER_KEY}
     ports:
-      # Expose LAPI and AppSec on localhost only for NPMplus integration
-      # NPMplus accesses via host.docker.internal:8080 and :7422
-      - "127.0.0.1:8080:8080/tcp"  # LAPI
-      - "127.0.0.1:7422:7422/tcp"  # AppSec
+      # Expose LAPI and AppSec for NPMplus integration
+      # Bound to all interfaces so Docker containers can access via gateway IP
+      # CrowdSec LAPI requires authentication (bouncer key) so this is secure
+      - "0.0.0.0:8080:8080/tcp"  # LAPI
+      - "0.0.0.0:7422:7422/tcp"  # AppSec
     volumes:
       - ${APP_DATA_DIR}/data/crowdsec/config:/etc/crowdsec
       # Required: the image refuses to fully start unless this is a real
