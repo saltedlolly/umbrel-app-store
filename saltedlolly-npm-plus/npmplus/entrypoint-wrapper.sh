@@ -9,25 +9,37 @@ echo "NPMplus Wrapper - Companion App Framework"
 echo "========================================"
 
 # ============================================================
+# Detect Docker host gateway IP
+# ============================================================
+# Get the default gateway IP (Docker host)
+DOCKER_HOST_IP=$(ip route | grep default | awk '{print $3}')
+if [ -z "$DOCKER_HOST_IP" ]; then
+    # Fallback to common Docker gateway
+    DOCKER_HOST_IP="172.17.0.1"
+fi
+echo "[Network] Docker host gateway: $DOCKER_HOST_IP"
+
+# ============================================================
 # Auto-detect companion apps
 # ============================================================
 echo ""
 echo "[Auto-Discovery] Detecting companion apps..."
 
 # Check CrowdSec LAPI (port 8080)
-# Use bash's built-in /dev/tcp/ to check if port is open (most reliable method)
-if timeout 2 bash -c ': < /dev/tcp/host.docker.internal/8080' 2>/dev/null; then
+# Use wget to check if LAPI is responding
+if wget -q --spider --timeout=2 "http://${DOCKER_HOST_IP}:8080/health" 2>/dev/null || \
+   wget -q --spider --timeout=2 "http://${DOCKER_HOST_IP}:8080" 2>/dev/null; then
     CROWDSEC_DETECTED=true
-    echo "[Auto-Discovery] ✓ CrowdSec detected (LAPI responding on :8080)"
+    echo "[Auto-Discovery] ✓ CrowdSec detected (LAPI responding on ${DOCKER_HOST_IP}:8080)"
 else
     CROWDSEC_DETECTED=false
     echo "[Auto-Discovery] ○ CrowdSec not detected"
 fi
 
 # Check Authentik
-if wget -q --spider --timeout=2 http://host.docker.internal:9000/application/o/npmplus/.well-known/openid-configuration 2>/dev/null; then
+if wget -q --spider --timeout=2 "http://${DOCKER_HOST_IP}:9000/application/o/npmplus/.well-known/openid-configuration" 2>/dev/null; then
     AUTHENTIK_DETECTED=true
-    echo "[Auto-Discovery] ✓ Authentik detected (OIDC responding on :9000)"
+    echo "[Auto-Discovery] ✓ Authentik detected (OIDC responding on ${DOCKER_HOST_IP}:9000)"
 else
     AUTHENTIK_DETECTED=false
     echo "[Auto-Discovery] ○ Authentik not detected"
@@ -108,13 +120,13 @@ if [ -f "$CROWDSEC_CONF" ]; then
 
         # Read the existing config template
         sed -i 's/^ENABLED=.*/ENABLED=true/' "$CROWDSEC_CONF"
-        sed -i "s|^API_URL=.*|API_URL=${CROWDSEC_LAPI_URL:-http://host.docker.internal:8080}|" "$CROWDSEC_CONF"
+        sed -i "s|^API_URL=.*|API_URL=${CROWDSEC_LAPI_URL:-http://${DOCKER_HOST_IP}:8080}|" "$CROWDSEC_CONF"
         sed -i "s|^API_KEY=.*|API_KEY=${APP_SALTEDLOLLY_CROWDSEC_NPMPLUS_BOUNCER_KEY}|" "$CROWDSEC_CONF"
-        sed -i "s|^APPSEC_URL=.*|APPSEC_URL=${CROWDSEC_APPSEC_URL:-http://host.docker.internal:7422}|" "$CROWDSEC_CONF"
+        sed -i "s|^APPSEC_URL=.*|APPSEC_URL=${CROWDSEC_APPSEC_URL:-http://${DOCKER_HOST_IP}:7422}|" "$CROWDSEC_CONF"
 
         echo "[CrowdSec] ✓ Bouncer enabled"
-        echo "[CrowdSec]   LAPI: ${CROWDSEC_LAPI_URL:-http://host.docker.internal:8080}"
-        echo "[CrowdSec]   AppSec: ${CROWDSEC_APPSEC_URL:-http://host.docker.internal:7422}"
+        echo "[CrowdSec]   LAPI: ${CROWDSEC_LAPI_URL:-http://${DOCKER_HOST_IP}:8080}"
+        echo "[CrowdSec]   AppSec: ${CROWDSEC_APPSEC_URL:-http://${DOCKER_HOST_IP}:7422}"
     else
         echo "[CrowdSec] Disabling bouncer integration"
         sed -i 's/^ENABLED=.*/ENABLED=false/' "$CROWDSEC_CONF"
@@ -152,11 +164,11 @@ esac
 
 if [ "$AUTHENTIK_EFFECTIVE" = "true" ]; then
     echo "[Authentik] Enabling SSO integration"
-    export AUTHENTIK_URL="${AUTHENTIK_URL:-http://host.docker.internal:9000}"
+    export AUTHENTIK_URL="${AUTHENTIK_URL:-http://${DOCKER_HOST_IP}:9000}"
     export AUTHENTIK_CLIENT_ID="${APP_SALTEDLOLLY_NPM_PLUS_AUTHENTIK_CLIENT_ID}"
     export AUTHENTIK_CLIENT_SECRET="${APP_SALTEDLOLLY_NPM_PLUS_AUTHENTIK_CLIENT_SECRET}"
     echo "[Authentik] ✓ SSO enabled"
-    echo "[Authentik]   URL: $AUTHENTIK_URL"
+    export "[Authentik]   URL: $AUTHENTIK_URL"
 else
     echo "[Authentik] ○ SSO disabled"
 fi
