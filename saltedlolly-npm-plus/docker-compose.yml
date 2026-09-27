@@ -21,7 +21,7 @@ services:
       retries: 5
 
   npmplus:
-    image: ghcr.io/saltedlolly/npmplus-wrapper@sha256:776a9828b5a30c9f6e3976909bd0a64ef8aead41e526f8090191b9fc2fdbb9bd
+    image: ghcr.io/saltedlolly/npmplus-wrapper@sha256:f16d62215ae7a4706b7122dbe2d616adb2891c2f9f60535e1b595e6d52df3381
     restart: on-failure
     stop_grace_period: 30s
     cap_drop:
