@@ -397,7 +397,9 @@ update_compose_digests() {
 
 # Ensure Docker Buildx is set up
 ensure_buildx() {
-  if ! docker buildx ls | grep -q "multi-platform-builder"; then
+  # Inspect by name: `docker buildx ls` exits non-zero if any other builder is
+  # unreachable (e.g. OrbStack stopped), which breaks a `ls | grep` under pipefail
+  if ! docker buildx inspect multi-platform-builder >/dev/null 2>&1; then
     echo "Creating multi-platform-builder..."
     docker buildx create --driver docker-container \
       --platform linux/amd64,linux/arm64 \
@@ -405,6 +407,7 @@ ensure_buildx() {
       --use
     docker buildx inspect --bootstrap
   else
+    docker buildx use multi-platform-builder
     echo "✓ Using existing multi-platform-builder"
   fi
 }
