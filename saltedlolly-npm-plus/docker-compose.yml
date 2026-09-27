@@ -17,11 +17,6 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - ${APP_SALTEDLOLLY_NPM_PLUS_DATA_DIR}/launcher-config:/data/config
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
 
   npmplus:
     image: ghcr.io/saltedlolly/npmplus-wrapper@sha256:20249b9df8297b8998827032166a545480bef34facffff60fa1e45b375f59e54
