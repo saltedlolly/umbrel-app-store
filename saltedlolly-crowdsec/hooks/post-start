@@ -9,12 +9,6 @@ for _ in $(seq 1 30); do
   sleep 2
 done
 
-# AppSec (WAF) is not enabled yet. v1.8.1.7 tried a top-level `appsec_config:`
-# key in config.yaml, which isn't valid and crash-looped CrowdSec (pre-start
-# now removes it). AppSec is enabled via an acquisition file
-# (acquis.d/appsec.yaml, `source: appsec`) plus the AppSec collections.
-# TODO: add that, then re-enable AppSec in NPMplus
-
 # crowdsec-web-ui doesn't support the env-var auto-registration bouncers get
 # (BOUNCER_KEY_<name>) - its own docs require a one-time `cscli machines add`
 # run against the crowdsec container. Doing that from inside a container

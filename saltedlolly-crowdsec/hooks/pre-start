@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# v1.8.1.7's post-start appended a top-level `appsec_config:` block to
-# config.yaml. That isn't a valid CrowdSec config key, so CrowdSec refuses to
-# start and crash-loops. /etc/crowdsec is bind-mounted from APP_DATA_DIR, so
-# the bad block survives app updates. Remove it here, on the host, before the
-# containers start - a crash-looping container can't be fixed via docker exec.
-# Idempotent: does nothing once the block is gone.
-CONFIG_FILE="${APP_DATA_DIR}/data/crowdsec/config/config.yaml"
+# Enable the AppSec (WAF) listener that NPMplus's bouncer forwards requests
+# to. AppSec is a datasource, configured by an acquisition file - not a
+# config.yaml key. Written on the host before the containers start: on a
+# fresh install the image's entrypoint only fills in missing files
+# (rsync --ignore-existing), so this file is kept. Rewritten on every start
+# so the app controls its content.
+# Listens on 0.0.0.0 inside the container so the published port reaches it;
+# docker-compose.yml publishes 7422 for NPMplus via the Docker gateway.
+ACQUIS_DIR="${APP_DATA_DIR}/data/crowdsec/config/acquis.d"
 
-if [[ -f "$CONFIG_FILE" ]] && grep -q '^appsec_config:' "$CONFIG_FILE"; then
-  echo "Removing invalid appsec_config block from config.yaml (added by v1.8.1.7)..."
-  cp -p "$CONFIG_FILE" "${CONFIG_FILE}.bak-v1.8.1.7"
-  # Drop the marker comment, the appsec_config: line and its indented children
-  awk '
-    /^# AppSec \(Web Application Firewall\) - auto-enabled by Umbrel app$/ { next }
-    /^appsec_config:/ { skip = 1; next }
-    skip && /^[[:space:]]/ { next }
-    { skip = 0; print }
-  ' "${CONFIG_FILE}.bak-v1.8.1.7" > "$CONFIG_FILE"
-  echo "✓ Removed (backup: config.yaml.bak-v1.8.1.7)"
-fi
+mkdir -p "$ACQUIS_DIR"
+cat > "${ACQUIS_DIR}/appsec.yaml" <<'EOF'
+# Managed by the Umbrel CrowdSec app - changes are overwritten on start
+appsec_configs:
+  - crowdsecurity/appsec-default
+labels:
+  type: appsec
+listen_addr: 0.0.0.0:7422
+source: appsec
+EOF
