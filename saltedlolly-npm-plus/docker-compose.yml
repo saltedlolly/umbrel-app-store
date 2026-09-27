@@ -5,7 +5,7 @@ services:
       APP_PORT: 8080
 
   launcher:
-    image: ghcr.io/saltedlolly/npmplus-launcher@sha256:a1f58d155bc1edba0bf834f25f0cd179d2a170dec21ee55b24e9fc46b8adacb6
+    image: ghcr.io/saltedlolly/npmplus-launcher@sha256:0e1c78c1576252c217f94b6d79db71bccbaf87023e0e0c84da05dd01ddc08a2e
     init: true
     restart: on-failure
     security_opt:
@@ -24,7 +24,7 @@ services:
       retries: 5
 
   npmplus:
-    image: ghcr.io/saltedlolly/npmplus-wrapper@sha256:f9227bdc0ddf221b438669d6e7c61581111e69a0f7a856e837f51e7c94030208
+    image: ghcr.io/saltedlolly/npmplus-wrapper@sha256:20249b9df8297b8998827032166a545480bef34facffff60fa1e45b375f59e54
     restart: on-failure
     stop_grace_period: 30s
     cap_drop:
