@@ -3,18 +3,37 @@ set -euo pipefail
 
 CROWDSEC_CONTAINER="${APP_ID}_crowdsec_1"
 
+# Wait for CrowdSec LAPI to be ready
+for _ in $(seq 1 30); do
+  docker exec "$CROWDSEC_CONTAINER" cscli lapi status >/dev/null 2>&1 && break
+  sleep 2
+done
+
+# Enable AppSec (WAF) if not already configured
+# AppSec rules/configs are bundled with the image, but the listener must be
+# enabled in config.yaml. This adds the appsec_config section if missing.
+# Idempotent - safe to run on every start.
+if ! docker exec "$CROWDSEC_CONTAINER" grep -q "^appsec_config:" /etc/crowdsec/config.yaml 2>/dev/null; then
+  echo "Enabling CrowdSec AppSec (Web Application Firewall)..."
+  docker exec "$CROWDSEC_CONTAINER" sh -c 'cat >> /etc/crowdsec/config.yaml <<EOF
+
+# AppSec (Web Application Firewall) - auto-enabled by Umbrel app
+appsec_config:
+  enabled: true
+  listen_addr: 0.0.0.0:7422
+  appsec_config_path: /etc/crowdsec/appsec-configs
+  appsec_rule_path: /etc/crowdsec/appsec-rules
+EOF'
+  # Reload CrowdSec to apply AppSec config
+  docker exec "$CROWDSEC_CONTAINER" kill -SIGHUP 1 2>/dev/null || true
+fi
+
 # crowdsec-web-ui doesn't support the env-var auto-registration bouncers get
 # (BOUNCER_KEY_<name>) - its own docs require a one-time `cscli machines add`
 # run against the crowdsec container. Doing that from inside a container
 # would need the Docker socket mounted in, which this store avoids; running
 # it here instead, directly on the host where hooks execute, needs no
 # socket access at all. Idempotent and safe to run on every start/restart.
-
-for _ in $(seq 1 30); do
-  docker exec "$CROWDSEC_CONTAINER" cscli lapi status >/dev/null 2>&1 && break
-  sleep 2
-done
-
 if ! docker exec "$CROWDSEC_CONTAINER" cscli machines list -o json 2>/dev/null | grep -q '"crowdsec-web-ui"'; then
   docker exec "$CROWDSEC_CONTAINER" cscli machines add crowdsec-web-ui \
     --password "${APP_SALTEDLOLLY_CROWDSEC_WEBUI_PASSWORD}" -f /dev/null || true
