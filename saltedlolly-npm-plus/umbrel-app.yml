@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-npm-plus
 category: networking
 name: NPMplus
-version: "2026-07-24-r1.13"
+version: "2026-07-24-r1.14"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
@@ -35,6 +35,10 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
+  ## 2026-07-24-r1.14
+
+  - Launcher now shows the real CrowdSec status (Connected / Disabled / restart needed) and real ban counts instead of placeholder numbers
+
   ## 2026-07-24-r1.13
 
   - Disable CrowdSec AppSec temporarily (was causing all requests to be banned) + fix CrowdSec dashboard URL (5182 → 5190)
