@@ -9,11 +9,11 @@ for _ in $(seq 1 30); do
   sleep 2
 done
 
-# AppSec (WAF) auto-enable temporarily disabled
-# The config format caused CrowdSec to crash-loop. Need to research correct
-# format - may need to be nested under crowdsec_service, or may require
-# a CrowdSec build with AppSec compiled in.
-# TODO: Re-enable once correct format is determined
+# AppSec (WAF) is not enabled yet. v1.8.1.7 tried a top-level `appsec_config:`
+# key in config.yaml, which isn't valid and crash-looped CrowdSec (pre-start
+# now removes it). AppSec is enabled via an acquisition file
+# (acquis.d/appsec.yaml, `source: appsec`) plus the AppSec collections.
+# TODO: add that, then re-enable AppSec in NPMplus
 
 # crowdsec-web-ui doesn't support the env-var auto-registration bouncers get
 # (BOUNCER_KEY_<name>) - its own docs require a one-time `cscli machines add`

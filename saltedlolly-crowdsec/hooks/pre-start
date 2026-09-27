@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# v1.8.1.7's post-start appended a top-level `appsec_config:` block to
+# config.yaml. That isn't a valid CrowdSec config key, so CrowdSec refuses to
+# start and crash-loops. /etc/crowdsec is bind-mounted from APP_DATA_DIR, so
+# the bad block survives app updates. Remove it here, on the host, before the
+# containers start - a crash-looping container can't be fixed via docker exec.
+# Idempotent: does nothing once the block is gone.
+CONFIG_FILE="${APP_DATA_DIR}/data/crowdsec/config/config.yaml"
+
+if [[ -f "$CONFIG_FILE" ]] && grep -q '^appsec_config:' "$CONFIG_FILE"; then
+  echo "Removing invalid appsec_config block from config.yaml (added by v1.8.1.7)..."
+  cp -p "$CONFIG_FILE" "${CONFIG_FILE}.bak-v1.8.1.7"
+  # Drop the marker comment, the appsec_config: line and its indented children
+  awk '
+    /^# AppSec \(Web Application Firewall\) - auto-enabled by Umbrel app$/ { next }
+    /^appsec_config:/ { skip = 1; next }
+    skip && /^[[:space:]]/ { next }
+    { skip = 0; print }
+  ' "${CONFIG_FILE}.bak-v1.8.1.7" > "$CONFIG_FILE"
+  echo "✓ Removed (backup: config.yaml.bak-v1.8.1.7)"
+fi

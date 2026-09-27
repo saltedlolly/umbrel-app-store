@@ -1,8 +1,0 @@
-# Add this section to /etc/crowdsec/config.yaml (or the mounted config file)
-# Insert it after the 'api:' section
-
-appsec_config:
-  enabled: true
-  listen_addr: 0.0.0.0:7422
-  appsec_config_path: /etc/crowdsec/appsec-configs
-  appsec_rule_path: /etc/crowdsec/appsec-rules
