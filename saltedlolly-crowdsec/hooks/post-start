@@ -9,24 +9,11 @@ for _ in $(seq 1 30); do
   sleep 2
 done
 
-# Enable AppSec (WAF) if not already configured
-# AppSec rules/configs are bundled with the image, but the listener must be
-# enabled in config.yaml. This adds the appsec_config section if missing.
-# Idempotent - safe to run on every start.
-if ! docker exec "$CROWDSEC_CONTAINER" grep -q "^appsec_config:" /etc/crowdsec/config.yaml 2>/dev/null; then
-  echo "Enabling CrowdSec AppSec (Web Application Firewall)..."
-  docker exec "$CROWDSEC_CONTAINER" sh -c 'cat >> /etc/crowdsec/config.yaml <<EOF
-
-# AppSec (Web Application Firewall) - auto-enabled by Umbrel app
-appsec_config:
-  enabled: true
-  listen_addr: 0.0.0.0:7422
-  appsec_config_path: /etc/crowdsec/appsec-configs
-  appsec_rule_path: /etc/crowdsec/appsec-rules
-EOF'
-  # Reload CrowdSec to apply AppSec config
-  docker exec "$CROWDSEC_CONTAINER" kill -SIGHUP 1 2>/dev/null || true
-fi
+# AppSec (WAF) auto-enable temporarily disabled
+# The config format caused CrowdSec to crash-loop. Need to research correct
+# format - may need to be nested under crowdsec_service, or may require
+# a CrowdSec build with AppSec compiled in.
+# TODO: Re-enable once correct format is determined
 
 # crowdsec-web-ui doesn't support the env-var auto-registration bouncers get
 # (BOUNCER_KEY_<name>) - its own docs require a one-time `cscli machines add`
