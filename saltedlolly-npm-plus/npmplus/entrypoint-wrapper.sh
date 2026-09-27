@@ -120,17 +120,19 @@ if [ -f "$CROWDSEC_CONF" ]; then
 
         # Always use detected gateway IP (ignore any env vars with old host.docker.internal)
         CROWDSEC_LAPI_URL="http://${DOCKER_HOST_IP}:8080"
-        CROWDSEC_APPSEC_URL="http://${DOCKER_HOST_IP}:7422"
+        # NOTE: AppSec disabled - not yet configured in CrowdSec container
+        # CROWDSEC_APPSEC_URL="http://${DOCKER_HOST_IP}:7422"
 
         # Write the config
         sed -i 's/^ENABLED=.*/ENABLED=true/' "$CROWDSEC_CONF"
         sed -i "s|^API_URL=.*|API_URL=${CROWDSEC_LAPI_URL}|" "$CROWDSEC_CONF"
         sed -i "s|^API_KEY=.*|API_KEY=${APP_SALTEDLOLLY_CROWDSEC_NPMPLUS_BOUNCER_KEY}|" "$CROWDSEC_CONF"
-        sed -i "s|^APPSEC_URL=.*|APPSEC_URL=${CROWDSEC_APPSEC_URL}|" "$CROWDSEC_CONF"
+        # Disable AppSec - it's not running in CrowdSec yet
+        sed -i "s|^APPSEC_URL=.*|APPSEC_URL=|" "$CROWDSEC_CONF"
 
-        echo "[CrowdSec] ✓ Bouncer enabled"
+        echo "[CrowdSec] ✓ Bouncer enabled (LAPI only)"
         echo "[CrowdSec]   LAPI: ${CROWDSEC_LAPI_URL}"
-        echo "[CrowdSec]   AppSec: ${CROWDSEC_APPSEC_URL}"
+        echo "[CrowdSec]   AppSec: disabled (not yet configured in CrowdSec)"
     else
         echo "[CrowdSec] Disabling bouncer integration"
         sed -i 's/^ENABLED=.*/ENABLED=false/' "$CROWDSEC_CONF"
