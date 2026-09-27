@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-npm-plus
 category: networking
 name: NPMplus
-version: "2026-07-24-r1.9"
+version: "2026-07-24-r1.10"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
@@ -35,6 +35,12 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
+  ## 2026-07-24-r1.10
+
+  - Fix CrowdSec detection in launcher - add extra_hosts for host.docker.internal resolution
+  - Launcher can now properly detect companion apps
+  - Resolves "not detected" issue in launcher UI even when CrowdSec is running
+
   ## 2026-07-24-r1.9
 
   - Fix CrowdSec/Authentik integration - always use detected gateway IP
