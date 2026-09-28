@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-crowdsec
 category: Networking
 name: CrowdSec
-version: "v1.8.1.12"
+version: "v1.8.1.13"
 tagline: Crowd-sourced intrusion detection and IP banning for your self-hosted apps
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -32,6 +32,10 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data, including your ban history and dashboard account. Back it up before uninstalling.
 releaseNotes: >-
+  v1.8.1.13:
+
+  - README: how to stop CrowdSec falsely banning your own apps (with an Audiobookshelf example), linked from the description
+
   v1.8.1.12:
 
   - App store description updated to explain the automatic NPMplus integration
