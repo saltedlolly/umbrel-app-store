@@ -378,6 +378,30 @@ publish_package() {
 # Git sync pre-flight check - prevents pushing to stale branch
 # Prepend this release's --notes as a new "## <version>" section at the top
 # of releaseNotes (same format as cf-build.sh / npmplus-build.sh)
+# New upstream release: release notes start afresh. Replace everything
+# above the upstream-notes marker (or the whole block if there's no marker)
+# with this release's single entry. Patch releases use prepend_release_notes
+# instead, so notes cover the current upstream release plus later patches.
+reset_release_notes() {
+  local file="$1" newv="$2" notes="$3"
+  python3 - "$file" "$newv" "$notes" <<'PY'
+import re, sys
+path, ver, msg = sys.argv[1:4]
+s = open(path).read()
+m = re.search(r'^releaseNotes:[ \t]*>-\n', s, re.M)
+if not m:
+    sys.exit("releaseNotes block not found")
+start, rest = m.end(), s[m.end():]
+marker = re.search(r'^  --- .*upstream release notes \(auto-updated\) ---$', rest, re.M)
+nextkey = re.search(r'^\S', rest, re.M)
+if marker and (not nextkey or marker.start() < nextkey.start()):
+    end, tail = marker.start(), "\n"
+else:
+    end, tail = (nextkey.start() if nextkey else len(rest)), ""
+open(path, 'w').write(s[:start] + f"  ## {ver}\n\n  - {msg}\n\n" + tail + rest[end:])
+PY
+}
+
 prepend_release_notes() {
   local newv="$1" notes="$2"
   awk -v ver="$newv" -v msg="$notes" '
@@ -515,7 +539,13 @@ if [[ "$CURRENT_VERSION" == "$TARGET_VERSION" ]]; then
 fi
 
 update_package "$TARGET_TAG" "$TARGET_DIGEST" "$TARGET_VERSION"
-[[ -n "$RELEASE_NOTES" ]] && prepend_release_notes "$TARGET_VERSION" "$RELEASE_NOTES"
+if [[ -n "$RELEASE_NOTES" ]]; then
+  if [[ "$TARGET_TAG" != "$CURRENT_TAG" ]]; then
+    reset_release_notes "$MANIFEST_FILE" "$TARGET_VERSION" "$RELEASE_NOTES"
+  else
+    prepend_release_notes "$TARGET_VERSION" "$RELEASE_NOTES"
+  fi
+fi
 update_release_notes "$TARGET_TAG"
 update_readme_version "$TARGET_VERSION"
 validate_package

@@ -226,18 +226,20 @@ manifest, count = re.subn(
 if count != 1:
     raise SystemExit("Could not update version in umbrel-app.yml")
 
-release_block = (
-    "releaseNotes: >-\n"
-    f"  ## {new_manifest_version}\n\n"
-    f"  - {notes}\n\n"
-)
-manifest, count = re.subn(
-    r"releaseNotes:\s*>-\n.*?\ndeveloper:",
-    release_block + "developer:",
-    manifest,
-    count=1,
-    flags=re.DOTALL,
-)
+# NOTES_MODE=reset (new upstream release): notes start afresh.
+# NOTES_MODE=prepend (patch): add this release on top, keep the rest.
+import os
+entry = f"  ## {new_manifest_version}\n\n  - {notes}\n\n"
+if os.environ.get("NOTES_MODE", "reset") == "prepend":
+    manifest, count = re.subn(r"releaseNotes:[ \t]*>-\n", lambda m: m.group(0) + entry, manifest, count=1)
+else:
+    manifest, count = re.subn(
+        r"releaseNotes:\s*>-\n.*?\ndeveloper:",
+        "releaseNotes: >-\n" + entry + "developer:",
+        manifest,
+        count=1,
+        flags=re.DOTALL,
+    )
 if count != 1:
     raise SystemExit("Could not update releaseNotes in umbrel-app.yml")
 manifest_path.write_text(manifest)
@@ -594,6 +596,7 @@ if [[ -z "$RELEASE_NOTES" ]]; then
   fi
 fi
 
+if [[ "$CDIO_CHANGED" == "true" ]]; then export NOTES_MODE=reset; else export NOTES_MODE=prepend; fi
 update_package "$TARGET_CDIO" "$CDIO_DIGEST" "$TARGET_SPB" "$SPB_DIGEST" "$TARGET_MANIFEST_VERSION" "$RELEASE_NOTES"
 update_release_notes "$TARGET_CDIO"
 update_readme_version "$TARGET_MANIFEST_VERSION"

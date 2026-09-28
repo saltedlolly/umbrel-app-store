@@ -572,6 +572,30 @@ update_migration_script_version() {
 # Git sync pre-flight check - prevents pushing to stale branch
 # Prepend this release's --notes as a new "## <version>" section at the top
 # of releaseNotes (same format as cf-build.sh / npmplus-build.sh)
+# New upstream release: release notes start afresh. Replace everything
+# above the upstream-notes marker (or the whole block if there's no marker)
+# with this release's single entry. Patch releases use prepend_release_notes
+# instead, so notes cover the current upstream release plus later patches.
+reset_release_notes() {
+  local file="$1" newv="$2" notes="$3"
+  python3 - "$file" "$newv" "$notes" <<'PY'
+import re, sys
+path, ver, msg = sys.argv[1:4]
+s = open(path).read()
+m = re.search(r'^releaseNotes:[ \t]*>-\n', s, re.M)
+if not m:
+    sys.exit("releaseNotes block not found")
+start, rest = m.end(), s[m.end():]
+marker = re.search(r'^  --- .*upstream release notes \(auto-updated\) ---$', rest, re.M)
+nextkey = re.search(r'^\S', rest, re.M)
+if marker and (not nextkey or marker.start() < nextkey.start()):
+    end, tail = marker.start(), "\n"
+else:
+    end, tail = (nextkey.start() if nextkey else len(rest)), ""
+open(path, 'w').write(s[:start] + f"  ## {ver}\n\n  - {msg}\n\n" + tail + rest[end:])
+PY
+}
+
 prepend_release_notes() {
   local newv="$1" notes="$2"
   awk -v ver="$newv" -v msg="$notes" '
@@ -795,7 +819,11 @@ FULL_VERSION=$(node -p "require('$CONFIG_TOOL_UI_REPO/public/version.json').vers
 
 if [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
   echo "Prepending release notes for ${FULL_VERSION}..."
-  prepend_release_notes "$FULL_VERSION" "$RELEASE_NOTES"
+  if [[ "$ABS_VERSION_CHANGED" == "true" ]]; then
+    reset_release_notes "$APP_YML_FILE" "$FULL_VERSION" "$RELEASE_NOTES"
+  else
+    prepend_release_notes "$FULL_VERSION" "$RELEASE_NOTES"
+  fi
 fi
 echo "[DEBUG] FULL_VERSION: $FULL_VERSION"
 

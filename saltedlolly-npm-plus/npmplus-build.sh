@@ -186,6 +186,30 @@ PY
 }
 
 # Prepend new release notes section
+# New upstream release: release notes start afresh. Replace everything
+# above the upstream-notes marker (or the whole block if there's no marker)
+# with this release's single entry. Patch releases use prepend_release_notes
+# instead, so notes cover the current upstream release plus later patches.
+reset_release_notes() {
+  local file="$1" newv="$2" notes="$3"
+  python3 - "$file" "$newv" "$notes" <<'PY'
+import re, sys
+path, ver, msg = sys.argv[1:4]
+s = open(path).read()
+m = re.search(r'^releaseNotes:[ \t]*>-\n', s, re.M)
+if not m:
+    sys.exit("releaseNotes block not found")
+start, rest = m.end(), s[m.end():]
+marker = re.search(r'^  --- .*upstream release notes \(auto-updated\) ---$', rest, re.M)
+nextkey = re.search(r'^\S', rest, re.M)
+if marker and (not nextkey or marker.start() < nextkey.start()):
+    end, tail = marker.start(), "\n"
+else:
+    end, tail = (nextkey.start() if nextkey else len(rest)), ""
+open(path, 'w').write(s[:start] + f"  ## {ver}\n\n  - {msg}\n\n" + tail + rest[end:])
+PY
+}
+
 prepend_release_notes() {
   local newv="$1" notes="$2"
   echo "Prepending release notes for $newv..."
@@ -533,7 +557,12 @@ update_readme_version "$TARGET_VERSION"
 update_compose_digests "$LAUNCHER_DIGEST" "$WRAPPER_DIGEST"
 
 if [[ "$FORCE_BUMP" == "true" ]] || [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
-  prepend_release_notes "$TARGET_VERSION" "$RELEASE_NOTES"
+  # A bare version (no .N) is a new upstream release: notes start afresh
+  if [[ "$TARGET_VERSION" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}-r[0-9]+$ ]]; then
+    reset_release_notes "$MANIFEST_FILE" "$TARGET_VERSION" "$RELEASE_NOTES"
+  else
+    prepend_release_notes "$TARGET_VERSION" "$RELEASE_NOTES"
+  fi
 fi
 
 # Update upstream release notes if this is a bare version (upstream update)

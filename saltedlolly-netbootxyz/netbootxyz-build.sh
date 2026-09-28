@@ -172,18 +172,20 @@ if count != 1:
 # has zero GitHub releases (confirmed directly), which is exactly why
 # version tracking uses Docker Hub tags instead. Notes stay a short
 # manually/automatically-supplied bullet rather than fetched content.
-release_block = (
-    "releaseNotes: >-\n"
-    f"  ## {target_version}\n\n"
-    f"  - {notes}\n\n"
-)
-manifest, count = re.subn(
-    r"releaseNotes:\s*>-\n.*?\ndeveloper:",
-    release_block + "developer:",
-    manifest,
-    count=1,
-    flags=re.DOTALL,
-)
+# NOTES_MODE=reset (new upstream release): notes start afresh.
+# NOTES_MODE=prepend (patch): add this release on top, keep the rest.
+import os
+entry = f"  ## {target_version}\n\n  - {notes}\n\n"
+if os.environ.get("NOTES_MODE", "reset") == "prepend":
+    manifest, count = re.subn(r"releaseNotes:[ \t]*>-\n", lambda m: m.group(0) + entry, manifest, count=1)
+else:
+    manifest, count = re.subn(
+        r"releaseNotes:\s*>-\n.*?\ndeveloper:",
+        "releaseNotes: >-\n" + entry + "developer:",
+        manifest,
+        count=1,
+        flags=re.DOTALL,
+    )
 if count != 1:
     raise SystemExit("Could not update releaseNotes in umbrel-app.yml")
 manifest_path.write_text(manifest)
@@ -449,6 +451,7 @@ if [[ "$CURRENT_VERSION" == "$TARGET_VERSION" ]]; then
   exit 0
 fi
 
+if [[ "$TARGET_TAG" != "$CURRENT_TAG" ]]; then export NOTES_MODE=reset; else export NOTES_MODE=prepend; fi
 update_package "$TARGET_TAG" "$TARGET_DIGEST" "$RELEASE_NOTES" "$TARGET_VERSION"
 update_readme_version "$TARGET_VERSION"
 validate_package
