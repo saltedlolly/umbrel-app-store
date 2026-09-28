@@ -16,7 +16,13 @@ Open the app and create your dashboard admin account on first visit - there's no
 
 CrowdSec doesn't protect anything by itself - something needs to actually enforce its decisions. That's a "bouncer," and [saltedlolly-npm-plus](../saltedlolly-npm-plus) already has one built in.
 
-Install both apps and they're wired together automatically: this app generates a shared secret (`BOUNCER_KEY_npmplus`) and registers a bouncer named `npmplus` with it on every startup. Point NPMplus's own bouncer config at this app to complete the connection - see [saltedlolly-npm-plus's README](../saltedlolly-npm-plus/README.md#crowdsec-integration-optional-bring-your-own-crowdsec) for the exact `API_URL`/`API_KEY` fields.
+Install both apps and they're wired together automatically, in either order (restart NPMplus if you install CrowdSec second). NPMplus finds CrowdSec at startup and sets up three things with no configuration:
+
+- **Blocklist bouncer** – NPMplus checks every visitor's IP against CrowdSec's decisions (your own bans plus the community blocklist). Both apps derive the same bouncer key, and this app registers the `npmplus` bouncer with it on every start.
+- **AppSec (WAF)** – NPMplus sends each request to CrowdSec's AppSec listener on port 7422, which blocks known CVE exploits and common attack probes. If AppSec is ever unavailable, requests are let through rather than blocked.
+- **Log analysis** – NPMplus sends its access logs to this app over syslog, so CrowdSec can spot patterns across many requests (scanners, brute force, aggressive crawlers) and ban the source.
+
+NPMplus's launcher page shows the connection status and active ban counts.
 
 To protect a different app or service, register another bouncer the same way this app registers NPMplus's: add a `BOUNCER_KEY_<name>=<a-generated-secret>` environment variable to this app's `crowdsec` service (the entrypoint registers it automatically on every start), then configure that other service's own bouncer with the matching key and `http://saltedlolly-crowdsec_crowdsec_1:8080` as its LAPI URL.
 
@@ -24,14 +30,9 @@ To protect a different app or service, register another bouncer the same way thi
 
 This app installs the [`ZoeyVid/npmplus`](https://hub.crowdsec.net/author/ZoeyVid/collections/npmplus) collection by default - built specifically for NPMplus's exact log format and covers common HTTP attack patterns (via the CrowdSec [hub](https://hub.crowdsec.net/)). To add more collections (for other apps, or broader coverage), edit the `COLLECTIONS` environment variable in `docker-compose.yml` - space-separated, installed automatically on every restart.
 
-## Local log-based detection (not enabled by default)
+## How NPMplus's logs reach CrowdSec
 
-Community-blocklist and AppSec (WAF) protection work over the network with no extra setup. NPMplus-specific *local* behavioral scenarios (e.g. spotting a brute-force pattern from its actual access logs) need this app to see those logs directly, which isn't wired up by default. Two ways to do this if you want it:
-
-- CrowdSec's own syslog datasource - have NPMplus forward its logs over the network to this app (no shared volume needed; CrowdSec's docs note this path is best for smaller setups).
-- A shared bind mount under the Umbrel Home folder that both apps mount (the same pattern `saltedlolly-audiobookshelf` uses for its Audiobooks/Podcasts folders) - NPMplus writes logs there, this app reads them.
-
-Neither is configured out of the box; this is a known limitation for a first release, not an oversight.
+NPMplus forwards its access logs over syslog (UDP) to port 4242, published only on the Umbrel's internal Docker gateway (`10.21.0.1`), so other apps' containers can reach it but devices on your network can't send fake log lines. A shared file mount isn't used because umbrelOS only lets an app see another app's files if it depends on that app, and CrowdSec deliberately doesn't depend on NPMplus. CrowdSec's docs describe its syslog listener as suited to small setups (a few hundred log lines per second), which is well above typical home traffic.
 
 ## Persistence
 

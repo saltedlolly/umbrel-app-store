@@ -28,14 +28,17 @@ services:
       # CrowdSec LAPI requires authentication (bouncer key) so this is secure
       - "0.0.0.0:8080:8080/tcp"  # LAPI
       - "0.0.0.0:7422:7422/tcp"  # AppSec
+      # NPMplus access logs arrive over syslog (UDP) - see hooks/pre-start.
+      # Bound to the Umbrel's Docker gateway only: containers can send logs,
+      # LAN devices can't inject fake ones. (A file mount of NPMplus's logs
+      # isn't possible: umbrelOS only exposes another app's paths to apps
+      # that depend on it, and this app deliberately doesn't.)
+      - "10.21.0.1:4242:4242/udp"  # Syslog from NPMplus
     volumes:
       - ${APP_DATA_DIR}/data/crowdsec/config:/etc/crowdsec
       # Required: the image refuses to fully start unless this is a real
       # mounted volume (its own startup check, not an Umbrel requirement).
       - ${APP_DATA_DIR}/data/crowdsec/data:/var/lib/crowdsec/data
-      # NPMplus logs for analysis (read-only)
-      # Only mounts if NPMplus is installed, otherwise harmless
-      - ${APP_SALTEDLOLLY_NPM_PLUS_DATA_DIR}/data/nginx/logs:/var/log/npmplus:ro
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:6060/metrics"]
       interval: 30s

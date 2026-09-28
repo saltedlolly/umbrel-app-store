@@ -21,3 +21,17 @@ labels:
 listen_addr: 0.0.0.0:7422
 source: appsec
 EOF
+
+# Receive NPMplus's access logs over syslog for behavioural detection
+# (scanners, brute force, crawlers). NPMplus sends them to the Docker
+# gateway on 4242/udp when it finds CrowdSec at startup; docker-compose.yml
+# publishes the port on the gateway only. The ZoeyVid/npmplus-logs parser
+# picks the lines out by their `npmplus` syslog tag.
+cat > "${ACQUIS_DIR}/npmplus-syslog.yaml" <<'EOF'
+# Managed by the Umbrel CrowdSec app - changes are overwritten on start
+source: syslog
+listen_addr: 0.0.0.0
+listen_port: 4242
+labels:
+  type: syslog
+EOF
