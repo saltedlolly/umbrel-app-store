@@ -361,6 +361,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Git sync check (if publishing)
+if [[ "${PUBLISH_TO_GITHUB:-false}" == "true" ]] || [[ "${MODE:-}" == "publish" ]]; then
+  check_git_sync
+  echo ""
+fi
+
 ########################################
 # Check for upstream tronbyt/server updates
 ########################################

@@ -534,6 +534,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Git sync check (if publishing)
+if [[ "${PUBLISH_TO_GITHUB:-false}" == "true" ]] || [[ "${MODE:-}" == "publish" ]]; then
+  check_git_sync
+  echo ""
+fi
+
 require_command curl
 require_command python3
 require_command docker

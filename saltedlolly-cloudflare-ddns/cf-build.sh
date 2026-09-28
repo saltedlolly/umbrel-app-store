@@ -1,13 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-
-# Git sync check (before building)
-if [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
-  check_git_sync
-  echo ""
-fi
-
 # Build and push multi-arch images for UI and DDNS, then pin compose to new manifest digests.
 # Also auto-bump umbrel-app.yml version (unless overridden), tag images to match, and prepend release notes.
 #
@@ -474,6 +467,12 @@ while [[ $# -gt 0 ]]; do
     *) usage; exit 1 ;;
   esac
 done
+
+# Git sync check (if publishing)
+if [[ "${PUBLISH_TO_GITHUB:-false}" == "true" ]] || [[ "${MODE:-}" == "publish" ]]; then
+  check_git_sync
+  echo ""
+fi
 
 ########################################
 # Check for upstream cloudflare-ddns updates

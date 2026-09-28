@@ -388,6 +388,12 @@ while [[ $# -gt 0 ]]; do
     *) fail "Unknown option: $1" ;;
   esac
 done
+
+# Git sync check (if publishing)
+if [[ "${PUBLISH_TO_GITHUB:-false}" == "true" ]] || [[ "${MODE:-}" == "publish" ]]; then
+  check_git_sync
+  echo ""
+fi
 [[ -z "$DASHBOARD_TAG" && -n "$DASHBOARD_DIGEST" ]] && fail "--dashboard-digest requires --dashboard-tag"
 [[ -n "$DASHBOARD_TAG" && -z "$DASHBOARD_DIGEST" ]] && fail "--dashboard-tag requires --dashboard-digest"
 
