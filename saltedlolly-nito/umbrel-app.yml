@@ -26,7 +26,7 @@ description: >-
 
   All node data (chain state) is stored under this app's persistent data directory and survives restarts and updates. Uninstalling this app deletes it - back up first if you want to keep it.
 releaseNotes: >-
-  v3.0.1.4:
+  ## v3.0.1.4
 
   - Fix docker-nito's entrypoint crash-looping on a fresh Umbrel install: nito.conf couldn't be written because the container started directly as UID 1000, but Umbrel's bind-mounted data directory is created root-owned. The image now starts as root, fixes ownership, then drops privileges before running nitod.
 

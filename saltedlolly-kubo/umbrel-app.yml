@@ -22,7 +22,19 @@ description: >-
 
   The peer-to-peer (swarm) port is published normally so this node can find and be found by other IPFS peers. The public Gateway (port 8395) is also exposed, so anyone who reaches it can fetch content through this node - a deliberate tradeoff for being able to actually use IPFS links, not an oversight.
 releaseNotes: >-
-  v0.43.1.0:
+  ## v0.43.1.7
+
+  - Fix the WebUI CORS error for real: replace the container-init.d bind-mount approach (which doesn't reliably sync on an app update) with an inline entrypoint override in docker-compose.yml itself. Also expose the public Gateway on port 8395, matching github.com/dennysubke/dennys-umbrel-app-store's Kubo package, so IPFS links actually work.
+
+  ## v0.43.1.4
+
+  - Fix the WebUI showing "Could not connect to the Kubo RPC": Kubo's API refuses browser requests whose Origin header isn't explicitly allow-listed, which affects any deployment where the API isn't reached via localhost. Adds a container-init.d script (Kubo's own official hook) that sets Access-Control-Allow-Origin on every container start.
+
+  ## v0.43.1.2
+
+  - Fix the WebUI link on the Umbrel home screen (was pointing at the bare API port, which returns 404 at /)
+
+  ## v0.43.1.0
 
   - Restore v0.43.1 after an auto-release workflow bug incorrectly downgraded this app to v0.43.0 (fixed in this same push - see .github/workflows/kubo-auto-release.yml)
 

@@ -130,6 +130,14 @@ gallery:
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/3.jpg
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/4.jpg
 releaseNotes: >-
+  ## 2.36.1.2
+
+  - Helper containers updated to Node 24 (security fixes; Node 18 and 20 are end of life)
+
+  ## 2.36.1.1
+
+  - Automated update: bump bundled advplyr/audiobookshelf to v2.36.1
+
   New in NAS Edition: Network Shares are no longer mounted as read-only - write is enabled. Podcasts now work!
 
 

@@ -23,7 +23,7 @@ description: >-
 
   All watches, settings, and page-snapshot history are stored under this app's persistent data directory and survive restarts and updates. Uninstalling this app deletes them - back up first if you want to keep your watch list.
 releaseNotes: >-
-  0.60.7:
+  ## 0.60.7
 
   - Update changedetection.io to upstream release 0.60.7.
 
