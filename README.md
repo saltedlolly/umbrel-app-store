@@ -26,6 +26,13 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
       <td>Audiobookshelf with added support for network shares - access media stored on your local network</td>
     </tr>
     <tr>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-authentik/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td><a href="#authentik">Authentik</a></td>
+      <td nowrap id="saltedlolly-authentik-version"><code>2026.8.3</code></td>
+      <td nowrap id="saltedlolly-authentik-date">2026-09-28</td>
+      <td>One login for your self-hosted apps, for you, your family and friends</td>
+    </tr>
+    <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-changedetection/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#changedetectionio">changedetection.io</a></td>
       <td nowrap id="saltedlolly-changedetection-version"><code>0.60.7</code></td>
@@ -158,6 +165,18 @@ The folders below contain your user accounts, libraries and associated metadata.
     - Restore your library to the newly installed app
 
  For detailed migration instructions, see the [ABS Library Migration Tool documentation](https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-audiobookshelf/tools#readme).
+
+---
+
+### Authentik<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-authentik/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+
+⚠️ Under construction: still being tested, please don't use it yet.
+
+One login for the apps you share from your Umbrel, powered by [Authentik](https://goauthentik.io). Create each person once, choose which apps they can use, and let them sign in with a password, a passkey or their Google account. Apps with an OpenID login option (such as [Audiobookshelf](#audiobookshelf-nas-edition) and its mobile apps) use Authentik as their login; apps without a login of their own can be put behind it with [NPMplus](#npmplus). Uses about 1 GB of RAM. See the [app's own README](saltedlolly-authentik/README.md) for setup steps.
+
+| Name          | Port         | Local Address                                            | Umbrel SSO    |
+|---------------| ------------ | --------------------------------------------------------- | ------------- |
+| Admin interface | `9800`     | [http://umbrel.local:9800](http://umbrel.local:9800/)    | ✅            |
 
 ---
 

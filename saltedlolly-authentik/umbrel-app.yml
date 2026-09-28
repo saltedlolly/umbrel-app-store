@@ -1,0 +1,61 @@
+manifestVersion: 1
+id: saltedlolly-authentik
+category: networking
+name: Authentik
+version: "2026.8.3"
+tagline: One login for your self-hosted apps, for you, your family and friends
+description: >-
+  ⚠️ UNDER CONSTRUCTION: this app is still being tested. Please don't use it yet. Check back soon.
+
+
+  Authentik gives the apps you share from your Umbrel a single, secure login page. Instead of creating a separate account in every app, you create each person once in Authentik, decide which apps they can use, and they sign in the same way everywhere.
+
+
+  - Sign in with a password, a passkey (Face ID, Touch ID, Windows Hello or a security key), or an existing account such as Google.
+
+  - Choose who can use which app: for example, family can use Audiobookshelf but not Home Assistant.
+
+  - Add two-factor authentication and invitation links (and self-service password resets, once you've set up email).
+
+  - Everything is managed from Authentik's web interface. No command line needed.
+
+
+  How it connects to your apps:
+
+
+  - Apps with a "Log in with OpenID/SSO" option (such as Audiobookshelf, including its mobile apps) use Authentik as their login.
+
+  - Apps with no login of their own can be put behind Authentik using the NPMplus app from this app store: NPMplus asks Authentik before letting anyone through.
+
+
+  To let people outside your home sign in, publish Authentik through NPMplus at an address such as auth.yourdomain.com. The README has step-by-step instructions: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-authentik
+
+
+  Requirements: Authentik uses about 1 GB of RAM. Recommended: 8 GB of RAM (for example a Raspberry Pi 5 with 8 GB, or an Umbrel Home). It works on 4 GB devices running only a few other apps.
+
+
+  Updates: Authentik has to be updated one release at a time. If you skip a few updates, this app catches up automatically the next time it starts (this can take a few extra minutes), and it backs up Authentik's database before every version change.
+
+
+  ⚠️ Uninstalling this app deletes all its data, including your users and settings. Back it up before uninstalling.
+releaseNotes: >-
+  ## 2026.8.3
+
+  - First release
+developer: Authentik Security Inc.
+website: https://goauthentik.io
+dependencies: []
+repo: https://github.com/goauthentik/authentik
+support: https://github.com/saltedlolly/umbrel-app-store/issues
+
+port: 9800
+gallery: []
+path: ""
+
+defaultUsername: akadmin
+defaultPassword: ""
+deterministicPassword: true
+
+icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-authentik/icon.png
+submitter: saltedlolly
+submission: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-authentik

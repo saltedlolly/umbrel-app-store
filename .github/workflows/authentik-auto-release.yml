@@ -1,0 +1,146 @@
+name: Authentik - Auto Release
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # every day 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: check upstream, run the upgrade smoke test, but do not commit'
+        type: boolean
+        default: false
+      force_authentik_version:
+        description: 'Optional: use this Authentik version instead of the next eligible one (e.g. 2026.11.0), for testing'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: authentik-auto-release
+  cancel-in-progress: false
+
+jobs:
+  check-upstream:
+    name: Check goauthentik/authentik for the next eligible release (2-day buffer)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      has_update: ${{ steps.next.outputs.has_update }}
+      current_version: ${{ steps.next.outputs.current_version }}
+      eligible_version: ${{ steps.next.outputs.eligible_version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Find the next eligible version (never skips a release family)
+        id: next
+        working-directory: saltedlolly-authentik
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          current="$(grep -oE 'ghcr.io/goauthentik/server:[0-9]+\.[0-9]+\.[0-9]+' docker-compose.yml | head -1 | cut -d: -f2)"
+          eligible="$(./authentik-build.sh --next-version --min-age-days 2)"
+          if [[ -n "${{ github.event.inputs.force_authentik_version }}" ]]; then
+            eligible="${{ github.event.inputs.force_authentik_version }}"
+            echo "::notice::Overriding with force_authentik_version input: $eligible"
+          fi
+          if [[ -n "$eligible" ]] && ! [[ "$eligible" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Unexpected Authentik version format: '$eligible'"
+            exit 1
+          fi
+          has_update=false
+          [[ -n "$eligible" && "$eligible" != "$current" ]] && has_update=true
+          echo "current_version=$current" >> "$GITHUB_OUTPUT"
+          echo "eligible_version=$eligible" >> "$GITHUB_OUTPUT"
+          echo "has_update=$has_update" >> "$GITHUB_OUTPUT"
+          echo "::notice::Authentik pinned=$current eligible=${eligible:-none} has_update=$has_update"
+
+  release:
+    name: Smoke-test the upgrade and publish
+    needs: check-upstream
+    if: needs.check-upstream.outputs.has_update == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      APP_DIR: saltedlolly-authentik
+      CURRENT_VERSION: ${{ needs.check-upstream.outputs.current_version }}
+      ELIGIBLE_VERSION: ${{ needs.check-upstream.outputs.eligible_version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: true   # required for authentik-build.sh's `git push`
+
+      # Start the pinned version on a fresh database, then upgrade it to the
+      # new one: the new version must migrate the old database and become
+      # healthy (upgrades have broken upstream before, e.g. goauthentik#25996)
+      - name: Smoke test - upgrade ${{ env.CURRENT_VERSION }} to ${{ env.ELIGIBLE_VERSION }}
+        run: |
+          set -euo pipefail
+          docker network create aktest
+          docker run -d --name aktest-db --network aktest \
+            -e POSTGRES_DB=authentik -e POSTGRES_USER=authentik -e POSTGRES_PASSWORD=smoketest \
+            "$(grep -oE 'docker.io/library/postgres:[^ ]+' "$APP_DIR/docker-compose.yml" | head -1)"
+          for _ in $(seq 1 30); do docker exec aktest-db pg_isready -U authentik -d authentik && break; sleep 2; done
+
+          run_until_healthy() {
+            local version="$1"
+            docker rm -f aktest-server >/dev/null 2>&1 || true
+            docker run -d --name aktest-server --network aktest --shm-size 512m \
+              -e AUTHENTIK_POSTGRESQL__HOST=aktest-db \
+              -e AUTHENTIK_POSTGRESQL__NAME=authentik \
+              -e AUTHENTIK_POSTGRESQL__USER=authentik \
+              -e AUTHENTIK_POSTGRESQL__PASSWORD=smoketest \
+              -e AUTHENTIK_SECRET_KEY=smoketest-secret-key-smoketest-secret-key \
+              -e AUTHENTIK_DISABLE_UPDATE_CHECK=true \
+              "ghcr.io/goauthentik/server:$version" server
+            for _ in $(seq 1 120); do
+              status="$(docker inspect -f '{{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{end}}' aktest-server)"
+              if [[ "$status" == "running healthy" ]]; then
+                echo "::notice::Authentik $version is healthy"
+                return 0
+              fi
+              [[ "$status" == running* ]] || break
+              sleep 5
+            done
+            docker logs --tail 80 aktest-server
+            echo "::error::Authentik $version did not become healthy"
+            return 1
+          }
+
+          run_until_healthy "$CURRENT_VERSION"
+          run_until_healthy "$ELIGIBLE_VERSION"
+          docker exec aktest-db psql -U authentik -d authentik -tAc \
+            "SELECT version FROM authentik_version_history ORDER BY timestamp"
+
+      - name: Configure git identity for automated commits
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Dry run summary (no commit)
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          echo "DRY RUN: would publish Authentik $ELIGIBLE_VERSION"
+
+      - name: Pin, set version and publish (authentik-build.sh)
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./authentik-build.sh --publish \
+            --authentik-version "$ELIGIBLE_VERSION" \
+            --notes "Automated update: Authentik ${ELIGIBLE_VERSION}"
+
+      - name: Log published app version
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          echo "::notice::Published app version: $(grep '^version:' umbrel-app.yml)"

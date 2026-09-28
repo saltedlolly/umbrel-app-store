@@ -1,0 +1,89 @@
+services:
+  app_proxy:
+    environment:
+      # The format here is: <app-id>_<docker-service-name>_1
+      APP_HOST: saltedlolly-authentik_server_1
+      APP_PORT: 9000
+
+  server:
+    image: ghcr.io/goauthentik/server:2026.8.3@sha256:ab9b4e8cc4ab3f8d1198d2db6aeea66bafea1963b3f2843589e0d163f97d9849
+    container_name: saltedlolly-authentik_server_1
+    command: server
+    restart: unless-stopped
+    shm_size: 512mb
+    environment:
+      # Database host by container name, not service name: every app shares
+      # umbrel_main_network, where a plain "postgresql" could be another app's
+      AUTHENTIK_POSTGRESQL__HOST: saltedlolly-authentik_postgresql_1
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${APP_SALTEDLOLLY_AUTHENTIK_DB_PASSWORD}
+      AUTHENTIK_SECRET_KEY: ${APP_SALTEDLOLLY_AUTHENTIK_SECRET_KEY}
+      # Password for the built-in "akadmin" account, shown on the app's page
+      # in Umbrel (deterministicPassword). Only used on the very first start
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${APP_PASSWORD}
+      # Updates arrive through the Umbrel app store (which has to step through
+      # Authentik's releases in order), so don't tell admins to update by hand
+      AUTHENTIK_DISABLE_UPDATE_CHECK: "true"
+      AUTHENTIK_DISABLE_STARTUP_ANALYTICS: "true"
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+    ports:
+      # For NPMplus (or another reverse proxy app) to publish Authentik's login
+      # pages and forward-auth endpoint, published on the Umbrel's Docker
+      # gateway only: other apps' containers reach it at 10.21.0.1:9810,
+      # devices on the LAN can't. (umbreld itself uses port 9000 on the host.)
+      # The admin UI opened from the Umbrel dashboard goes through app_proxy.
+      - "10.21.0.1:9810:9000/tcp"
+    volumes:
+      - ${APP_DATA_DIR}/data/data:/data
+      - ${APP_DATA_DIR}/data/custom-templates:/templates
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+  worker:
+    image: ghcr.io/goauthentik/server:2026.8.3@sha256:ab9b4e8cc4ab3f8d1198d2db6aeea66bafea1963b3f2843589e0d163f97d9849
+    container_name: saltedlolly-authentik_worker_1
+    command: worker
+    restart: unless-stopped
+    shm_size: 512mb
+    # Unlike upstream's compose file: no `user: root` and no Docker socket.
+    # The socket only lets Authentik deploy extra outposts as containers; the
+    # built-in (embedded) outpost doesn't need it. The data folders are
+    # already owned by uid 1000, which the image runs as.
+    environment:
+      AUTHENTIK_POSTGRESQL__HOST: saltedlolly-authentik_postgresql_1
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${APP_SALTEDLOLLY_AUTHENTIK_DB_PASSWORD}
+      AUTHENTIK_SECRET_KEY: ${APP_SALTEDLOLLY_AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${APP_PASSWORD}
+      AUTHENTIK_DISABLE_UPDATE_CHECK: "true"
+      AUTHENTIK_DISABLE_STARTUP_ANALYTICS: "true"
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+    volumes:
+      - ${APP_DATA_DIR}/data/data:/data
+      - ${APP_DATA_DIR}/data/certs:/certs
+      - ${APP_DATA_DIR}/data/custom-templates:/templates
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+  postgresql:
+    # Kept on PostgreSQL 16 (upstream's choice). A major PostgreSQL upgrade
+    # needs a dump and restore, so it's never done by auto-release
+    image: docker.io/library/postgres:16.15-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    container_name: saltedlolly-authentik_postgresql_1
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: authentik
+      POSTGRES_USER: authentik
+      POSTGRES_PASSWORD: ${APP_SALTEDLOLLY_AUTHENTIK_DB_PASSWORD}
+    volumes:
+      - ${APP_DATA_DIR}/data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d authentik -U authentik"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
