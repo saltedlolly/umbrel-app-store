@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:24-alpine
 
 # Install wget for healthchecks
 RUN apk add --no-cache wget
@@ -11,7 +11,7 @@ ARG VERSION=unknown
 
 # Copy UI package json and install production deps
 COPY ui/package*.json ./
-RUN npm install --only=production
+RUN npm install --omit=dev
 
 # Copy UI files into the image
 COPY ui/ ./
