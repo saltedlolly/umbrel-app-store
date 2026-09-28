@@ -15,9 +15,29 @@ const CROWDSEC_STATUS_FILE = path.join(STATUS_DIR, 'crowdsec.env');
 const CROWDSEC_BOUNCER_KEY = process.env.CROWDSEC_BOUNCER_KEY || '';
 
 // Integration endpoints
-const CROWDSEC_LAPI = 'host.docker.internal:8080';
-const CROWDSEC_APPSEC = 'host.docker.internal:7422';
-const AUTHENTIK_URL = 'host.docker.internal:9000';
+// Companion apps are reached via the Umbrel Docker network's gateway
+// (10.21.0.1), the same address the npmplus wrapper uses. Not
+// host.docker.internal: that resolves to the default docker0 bridge
+// (172.17.0.1), which companions don't publish on once their ports are
+// bound to the gateway only.
+function dockerGateway() {
+    try {
+        // /proc/net/route: default route has Destination 00000000; Gateway is little-endian hex
+        for (const line of fs.readFileSync('/proc/net/route', 'utf8').split('\n').slice(1)) {
+            const [, dest, gw] = line.trim().split(/\s+/);
+            if (dest === '00000000' && gw) {
+                return gw.match(/../g).reverse().map(b => parseInt(b, 16)).join('.');
+            }
+        }
+    } catch { /* fall through */ }
+    return null;
+}
+const GATEWAY = dockerGateway() || 'host.docker.internal';
+console.log(`[startup] Companion apps reached via ${GATEWAY}`);
+
+const CROWDSEC_LAPI = `${GATEWAY}:8080`;
+const CROWDSEC_APPSEC = `${GATEWAY}:7422`;
+const AUTHENTIK_URL = `${GATEWAY}:9000`;
 
 // Middleware
 app.use(express.json());
@@ -250,10 +270,10 @@ app.get('/api/integrations/status', async (req, res) => {
         const config = readConfig();
 
         // Check if CrowdSec is available
-        const crowdsecDetected = await checkServiceAvailable('host.docker.internal', 8080, '/health', 2000);
+        const crowdsecDetected = await checkServiceAvailable(GATEWAY, 8080, '/health', 2000);
 
         // Check if Authentik is available
-        const authentikDetected = await checkServiceAvailable('host.docker.internal', 9000, '/application/o/npmplus/.well-known/openid-configuration', 2000);
+        const authentikDetected = await checkServiceAvailable(GATEWAY, 9000, '/application/o/npmplus/.well-known/openid-configuration', 2000);
 
         // Determine effective enabled state
         const crowdsecEnabled = config.CROWDSEC_ENABLED === 'auto'
