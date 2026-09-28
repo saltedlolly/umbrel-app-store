@@ -21,6 +21,37 @@ releaseNotes: >-
 
   - Automated update: bump bundled tronbyt/server to v2.4.0
 
+
+  --- tronbyt/server upstream release notes (auto-updated) ---
+
+
+  tronbyt/server v2.4.0
+
+    What's Changed
+    * fix: resolve pushed apps by installationID in GET/PATCH installation endpoints by @cedub in https://github.com/tronbyt/server/pull/910
+    * build(deps): bump github.com/quic-go/quic-go from 0.61.0 to 0.62.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/908
+    * Support configurable OIDC scopes by @ivanovart in https://github.com/tronbyt/server/pull/911
+    * build(deps): bump golang.org/x/mod from 0.40.0 to 0.41.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/915
+    * build(deps): bump github.com/coreos/go-oidc/v3 from 3.20.0 to 3.21.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/913
+    * build(deps): bump github.com/mattn/go-sqlite3 from 1.14.50 to 1.14.52 by @dependabot[bot] in https://github.com/tronbyt/server/pull/916
+    * build(deps): bump golang.org/x/crypto from 0.55.0 to 0.56.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/914
+    * feat: support square 64x64 panels (Raspberry Pi and MatrixPortal S3) by @nsluke in https://github.com/tronbyt/server/pull/905
+    * feat: add Color Order to device settings by @ahaghgoo in https://github.com/tronbyt/server/pull/917
+    * chore(deps): update pixlet to v0.54.0 by @gabe565 in https://github.com/tronbyt/server/pull/920
+    * build(deps): bump github.com/go-webauthn/webauthn from 0.17.4 to 0.18.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/907
+    * fix: stop logging stored scrypt hash on format mismatch by @gabe565 in https://github.com/tronbyt/server/pull/921
+    * fix(ui): restore round color palette swatches by @gabe565 in https://github.com/tronbyt/server/pull/922
+
+    New Contributors
+    * @cedub made their first contribution in https://github.com/tronbyt/server/pull/910
+    * @ivanovart made their first contribution in https://github.com/tronbyt/server/pull/911
+    * @ahaghgoo made their first contribution in https://github.com/tronbyt/server/pull/917
+
+    **Full Changelog**: https://github.com/tronbyt/server/compare/v2.3.7...v2.4.0
+
+
+  See the full release history: https://github.com/tronbyt/server/releases
+
 developer: tronbyt
 website: https://github.com/tronbyt/server
 dependencies: []

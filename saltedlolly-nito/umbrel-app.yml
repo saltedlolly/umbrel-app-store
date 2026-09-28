@@ -76,78 +76,8 @@ releaseNotes: >-
     2f7d81d2aeba5c551cc297b7c2d287204495f3f2850669ed51db20f3e712b0c7 nito-3.0.1-aarch64-linux-gnu.tar.gz
     ff585792bd6a835d082c192c4800522c0eb48702d2d7a600975079eb2e5dba0f nito-3.0.1-win64.zip
     5b693deff8d7350d8a521c03426e801feb917c3512d989fee4f707a9f0d6be14 nito-3.0.1-win64-setup.exe
-    524f8b70c725b9b6cafb8edfb3995fdc925d4fb62c0c75f49868649e02f71871 nito-3.0.1-arm64-apple-darwin.tar.gz
-    50f5527c6319d373bc88f415dcc2a051f782ac167ab44554b0cab8c110f09ccf nito-3.0.1-arm64-apple-darwin.dmg
-    ```
 
-
-  NitoNetwork/Nito-core v3.0.0
-
-    ⚠️ MANDATORY UPDATE - Hard Fork at Block 750,000
-
-    All nodes MUST update before block 750,000 to remain on the main chain.
-
-    | Current Block | Activation Block | Estimated Time |
-    |---------------|------------------|----------------|
-    | ~688,000 | 750,000 | ~43 days |
-
-    ---
-
-    What's New in v3.0.0
-
-    🔓 Re-enable Legacy & P2SH Addresses (Block 750,000)
-    After block 750,000, the network will accept Legacy (P2PKH) and P2SH-SegWit transactions:
-    - Mining pool compatibility (Yiimp, MPOS, etc.)
-    - Exchange integration
-    - Legacy wallet support
-
-    🖥️ GUI Updates
-    - Legacy and P2SH address types appear in wallet dropdown after activation
-
-    🔒 Security Updates
-    - New checkpoints at blocks 550,000, 600,000, 650,000, 687,000
-
-    **Source Code:** https://github.com/NitoNetwork/Nito-core/tree/v3.0.0
-
-    ---
-
-    Upgrade Instructions
-
-    1. Stop your node: `nito-cli stop`
-    2. Backup your wallet.dat
-    3. Download and extract the new version
-    4. Start your node: `nitod` or `nito-qt`
-    5. Verify: `nito-cli getnetworkinfo | grep subversion` → `/Nito:3.0.0/`
-
-    ---
-
-    For Mining Pools (After Block 750,000)
-    ```bash
-    nito-cli getnewaddress "pool" legacy
-    ```
-
-    ---
-
-    Behavior Before & After Block 750,000
-
-    | Feature | Before 750,000 | After 750,000 |
-    |---------|----------------|---------------|
-    | Send to Legacy/P2SH | ❌ Blocked | ✅ Allowed |
-    | GUI Legacy dropdown | ❌ Hidden | ✅ Visible |
-    | Coinbase to Legacy | ✅ Allowed | ✅ Allowed |
-    | Bech32 (SegWit) | ✅ Allowed | ✅ Allowed |
-
-    ---
-
-    Verify Downloads (SHA256)
-    ```
-    aab6a70fe154b43266e808d0105e98d9794fcbfac93fba426b8621fd031fe707  nito-3.0.0-x86_64-linux-gnu.tar.gz
-    271dc7c43919fb258f2305fee8bfdffd15dd7705c47b614a4b8c5469a38bcc7e  nito-3.0.0-aarch64-linux-gnu.tar.gz
-    fc670a934e89614977e58cc6e7195f1c1e701f884047b58ca9bb146a12b74891  nito-3.0.0-win64.zip
-    a6d867fbf3a7f8f2c2bf3978ddd021a5ad6455156738ac44e7b1e5cbcfbd8f0f  nito-3.0.0-win64-setup.exe
-    2d9de56df76738ace12ea27374681fa16727ca08bf28f47d444f23747b4bd791  nito-3.0.0-arm64-apple-darwin-tar.zip
-    1773f166db2396570c754c43af505d16c93d74c04d1a0446e1c49dc8a8c73429  nito-3.0.0-arm64-apple-darwin-dmg.zip
-    ```
+    … (truncated) Full release notes: https://github.com/NitoNetwork/Nito-core/releases/tag/v3.0.1
 
 
   See the full release history: https://github.com/NitoNetwork/Nito-core/releases

@@ -49,16 +49,6 @@ releaseNotes: >-
     **Full Changelog**: https://github.com/dgtlmoon/changedetection.io/compare/0.60.6...0.60.7
 
 
-  dgtlmoon/changedetection.io 0.60.6
-
-    What's Changed
-    * Puppeteer fetcher - Re-navigation cap must not mean "extract right now" by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4439
-    * xPath filters - Stop LC_COLLATE deciding what contains() means (#4437), breaks xpath filters by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4438
-
-
-    **Full Changelog**: https://github.com/dgtlmoon/changedetection.io/compare/0.60.5...0.60.6
-
-
   See the full release history: https://github.com/dgtlmoon/changedetection.io/releases
 
 developer: dgtlmoon

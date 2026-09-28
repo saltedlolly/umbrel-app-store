@@ -156,38 +156,21 @@ releaseNotes: >-
 
   zoeyvid/npmplus 2026-07-24-r1
 
-    This package pins the immutable multi-architecture NPMplus 2026-07-24-r1
-    image for amd64 and arm64.
+    What Changed since the last release
+    * fix https://github.com/ZoeyVid/NPMplus/security/advisories/GHSA-c8f8-6gxh-hf2g
 
-    Full upstream release notes: https://github.com/ZoeyVid/NPMplus/releases/tag/2026-07-24-r1
+    Image tags:
+    * `docker.io/zoeyvid/npmplus:2026-07-24-r1` (fixed to this release)
+    * `ghcr.io/zoeyvid/npmplus:2026-07-24-r1` (fixed to this release)
+    * `docker.io/zoeyvid/npmplus:latest` (latest stable)
+    * `ghcr.io/zoeyvid/npmplus:latest` (latest stable)
+    * `docker.io/zoeyvid/npmplus:beta` (latest beta/stable)
+    * `ghcr.io/zoeyvid/npmplus:beta` (latest beta/stable)
 
-
-  Full features (Trusted Proxy Configuration UI):
-
-  - Web-based configuration for Cloudflare proxy mode (TRUST_CLOUDFLARE setting)
-
-  - No terminal access required to configure trusted proxy settings
-
-  - Configuration persists across app restarts and updates
-
-  - Simplified launcher page focused on setup workflow
+    **Full Changelog**: https://github.com/ZoeyVid/NPMplus/compare/2026-07-23-r1...2026-07-24-r1
 
 
-  How to use:
-
-  1. Open the NPMplus app (port 5180)
-
-  2. Configure "Trusted Proxy Configuration" if using Cloudflare's proxy (orange cloud)
-
-  3. Click "Save Settings"
-
-  4. Restart the app via Umbrel dashboard
-
-
-  This package pins the immutable multi-architecture NPMplus 2026-07-24-r1 image for amd64 and arm64.
-
-
-  Full upstream release notes: https://github.com/ZoeyVid/NPMplus/releases/tag/2026-07-24-r1
+  See the full release history: https://github.com/zoeyvid/npmplus/releases
 
 developer: ZoeyVid
 website: https://github.com/ZoeyVid/NPMplus
