@@ -41,7 +41,44 @@ description: >-
 releaseNotes: >-
   ## 2026.8.3
 
-  - First release
+  - First release (under construction, please don't use yet)
+
+
+  --- goauthentik/authentik upstream release notes (auto-updated) ---
+
+
+  goauthentik/authentik 2026.8.3
+
+    See https://docs.goauthentik.io/docs/releases/2026.8#fixed-in-202683
+
+    What's Changed
+
+    - admin/files: make file search case-insensitive (#25736)
+    - api: include JSON field relation models in search autocomplete (#26153)
+    - blueprints: fix `employee_department` typo (#26046)
+    - change docker compose to compose (#26087)
+    - core: fix migrations (version-2026.8) (cherry-pick #26208) (#26209)
+    - events: Note in logs when an agent makes a call (#26146)
+    - flows: strip `login_hint` from next on cancel to prevent loop (#26111)
+    - outposts: refresh sessions when impersonation changes (#26086)
+    - packages/ak-axum/extract/client_ip: support X-Forwarded-For with ports (#25682)
+    - policies: fix policybinding cache invalidation (#25989)
+    - providers/ldap: fix memory leak in the cached searcher (#26028)
+    - providers/oauth: handle token exchange when no signing key is set (#26049)
+    - providers/oauth2: only expose URL-based avatars as picture claim (#26080)
+    - root: document CNA in SECURITY.md (#26124)
+    - root: fix metric gauges for multiprocessor mode (#25882)
+    - server: preserve websocket close code when proxying to outposts (#26090)
+    - sources/saml: Register ID attributes (#25706)
+    - web/flows: fix hardcoded locale in identification stage's `OR_LIST_FORMATTERS` (#26017)
+    - web/scim: Add gitlab compatibility option to form (#26154)
+
+
+    **Full Changelog**: https://github.com/goauthentik/authentik/compare/version/2026.8.2...version/2026.8.3
+
+
+  See the full release history: https://github.com/goauthentik/authentik/releases
+
 developer: Authentik Security Inc.
 website: https://goauthentik.io
 dependencies: []
