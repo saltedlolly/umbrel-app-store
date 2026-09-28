@@ -429,7 +429,7 @@ update_release_notes() {
     return
   fi
 
-  echo "Fetching Audiobookshelf's own release notes for v$abs_version and the preceding release..."
+  echo "Fetching Audiobookshelf's own release notes for v$abs_version..."
   local releases_file
   releases_file="$(mktemp)"
   if ! curl -sf "https://api.github.com/repos/advplyr/audiobookshelf/releases?per_page=10" -o "$releases_file"; then
@@ -454,12 +454,17 @@ stable.sort(key=lambda r: r["published_at"], reverse=True)
 
 target_tag = f"v{target_version}"
 idx = next((i for i, r in enumerate(stable) if r["tag_name"] == target_tag), None)
-selected = stable[idx : idx + 2] if idx is not None else stable[:2]
+# Only the upstream release this version ships (user decision 2026-09-28:
+# keep release notes short)
+selected = stable[idx : idx + 1] if idx is not None else stable[:1]
 if not selected:
     sys.exit(f"Could not find release {target_tag} (or any stable release) to build notes from")
 
 
-def format_body(body: str) -> str:
+MAX_UPSTREAM_LINES = 40  # longer upstream notes are cut, with a link to the full text
+
+
+def format_body(body: str, url: str = "") -> str:
     # Strip markdown heading markers ("### Fixed" -> "Fixed") - matches the
     # plain-text style already used for hand-curated notes in this file.
     # Every line goes at 4-space indent (2 more than the block's own 2-space
@@ -470,12 +475,17 @@ def format_body(body: str) -> str:
     for line in lines:
         line = re.sub(r"^#{2,4}\s*", "", line).rstrip()
         out.append(("    " + line) if line else "")
+    if len(out) > MAX_UPSTREAM_LINES:
+        out = out[:MAX_UPSTREAM_LINES]
+        while out and not out[-1]:
+            out.pop()
+        out += ["", f"    … (truncated) Full release notes: {url}"]
     return "\n".join(out)
 
 
 sections = []
 for r in selected:
-    sections.append(f"  Audiobookshelf {r['tag_name']}\n\n{format_body(r.get('body') or '(no notes provided)')}")
+    sections.append(f"  Audiobookshelf {r['tag_name']}\n\n{format_body(r.get('body') or '(no notes provided)', r.get('html_url', ''))}")
 
 upstream_block = "\n\n\n".join(sections)
 upstream_block += "\n\n\n  See the full release history: https://github.com/advplyr/audiobookshelf/releases"
