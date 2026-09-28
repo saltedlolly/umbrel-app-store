@@ -326,6 +326,7 @@ build_launcher() {
   docker buildx build \
     --platform linux/amd64,linux/arm64 \
     --tag "${LAUNCHER_IMAGE}:${version}" \
+    --build-arg "APP_VERSION=${version}" \
     --label "org.opencontainers.image.source=https://github.com/saltedlolly/umbrel-app-store" \
     --label "org.opencontainers.image.description=NPMplus launcher - configuration UI" \
     --push \

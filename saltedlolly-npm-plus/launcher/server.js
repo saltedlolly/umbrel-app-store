@@ -333,6 +333,11 @@ app.post('/api/integrations', (req, res) => {
 });
 
 // API: Get current configuration
+// API: App version (baked into the image by npmplus-build.sh)
+app.get('/api/version', (req, res) => {
+    res.json({ version: process.env.APP_VERSION || 'dev' });
+});
+
 app.get('/api/config', (req, res) => {
     try {
         const config = readConfig();
