@@ -109,7 +109,7 @@ prepend_release_notes() {
     BEGIN{inserted=0}
     /^releaseNotes:[[:space:]]*>-/ {
       if (!inserted) {
-        print; print "  " ver ":\n\n  - " msg "\n"; inserted=1; next
+        print; print "  ## " ver "\n\n  - " msg "\n"; inserted=1; next
       }
     }
     {print}
@@ -545,7 +545,9 @@ elif [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
   echo
 
   echo "Committing changes..."
-  git add -A
+  # Scoped staging only - this script touches its own app folder and the
+  # root README (version + date), nothing else. Never `git add -A`.
+  git add -- "$APP_ROOT" "$APP_ROOT/../README.md"
   git commit -m "release: ${target_v} - ${RELEASE_NOTES}"
 
   echo "Pushing to GitHub..."

@@ -157,7 +157,7 @@ manifest, count = re.subn(r'^version:\s*"[^"]+"$', f'version: "{new_version}"', 
 if count != 1:
     raise SystemExit("Could not update version in umbrel-app.yml")
 
-release_block = f"releaseNotes: >-\n  {new_version}:\n\n  - {notes}\n\n"
+release_block = f"releaseNotes: >-\n  ## {new_version}\n\n  - {notes}\n\n"
 manifest, count = re.subn(r"releaseNotes:\s*>-\n.*?\ndeveloper:", release_block + "developer:", manifest, count=1, flags=re.DOTALL)
 if count != 1:
     raise SystemExit("Could not update releaseNotes in umbrel-app.yml")

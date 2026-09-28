@@ -805,7 +805,9 @@ elif [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
   
   # Commit and push to GitHub
   echo "Committing changes..."
-  git add -A
+  # Scoped staging only - this script touches its own app folder and the
+  # root README (version + date), nothing else. Never `git add -A`.
+  git add -- "$APP_ROOT" "$APP_ROOT/../README.md"
   git commit -m "release: ${target_v} - ${RELEASE_NOTES}"
   
   echo "Pushing to GitHub..."
@@ -821,6 +823,6 @@ elif [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
 else
   echo "Next steps:"
   echo "  1. Review changes: git diff"
-  echo "  2. Commit: git add -A && git commit -m 'chore: bump to ${target_v}, build multi-arch and pin digests'"
+  echo "  2. Commit: git add -- \"$APP_ROOT\" \"$APP_ROOT/../README.md\" && git commit -m 'chore: bump to ${target_v}, build multi-arch and pin digests'"
   echo "  3. Push: git push"
 fi

@@ -584,7 +584,7 @@ elif [[ "$LOCAL_TEST" == "true" ]]; then
   echo "ℹ️  Local test mode - files updated but not committed"
 else
   echo "ℹ️  Files updated locally. To publish:"
-  echo "   git add -A && git commit && git push"
+  echo "   git add -- \"$APP_ROOT\" \"$STORE_ROOT/README.md\" && git commit && git push"
 fi
 
 echo ""

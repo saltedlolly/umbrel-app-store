@@ -376,6 +376,22 @@ publish_package() {
 ########################################
 
 # Git sync pre-flight check - prevents pushing to stale branch
+# Prepend this release's --notes as a new "## <version>" section at the top
+# of releaseNotes (same format as cf-build.sh / npmplus-build.sh)
+prepend_release_notes() {
+  local newv="$1" notes="$2"
+  awk -v ver="$newv" -v msg="$notes" '
+    BEGIN{inserted=0}
+    /^releaseNotes:[[:space:]]*>-/ {
+      if (!inserted) {
+        print; print "  ## " ver "\n\n  - " msg "\n"; inserted=1; next
+      }
+    }
+    {print}
+  ' "$MANIFEST_FILE" > "$MANIFEST_FILE.tmp"
+  mv "$MANIFEST_FILE.tmp" "$MANIFEST_FILE"
+}
+
 check_git_sync() {
   echo "Checking repository sync status..."
   
@@ -499,6 +515,7 @@ if [[ "$CURRENT_VERSION" == "$TARGET_VERSION" ]]; then
 fi
 
 update_package "$TARGET_TAG" "$TARGET_DIGEST" "$TARGET_VERSION"
+[[ -n "$RELEASE_NOTES" ]] && prepend_release_notes "$TARGET_VERSION" "$RELEASE_NOTES"
 update_release_notes "$TARGET_TAG"
 update_readme_version "$TARGET_VERSION"
 validate_package

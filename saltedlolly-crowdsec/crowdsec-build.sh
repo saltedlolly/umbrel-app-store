@@ -120,7 +120,7 @@ prepend_release_notes() {
     BEGIN{inserted=0}
     /^releaseNotes:[[:space:]]*>-/ {
       if (!inserted) {
-        print; print "  " ver ":\n\n  - " msg "\n"; inserted=1; next
+        print; print "  ## " ver "\n\n  - " msg "\n"; inserted=1; next
       }
     }
     {print}

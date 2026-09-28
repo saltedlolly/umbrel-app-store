@@ -174,7 +174,7 @@ if count != 1:
 # manually/automatically-supplied bullet rather than fetched content.
 release_block = (
     "releaseNotes: >-\n"
-    f"  {target_version}:\n\n"
+    f"  ## {target_version}\n\n"
     f"  - {notes}\n\n"
 )
 manifest, count = re.subn(

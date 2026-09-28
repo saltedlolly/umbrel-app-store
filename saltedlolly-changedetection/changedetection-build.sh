@@ -228,7 +228,7 @@ if count != 1:
 
 release_block = (
     "releaseNotes: >-\n"
-    f"  {new_manifest_version}:\n\n"
+    f"  ## {new_manifest_version}\n\n"
     f"  - {notes}\n\n"
 )
 manifest, count = re.subn(

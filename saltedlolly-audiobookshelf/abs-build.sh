@@ -42,7 +42,7 @@ ABS_SERVER_LOCAL_TXT_FILE="$APP_ROOT/docker-containers/abs-manager/abs-server-im
 ABS_RELEASE_NOTES_MARKER="--- Audiobookshelf upstream release notes (auto-updated) ---"
 
 # Development / publishing options
-RELEASE_NOTES="Update abs-network-shares-config-tool multi-arch image for Umbrel Home compatibility"
+RELEASE_NOTES=""
 LOCAL_TEST=false
 PUBLISH_TO_GITHUB=false
 FORCE_BUMP=false
@@ -570,6 +570,22 @@ update_migration_script_version() {
 
 
 # Git sync pre-flight check - prevents pushing to stale branch
+# Prepend this release's --notes as a new "## <version>" section at the top
+# of releaseNotes (same format as cf-build.sh / npmplus-build.sh)
+prepend_release_notes() {
+  local newv="$1" notes="$2"
+  awk -v ver="$newv" -v msg="$notes" '
+    BEGIN{inserted=0}
+    /^releaseNotes:[[:space:]]*>-/ {
+      if (!inserted) {
+        print; print "  ## " ver "\n\n  - " msg "\n"; inserted=1; next
+      }
+    }
+    {print}
+  ' "$APP_YML_FILE" > "$APP_YML_FILE.tmp"
+  mv "$APP_YML_FILE.tmp" "$APP_YML_FILE"
+}
+
 check_git_sync() {
   echo "Checking repository sync status..."
   
@@ -649,6 +665,12 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# --publish writes the notes into umbrel-app.yml, so they're required
+if [[ "$PUBLISH_TO_GITHUB" == "true" && -z "$RELEASE_NOTES" ]]; then
+  echo "Error: --publish requires --notes" >&2
+  exit 1
+fi
 
 # Git sync check (if publishing)
 if [[ "${PUBLISH_TO_GITHUB:-false}" == "true" ]] || [[ "${MODE:-}" == "publish" ]]; then
@@ -770,6 +792,11 @@ update_release_notes
 # Get the full version from version.json for everything (e.g., "2.31.0.13")
 echo "[DEBUG] Reading FULL_VERSION from version.json"
 FULL_VERSION=$(node -p "require('$CONFIG_TOOL_UI_REPO/public/version.json').version")
+
+if [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
+  echo "Prepending release notes for ${FULL_VERSION}..."
+  prepend_release_notes "$FULL_VERSION" "$RELEASE_NOTES"
+fi
 echo "[DEBUG] FULL_VERSION: $FULL_VERSION"
 
 # Update migrate-library.sh script version to match app version
@@ -1042,24 +1069,11 @@ elif $PUBLISH_TO_GITHUB; then
   echo "========================================" 
   echo ""
   
-  # Prompt for release notes if using default
-  if [[ "$RELEASE_NOTES" == "Update network-shares-ui multi-arch image for Umbrel Home compatibility" ]]; then
-    echo "Enter release notes (used for commit message):"
-    read -r RELEASE_NOTES
-    
-    if [[ -z "$RELEASE_NOTES" ]]; then
-      echo "Error: Release notes cannot be empty" >&2
-      exit 1
-    fi
-    
-    echo ""
-  fi
-  
   # Commit and push to GitHub
   echo "Committing changes..."
-  git add -A
-  # Explicitly add the README.md from app store root (in case it's not in current dir)
-  git add "$SCRIPT_DIR/../README.md" 2>/dev/null || true
+  # Scoped staging only - never `git add -A`, which would sweep unrelated
+  # changes elsewhere in the store into this app's release commit
+  git add -- "$APP_ROOT" "$SCRIPT_DIR/../README.md"
   git commit -m "release: v${FULL_VERSION} - ${RELEASE_NOTES}"
   
   echo "Pushing to GitHub..."
