@@ -157,6 +157,24 @@ else
     echo "[CrowdSec] ⚠ Warning: crowdsec.conf not found at $CROWDSEC_CONF"
 fi
 
+# Forward access logs to CrowdSec over syslog so it can detect patterns
+# across requests (scanners, brute force). nginx includes conf.d/*.conf in
+# its http block and no proxy host sets its own access_log, so this applies
+# to every host alongside the normal log file. Uses the same `alog` format
+# as access.log; CrowdSec's ZoeyVid/npmplus-logs parser matches the
+# `npmplus` tag. UDP to a port nobody listens on is simply dropped, so this
+# is harmless with CrowdSec versions that don't receive logs.
+# This file lives in the container, not /data, so it's rebuilt every start.
+CROWDSEC_SYSLOG_CONF="/usr/local/nginx/conf/conf.d/crowdsec-syslog.conf"
+if [ -f "$CROWDSEC_CONF" ] && [ "$CROWDSEC_EFFECTIVE" = "true" ]; then
+    echo "access_log syslog:server=${DOCKER_HOST_IP}:4242,tag=npmplus alog;" > "$CROWDSEC_SYSLOG_CONF"
+    CROWDSEC_LOG_SHARING=true
+    echo "[CrowdSec]   Logs: syslog to ${DOCKER_HOST_IP}:4242"
+else
+    rm -f "$CROWDSEC_SYSLOG_CONF"
+    CROWDSEC_LOG_SHARING=false
+fi
+
 # Publish the bouncer state for the launcher, which can't see crowdsec.conf.
 # No secrets here - the launcher mounts this directory read-only.
 STATUS_DIR="/data/integration-status"
@@ -172,6 +190,7 @@ MODE=${CROWDSEC_ENABLED:-auto}
 DETECTED_AT_START=${CROWDSEC_DETECTED}
 LAPI_URL=${CROWDSEC_LAPI_URL:-}
 APPSEC_ENABLED=${CROWDSEC_APPSEC_ENABLED:-false}
+LOG_SHARING=${CROWDSEC_LOG_SHARING}
 UPDATED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 EOF
 mv "$STATUS_DIR/crowdsec.env.tmp" "$STATUS_DIR/crowdsec.env"

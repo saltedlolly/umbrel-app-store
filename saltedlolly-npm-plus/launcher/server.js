@@ -67,6 +67,7 @@ function readCrowdSecStatus() {
             mode: status.MODE || 'auto',
             lapiUrl: status.LAPI_URL || '',
             appsecEnabled: status.APPSEC_ENABLED === 'true',
+            logSharing: status.LOG_SHARING === 'true',
             updatedAt: status.UPDATED_AT || null
         };
     } catch {
@@ -278,6 +279,7 @@ app.get('/api/integrations/status', async (req, res) => {
                 // Settings saved since NPMplus started only apply after a restart
                 pendingRestart: !!crowdsecStatus && crowdsecStatus.mode !== crowdsecConfiguredMode,
                 appsecEnabled: !!crowdsecStatus && crowdsecStatus.appsecEnabled,
+                logSharing: !!crowdsecStatus && crowdsecStatus.logSharing,
                 connectedSince: crowdsecState === 'connected' ? crowdsecStatus.updatedAt : null,
                 decisions: crowdsecDecisions
             },

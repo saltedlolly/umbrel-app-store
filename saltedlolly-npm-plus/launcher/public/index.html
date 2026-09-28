@@ -162,6 +162,7 @@
                                 <div class="metric-item">
                                     <span class="metric-label">Protection</span>
                                     <span class="metric-value" id="crowdsecProtection">-</span>
+                                    <span class="metric-detail" id="crowdsecProtectionDetail"></span>
                                 </div>
                                 <div class="metric-item">
                                     <span class="metric-label">Connected Since</span>
@@ -532,6 +533,9 @@
                 bansDetail.textContent = 'Could not reach CrowdSec';
             }
             document.getElementById('crowdsecProtection').textContent = status.appsecEnabled ? 'Blocklist + WAF' : 'Blocklist';
+            document.getElementById('crowdsecProtectionDetail').textContent = status.logSharing
+                ? 'Access logs sent for analysis'
+                : '';
             document.getElementById('crowdsecSince').textContent = status.connectedSince
                 ? new Date(status.connectedSince).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
                 : '–';
