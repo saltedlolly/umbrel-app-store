@@ -138,8 +138,6 @@ releaseNotes: >-
 
   - Automated update: bump bundled advplyr/audiobookshelf to v2.36.1
 
-  New in NAS Edition: Network Shares are no longer mounted as read-only - write is enabled. Podcasts now work!
-
 
   --- Audiobookshelf upstream release notes (auto-updated) ---
 
