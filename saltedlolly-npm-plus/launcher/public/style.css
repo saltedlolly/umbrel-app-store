@@ -6,7 +6,7 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(135deg, #F15933 0%, #9B3995 100%);
+    background: linear-gradient(135deg, #A01664 0%, #552263 100%);
     min-height: 100vh;
     padding: 20px;
     color: #333;
@@ -429,7 +429,7 @@ code {
 
 /* Notification Banner */
 .notification-banner {
-    background: linear-gradient(135deg, #F15933 0%, #9B3995 100%);
+    background: linear-gradient(135deg, #A01664 0%, #552263 100%);
     border-radius: 12px;
     padding: 20px;
     margin-bottom: 20px;
