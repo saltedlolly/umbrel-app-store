@@ -385,6 +385,41 @@ update_webui_pin() {
 ########################################
 
 # Git sync pre-flight check - prevents pushing to stale branch
+# Commit/push failure handling. By the time we commit, images are pushed and
+# the release files are updated and staged, so a failed commit (often commit
+# signing, e.g. 1Password locked or timed out) must not leave a mystery.
+# Re-running the script would bump the version again, so explain how to finish.
+explain_failed_commit() {
+  local msg="$1" root
+  root="$(git rev-parse --show-toplevel)"
+  {
+    echo ""
+    echo "❌ git commit failed (often commit signing: e.g. 1Password locked or timed out)."
+    echo "Everything else is done: images are pushed and the release files are updated and staged."
+    echo "Do NOT re-run this script - it would bump the version again."
+    echo "Once the cause is fixed, finish the release with:"
+    echo ""
+    echo "  git -C $(printf '%q' "$root") commit -m $(printf '%q' "$msg")"
+    echo "  git -C $(printf '%q' "$root") push"
+    echo ""
+  } >&2
+  exit 1
+}
+
+explain_failed_push() {
+  local root
+  root="$(git rev-parse --show-toplevel)"
+  {
+    echo ""
+    echo "❌ git push failed. The release commit was made locally."
+    echo "Once the cause is fixed (network, or pull if GitHub moved on), run:"
+    echo ""
+    echo "  git -C $(printf '%q' "$root") push"
+    echo ""
+  } >&2
+  exit 1
+}
+
 check_git_sync() {
   echo "Checking repository sync status..."
   
@@ -654,11 +689,10 @@ elif [[ "$PUBLISH_TO_GITHUB" == "true" ]]; then
 
   echo "Committing changes..."
   git -C "$STORE_ROOT" add -- "$APP_ROOT" "$STORE_ROOT/README.md"
-  git -C "$STORE_ROOT" commit -m "release: ${target_v} - ${RELEASE_NOTES}"
-
+  release_msg="release: ${target_v} - ${RELEASE_NOTES}"
+  git -C "$STORE_ROOT" commit -m "$release_msg" || explain_failed_commit "$release_msg"
   echo "Pushing to GitHub..."
-  git -C "$STORE_ROOT" push
-
+  git -C "$STORE_ROOT" push || explain_failed_push
   echo
   echo "✓ Successfully published ${target_v} to GitHub"
   echo

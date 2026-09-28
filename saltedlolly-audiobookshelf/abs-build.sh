@@ -114,41 +114,41 @@ EOF
 }
 
 ensure_buildx() {
+  # Pick a multi-arch (docker-container) builder without parsing
+  # `docker buildx ls`: its column layout changes between Docker versions,
+  # and it exits non-zero when any other builder (e.g. a stopped OrbStack
+  # one) is unreachable. Order: the currently selected builder (what
+  # docker/setup-buildx-action selects in CI), then multi-platform-builder,
+  # else create multi-platform-builder.
   echo "Setting up Docker buildx for multi-platform builds..."
-  
   if ! command -v docker &> /dev/null; then
     echo "Error: Docker is not installed or not in PATH" >&2
     exit 1
   fi
-  
-  local container_builder=$(docker buildx ls 2>/dev/null | awk '$2 ~ /docker-container/ && $4 ~ /linux\/amd64/ && $4 ~ /linux\/arm64/ {print $1; exit}')
-  container_builder="${container_builder%\*}"
-  
-  if [[ -z "$container_builder" ]]; then
-    container_builder=$(docker buildx ls 2>/dev/null | awk '$2 ~ /docker-container/ {print $1; exit}')
-    container_builder="${container_builder%\*}"
-    
-    if [[ -z "$container_builder" ]]; then
-      echo "Creating multiarch builder with both amd64 and arm64 support..."
-      docker buildx create --driver docker-container --platform linux/amd64,linux/arm64 --name multiarch >/dev/null 2>&1
-      container_builder="multiarch"
-    else
-      echo "Warning: Found docker-container builder but it may not support both amd64 and arm64"
-    fi
+
+  # Capture first, then parse: piping into `awk '{...; exit}'` can SIGPIPE
+  # docker, which under `set -o pipefail` + `set -e` silently kills the script
+  local info current driver
+  info=$(docker buildx inspect 2>/dev/null || true)
+  current=$(awk '/^Name:/{print $2; exit}' <<< "$info")
+  driver=$(awk '/^Driver:/{print $2; exit}' <<< "$info")
+
+  if [[ "$driver" == "docker-container" ]] && docker buildx inspect --bootstrap >/dev/null 2>&1; then
+    echo "Using current buildx builder: $current"
+  elif docker buildx inspect --bootstrap multi-platform-builder >/dev/null 2>&1; then
+    docker buildx use multi-platform-builder
+    echo "Using buildx builder: multi-platform-builder"
+  else
+    echo "Creating buildx builder multi-platform-builder (linux/amd64, linux/arm64)..."
+    docker buildx rm multi-platform-builder >/dev/null 2>&1 || true
+    docker buildx create --driver docker-container \
+      --platform linux/amd64,linux/arm64 \
+      --name multi-platform-builder --use >/dev/null
+    docker buildx inspect --bootstrap >/dev/null 2>&1 || {
+      echo "Error: Could not bootstrap builder multi-platform-builder" >&2
+      exit 1
+    }
   fi
-  
-  echo "Using buildx builder: $container_builder"
-  docker buildx use "$container_builder" 2>/dev/null || {
-    echo "Error: Could not switch to builder $container_builder" >&2
-    exit 1
-  }
-  
-  echo "Bootstrapping builder..."
-  docker buildx inspect --bootstrap >/dev/null 2>&1 || {
-    echo "Error: Could not bootstrap builder" >&2
-    exit 1
-  }
-  
   echo "Builder is ready."
 }
 
@@ -608,6 +608,41 @@ prepend_release_notes() {
     {print}
   ' "$APP_YML_FILE" > "$APP_YML_FILE.tmp"
   mv "$APP_YML_FILE.tmp" "$APP_YML_FILE"
+}
+
+# Commit/push failure handling. By the time we commit, images are pushed and
+# the release files are updated and staged, so a failed commit (often commit
+# signing, e.g. 1Password locked or timed out) must not leave a mystery.
+# Re-running the script would bump the version again, so explain how to finish.
+explain_failed_commit() {
+  local msg="$1" root
+  root="$(git rev-parse --show-toplevel)"
+  {
+    echo ""
+    echo "❌ git commit failed (often commit signing: e.g. 1Password locked or timed out)."
+    echo "Everything else is done: images are pushed and the release files are updated and staged."
+    echo "Do NOT re-run this script - it would bump the version again."
+    echo "Once the cause is fixed, finish the release with:"
+    echo ""
+    echo "  git -C $(printf '%q' "$root") commit -m $(printf '%q' "$msg")"
+    echo "  git -C $(printf '%q' "$root") push"
+    echo ""
+  } >&2
+  exit 1
+}
+
+explain_failed_push() {
+  local root
+  root="$(git rev-parse --show-toplevel)"
+  {
+    echo ""
+    echo "❌ git push failed. The release commit was made locally."
+    echo "Once the cause is fixed (network, or pull if GitHub moved on), run:"
+    echo ""
+    echo "  git -C $(printf '%q' "$root") push"
+    echo ""
+  } >&2
+  exit 1
 }
 
 check_git_sync() {
@@ -1102,11 +1137,10 @@ elif $PUBLISH_TO_GITHUB; then
   # Scoped staging only - never `git add -A`, which would sweep unrelated
   # changes elsewhere in the store into this app's release commit
   git add -- "$APP_ROOT" "$SCRIPT_DIR/../README.md"
-  git commit -m "release: v${FULL_VERSION} - ${RELEASE_NOTES}"
-  
+  release_msg="release: v${FULL_VERSION} - ${RELEASE_NOTES}"
+  git commit -m "$release_msg" || explain_failed_commit "$release_msg"
   echo "Pushing to GitHub..."
-  git push
-  
+  git push || explain_failed_push
   echo ""
   echo "✓ Successfully published v${FULL_VERSION} to GitHub"
   echo ""
