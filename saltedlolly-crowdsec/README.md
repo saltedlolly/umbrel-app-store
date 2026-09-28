@@ -34,6 +34,35 @@ This app installs the [`ZoeyVid/npmplus`](https://hub.crowdsec.net/author/ZoeyVi
 
 NPMplus forwards its access logs over syslog (UDP) to port 4242, published only on the Umbrel's internal Docker gateway (`10.21.0.1`), so other apps' containers can reach it but devices on your network can't send fake log lines. A shared file mount isn't used because umbrelOS only lets an app see another app's files if it depends on that app, and CrowdSec deliberately doesn't depend on NPMplus. CrowdSec's docs describe its syslog listener as suited to small setups (a few hundred log lines per second), which is well above typical home traffic.
 
+## Stopping false bans of your own apps (whitelists)
+
+CrowdSec's generic rules ban visitors that look like bots, such as a burst of requests with many "not found" (404) responses. Some self-hosted apps legitimately behave like that. For example, the Audiobookshelf mobile apps (Prologue, the official app, ShelfPlayer and others) can request hundreds of library items in a few seconds while syncing, and get banned for "crawling" or "probing".
+
+If you notice a real user being banned, first lift the ban: open the CrowdSec dashboard, go to **Decisions**, and remove it. Then add a whitelist so it doesn't happen again. A whitelist tells CrowdSec's **log-based** rules to ignore matching requests. The web application firewall and the community blocklist still check every request, so a whitelist only stops the "looks like a bot" detection for that traffic.
+
+### Example: Audiobookshelf
+
+This ignores Audiobookshelf's app API calls (`/api/...`) on your Audiobookshelf domain, while its login page stays protected against password guessing.
+
+1. SSH into your Umbrel (`ssh umbrel@umbrel.local`).
+2. Create the whitelist file, replacing `abs.example.com` with the domain you use for Audiobookshelf in NPMplus:
+
+   ```bash
+   sudo tee ~/umbrel/app-data/saltedlolly-crowdsec/data/crowdsec/config/parsers/s02-enrich/audiobookshelf-whitelist.yaml > /dev/null <<'EOF'
+   name: local/audiobookshelf-api-whitelist
+   description: "Ignore Audiobookshelf app API traffic in log-based scenarios"
+   whitelist:
+     reason: "Audiobookshelf app API traffic"
+     expression:
+       - evt.Meta.target_fqdn == 'abs.example.com' && evt.Meta.http_path startsWith '/api/'
+   EOF
+   ```
+
+3. Restart CrowdSec so it loads the file: `sudo docker restart saltedlolly-crowdsec_crowdsec_1`
+4. Check it loaded: `sudo docker exec saltedlolly-crowdsec_crowdsec_1 cscli parsers list | grep audiobookshelf` should show it as `enabled,local`.
+
+The file lives in CrowdSec's own config folder, so it survives app updates; the app never changes it. To adapt this for another app, change the domain and the path. Useful fields include `evt.Meta.target_fqdn` (the domain), `evt.Meta.http_path`, `evt.Meta.http_user_agent` and `evt.Meta.source_ip`. See CrowdSec's [whitelist documentation](https://docs.crowdsec.net/docs/next/log_processor/whitelist/intro) for more options.
+
 ## Persistence
 
 All engine state (config, ban/alert database, hub collections) lives under `${APP_DATA_DIR}/data/crowdsec/`, and the dashboard's own account/settings under `${APP_DATA_DIR}/data/web-ui/`. Both are backed up by Umbrel's Backup tool and preserved across restarts and updates.

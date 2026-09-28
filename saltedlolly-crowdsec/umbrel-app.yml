@@ -27,6 +27,9 @@ description: >-
   If CrowdSec is ever unavailable, NPMplus lets traffic through, so your sites keep working. Other services with their own CrowdSec bouncer can be connected too (see the app's README).
 
 
+  Some apps' own mobile clients can look like bots to CrowdSec (for example Audiobookshelf apps syncing a library) and get banned by mistake. The README explains how to lift a ban and add a whitelist to stop it happening again: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-crowdsec#stopping-false-bans-of-your-own-apps-whitelists
+
+
   ⚠️ Uninstalling this app deletes its persistent app data, including your ban history and dashboard account. Back it up before uninstalling.
 releaseNotes: >-
   v1.8.1.12:
