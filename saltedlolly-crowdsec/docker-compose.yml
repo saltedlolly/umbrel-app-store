@@ -23,11 +23,12 @@ services:
       # secret with saltedlolly-npm-plus's bouncer config to connect them.
       - BOUNCER_KEY_npmplus=${APP_SALTEDLOLLY_CROWDSEC_NPMPLUS_BOUNCER_KEY}
     ports:
-      # Expose LAPI and AppSec for NPMplus integration
-      # Bound to all interfaces so Docker containers can access via gateway IP
-      # CrowdSec LAPI requires authentication (bouncer key) so this is secure
-      - "0.0.0.0:8080:8080/tcp"  # LAPI
-      - "0.0.0.0:7422:7422/tcp"  # AppSec
+      # LAPI and AppSec for NPMplus, published on the Umbrel's Docker gateway
+      # only: other apps' containers reach them at 10.21.0.1, devices on the
+      # LAN can't reach them at all (both also require the bouncer key).
+      # The CrowdSec web UI connects by container name and isn't affected.
+      - "10.21.0.1:8080:8080/tcp"  # LAPI
+      - "10.21.0.1:7422:7422/tcp"  # AppSec
       # NPMplus access logs arrive over syslog (UDP) - see hooks/pre-start.
       # Bound to the Umbrel's Docker gateway only: containers can send logs,
       # LAN devices can't inject fake ones. (A file mount of NPMplus's logs
