@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-authentik
 category: networking
 name: Authentik
-version: "2026.8.3"
+version: "2026.8.3.1"
 tagline: One login for your self-hosted apps, for you and everyone you share them with
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested. Please don't use it yet. Check back soon.
@@ -39,6 +39,10 @@ description: >-
 
   ⚠️ Uninstalling this app deletes all its data, including your users and settings. Back it up before uninstalling.
 releaseNotes: >-
+  ## 2026.8.3.1
+
+  - New installs start with admin@umbrel.local as the admin email. README: tested setup steps for publishing Authentik, accounts, two-factor and passkeys, Sign in with Google, and apps with OpenID login such as Audiobookshelf
+
   ## 2026.8.3
 
   - First release (under construction, please don't use yet)
