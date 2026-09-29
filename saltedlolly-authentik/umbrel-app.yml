@@ -3,7 +3,7 @@ id: saltedlolly-authentik
 category: networking
 name: Authentik
 version: "2026.8.3"
-tagline: One login for your self-hosted apps, for you, your family and friends
+tagline: One login for your self-hosted apps, for you and everyone you share them with
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested. Please don't use it yet. Check back soon.
 

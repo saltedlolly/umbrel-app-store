@@ -22,6 +22,10 @@ services:
       # Password for the built-in "akadmin" account, shown on the app's page
       # in Umbrel (deterministicPassword). Only used on the very first start
       AUTHENTIK_BOOTSTRAP_PASSWORD: ${APP_PASSWORD}
+      # akadmin's email on the very first start (Authentik's default is
+      # root@example.com). The bootstrap blueprint only sets it when it creates
+      # the account, so an email changed later in the web UI is kept
+      AUTHENTIK_BOOTSTRAP_EMAIL: admin@umbrel.local
       # Updates arrive through the Umbrel app store (which has to step through
       # Authentik's releases in order), so don't tell admins to update by hand
       AUTHENTIK_DISABLE_UPDATE_CHECK: "true"
@@ -58,6 +62,7 @@ services:
       AUTHENTIK_POSTGRESQL__PASSWORD: ${APP_SALTEDLOLLY_AUTHENTIK_DB_PASSWORD}
       AUTHENTIK_SECRET_KEY: ${APP_SALTEDLOLLY_AUTHENTIK_SECRET_KEY}
       AUTHENTIK_BOOTSTRAP_PASSWORD: ${APP_PASSWORD}
+      AUTHENTIK_BOOTSTRAP_EMAIL: admin@umbrel.local
       AUTHENTIK_DISABLE_UPDATE_CHECK: "true"
       AUTHENTIK_DISABLE_STARTUP_ANALYTICS: "true"
       AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
