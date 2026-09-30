@@ -13,6 +13,9 @@ const CONFIG_FILE = path.join(CONFIG_DIR, 'npm-settings.env');
 const STATUS_DIR = process.env.STATUS_DIR || '/data/status';
 const CROWDSEC_STATUS_FILE = path.join(STATUS_DIR, 'crowdsec.env');
 const AUTHENTIK_STATUS_FILE = path.join(STATUS_DIR, 'authentik.env');
+// NPMplus's generated per-host nginx configs (read-only): one <id>.conf per
+// enabled proxy host; disabled hosts have none, broken ones are *.conf.err
+const PROXY_HOST_DIR = process.env.PROXY_HOST_DIR || '/data/proxy_host';
 const CROWDSEC_BOUNCER_KEY = process.env.CROWDSEC_BOUNCER_KEY || '';
 
 // Integration endpoints
@@ -147,6 +150,29 @@ function fetchCrowdSecDecisions(lapiUrl) {
         req.on('error', () => resolve(null));
         req.on('timeout', () => { req.destroy(); resolve(null); });
     });
+}
+
+// Proxy hosts that ask Authentik before letting visitors in: NPMplus adds
+// this auth_request line when Auth Request is set to authentik (or
+// authentik-send-basic-auth) on the host or one of its custom locations.
+// Returns null if the configs can't be read (older compose file).
+function readAuthentikProtectedHosts() {
+    let files;
+    try {
+        files = fs.readdirSync(PROXY_HOST_DIR).filter(f => /^\d+\.conf$/.test(f));
+    } catch {
+        return null;
+    }
+    const domains = [];
+    for (const file of files) {
+        try {
+            const conf = fs.readFileSync(path.join(PROXY_HOST_DIR, file), 'utf8');
+            if (!conf.includes('auth_request /outpost.goauthentik.io/auth/nginx')) continue;
+            const match = conf.match(/^\s*server_name\s+([^;]+);/m);
+            domains.push(...(match ? match[1].trim().split(/\s+/) : [`host ${file}`]));
+        } catch { /* skip unreadable file */ }
+    }
+    return { count: domains.length, domains: domains.sort() };
 }
 
 // Work out what the CrowdSec card should say, from what's reachable now
@@ -300,7 +326,8 @@ app.get('/api/integrations/status', async (req, res) => {
                 detected: authentikDetected,
                 // Whether the running NPMplus has Authentik's address set for
                 // forward auth (the wrapper sets it on every start)
-                forwardAuthReady: !!(readStatusFile(AUTHENTIK_STATUS_FILE) || {}).UPSTREAM
+                forwardAuthReady: !!(readStatusFile(AUTHENTIK_STATUS_FILE) || {}).UPSTREAM,
+                protectedHosts: readAuthentikProtectedHosts()
             }
         });
     } catch (error) {

@@ -9,7 +9,7 @@
 <body>
     <div class="container">
         <header>
-            <img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-npm-plus/npmplusicon.svg" alt="NPMplus Logo" class="logo">
+            <img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-npm-plus/icon.svg" alt="NPMplus Logo" class="logo">
             <h1>NPMplus for Umbrel</h1>
             <p class="subtitle">Reverse Proxy with SSL Certificate Management</p>
         </header>
@@ -209,6 +209,42 @@
                             <li>Apps with their own OpenID login (such as Audiobookshelf) connect to Authentik in their own settings.</li>
                             <li>For a site with no login of its own, NPMplus can check with Authentik before letting anyone in: choose <strong>authentik</strong> under <strong>Auth Request</strong> on its proxy host. NPMplus already knows where Authentik is.</li>
                         </ul>
+
+                        <div class="integration-metrics" id="authentikMetrics" style="display: none;">
+                            <div class="metric-grid">
+                                <div class="metric-item">
+                                    <span class="metric-label">Sites Using Authentik</span>
+                                    <span class="metric-value" id="authentikHostCount">-</span>
+                                    <span class="metric-detail" id="authentikHostList"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <details class="authentik-guide">
+                            <summary>How to protect a site with Authentik</summary>
+                            <p class="help-text">
+                                <strong>Once, before your first site:</strong> publish Authentik on your domain and give it
+                                that public address in both places the Setup Guide describes (System → Settings → Base URL,
+                                and the embedded outpost's <code>authentik_host</code>). Otherwise visitors are sent to a
+                                sign-in address they can't reach.
+                            </p>
+                            <ol>
+                                <li><strong>In Authentik:</strong> Applications → Applications → <strong>Create with provider</strong>. Choose <strong>Proxy Provider</strong>, mode <strong>Forward auth (single application)</strong>, and set <strong>External host</strong> to the site's public address (e.g. <code>https://tools.yourdomain.com</code>). Under <strong>Bindings</strong>, choose who may use it.</li>
+                                <li><strong>In Authentik:</strong> Applications → Outposts → <strong>authentik Embedded Outpost</strong> → Edit, and add the new application.</li>
+                                <li><strong>In NPMplus:</strong> on the site's proxy host, set <strong>Auth Request</strong> to <strong>authentik</strong> and save.</li>
+                            </ol>
+                            <p class="help-text">
+                                <strong>Apps that normally use your Umbrel login</strong> (most apps without a login of their own):
+                                forward the proxy host to the app's container, not to its Umbrel port. Otherwise visitors
+                                also get your Umbrel's login page. The container name and port are the
+                                <code>APP_HOST</code> and <code>APP_PORT</code> in the app's <code>docker-compose.yml</code>
+                                (for example <code>librespeed_server_1</code> and <code>8080</code>).
+                            </p>
+                            <p class="help-text">
+                                Use this for sites people open in a web browser. Apps with their own OpenID login
+                                (such as Audiobookshelf) should use that instead: forward auth would stop their mobile apps working.
+                            </p>
+                        </details>
 
                         <div class="integration-actions" id="authentikActions" style="display: none;">
                             <button type="button" class="secondary-button" onclick="openAuthentik()">
@@ -525,12 +561,32 @@
         // proxy host, and the wrapper always sets Authentik's address
         function updateAuthentikStatus(status) {
             const statusElem = document.getElementById('authentikStatus');
+            const hosts = status.protectedHosts;
+            const count = hosts ? hosts.count : 0;
+            const sites = `${count} site${count === 1 ? '' : 's'}`;
             if (status.detected) {
                 statusElem.innerHTML = '<span class="status-icon status-detected">✓</span> ';
+                statusElem.appendChild(document.createTextNode(count > 0
+                    ? `Connected · protecting ${sites}`
+                    : (status.forwardAuthReady ? 'Detected · ready for forward auth' : 'Detected')));
+            } else if (count > 0) {
+                // Hosts set to authentik fail closed: they show an error until Authentik is back
+                statusElem.innerHTML = '<span class="status-icon status-error">✕</span> ';
                 statusElem.appendChild(document.createTextNode(
-                    status.forwardAuthReady ? 'Detected · ready for forward auth' : 'Detected'));
+                    `${sites} use${count === 1 ? 's' : ''} Authentik, but it isn't responding (they show an error until it's back)`));
             } else {
                 statusElem.innerHTML = '<span class="status-icon status-not-detected">○</span> Not detected';
+            }
+
+            const metrics = document.getElementById('authentikMetrics');
+            if (hosts && (status.detected || count > 0)) {
+                metrics.style.display = 'block';
+                document.getElementById('authentikHostCount').textContent = count;
+                document.getElementById('authentikHostList').textContent = count > 0
+                    ? hosts.domains.join(', ')
+                    : 'None yet: see "How to protect a site" below';
+            } else {
+                metrics.style.display = 'none';
             }
             document.getElementById('authentikBody').style.display = 'block';
             document.getElementById('authentikActions').style.display = status.detected ? 'flex' : 'none';

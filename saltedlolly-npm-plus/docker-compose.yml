@@ -22,6 +22,9 @@ services:
       - ${APP_SALTEDLOLLY_NPM_PLUS_DATA_DIR}/launcher-config:/data/config
       # Integration state written by the npmplus wrapper at startup
       - ${APP_SALTEDLOLLY_NPM_PLUS_DATA_DIR}/integration-status:/data/status:ro
+      # NPMplus's generated proxy host configs, to count the sites that use
+      # Authentik (read-only; NPMplus chowns its data folder on every start)
+      - ${APP_SALTEDLOLLY_NPM_PLUS_DATA_DIR}/nginx/proxy_host:/data/proxy_host:ro
 
   npmplus:
     image: ghcr.io/saltedlolly/npmplus-wrapper@sha256:f143247f232dd231b3a672716c913d14990b893d8dffda11ba1b285e906bf334

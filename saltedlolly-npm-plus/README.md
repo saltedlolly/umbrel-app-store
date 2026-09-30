@@ -1,6 +1,6 @@
 # NPMplus for umbrelOS
 
-This package runs NPMplus directly under Umbrel's Docker engine. It does not use Portainer and does not include Authentik or CrowdSec.
+This package runs NPMplus directly under Umbrel's Docker engine. It does not use Portainer. It works on its own, and connects automatically to the CrowdSec and Authentik apps from this store if you install them.
 
 ## Architecture
 
@@ -90,40 +90,36 @@ Umbrel's Portainer install is set up, stop and figure out reliable data
 access before proceeding - do not improvise a live copy between the two
 installations.
 
-## CrowdSec integration (optional, bring your own CrowdSec)
+## CrowdSec integration (optional)
 
-NPMplus ships with a built-in CrowdSec bouncer (no extra container needed
-in this package) - it just needs a reachable CrowdSec engine + LAPI to
-query. This package doesn't include CrowdSec itself - install
-[saltedlolly-crowdsec](../saltedlolly-crowdsec) for that, so a single
-CrowdSec instance can protect multiple apps/services rather than being
-tied to this one.
+NPMplus has a built-in CrowdSec bouncer. Install the [CrowdSec app](../saltedlolly-crowdsec) from this store and the two connect automatically the next time NPMplus starts; nothing to configure. Every site published through NPMplus is then protected:
 
-Install both apps and they're wired together automatically:
-`saltedlolly-crowdsec` generates a shared secret and registers a bouncer
-named `npmplus` with it on every startup - no manual `cscli` step needed
-on either side. To complete the connection, configure NPMplus's bouncer
-by editing `${APP_DATA_DIR}/data/crowdsec/crowdsec.conf` with:
+- **Blocklist:** known attackers (CrowdSec's community list plus anything your CrowdSec bans) are blocked.
+- **Web application firewall (AppSec):** common attacks and exploit probes are refused. It can be switched off for a single proxy host (**Disable Crowdsec Appsec**).
+- **Log analysis:** NPMplus sends its access logs to CrowdSec, which bans scanners, brute-force attempts and aggressive crawlers.
 
-```
-API_URL=http://saltedlolly-crowdsec_crowdsec_1:8080
-API_KEY=<the same BOUNCER_KEY_npmplus value from saltedlolly-crowdsec's docker-compose.yml>
-ENABLED=true
-```
+The integration fails open: if CrowdSec is stopped or uninstalled, your sites keep working. The launcher's CrowdSec card shows the connection state and the number of active bans. If CrowdSec bans a legitimate app (for example an Audiobookshelf mobile app), see the whitelist recipe in the [CrowdSec README](../saltedlolly-crowdsec/README.md).
 
-then restart the app. See [saltedlolly-crowdsec's README](../saltedlolly-crowdsec/README.md#protecting-npmplus-or-other-apps)
-for more on how the two apps connect, and
-[NPMplus's own CrowdSec documentation](https://github.com/ZoeyVid/NPMplus)
-for the full config format (including optional `APPSEC_URL`).
+## Authentik integration (optional)
 
-CrowdSec's *local log-based detection* scenarios (as opposed to its
-community IP-reputation blocklist and AppSec checks, which work over pure
-network calls) need access to NPMplus's actual access logs. Since this
-package doesn't bundle CrowdSec, that needs either CrowdSec's own syslog
-log-forwarding datasource, or a shared bind mount under the Umbrel Home
-folder that both this app and a future CrowdSec app mount (the same
-pattern `saltedlolly-audiobookshelf` uses for its Audiobooks/Podcasts
-folders) - not yet wired up in this package's default configuration.
+With the [Authentik app](../saltedlolly-authentik) from this store installed, NPMplus can ask Authentik before letting anyone into a site ("forward auth"). NPMplus finds Authentik automatically and already knows its address, so you only choose **authentik** under **Auth Request** on a proxy host. Nothing is protected until you do: each site is switched on separately.
+
+**When to use it:** for sites people open in a web browser that have no login of their own (or a weak one). Apps with their own OpenID login, such as Audiobookshelf, should use that instead: forward auth would stop their mobile apps working, and people would have to sign in twice. The [Authentik README](../saltedlolly-authentik/README.md) covers both, and [Authentik's forward auth documentation](https://docs.goauthentik.io/add-secure-apps/providers/proxy/forward_auth/) explains the mechanism.
+
+**Setting up a site** (the launcher's Authentik card has the same steps):
+
+1. **Once, before your first site:** publish Authentik on your domain and set its public address in both places the Authentik README describes (Base URL, and the embedded outpost's `authentik_host`). Otherwise visitors are sent to a sign-in address they can't reach.
+2. **In Authentik:** Applications → Applications → **Create with provider**. Choose **Proxy Provider**, mode **Forward auth (single application)**, and set **External host** to the site's public address. Under **Bindings**, choose who may use it.
+3. **In Authentik:** Applications → Outposts → **authentik Embedded Outpost** → Edit, and add the application.
+4. **In NPMplus:** on the site's proxy host, set **Auth Request** to **authentik** and leave **Auth Request Upstream** empty.
+
+**Apps that use your Umbrel login.** Most apps without a login of their own keep Umbrel's login switched on. Through their Umbrel port, NPMplus (and so your visitors) would get your Umbrel's login page. Forward the proxy host to the app's container instead: the container name and port are the `APP_HOST` and `APP_PORT` under `app_proxy` in the app's `docker-compose.yml` (for example LibreSpeed: `librespeed_server_1`, port `8080`). This only works for apps on the same Umbrel as NPMplus; apps on another machine need their own login.
+
+**APIs used by other apps.** Some apps, such as Sonarr, Radarr and Prowlarr, are also used through their API by other apps and phone apps with an API key. Those can't show a login page, so protect the web pages but not the API: add a **Custom Location** for `/api` with Auth Request set to **none** (the API stays protected by its key).
+
+**If Authentik is down**, protected sites show an error instead of opening ("fail closed"). Other sites are unaffected.
+
+The launcher's Authentik card shows whether Authentik is detected and lists the sites that use it, with a warning if they can't reach Authentik.
 
 ## Release tooling
 

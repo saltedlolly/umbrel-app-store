@@ -737,3 +737,32 @@ code {
         width: 100%;
     }
 }
+
+.authentik-guide {
+    margin: 12px 0;
+    font-size: 14px;
+    color: #444;
+}
+
+.authentik-guide summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: #A92876;
+}
+
+.authentik-guide ol {
+    margin: 8px 0;
+    padding-left: 22px;
+    line-height: 1.5;
+}
+
+.authentik-guide li + li {
+    margin-top: 6px;
+}
+
+.authentik-guide code {
+    background: #f3f3f3;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 13px;
+}
