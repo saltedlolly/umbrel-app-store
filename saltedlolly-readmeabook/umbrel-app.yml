@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: saltedlolly-readmeabook
 category: media
 name: ReadMeABook
-version: "v1.2.2.2"
+version: "v1.2.3"
 tagline: Request and automatically download audiobooks
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -32,36 +32,56 @@ description: >-
 
   See the app README for the complete setup guide, including local and NAS library paths.
 releaseNotes: >-
-  ## v1.2.2.2
+  ## v1.2.3
 
-  - Prepare a writable shared audiobook download directory
-
-  ## v1.2.2.1
-
-  - Fix umbrelOS startup by preserving the upstream Supervisor command
-
-  ## v1.2.2
-
-  - First Umbrel package, with shared Downloads storage and Audiobookshelf NAS Edition media paths configured out of the box.
+  - Automated update: bump ReadMeABook to v1.2.3
 
 
   --- kikootwo/ReadMeABook upstream release notes (auto-updated) ---
 
 
-  kikootwo/ReadMeABook v1.2.2
+  kikootwo/ReadMeABook v1.2.3
 
-    Features:
+    🎉  Release v1.2.3
 
-    - Advance existing requests from Interactive Search instead of creating duplicates
 
-    Fixes:
+    **Fixes:**
+    - ✅ Hardcoded JWT fallback enables forged administrator tokens
+       - https://github.com/kikootwo/ReadMeABook/issues/297
+       - Installs running outside the official Docker image, including the Proxmox VE helper script, should update now (Proxmox: run `update` in the container). Users on those installs are signed out once.
+       - Docker installs were not affected.
+    - ✅ Search / Download stopping at 50
+       - https://github.com/kikootwo/ReadMeABook/issues/151
+       - Requests beyond the first 50 are now processed in rotating batches, and RSS matching covers every request awaiting search
+    - ✅ Search truncates to 100 results *before* dedup and ranking, silently dropping the best releases
+       - https://github.com/kikootwo/ReadMeABook/issues/262
+       - The full deduplicated result set is now ranked before the 100-result cap is applied
+    - ✅ Deleting a request removes a directory rebuilt from the current template, not the one it created
+       - https://github.com/kikootwo/ReadMeABook/issues/265
+       - Deletion now uses the path stored when the book was organized
+    - ✅ A rate-limited indexer grab marks the request permanently `failed` instead of trying the next release
+       - https://github.com/kikootwo/ReadMeABook/issues/267
+       - After a 429 or 5xx grab response, the next ranked release is tried automatically
 
-    - Fix CamelCase author names failing automatic search matching
-    - Fix Wait for Relocation becoming stuck
-    - Fix intermittent empty Audible series pages
+      **Upgrade:**
+      ```bash
+      docker pull ghcr.io/kikootwo/readmeabo
+      docker compose down
+      docker compose up -d
+      ```
+
+
+    What's Changed
+    * Fix search and download processing stopping at 50 by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/274
+    * Fix rate-limited grabs by trying the nwo inhttps://github.com/kikootwo/ReadMeABook/pull/275
+    * Fix request deletion to use stored media path by @kikootwo in
+    https://github.com/kikootwo/ReadMeABook/
+    * Rank search results before applying result cap by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/277
+    * Fix/jwt secret derivation by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/301
 
 
   See the full release history: https://github.com/kikootwo/ReadMeABook/releases
+
 developer: kikootwo
 website: https://github.com/kikootwo/ReadMeABook
 dependencies: []
