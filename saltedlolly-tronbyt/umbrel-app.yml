@@ -1,6 +1,6 @@
 manifestVersion: 1
 id: saltedlolly-tronbyt
-category: Automation
+category: automation
 name: Tronbyt
 version: "v2.4.0.0"
 tagline: Self-hosted server for managing Tidbyt/Tronbyt smart displays without the cloud

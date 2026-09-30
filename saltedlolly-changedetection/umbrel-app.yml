@@ -1,6 +1,6 @@
 manifestVersion: 1
 id: saltedlolly-changedetection
-category: Automation
+category: automation
 name: changedetection.io
 version: "0.60.8"
 tagline: Monitor any website for changes and get notified

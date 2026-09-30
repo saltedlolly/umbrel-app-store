@@ -1,6 +1,6 @@
 manifestVersion: 1
 id: saltedlolly-netbootxyz
-category: Networking
+category: networking
 name: netboot.xyz
 version: "0.7.6-nbxyz24"
 tagline: Network-boot a menu of OS installers and live images to any machine on your LAN

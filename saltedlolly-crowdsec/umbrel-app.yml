@@ -1,6 +1,6 @@
 manifestVersion: 1
 id: saltedlolly-crowdsec
-category: Networking
+category: networking
 name: CrowdSec
 version: "v1.8.1.14"
 tagline: Crowd-sourced intrusion detection and IP banning for your self-hosted apps

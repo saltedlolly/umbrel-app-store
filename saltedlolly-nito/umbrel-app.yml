@@ -1,6 +1,6 @@
 manifestVersion: 1
 id: saltedlolly-nito
-category: Bitcoin
+category: blockchain
 name: Nito
 version: "v3.0.1.4"
 tagline: A fair-launch, SHA-256 proof-of-work blockchain built for 200-year longevity
