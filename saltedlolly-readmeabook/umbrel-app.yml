@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: saltedlolly-readmeabook
 category: media
 name: ReadMeABook
-version: "v1.2.2"
+version: "v1.2.2.1"
 tagline: Request and automatically download audiobooks
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -32,6 +32,10 @@ description: >-
 
   See the app README for the complete setup guide, including local and NAS library paths.
 releaseNotes: >-
+  ## v1.2.2.1
+
+  - Fix umbrelOS startup by preserving the upstream Supervisor command
+
   ## v1.2.2
 
   - First Umbrel package, with shared Downloads storage and Audiobookshelf NAS Edition media paths configured out of the box.

@@ -15,6 +15,7 @@ services:
     # Persist PostgreSQL's parent directory so its required empty data child
     # can be created at first boot without colliding with Git's placeholder.
     entrypoint: ["/bin/sh", "-c", "mkdir -p /var/lib/postgresql/data && exec /entrypoint.sh \"$$@\"", "--"]
+    command: ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
     init: true
     restart: on-failure
     stop_grace_period: 1m
