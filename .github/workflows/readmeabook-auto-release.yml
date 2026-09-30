@@ -1,0 +1,196 @@
+name: ReadMeABook - Auto Release
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: check upstream and log the plan only (no update/commit)'
+        type: boolean
+        default: false
+      force_version:
+        description: 'Optional: pretend the eligible release is this (for example v1.2.3)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: readmeabook-auto-release
+  cancel-in-progress: false
+
+jobs:
+  check-upstream:
+    name: Check ReadMeABook for an eligible release (2-day buffer)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      has_update: ${{ steps.compare.outputs.has_update }}
+      eligible_version: ${{ steps.latest.outputs.eligible_version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            saltedlolly-readmeabook/docker-compose.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Find newest stable release that has cleared the 2-day buffer
+        id: latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORCED_VERSION: ${{ github.event.inputs.force_version }}
+        run: |
+          set -euo pipefail
+          cutoff="$(date -u -d '2 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+          releases="$(curl -sf \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/kikootwo/ReadMeABook/releases?per_page=20")"
+
+          version="$(echo "$releases" | jq -r --arg cutoff "$cutoff" '
+            [ .[]
+              | select(.draft == false and .prerelease == false)
+              | select(.published_at <= $cutoff)
+              | select(.tag_name | test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))
+            ]
+            | sort_by(.published_at)
+            | last
+            | .tag_name // empty
+          ')"
+
+          if [[ -n "$FORCED_VERSION" ]]; then
+            version="$FORCED_VERSION"
+            echo "::notice::Overriding with force_version input: $version"
+          fi
+
+          if [[ -z "$version" ]]; then
+            echo "::notice::No stable release has cleared the 2-day buffer"
+            echo "eligible_version=" >> "$GITHUB_OUTPUT"
+          else
+            if ! [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Unexpected release format: '$version'"
+              exit 1
+            fi
+            echo "eligible_version=$version" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Get currently pinned release
+        id: current
+        run: |
+          set -euo pipefail
+          current="$(grep -oE 'kikootwo/readmeabook:[0-9]+\.[0-9]+\.[0-9]+' \
+            saltedlolly-readmeabook/docker-compose.yml | sed -n '1p' | cut -d: -f2)"
+          if [[ -z "$current" ]]; then
+            echo "::error::Could not extract the pinned ReadMeABook tag"
+            exit 1
+          fi
+          echo "current_version=v$current" >> "$GITHUB_OUTPUT"
+
+      - name: Compare versions without allowing downgrades
+        id: compare
+        run: |
+          set -euo pipefail
+          eligible="${{ steps.latest.outputs.eligible_version }}"
+          current="${{ steps.current.outputs.current_version }}"
+
+          if [[ -z "$eligible" ]]; then
+            echo "has_update=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No eligible release. pinned=$current"
+            exit 0
+          fi
+
+          newest="$(printf '%s\n%s\n' "$current" "$eligible" | sort -V | tail -1)"
+          if [[ "$eligible" == "$current" || "$newest" != "$eligible" ]]; then
+            echo "has_update=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No update to publish. pinned=$current eligible=$eligible"
+          else
+            echo "has_update=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Publishing update. pinned=$current -> eligible=$eligible"
+          fi
+
+  release:
+    name: Smoke-test and publish new version
+    needs: check-upstream
+    if: needs.check-upstream.outputs.has_update == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      APP_DIR: saltedlolly-readmeabook
+      ELIGIBLE_VERSION: ${{ needs.check-upstream.outputs.eligible_version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Configure git identity for automated commits
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Verify the official image is multi-architecture
+        run: |
+          set -euo pipefail
+          image_tag="${ELIGIBLE_VERSION#v}"
+          inspection="$(docker buildx imagetools inspect "ghcr.io/kikootwo/readmeabook:${image_tag}")"
+          grep -q 'Platform:[[:space:]]*linux/amd64' <<< "$inspection"
+          grep -q 'Platform:[[:space:]]*linux/arm64' <<< "$inspection"
+
+      - name: Smoke-test the unified image
+        run: |
+          set -euo pipefail
+          image_tag="${ELIGIBLE_VERSION#v}"
+          cleanup() {
+            docker logs readmeabook-smoke || true
+            docker rm -f readmeabook-smoke || true
+            docker volume rm readmeabook-smoke-config readmeabook-smoke-cache \
+              readmeabook-smoke-postgres readmeabook-smoke-redis || true
+          }
+          trap cleanup EXIT
+
+          docker volume create readmeabook-smoke-config
+          docker volume create readmeabook-smoke-cache
+          docker volume create readmeabook-smoke-postgres
+          docker volume create readmeabook-smoke-redis
+          docker run -d --name readmeabook-smoke -p 3030:3030 \
+            -e PUID=1000 -e PGID=1000 \
+            -v readmeabook-smoke-config:/app/config \
+            -v readmeabook-smoke-cache:/app/cache \
+            -v readmeabook-smoke-postgres:/var/lib/postgresql/data \
+            -v readmeabook-smoke-redis:/var/lib/redis \
+            "ghcr.io/kikootwo/readmeabook:${image_tag}"
+
+          ok=false
+          for i in $(seq 1 60); do
+            curl -sf "http://127.0.0.1:3030/api/health" >/dev/null && { ok=true; break; }
+            sleep 2
+          done
+          [[ "$ok" == "true" ]] || {
+            echo "::error::ReadMeABook failed its health check"
+            exit 1
+          }
+
+      - name: Dry run summary (no update/commit)
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          echo "DRY RUN: would publish ReadMeABook ${ELIGIBLE_VERSION}"
+
+      - name: Update pin, release notes and publish
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          ./readmeabook-build.sh --publish \
+            --version "$ELIGIBLE_VERSION" \
+            --notes "Automated update: bump ReadMeABook to $ELIGIBLE_VERSION"
+
+      - name: Log published app version
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          echo "::notice::Published app version: $(grep '^version:' umbrel-app.yml)"

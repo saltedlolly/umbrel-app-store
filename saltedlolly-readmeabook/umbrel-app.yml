@@ -1,0 +1,81 @@
+manifestVersion: 1.1
+id: saltedlolly-readmeabook
+category: media
+name: ReadMeABook
+version: "v1.2.2"
+tagline: Request and automatically download audiobooks
+description: >-
+  ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
+
+
+  ReadMeABook is an audiobook request and automation service: search for a book, request it, and let ReadMeABook find a release through Prowlarr, send it to your download client, organize the files, and add it to Audiobookshelf or Plex.
+
+
+  - Works with Audiobookshelf and Plex
+
+  - Searches torrent and Usenet indexers through Prowlarr
+
+  - Supports qBittorrent, Transmission, SABnzbd, NZBGet and Deluge
+
+  - Includes multi-user requests, approval workflows and notifications
+
+  - BookDate recommends audiobooks with an optional AI-powered swipe interface
+
+  - Can merge multi-file chapter downloads into a single M4B
+
+
+  Audiobookshelf NAS Edition integration is built in: its local audiobook folder and Umbrel-mounted network shares are available inside ReadMeABook, and the local server can be reached at http://10.21.0.1:13378. For security, you still copy an Audiobookshelf API token once and select the library during ReadMeABook's setup wizard.
+
+
+  Prowlarr and a supported download client are also required. Downloads use Umbrel's shared Downloads folder so the official Umbrel download-client apps and ReadMeABook see the same files at /downloads.
+
+
+  See the app README for the complete setup guide, including local and NAS library paths.
+releaseNotes: >-
+  ## v1.2.2
+
+  - First Umbrel package, with shared Downloads storage and Audiobookshelf NAS Edition media paths configured out of the box.
+
+
+  --- kikootwo/ReadMeABook upstream release notes (auto-updated) ---
+
+
+  kikootwo/ReadMeABook v1.2.2
+
+    Features:
+
+    - Advance existing requests from Interactive Search instead of creating duplicates
+
+    Fixes:
+
+    - Fix CamelCase author names failing automatic search matching
+    - Fix Wait for Relocation becoming stuck
+    - Fix intermittent empty Audible series pages
+
+
+  See the full release history: https://github.com/kikootwo/ReadMeABook/releases
+developer: kikootwo
+website: https://github.com/kikootwo/ReadMeABook
+dependencies: []
+repo: https://github.com/kikootwo/ReadMeABook
+support: https://github.com/saltedlolly/umbrel-app-store/issues
+
+port: 3030
+gallery:
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/main/saltedlolly-readmeabook/1.jpg
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/main/saltedlolly-readmeabook/2.jpg
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/main/saltedlolly-readmeabook/3.jpg
+path: ""
+
+defaultUsername: ""
+defaultPassword: ""
+
+icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/main/saltedlolly-readmeabook/icon.png
+submitter: saltedlolly
+submission: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-readmeabook
+
+permissions:
+  - STORAGE_DOWNLOADS
+
+backupIgnore:
+  - cache

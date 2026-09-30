@@ -1,0 +1,48 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: saltedlolly-readmeabook_server_1
+      APP_PORT: 3030
+      # ReadMeABook has its own local/OIDC accounts and API authentication.
+      # Adding Umbrel's login here would block invited users, OAuth callbacks,
+      # and API clients before they can reach ReadMeABook itself.
+      PROXY_AUTH_ADD: "false"
+
+  server:
+    image: ghcr.io/kikootwo/readmeabook:1.2.2@sha256:91fb3ee1943678003cd9c86990430c6268428f52c6ea3fb8a57e179f84855d45
+    # Persist PostgreSQL's parent directory so its required empty data child
+    # can be created at first boot without colliding with Git's placeholder.
+    entrypoint: ["/bin/sh", "-c", "mkdir -p /var/lib/postgresql/data && exec /entrypoint.sh \"$$@\"", "--"]
+    init: true
+    restart: on-failure
+    stop_grace_period: 1m
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=002
+      - LOG_LEVEL=info
+    volumes:
+      # Application configuration, encrypted credentials and generated secrets.
+      - ${APP_DATA_DIR}/data/config:/app/config
+      # Rebuildable artwork and API caches.
+      - ${APP_DATA_DIR}/data/cache:/app/cache
+      # The upstream unified image contains its own PostgreSQL and Redis.
+      - ${APP_DATA_DIR}/data/postgres:/var/lib/postgresql
+      - ${APP_DATA_DIR}/data/redis:/var/lib/redis
+      # Same path used by the official Umbrel qBittorrent, Transmission,
+      # SABnzbd and Prowlarr packages.
+      - ${UMBREL_ROOT}/data/storage/downloads:/downloads
+      # Audiobookshelf NAS Edition's local audiobook folder. ReadMeABook's
+      # upstream default media path is already /media/audiobooks.
+      - ${UMBREL_ROOT}/home/Audiobookshelf/Audiobooks:/media/audiobooks
+      # NAS shares mounted through Umbrel Files. Select the desired library
+      # subfolder under /media/network in ReadMeABook's setup wizard.
+      - ${UMBREL_ROOT}/network:/media/network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3030/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
