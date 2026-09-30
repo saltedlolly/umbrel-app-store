@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-npm-plus
 category: networking
 name: NPMplus
-version: "2026-07-24-r1.22"
+version: "2026-07-24-r1.23"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
@@ -38,6 +38,10 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
+  ## 2026-07-24-r1.23
+
+  - Authentik: the launcher's Authentik card now lists the sites protected by Authentik (warning if Authentik isn't responding) and has a step-by-step guide to protecting a site. README: up-to-date CrowdSec and Authentik sections
+
   ## 2026-07-24-r1.22
 
   - Authentik: NPMplus now detects the Authentik app and knows its address, so you can choose authentik under a proxy host's Auth Request without typing one. The launcher's Authentik card shows whether Authentik is installed, with links to open it and its setup guide. Fixed: saving Trusted Proxy settings no longer resets your CrowdSec choice
