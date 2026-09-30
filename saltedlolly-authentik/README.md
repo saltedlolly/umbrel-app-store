@@ -111,23 +111,7 @@ Apps with a "Log in with OpenID" option can use Authentik as their login. This s
 2. Paste the Client ID and Client Secret.
 3. **Match existing users by:** email. **Auto Register:** off. Create each person in Audiobookshelf first, with the same email as in Authentik.
 4. **Subfolder for Redirect URLs:** None.
-5. **Allowed Mobile Redirect URIs:** add the address of every mobile app your users might use. Apps that aren't on the list fail at the last step of signing in:
-
-   | App | Platform | Address |
-   |---|---|---|
-   | Audiobookshelf (official) | iOS, Android | `audiobookshelf://oauth` |
-   | Absorb | iOS, Android | `audiobookshelf://oauth` (same as the official app) |
-   | AudioBooth | iOS | `audiobooth://oauth` |
-   | Prologue | iOS | `prologue://oauth` |
-   | Still | iOS | `stillapp://oauth` |
-   | ShelfPlayer | iOS | `shelfplayer://callback` |
-   | Plappa | iOS | `plappa://oauth` |
-   | SoundLeaf | iOS | check its sign-in screen |
-   | Lissen | Android | `lissen://oauth` |
-
-   For other apps, look for the address on the app's sign-in screen or in its documentation. It's often `appname://oauth`, but not always (ShelfPlayer uses `callback`).
-
-   Some apps have no SSO sign-in at all (as of September 2026: Buchable, Toutui and ABS-wear). If you switch off Audiobookshelf's password login, people using those apps can't sign in.
+5. **Allowed Mobile Redirect URIs:** add the redirect URI of every mobile app your users might use; apps that aren't on the list fail at the last step of signing in. Audiobookshelf's [OpenID Connect documentation](https://audiobookshelf.org/docs/documentation/server-management/oidc-authentication) explains this field. For an app's URI, check that page, the app's sign-in screen or its own documentation. If you plan to switch off Audiobookshelf's password login, first check that every app your users rely on supports OpenID sign-in.
 6. Save, and restart Audiobookshelf.
 
 Always open Audiobookshelf on its public address (`https://abs.yourdomain.com`) to sign in: it builds the return address from the address you opened it on, and a local address won't match the redirect URIs.
@@ -136,7 +120,13 @@ Always open Audiobookshelf on its public address (`https://abs.yourdomain.com`) 
 - **Auto Launch** (in the same OpenID settings) sends everyone straight to Authentik when they open Audiobookshelf. To reach Audiobookshelf's own login page, add `/login?autoLaunch=0` to its address.
 - **Password Authentication** can then be switched off, so the only way in is through Authentik. First check that the account you sign in with through Authentik is an Audiobookshelf admin (you can open **Settings**). If OpenID ever stops working with password login off, the only way back in is editing Audiobookshelf's database.
 
-## 8. Adding other users
+## 8. Sites without their own login (optional, with NPMplus)
+
+For a site people open in a browser that has no login of its own, the [NPMplus app](../saltedlolly-npm-plus) can ask Authentik before letting anyone in ("forward auth"). NPMplus finds Authentik automatically; you choose which sites to protect and who may use each one. The steps are in the [NPMplus README](../saltedlolly-npm-plus/README.md#authentik-integration-optional) and on the Authentik card in the NPMplus launcher. Forward auth needs the embedded outpost's `authentik_host` from step 3; without it, visitors are sent to a sign-in address they can't reach.
+
+Apps with their own OpenID login (step 7) don't need this.
+
+## 9. Adding other users
 
 For each person:
 
@@ -147,6 +137,8 @@ For each person:
 
 Without outgoing email set up in Authentik, people can't reset their own password: you reset it for them.
 
+External users who open Authentik itself (for example with **Go home** on an error page) see "Interface can only be reached by internal users". To send them somewhere useful instead, set a default application: **System → Brands → your brand → Edit → Default application**, for example Audiobookshelf.
+
 ## Troubleshooting
 
 - **"No callback or already expired"** (Audiobookshelf): Audiobookshelf only allows 2 minutes from clicking its sign-in button to coming back from Authentik ([issue #5614](https://github.com/advplyr/audiobookshelf/issues/5614)). Open Audiobookshelf's address again and sign in again: you're usually still signed in to Authentik, so it goes straight through. With Auto Launch on, just reopening Audiobookshelf is enough.
@@ -154,6 +146,8 @@ Without outgoing email set up in Authentik, people can't reset their own passwor
 - **"Unauthorized"** (Audiobookshelf): the email isn't marked as verified. Check the provider uses the **Email (verified)** scope mapping, and that the person's email is the same in both apps.
 - **`redirect_uri_no_match`** (Authentik): Audiobookshelf was opened on a different address from the redirect URIs (for example a local one), or **Subfolder for Redirect URLs** isn't None.
 - **Passkey not offered:** passkeys only work on the address they were created on. Create them at `https://auth.yourdomain.com`, not on the Umbrel's local address.
+- **A site protected with NPMplus forward auth shows "500 Internal Server Error":** Authentik isn't running or isn't reachable. The site stays closed until Authentik is back (on purpose).
+- **Forward auth sends visitors to `umbrel.local`:** the embedded outpost's `authentik_host` still has the address you first opened Authentik on. Set it to your public address (step 3).
 - **Password manager doesn't fill:** in private windows, browser extensions (such as 1Password) are off unless you allow them there.
 
 ## Updates and backups
