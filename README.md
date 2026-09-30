@@ -82,7 +82,7 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
       <td>A feature-rich reverse proxy with HTTP/3, CrowdSec support, and advanced access control</td>
     </tr>
     <tr>
-      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/main/saltedlolly-readmeabook/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-readmeabook/icon.svg" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#readmeabook">ReadMeABook</a></td>
       <td nowrap id="saltedlolly-readmeabook-version"><code>v1.2.3</code></td>
       <td nowrap id="saltedlolly-readmeabook-date">2026-09-30</td>
@@ -118,6 +118,10 @@ If you find these Apps useful, please support my work by [becoming a sponsor](ht
 Your support helps me maintain and improve existing Apps, and develop new ones.
 
 One-time donations and monthly sponsors are both hugely appreciated — thank you for helping keep open-source sustainable and making self-hosting easier for all. 🙏
+
+## 🎨 Artwork Attribution
+
+Selected application icons are sourced from [selfh.st/icons](https://github.com/selfhst/icons) and used under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Adapted icons are identified in the corresponding app README and store description. Application names and logos remain the property of their respective owners.
 
 
 ## 🧩 About the Apps
@@ -281,13 +285,15 @@ NPMplus's administration interface is unconditionally served over HTTPS. Opening
 
 ---
 
-### ReadMeABook<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/main/saltedlolly-readmeabook/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+### ReadMeABook<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-readmeabook/icon.svg" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 ⚠️ Under construction: still being tested, please don't use it yet.
 
 [ReadMeABook](https://github.com/kikootwo/ReadMeABook) brings the request-and-automation workflow of the *arr apps to audiobooks. Search for a title, request it, and ReadMeABook searches your Prowlarr indexers, sends the chosen release to a supported download client, organizes the completed files, and adds them to Audiobookshelf or Plex.
 
 This package is prepared for [Audiobookshelf NAS Edition](#audiobookshelf-nas-edition): its local audiobook folder and Umbrel-mounted NAS shares are available inside ReadMeABook, and both ReadMeABook and the official Umbrel download clients use the same shared Downloads folder. An Audiobookshelf API token and library still need to be selected once in the setup wizard. Prowlarr and a supported download client are also required. See the [app's own README](saltedlolly-readmeabook/README.md) for the exact addresses and paths.
+
+The icon is sourced from [selfh.st/icons](https://github.com/selfhst/icons), used under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), and adapted with additional internal spacing for UmbrelOS.
 
 | Name          | Port         | Local Address                                            | Umbrel SSO    |
 |---------------| ------------ | -------------------------------------------------------- | ------------- |

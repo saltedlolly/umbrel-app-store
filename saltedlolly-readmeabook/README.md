@@ -100,3 +100,7 @@ Plex OAuth and OpenID Connect require `PUBLIC_URL` to match the address users op
 - [Setup wizard](https://github.com/kikootwo/ReadMeABook/blob/main/documentation/setup-wizard.md)
 - [Volume mapping guide](https://github.com/kikootwo/ReadMeABook/blob/main/documentation/deployment/volume-mapping.md)
 - [Upstream issues](https://github.com/kikootwo/ReadMeABook/issues)
+
+## Icon attribution
+
+The ReadMeABook icon is sourced from [selfh.st/icons](https://github.com/selfhst/icons) at revision [`589d718`](https://github.com/selfhst/icons/blob/589d718a638b7770abae0edd1b60ff36c0dd1d5a/svg/readmeabook.svg) and used under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). It has been adapted with additional internal spacing for display in UmbrelOS; the logo geometry and colours are unchanged. Application names and logos remain the property of their respective owners.
