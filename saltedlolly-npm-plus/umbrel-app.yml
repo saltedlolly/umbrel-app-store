@@ -190,6 +190,6 @@ defaultUsername: admin@umbrel.local
 defaultPassword: ""
 deterministicPassword: true
 
-icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-npm-plus/npmplusicon.svg
+icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-npm-plus/icon.svg
 submitter: saltedlolly
 submission: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-npm-plus

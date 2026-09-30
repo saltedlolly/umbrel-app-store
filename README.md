@@ -19,63 +19,63 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
   </thead>
   <tbody>
     <tr>
-      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/icon.svg" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/icon.svg" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#audiobookshelf-nas-edition">Audiobookshelf:<br>NAS Edition</a></td>
       <td nowrap id="saltedlolly-audiobookshelf-version"><code>v2.36.1.2</code></td>
       <td nowrap id="saltedlolly-audiobookshelf-date">2026-09-28</td>
       <td>Audiobookshelf with added support for network shares - access media stored on your local network</td>
     </tr>
     <tr>
-      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-authentik/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-authentik/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#authentik">Authentik</a></td>
       <td nowrap id="saltedlolly-authentik-version"><code>2026.8.3.1</code></td>
       <td nowrap id="saltedlolly-authentik-date">2026-09-29</td>
       <td>One login for your self-hosted apps, for you, your family and friends</td>
     </tr>
     <tr>
-      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-changedetection/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-changedetection/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#changedetectionio">changedetection.io</a></td>
       <td nowrap id="saltedlolly-changedetection-version"><code>0.60.8</code></td>
       <td nowrap id="saltedlolly-changedetection-date">2026-09-30</td>
       <td>Monitor any website for changes and get notified</td>
     </tr>
     <tr>
-      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/logo.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#cloudflare-ddns">Cloudflare DDNS</a></td>
       <td nowrap id="saltedlolly-cloudflare-ddns-version"><code>v1.17.1.8</code></td>
       <td nowrap id="saltedlolly-cloudflare-ddns-date">2026-09-28</td>
       <td>A dynamic DNS client for domains hosted on Cloudflare</td>
     </tr>
     <tr>
-      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-crowdsec/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-crowdsec/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#crowdsec">CrowdSec</a></td>
       <td nowrap id="saltedlolly-crowdsec-version"><code>v1.8.1.14</code></td>
       <td nowrap id="saltedlolly-crowdsec-date">2026-09-28</td>
       <td>Crowd-sourced intrusion detection and IP banning for your self-hosted apps</td>
     </tr>
     <tr>
-      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-kubo/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-kubo/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#kubo-ipfs">Kubo (IPFS)</a></td>
       <td nowrap id="saltedlolly-kubo-version"><code>v0.43.1.7</code></td>
       <td nowrap id="saltedlolly-kubo-date">2026-09-23</td>
       <td>Run a full IPFS node with the official WebUI for peers, pins, and files</td>
     </tr>
     <tr>
-      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-netbootxyz/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-netbootxyz/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#netbootxyz">netboot.xyz</a></td>
       <td nowrap id="saltedlolly-netbootxyz-version"><code>0.7.6-nbxyz24</code></td>
       <td nowrap id="saltedlolly-netbootxyz-date">2026-09-14</td>
       <td>Network-boot a menu of OS installers and live images to any machine on your LAN</td>
     </tr>
     <tr>
-      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-nito/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-nito/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#nito">Nito</a></td>
       <td nowrap id="saltedlolly-nito-version"><code>v3.0.1.4</code></td>
       <td nowrap id="saltedlolly-nito-date">2026-09-23</td>
       <td>A fair-launch, SHA-256 proof-of-work blockchain built for 200-year longevity</td>
     </tr>
     <tr>
-      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-npm-plus/npmplusicon.svg" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-npm-plus/icon.svg" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#npmplus">NPMplus</a></td>
       <td nowrap id="saltedlolly-npm-plus-version"><code>2026-07-24-r1.22</code></td>
       <td nowrap id="saltedlolly-npm-plus-date">2026-09-30</td>
@@ -89,7 +89,7 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
       <td>Request audiobooks and automatically find, download, organize, and add them to your library</td>
     </tr>
     <tr>
-      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-tronbyt/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-tronbyt/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#tronbyt">Tronbyt</a></td>
       <td nowrap id="saltedlolly-tronbyt-version"><code>v2.4.0.0</code></td>
       <td nowrap id="saltedlolly-tronbyt-date">2026-09-18</td>
@@ -126,7 +126,7 @@ Selected application icons are sourced from [selfh.st/icons](https://github.com/
 
 ## 🧩 About the Apps
 
-### Audiobookshelf: NAS Edition<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/icon.svg" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+### Audiobookshelf: NAS Edition<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/icon.svg" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
  This [Audiobookshelf](https://www.audiobookshelf.org/) app includes several advanced features not available in the Umbrel App Store version:
 
@@ -179,7 +179,7 @@ The folders below contain your user accounts, libraries and associated metadata.
 
 ---
 
-### Authentik<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-authentik/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+### Authentik<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-authentik/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 ⚠️ Under construction: still being tested, please don't use it yet.
 
@@ -191,7 +191,7 @@ One login for the apps you share from your Umbrel, powered by [Authentik](https:
 
 ---
 
-### changedetection.io<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-changedetection/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+### changedetection.io<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-changedetection/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 A self-hosted [changedetection.io](https://changedetection.io/) - watch any web page for changes and get notified (email, Discord, Slack, Telegram, and dozens more) the moment something changes: a price drop, a restock, a keyword appearing, or any part of a page you care about.
 
@@ -205,7 +205,7 @@ Includes a bundled headless-Chrome sidecar ([sockpuppetbrowser](https://github.c
 
 ---
 
-### Cloudflare DDNS<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-cloudflare-ddns/logo.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+### Cloudflare DDNS<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 
 A dynamic DNS client for Cloudflare powered by [favonia/cloudflare-ddns](https://github.com/favonia/cloudflare-ddns) which helps you automatically keep your Cloudflare domain or subdomain updated with your current IP address. Includes a web UI for configuration and monitoring. Supports IPv4 and IPv6, multiple domains, and Cloudflare cloud proxying.
@@ -216,7 +216,7 @@ A dynamic DNS client for Cloudflare powered by [favonia/cloudflare-ddns](https:/
 
 ---
 
-### CrowdSec<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-crowdsec/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+### CrowdSec<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-crowdsec/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 Crowd-sourced intrusion detection and automatic IP banning, powered by [CrowdSec](https://www.crowdsec.net/). Watches for attacks (brute-force logins, scans, known-bad IPs) against services proxied through your Umbrel and bans them, sharing and benefiting from threat intelligence crowd-sourced across the whole CrowdSec community. Includes a local web dashboard ([crowdsec-web-ui](https://github.com/TheDuffman85/crowdsec-web-ui)) for browsing alerts and managing bans - no command line needed.
 
@@ -228,7 +228,7 @@ On its own, CrowdSec doesn't protect anything - it needs a "bouncer" wired into 
 
 ---
 
-### Kubo (IPFS)<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-kubo/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+### Kubo (IPFS)<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-kubo/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 A self-hosted [Kubo](https://github.com/ipfs/kubo) node - the reference implementation of [IPFS](https://ipfs.tech/), a peer-to-peer network for storing and sharing content-addressed data. Includes the official WebUI for managing peers, pinning and browsing content, and monitoring bandwidth and repository usage. Built from scratch rather than derived from any existing community Kubo package - see the [app's own README](saltedlolly-kubo/README.md) for why.
 
@@ -241,7 +241,7 @@ A self-hosted [Kubo](https://github.com/ipfs/kubo) node - the reference implemen
 
 ---
 
-### netboot.xyz<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-netbootxyz/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+### netboot.xyz<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-netbootxyz/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 A self-hosted [netboot.xyz](https://netboot.xyz/) server - network-boot (PXE) a menu of OS installers, live rescue/diagnostic tools, and utilities to any machine on your LAN, no USB stick needed.
 
@@ -255,7 +255,7 @@ This app uses host networking (no Umbrel SSO, no app proxy) rather than the usua
 
 ---
 
-### Nito<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-nito/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+### Nito<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-nito/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 A self-hosted [Nito](https://nito.network/) node - a fair-launch, SHA-256 proof-of-work blockchain built around fairness and longevity: no premine, no ICO, no VC allocation, a 200-year emission schedule with a hard cap, and Taproot/Schnorr active since genesis. Includes an original dashboard showing block height, sync progress, peers, and mempool activity. Built from scratch, compiling the node from source rather than trusting upstream's unattested pre-built binaries - see the [app's own README](saltedlolly-nito/README.md) for why, and for what was found reviewing the project's history along the way.
 
@@ -268,7 +268,7 @@ There is no Lightning Network support for Nito, and none is possible - Bitcoin's
 
 ---
 
-### NPMplus<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-npm-plus/npmplusicon.svg" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+### NPMplus<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-npm-plus/icon.svg" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 A feature-rich reverse proxy powered by [NPMplus](https://github.com/ZoeyVid/NPMplus), a fork of Nginx Proxy Manager built on OpenResty. Beyond the usual proxy-host/SSL-certificate management, it adds HTTP/3 (QUIC), raw TCP/UDP stream forwarding, mTLS with per-host client certificates, geo-blocking, built-in `auth_request`/OIDC support (including pre-configured Authentik integration), and optional [CrowdSec](https://www.crowdsec.net/) support for community-sourced intrusion protection.
 
@@ -301,7 +301,7 @@ The icon is sourced from [selfh.st/icons](https://github.com/selfhst/icons), use
 
 ---
 
-### Tronbyt<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-tronbyt/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+### Tronbyt<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-tronbyt/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 A self-hosted server for managing [Tidbyt](https://tidbyt.com/) and [Tronbyt](https://tronbyt.com/) smart displays, powered by [tronbyt/server](https://github.com/tronbyt/server), entirely on your own Umbrel — no dependency on Tidbyt's cloud backend. Add devices, browse and configure apps, and generate firmware for flashing a Tidbyt into a Tronbyt, all from a web UI that keeps working even if Tidbyt's own servers go offline.
 

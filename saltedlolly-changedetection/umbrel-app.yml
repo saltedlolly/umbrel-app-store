@@ -74,6 +74,6 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 
-icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-changedetection/icon.png
+icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-changedetection/icon.png
 submitter: saltedlolly
 submission: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-changedetection

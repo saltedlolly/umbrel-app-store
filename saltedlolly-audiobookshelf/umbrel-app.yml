@@ -4,7 +4,7 @@ name: ABS NAS Edition
 tagline: Audiobookshelf with NAS support
 category: Media
 version: "2.36.1.2"
-icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/icon.svg
+icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/icon.svg
 port: 23378
 description: >-
   Audiobookshelf NAS Edition adds support for accessing network shares from within Audiobookshelf, allowing you to access your media files stored on NAS/SMB/NFS shares.
@@ -125,10 +125,10 @@ submission: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-audioboo
 repo: https://github.com/advplyr/audiobookshelf
 support: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-audiobookshelf/issues
 gallery:
-  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/1.jpg
-  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/2.jpg
-  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/3.jpg
-  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-audiobookshelf/4.jpg
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/gallery/1.jpg
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/gallery/2.jpg
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/gallery/3.jpg
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/gallery/4.jpg
 releaseNotes: >-
   ## 2.36.1.2
 

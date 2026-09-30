@@ -97,6 +97,6 @@ defaultUsername: akadmin
 defaultPassword: ""
 deterministicPassword: true
 
-icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store-gallery/master/saltedlolly-authentik/icon.png
+icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-authentik/icon.png
 submitter: saltedlolly
 submission: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-authentik
