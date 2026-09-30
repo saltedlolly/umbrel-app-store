@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-changedetection
 category: Automation
 name: changedetection.io
-version: "0.60.7"
+version: "0.60.8"
 tagline: Monitor any website for changes and get notified
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -23,30 +23,40 @@ description: >-
 
   All watches, settings, and page-snapshot history are stored under this app's persistent data directory and survive restarts and updates. Uninstalling this app deletes them - back up first if you want to keep your watch list.
 releaseNotes: >-
-  ## 0.60.7
+  ## 0.60.8
 
-  - Update changedetection.io to upstream release 0.60.7.
+  - Update changedetection.io to upstream release 0.60.8.
 
 
   --- dgtlmoon/changedetection.io upstream release notes (auto-updated) ---
 
 
-  dgtlmoon/changedetection.io 0.60.7
+  dgtlmoon/changedetection.io 0.60.8
 
     What's Changed
-    * Fetch favicon candidates in parallel under one deadline, and fix two ways it could hang by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4435
-    * Keep history diff title and controls visible while scrolling by @jhedlund in https://github.com/dgtlmoon/changedetection.io/pull/4412
-    * General licence cleanups by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4445
-    * Add watch UI tweaks by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4446
-    * fix(http): send a single Date header on werkzeug built-in server by @Huang-404-Q in https://github.com/dgtlmoon/changedetection.io/pull/4372
-    * UI - Make the 'share watch' optional, reduces visual noise, not really used by non-power users by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4448
-    * Set Cache-Control: no-store on dynamic responses by default by @DennisGaida in https://github.com/dgtlmoon/changedetection.io/pull/4319
+    * Adding HTTP browser caching of UI elements by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4450
+    * UI - Set language on reverse proxy/subdirectory hosting was acting wrong, just redirect it to watchlist so theres no failures. by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4453
+    * System - Ensure import+API update values are verified types by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4458
+    * Update chardet requirement from >2.3.0 to >=7.6.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4455
+    * i18n: Use `msgctxt` and correct ja translations for -ed forms by @skkzsh in https://github.com/dgtlmoon/changedetection.io/pull/4460
+    * i18n: Add ja translations for new UI by @skkzsh in https://github.com/dgtlmoon/changedetection.io/pull/4464
+    * UI: make editing a configured LLM model discoverable by @quinnypig in https://github.com/dgtlmoon/changedetection.io/pull/4400
+    * Groups - UI fix for #4451 and tweaks by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4466
+    * Make LLM summary from UI non blocking by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4467
+    * LLM UI - When LLM is disabled, hide it from the groups settings also by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4471
+    * LLM timeout improvements (frontend) by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4470
+    * Llm UI nonblocking by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4469
+    * Dont allow accidental change of LLM Key by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4473
+    * First PWA by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4472
+    * Update selenium requirement from ~=4.31.0 to ~=4.49.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4456
+    * Update flask-wtf requirement from ~=1.2 to ~=1.3 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4485
+    * Update python-socketio requirement from <6,>=5.11.0 to >=5.17.0,<6 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4486
+    * Title extract - Limit search window and improve regex - reduce memory usage by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4487
+    * i18n: Use `lazy_pgettext` for condition Match label by @skkzsh in https://github.com/dgtlmoon/changedetection.io/pull/4480
+    * i18n: Fix untranslated labels by @skkzsh in https://github.com/dgtlmoon/changedetection.io/pull/4488
 
-    New Contributors
-    * @Huang-404-Q made their first contribution in https://github.com/dgtlmoon/changedetection.io/pull/4372
-    * @DennisGaida made their first contribution in https://github.com/dgtlmoon/changedetection.io/pull/4319
 
-    **Full Changelog**: https://github.com/dgtlmoon/changedetection.io/compare/0.60.6...0.60.7
+    **Full Changelog**: https://github.com/dgtlmoon/changedetection.io/compare/0.60.7...0.60.8
 
 
   See the full release history: https://github.com/dgtlmoon/changedetection.io/releases
