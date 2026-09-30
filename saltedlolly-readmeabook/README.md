@@ -12,7 +12,7 @@ ReadMeABook coordinates other services rather than downloading directly. Before 
 - **Prowlarr** with at least one suitable audiobook indexer
 - **A download client:** qBittorrent, Transmission, SABnzbd, NZBGet or Deluge
 
-The official Umbrel qBittorrent, Transmission, SABnzbd and Prowlarr apps use the same shared Downloads folder mounted here at `/downloads`.
+The official Umbrel qBittorrent, Transmission, SABnzbd and Prowlarr apps use the same shared Downloads folder mounted here at `/downloads`. This package prepares the writable `/downloads/audiobooks` subfolder for audiobook jobs.
 
 ## Audiobookshelf NAS Edition
 
@@ -21,6 +21,7 @@ This package exposes Audiobookshelf NAS Edition's storage in the paths ReadMeABo
 | Content | Path inside ReadMeABook |
 |---|---|
 | Umbrel's shared Downloads folder | `/downloads` |
+| Writable audiobook download folder | `/downloads/audiobooks` |
 | Local Audiobookshelf audiobooks | `/media/audiobooks` |
 | Shares mounted in Umbrel Files | `/media/network/<host>/<share>/...` |
 
@@ -30,7 +31,7 @@ ReadMeABook can reach the local Audiobookshelf NAS Edition server through the Um
 2. In Audiobookshelf, open **Settings → API Keys** and create a key for ReadMeABook. Treat this key like a password.
 3. Enter `http://10.21.0.1:13378` as the Audiobookshelf Server URL.
 4. Paste the API key, test the connection, and select the audiobook library.
-5. Leave the download directory as `/downloads`.
+5. Set the download directory to `/downloads/audiobooks`.
 6. For a local Audiobookshelf library, leave the media directory as `/media/audiobooks`.
 7. For a NAS library, use its corresponding `/media/network/<host>/<share>/...` path. It must be a writable share because ReadMeABook places completed books there.
 
@@ -40,9 +41,9 @@ Audiobookshelf normally watches its library folders automatically. Leave **Trigg
 
 ## Prowlarr and the download client
 
-Use the address shown by the relevant app's Umbrel page. When both apps use Umbrel's standard Downloads storage, keep ReadMeABook's download directory at `/downloads` and the download client's save path at `/downloads` (or a subfolder beneath it).
+Use the address shown by the relevant app's Umbrel page. Set ReadMeABook's download directory and the download client's audiobook/category save path to `/downloads/audiobooks`.
 
-The container path matters: ReadMeABook must see a completed download at the same path reported by the download client. If the client reports `/downloads/ReadMeABook/example.m4b`, that exact path must exist inside this container too.
+The container path matters: ReadMeABook must see a completed download at the same path reported by the download client. If the client reports `/downloads/audiobooks/example.m4b`, that exact path must exist inside this container too.
 
 ## Accounts and remote access
 
@@ -63,7 +64,7 @@ Umbrel's Backup tool covers the app-owned data while the app is installed. Unins
 
 Downloaded and finished audiobook files live outside the app directory:
 
-- Downloads: Umbrel shared storage (`data/storage/downloads`)
+- Downloads: Umbrel shared storage (`Home/Downloads/audiobooks`)
 - Local ABS media: `Home/Audiobookshelf/Audiobooks`
 - NAS media: the share mounted through Umbrel Files
 
@@ -80,7 +81,7 @@ Those user files are not owned by this app and are not removed when ReadMeABook 
 ### Download completes but is not imported
 
 - Keep the download path identical in ReadMeABook and the download client.
-- The official Umbrel media apps use `/downloads`.
+- Use `/downloads/audiobooks` in both ReadMeABook and the download client; the shared `/downloads` root itself may be read-only to app users.
 - Check ReadMeABook's system logs for the path reported by the client.
 
 ### ReadMeABook cannot write to a NAS library

@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: saltedlolly-readmeabook
 category: media
 name: ReadMeABook
-version: "v1.2.2.1"
+version: "v1.2.2.2"
 tagline: Request and automatically download audiobooks
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -27,11 +27,15 @@ description: >-
   Audiobookshelf NAS Edition integration is built in: its local audiobook folder and Umbrel-mounted network shares are available inside ReadMeABook, and the local server can be reached at http://10.21.0.1:13378. For security, you still copy an Audiobookshelf API token once and select the library during ReadMeABook's setup wizard.
 
 
-  Prowlarr and a supported download client are also required. Downloads use Umbrel's shared Downloads folder so the official Umbrel download-client apps and ReadMeABook see the same files at /downloads.
+  Prowlarr and a supported download client are also required. Downloads use Umbrel's shared Downloads folder so the official Umbrel download-client apps and ReadMeABook see the same files at /downloads/audiobooks.
 
 
   See the app README for the complete setup guide, including local and NAS library paths.
 releaseNotes: >-
+  ## v1.2.2.2
+
+  - Prepare a writable shared audiobook download directory
+
   ## v1.2.2.1
 
   - Fix umbrelOS startup by preserving the upstream Supervisor command
