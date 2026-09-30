@@ -49,8 +49,6 @@ services:
       DISABLE_GRAVATAR: "true"
       # Integration secrets (passed to wrapper script)
       APP_SALTEDLOLLY_CROWDSEC_NPMPLUS_BOUNCER_KEY: ${APP_SALTEDLOLLY_CROWDSEC_NPMPLUS_BOUNCER_KEY}
-      APP_SALTEDLOLLY_NPM_PLUS_AUTHENTIK_CLIENT_ID: ${APP_SALTEDLOLLY_NPM_PLUS_AUTHENTIK_CLIENT_ID}
-      APP_SALTEDLOLLY_NPM_PLUS_AUTHENTIK_CLIENT_SECRET: ${APP_SALTEDLOLLY_NPM_PLUS_AUTHENTIK_CLIENT_SECRET}
     extra_hosts:
       # Allow NPMplus to access companion apps via host.docker.internal
       - "host.docker.internal:host-gateway"

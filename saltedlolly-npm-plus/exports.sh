@@ -6,7 +6,3 @@ export APP_SALTEDLOLLY_NPM_PLUS_COOKIE_SECRET="$(derive_entropy "${app_entropy_i
 
 # CrowdSec bouncer key (shared with CrowdSec app - must use same derivation)
 export APP_SALTEDLOLLY_CROWDSEC_NPMPLUS_BOUNCER_KEY="$(derive_entropy "saltedlolly-npmplus-crowdsec-shared-bouncer")"
-
-# Authentik OAuth2/OIDC client credentials (shared with Authentik app when installed)
-export APP_SALTEDLOLLY_NPM_PLUS_AUTHENTIK_CLIENT_ID="npmplus-$(derive_entropy "${app_entropy_identifier}-authentik-client" | head -c 16)"
-export APP_SALTEDLOLLY_NPM_PLUS_AUTHENTIK_CLIENT_SECRET="$(derive_entropy "${app_entropy_identifier}-authentik-secret")"

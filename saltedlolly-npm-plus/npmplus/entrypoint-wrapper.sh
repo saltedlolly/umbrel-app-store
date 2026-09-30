@@ -36,10 +36,11 @@ else
     echo "[Auto-Discovery] ○ CrowdSec not detected"
 fi
 
-# Check Authentik
-if wget -q --spider --timeout=2 "http://${DOCKER_HOST_IP}:9000/application/o/npmplus/.well-known/openid-configuration" 2>/dev/null; then
+# Check Authentik (the Authentik app publishes its server on the gateway at
+# :9810; umbreld itself owns host port 9000)
+if wget -q --spider --timeout=2 "http://${DOCKER_HOST_IP}:9810/-/health/live/" 2>/dev/null; then
     AUTHENTIK_DETECTED=true
-    echo "[Auto-Discovery] ✓ Authentik detected (OIDC responding on ${DOCKER_HOST_IP}:9000)"
+    echo "[Auto-Discovery] ✓ Authentik detected (responding on ${DOCKER_HOST_IP}:9810)"
 else
     AUTHENTIK_DETECTED=false
     echo "[Auto-Discovery] ○ Authentik not detected"
@@ -60,7 +61,6 @@ else
     echo "[Configuration] No config file found, using defaults"
     PROXY_MODE="none"
     CROWDSEC_ENABLED="auto"
-    AUTHENTIK_ENABLED="auto"
 fi
 
 # ============================================================
@@ -196,43 +196,28 @@ EOF
 mv "$STATUS_DIR/crowdsec.env.tmp" "$STATUS_DIR/crowdsec.env"
 
 # ============================================================
-# Configure Authentik Integration
+# Configure Authentik (forward auth)
 # ============================================================
+# NPMplus has built-in Authentik forward auth: choosing "authentik" under a
+# proxy host's Auth Request makes nginx ask Authentik's embedded outpost
+# before letting a visitor through. It needs Authentik's address, which is
+# this env var unless the host sets its own "Auth Request Upstream".
+# Set it even when Authentik isn't detected: with no address, a host set to
+# "authentik" would get an empty nginx upstream. With it, a missing or
+# stopped Authentik only affects the hosts that use it (they fail closed:
+# an error page, never an unprotected site).
 echo ""
-echo "[Authentik] Configuring SSO integration..."
+AUTH_REQUEST_AUTHENTIK_UPSTREAM="http://${DOCKER_HOST_IP}:9810"
+export AUTH_REQUEST_AUTHENTIK_UPSTREAM
+echo "[Authentik] Forward auth upstream: ${AUTH_REQUEST_AUTHENTIK_UPSTREAM} (detected=${AUTHENTIK_DETECTED})"
 
-# Determine if Authentik should be enabled
-case "${AUTHENTIK_ENABLED:-auto}" in
-    auto)
-        AUTHENTIK_EFFECTIVE=$AUTHENTIK_DETECTED
-        echo "[Authentik] Mode: Auto (detected=$AUTHENTIK_DETECTED)"
-        ;;
-    true)
-        AUTHENTIK_EFFECTIVE=true
-        echo "[Authentik] Mode: Force enabled"
-        ;;
-    false)
-        AUTHENTIK_EFFECTIVE=false
-        echo "[Authentik] Mode: Disabled by user"
-        ;;
-    *)
-        AUTHENTIK_EFFECTIVE=$AUTHENTIK_DETECTED
-        echo "[Authentik] Mode: Unknown setting, defaulting to auto"
-        ;;
-esac
-
-if [ "$AUTHENTIK_EFFECTIVE" = "true" ]; then
-    echo "[Authentik] Enabling SSO integration"
-    # Always use detected gateway IP (ignore any env vars with old host.docker.internal)
-    AUTHENTIK_URL="http://${DOCKER_HOST_IP}:9000"
-    export AUTHENTIK_URL
-    export AUTHENTIK_CLIENT_ID="${APP_SALTEDLOLLY_NPM_PLUS_AUTHENTIK_CLIENT_ID}"
-    export AUTHENTIK_CLIENT_SECRET="${APP_SALTEDLOLLY_NPM_PLUS_AUTHENTIK_CLIENT_SECRET}"
-    echo "[Authentik] ✓ SSO enabled"
-    echo "[Authentik]   URL: $AUTHENTIK_URL"
-else
-    echo "[Authentik] ○ SSO disabled"
-fi
+# For the launcher's Authentik card (no secrets)
+cat > "$STATUS_DIR/authentik.env.tmp" <<EOF
+DETECTED_AT_START=${AUTHENTIK_DETECTED}
+UPSTREAM=${AUTH_REQUEST_AUTHENTIK_UPSTREAM}
+UPDATED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+EOF
+mv "$STATUS_DIR/authentik.env.tmp" "$STATUS_DIR/authentik.env"
 
 # ============================================================
 # Enable log rotation (required for CrowdSec log parsing)
@@ -253,7 +238,7 @@ echo "  TRUST_CLOUDFLARE: ${TRUST_CLOUDFLARE}"
 echo "  TRUST_IP: ${TRUST_IP}"
 echo ""
 echo "CrowdSec Protection: $([ "$CROWDSEC_EFFECTIVE" = "true" ] && echo "ENABLED" || echo "DISABLED")"
-echo "Authentik SSO: $([ "$AUTHENTIK_EFFECTIVE" = "true" ] && echo "ENABLED" || echo "DISABLED")"
+echo "Authentik: $([ "$AUTHENTIK_DETECTED" = "true" ] && echo "detected" || echo "not detected") (forward auth upstream ${AUTH_REQUEST_AUTHENTIK_UPSTREAM})"
 echo "Log Rotation: ENABLED"
 echo "========================================"
 echo ""

@@ -12,6 +12,7 @@ const CONFIG_FILE = path.join(CONFIG_DIR, 'npm-settings.env');
 // Integration state written by the npmplus wrapper at startup (read-only here)
 const STATUS_DIR = process.env.STATUS_DIR || '/data/status';
 const CROWDSEC_STATUS_FILE = path.join(STATUS_DIR, 'crowdsec.env');
+const AUTHENTIK_STATUS_FILE = path.join(STATUS_DIR, 'authentik.env');
 const CROWDSEC_BOUNCER_KEY = process.env.CROWDSEC_BOUNCER_KEY || '';
 
 // Integration endpoints
@@ -37,7 +38,9 @@ console.log(`[startup] Companion apps reached via ${GATEWAY}`);
 
 const CROWDSEC_LAPI = `${GATEWAY}:8080`;
 const CROWDSEC_APPSEC = `${GATEWAY}:7422`;
-const AUTHENTIK_URL = `${GATEWAY}:9000`;
+// The Authentik app publishes its server on the gateway at 9810 (umbreld
+// itself owns host port 9000)
+const AUTHENTIK_PORT = 9810;
 
 // Middleware
 app.use(express.json());
@@ -73,26 +76,33 @@ function checkServiceAvailable(host, port, path = '/health', timeout = 3000) {
     });
 }
 
-// Read the CrowdSec bouncer state the npmplus wrapper published at startup.
-// Returns null if the wrapper hasn't written it (older wrapper, first start).
-function readCrowdSecStatus() {
+// Read a KEY=value status file the npmplus wrapper wrote at startup.
+// Returns null if it doesn't exist (older wrapper, first start).
+function readStatusFile(file) {
     try {
         const status = {};
-        for (const line of fs.readFileSync(CROWDSEC_STATUS_FILE, 'utf8').split('\n')) {
+        for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
             const match = line.match(/^([A-Z_]+)=(.*)$/);
             if (match) status[match[1]] = match[2];
         }
-        return {
-            bouncerEnabled: status.BOUNCER_ENABLED === 'true',
-            mode: status.MODE || 'auto',
-            lapiUrl: status.LAPI_URL || '',
-            appsecEnabled: status.APPSEC_ENABLED === 'true',
-            logSharing: status.LOG_SHARING === 'true',
-            updatedAt: status.UPDATED_AT || null
-        };
+        return status;
     } catch {
         return null;
     }
+}
+
+// Read the CrowdSec bouncer state the npmplus wrapper published at startup
+function readCrowdSecStatus() {
+    const status = readStatusFile(CROWDSEC_STATUS_FILE);
+    if (!status) return null;
+    return {
+        bouncerEnabled: status.BOUNCER_ENABLED === 'true',
+        mode: status.MODE || 'auto',
+        lapiUrl: status.LAPI_URL || '',
+        appsecEnabled: status.APPSEC_ENABLED === 'true',
+        logSharing: status.LOG_SHARING === 'true',
+        updatedAt: status.UPDATED_AT || null
+    };
 }
 
 // Count active LAPI decisions with the bouncer key. The community blocklist
@@ -162,8 +172,6 @@ function readConfig() {
             CROWDSEC_ENABLED: 'auto',
             CROWDSEC_LAPI_URL: `http://${CROWDSEC_LAPI}`,
             CROWDSEC_APPSEC_URL: `http://${CROWDSEC_APPSEC}`,
-            AUTHENTIK_ENABLED: 'auto',
-            AUTHENTIK_URL: `http://${AUTHENTIK_URL}`,
             CONFIG_VERSION: '2'
         };
     }
@@ -188,8 +196,6 @@ function readConfig() {
         config.CROWDSEC_ENABLED = config.CROWDSEC_ENABLED || 'auto';
         config.CROWDSEC_LAPI_URL = config.CROWDSEC_LAPI_URL || `http://${CROWDSEC_LAPI}`;
         config.CROWDSEC_APPSEC_URL = config.CROWDSEC_APPSEC_URL || `http://${CROWDSEC_APPSEC}`;
-        config.AUTHENTIK_ENABLED = config.AUTHENTIK_ENABLED || 'auto';
-        config.AUTHENTIK_URL = config.AUTHENTIK_URL || `http://${AUTHENTIK_URL}`;
         config.CONFIG_VERSION = '2';
     }
 
@@ -236,15 +242,6 @@ CROWDSEC_LAPI_URL=${config.CROWDSEC_LAPI_URL || `http://${CROWDSEC_LAPI}`}
 CROWDSEC_APPSEC_URL=${config.CROWDSEC_APPSEC_URL || `http://${CROWDSEC_APPSEC}`}
 
 # ============================================================
-# Authentik Integration
-# ============================================================
-# Authentik Enabled: auto (detect and enable), true (force enable), false (disable)
-AUTHENTIK_ENABLED=${config.AUTHENTIK_ENABLED || 'auto'}
-
-# Authentik URL
-AUTHENTIK_URL=${config.AUTHENTIK_URL || `http://${AUTHENTIK_URL}`}
-
-# ============================================================
 # Configuration Version
 # ============================================================
 CONFIG_VERSION=${config.CONFIG_VERSION || '2'}
@@ -273,16 +270,12 @@ app.get('/api/integrations/status', async (req, res) => {
         const crowdsecDetected = await checkServiceAvailable(GATEWAY, 8080, '/health', 2000);
 
         // Check if Authentik is available
-        const authentikDetected = await checkServiceAvailable(GATEWAY, 9000, '/application/o/npmplus/.well-known/openid-configuration', 2000);
+        const authentikDetected = await checkServiceAvailable(GATEWAY, AUTHENTIK_PORT, '/-/health/live/', 2000);
 
         // Determine effective enabled state
         const crowdsecEnabled = config.CROWDSEC_ENABLED === 'auto'
             ? crowdsecDetected
             : config.CROWDSEC_ENABLED === 'true';
-
-        const authentikEnabled = config.AUTHENTIK_ENABLED === 'auto'
-            ? authentikDetected
-            : config.AUTHENTIK_ENABLED === 'true';
 
         const crowdsecStatus = readCrowdSecStatus();
         const crowdsecConfiguredMode = config.CROWDSEC_ENABLED || 'auto';
@@ -305,12 +298,9 @@ app.get('/api/integrations/status', async (req, res) => {
             },
             authentik: {
                 detected: authentikDetected,
-                enabled: authentikEnabled,
-                metrics: authentikEnabled ? {
-                    hosts: 0,    // TODO: Fetch from Authentik API
-                    sessions: 0, // TODO: Fetch from Authentik API
-                    lastSync: 'Just now'
-                } : null
+                // Whether the running NPMplus has Authentik's address set for
+                // forward auth (the wrapper sets it on every start)
+                forwardAuthReady: !!(readStatusFile(AUTHENTIK_STATUS_FILE) || {}).UPSTREAM
             }
         });
     } catch (error) {
@@ -322,7 +312,7 @@ app.get('/api/integrations/status', async (req, res) => {
 // API: Save integrations configuration
 app.post('/api/integrations', (req, res) => {
     try {
-        const { crowdsec, authentik } = req.body;
+        const { crowdsec } = req.body;
 
         // Read current config to preserve other settings
         const config = readConfig();
@@ -332,14 +322,9 @@ app.post('/api/integrations', (req, res) => {
             config.CROWDSEC_ENABLED = crowdsec.enabled ? 'true' : 'false';
         }
 
-        // Update Authentik settings if provided
-        if (authentik !== undefined) {
-            config.AUTHENTIK_ENABLED = authentik.enabled ? 'true' : 'false';
-        }
-
         writeConfig(config);
 
-        console.log(`Integration settings saved: CrowdSec=${config.CROWDSEC_ENABLED}, Authentik=${config.AUTHENTIK_ENABLED}`);
+        console.log(`Integration settings saved: CrowdSec=${config.CROWDSEC_ENABLED}`);
 
         res.json({
             success: true,
@@ -387,11 +372,13 @@ app.post('/api/config', (req, res) => {
             return res.status(400).json({ error: 'Custom proxy mode requires trusted IP addresses' });
         }
 
+        // Keep the other settings (e.g. CrowdSec on/off): only the proxy
+        // fields change here
         const config = {
+            ...readConfig(),
             PROXY_MODE: proxyMode,
             TRUST_CLOUDFLARE: proxyMode === 'cloudflare' ? 'true' : 'false',
-            TRUST_IP: proxyMode === 'custom' ? (trustIp || '').trim() : '',
-            CONFIG_VERSION: '1'
+            TRUST_IP: proxyMode === 'custom' ? (trustIp || '').trim() : ''
         };
 
         writeConfig(config);

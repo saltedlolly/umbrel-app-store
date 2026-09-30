@@ -180,7 +180,7 @@
                             <p class="help-text">
                                 Install the CrowdSec app from the Umbrel App Store to enable security protection.
                             </p>
-                            <button type="button" class="secondary-button" onclick="window.open(window.location.protocol + '//' + window.location.hostname + '/community-app-store/saltedlolly/saltedlolly-npm-plus', '_blank')">
+                            <button type="button" class="secondary-button" onclick="openAppStorePage('saltedlolly-crowdsec')">
                                 View in App Store
                             </button>
                         </div>
@@ -192,7 +192,7 @@
                     <div class="integration-header">
                         <div class="integration-icon">🔐</div>
                         <div class="integration-title">
-                            <h3>Authentik SSO Provider</h3>
+                            <h3>Authentik</h3>
                             <p class="integration-status" id="authentikStatus">
                                 <span class="status-icon">⏳</span> Checking...
                             </p>
@@ -201,43 +201,31 @@
 
                     <div class="integration-body" id="authentikBody" style="display: none;">
                         <p class="help-text">
-                            Authentik enables single sign-on (SSO) authentication across all your services,
-                            with support for OIDC, SAML, LDAP, and more.
+                            Authentik gives the people you share apps with one secure login (a passkey,
+                            a password and code, or their Google account), and lets you choose who can
+                            use which app.
                         </p>
+                        <ul class="help-list">
+                            <li>Apps with their own OpenID login (such as Audiobookshelf) connect to Authentik in their own settings.</li>
+                            <li>For a site with no login of its own, NPMplus can check with Authentik before letting anyone in: choose <strong>authentik</strong> under <strong>Auth Request</strong> on its proxy host. NPMplus already knows where Authentik is.</li>
+                        </ul>
 
-                        <div class="integration-controls">
-                            <label class="toggle-label">
-                                <input type="checkbox" id="authentikEnabled" name="authentikEnabled">
-                                <span class="toggle-text">Enable Authentik SSO</span>
-                            </label>
-                        </div>
-
-                        <div class="integration-metrics" id="authentikMetrics" style="display: none;">
-                            <div class="metric-grid">
-                                <div class="metric-item">
-                                    <span class="metric-label">Protected Hosts</span>
-                                    <span class="metric-value" id="authentikHosts">-</span>
-                                </div>
-                                <div class="metric-item">
-                                    <span class="metric-label">Active Sessions</span>
-                                    <span class="metric-value" id="authentikSessions">-</span>
-                                </div>
-                                <div class="metric-item">
-                                    <span class="metric-label">Last Sync</span>
-                                    <span class="metric-value" id="authentikLastSync">-</span>
-                                </div>
-                            </div>
-                            <div class="integration-actions">
-                                <button type="button" class="secondary-button" onclick="openAuthentik()">
-                                    Open Authentik Dashboard
-                                </button>
-                            </div>
+                        <div class="integration-actions" id="authentikActions" style="display: none;">
+                            <button type="button" class="secondary-button" onclick="openAuthentik()">
+                                Open Authentik
+                            </button>
+                            <button type="button" class="secondary-button" onclick="window.open('https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-authentik', '_blank')">
+                                Setup Guide
+                            </button>
                         </div>
 
                         <div class="integration-install" id="authentikInstall" style="display: none;">
                             <p class="help-text">
-                                The Authentik app is coming soon. Check back later for SSO integration support.
+                                Install the Authentik app from this app store to use it.
                             </p>
+                            <button type="button" class="secondary-button" onclick="openAppStorePage('saltedlolly-authentik')">
+                                View in App Store
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -403,11 +391,6 @@
                 showIntegrationNotification('CrowdSec', 'crowdsec');
             }
 
-            // Check Authentik
-            if (previousDetectionState.authentik === false && data.authentik.detected === true) {
-                showIntegrationNotification('Authentik', 'authentik');
-            }
-
             // Update state for next check
             previousDetectionState = {
                 crowdsec: data.crowdsec.detected,
@@ -425,9 +408,6 @@
             if (appId === 'crowdsec') {
                 title.textContent = 'CrowdSec Security Engine Detected!';
                 text.textContent = 'CrowdSec is now available and can protect your proxy hosts from attacks. Restart NPMplus to enable security protection.';
-            } else if (appId === 'authentik') {
-                title.textContent = 'Authentik SSO Provider Detected!';
-                text.textContent = 'Authentik is now available and can provide single sign-on for your services. Restart NPMplus to enable SSO integration.';
             }
 
             // Show the banner with animation
@@ -457,6 +437,11 @@
                 return;
             }
 
+            if (integration === 'authentik') {
+                updateAuthentikStatus(status);
+                return;
+            }
+
             if (status.detected) {
                 // Integration detected - show controls, hide install message
                 statusElem.innerHTML = '<span class="status-icon status-detected">✓</span> Detected and available';
@@ -470,13 +455,6 @@
                 // Show/hide metrics based on enabled state
                 if (status.enabled && status.metrics) {
                     metricsElem.style.display = 'block';
-
-                    // Update Authentik metrics
-                    if (integration === 'authentik') {
-                        document.getElementById('authentikHosts').textContent = status.metrics.hosts || '0';
-                        document.getElementById('authentikSessions').textContent = status.metrics.sessions || '0';
-                        document.getElementById('authentikLastSync').textContent = status.metrics.lastSync || 'Never';
-                    }
                 } else {
                     metricsElem.style.display = 'none';
                 }
@@ -541,6 +519,22 @@
             document.getElementById('crowdsecSince').textContent = status.connectedSince
                 ? new Date(status.connectedSince).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
                 : '–';
+        }
+
+        // Authentik needs no on/off switch here: forward auth is chosen per
+        // proxy host, and the wrapper always sets Authentik's address
+        function updateAuthentikStatus(status) {
+            const statusElem = document.getElementById('authentikStatus');
+            if (status.detected) {
+                statusElem.innerHTML = '<span class="status-icon status-detected">✓</span> ';
+                statusElem.appendChild(document.createTextNode(
+                    status.forwardAuthReady ? 'Detected · ready for forward auth' : 'Detected'));
+            } else {
+                statusElem.innerHTML = '<span class="status-icon status-not-detected">○</span> Not detected';
+            }
+            document.getElementById('authentikBody').style.display = 'block';
+            document.getElementById('authentikActions').style.display = status.detected ? 'flex' : 'none';
+            document.getElementById('authentikInstall').style.display = status.detected ? 'none' : 'block';
         }
 
         // Footer version comes from the image, so it can't drift from the release
@@ -634,7 +628,6 @@
             e.preventDefault();
 
             const crowdsecEnabled = document.getElementById('crowdsecEnabled').checked;
-            const authentikEnabled = document.getElementById('authentikEnabled').checked;
 
             const statusMessage = document.getElementById('integrationsStatusMessage');
             statusMessage.style.display = 'none';
@@ -646,8 +639,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        crowdsec: { enabled: crowdsecEnabled },
-                        authentik: { enabled: authentikEnabled }
+                        crowdsec: { enabled: crowdsecEnabled }
                     })
                 });
 
@@ -689,11 +681,14 @@
             window.open(crowdsecUrl, '_blank');
         }
 
-        // Open Authentik dashboard
+        // Open Authentik the way the Umbrel dashboard does (its app port)
         function openAuthentik() {
-            const hostname = window.location.hostname;
-            const authentikUrl = `http://${hostname}:9000`;
-            window.open(authentikUrl, '_blank');
+            window.open(`${window.location.protocol}//${window.location.hostname}:9800`, '_blank');
+        }
+
+        // An app's page in this community app store on the Umbrel
+        function openAppStorePage(appId) {
+            window.open(`${window.location.protocol}//${window.location.hostname}/community-app-store/saltedlolly/${appId}`, '_blank');
         }
     </script>
 </body>
