@@ -201,32 +201,69 @@
 
                     <div class="integration-body" id="authentikBody" style="display: none;">
                         <p class="help-text">
-                            Authentik gives the people you share apps with one secure login (a passkey,
-                            a password and code, or their Google account), and lets you choose who can
-                            use which app.
+                            Authentik is a single sign-on (SSO) and identity provider platform. With NPMplus, it puts
+                            a secure login in front of the apps you publish to the internet: an alternative to Umbrel's
+                            own login that works for other people too, each with their own account and access. It
+                            supports modern sign-in methods such as passkeys and two-factor authentication, and standard
+                            protocols including OpenID Connect (OIDC), OAuth2 and SAML.
+                            <a href="https://docs.goauthentik.io/" target="_blank" rel="noopener">Learn more</a>
                         </p>
-                        <ul class="help-list">
-                            <li>Apps with their own OpenID login (such as Audiobookshelf) connect to Authentik in their own settings.</li>
-                            <li>For a site with no login of its own, NPMplus can check with Authentik before letting anyone in: choose <strong>authentik</strong> under <strong>Auth Request</strong> on its proxy host. NPMplus already knows where Authentik is.</li>
-                        </ul>
 
                         <div class="integration-metrics" id="authentikMetrics" style="display: none;">
                             <div class="metric-grid">
                                 <div class="metric-item">
-                                    <span class="metric-label">Sites Using Authentik</span>
+                                    <span class="metric-label">Public Address</span>
+                                    <span class="metric-value metric-value-small" id="authentikPublicAddress">-</span>
+                                    <span class="metric-detail" id="authentikPublicDetail"></span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Sites NPMplus Checks with Authentik</span>
                                     <span class="metric-value" id="authentikHostCount">-</span>
                                     <span class="metric-detail" id="authentikHostList"></span>
                                 </div>
                             </div>
+                            <p class="metric-footnote">
+                                Apps that sign in with OIDC talk to Authentik directly, so they aren't listed here.
+                            </p>
                         </div>
 
                         <details class="authentik-guide">
                             <summary>How to protect a site with Authentik</summary>
+                            <h4>Step 1: Give Authentik a public address</h4>
                             <p class="help-text">
-                                <strong>Once, before your first site:</strong> publish Authentik on your domain and give it
-                                that public address in both places the Setup Guide describes (System → Settings → Base URL,
-                                and the embedded outpost's <code>authentik_host</code>). Otherwise visitors are sent to a
-                                sign-in address they can't reach.
+                                Do this first, once you've signed in to Authentik and secured your admin account with a
+                                passkey or an authenticator app (see the Setup Guide). People sign in on a page at an
+                                address of your own, such as <code>auth.yourdomain.com</code>:
+                            </p>
+                            <ol>
+                                <li><strong>DNS:</strong> point <code>auth.yourdomain.com</code> at your home's public IP
+                                    address, the same way as your other published sites. If you use Cloudflare and your home
+                                    doesn't have a fixed IP address, the
+                                    <a href="#" onclick="openAppStorePage('saltedlolly-cloudflare-ddns'); return false;">Cloudflare DDNS app</a>
+                                    keeps the address up to date.</li>
+                                <li><strong>In NPMplus:</strong> add a proxy host for <code>auth.yourdomain.com</code>:
+                                    scheme <code>http</code>, forward hostname <code>10.21.0.1</code>, port <code>9810</code>,
+                                    and request a TLS certificate.</li>
+                                <li><strong>In Authentik</strong> (open it at the new address): set
+                                    <code>https://auth.yourdomain.com</code> in System → Settings → <strong>Base URL</strong>, and in
+                                    Applications → Outposts → authentik Embedded Outpost → Edit → Advanced settings
+                                    (<code>authentik_host</code>).</li>
+                            </ol>
+
+                            <h4>Step 2: Protect each site</h4>
+                            <p class="help-text">It depends on the app.</p>
+
+                            <h5>If the app supports OpenID Connect (OIDC)</h5>
+                            <p class="help-text">
+                                Look for "OpenID Connect", "OIDC" or "SSO" in the app's login settings. Set it up by following
+                                the app's own documentation and
+                                <a href="https://integrations.goauthentik.io/" target="_blank" rel="noopener">Authentik's integration guides</a>,
+                                then publish the app in NPMplus as a normal proxy host with <strong>Auth Request: none</strong>.
+                            </p>
+
+                            <h5>If the app has no login, or no OIDC</h5>
+                            <p class="help-text">
+                                NPMplus can check with Authentik before letting anyone reach the site ("forward auth"):
                             </p>
                             <ol>
                                 <li><strong>In Authentik:</strong> Applications → Applications → <strong>Create with provider</strong>. Choose <strong>Proxy Provider</strong>, mode <strong>Forward auth (single application)</strong>, and set <strong>External host</strong> to the site's public address (e.g. <code>https://tools.yourdomain.com</code>). Under <strong>Bindings</strong>, choose who may use it.</li>
@@ -234,16 +271,38 @@
                                 <li><strong>In NPMplus:</strong> on the site's proxy host, set <strong>Auth Request</strong> to <strong>authentik</strong> and save.</li>
                             </ol>
                             <p class="help-text">
-                                <strong>Apps that normally use your Umbrel login</strong> (most apps without a login of their own):
-                                forward the proxy host to the app's container, not to its Umbrel port. Otherwise visitors
-                                also get your Umbrel's login page. The container name and port are the
-                                <code>APP_HOST</code> and <code>APP_PORT</code> in the app's <code>docker-compose.yml</code>
-                                (for example <code>librespeed_server_1</code> and <code>8080</code>).
+                                <strong>Important:</strong> forward auth works only for people using a web browser. Mobile
+                                apps and other programs that connect to the site directly can't show Authentik's login page,
+                                so they're blocked. If other apps use the site's API (for example with an API key), add a
+                                <strong>Custom Location</strong> for its API path with Auth Request set to none.
                             </p>
-                            <p class="help-text">
-                                Use this for sites people open in a web browser. Apps with their own OpenID login
-                                (such as Audiobookshelf) should use that instead: forward auth would stop their mobile apps working.
-                            </p>
+
+                            <div class="warning-box">
+                                <strong>Be careful what you share</strong>
+                                <p>Authentik decides <em>who</em> gets in; once in, people can do whatever the app allows.</p>
+                                <ol>
+                                    <li><strong>If you don't need to share an app, don't.</strong> If only you use it, use it
+                                        over Tailscale (or on your home network) behind your Umbrel login instead. Never publish
+                                        apps that control your Umbrel or its files, even behind Authentik: for example Portainer,
+                                        terminals, file managers with access to your Home folder, NPMplus's own admin page, or
+                                        the Umbrel dashboard.</li>
+                                    <li><strong>If you must share an app that normally uses your Umbrel login</strong> (most
+                                        apps without a login of their own), forward its proxy host to the app's container, not to
+                                        its Umbrel port. Otherwise visitors also get your Umbrel's login page. To find the
+                                        container name and port:
+                                        <ul>
+                                            <li>Open the app's page in the Umbrel App Store: its app ID is the last part of the
+                                                page's address (for example <code>librespeed</code>).</li>
+                                            <li>Open its <code>docker-compose.yml</code> on GitHub: for apps from the official
+                                                store, <code>github.com/getumbrel/umbrel-apps/blob/master/&lt;app-id&gt;/docker-compose.yml</code>
+                                                (for a community store, that store's own repository).</li>
+                                            <li>Under <code>app_proxy</code>, use <code>APP_HOST</code> as the forward hostname and
+                                                <code>APP_PORT</code> as the port (for LibreSpeed: <code>librespeed_server_1</code>
+                                                and <code>8080</code>).</li>
+                                        </ul>
+                                        This only works for apps on the same Umbrel as NPMplus.</li>
+                                </ol>
+                            </div>
                         </details>
 
                         <div class="integration-actions" id="authentikActions" style="display: none;">
@@ -578,13 +637,24 @@
                 statusElem.innerHTML = '<span class="status-icon status-not-detected">○</span> Not detected';
             }
 
+            // Authentik's public address, if a proxy host publishes it
+            authentikPublicUrl = status.publicDomains && status.publicDomains.length
+                ? `https://${status.publicDomains[0]}`
+                : null;
+
             const metrics = document.getElementById('authentikMetrics');
             if (hosts && (status.detected || count > 0)) {
                 metrics.style.display = 'block';
+                document.getElementById('authentikPublicAddress').textContent = authentikPublicUrl
+                    ? status.publicDomains[0]
+                    : 'Not published';
+                document.getElementById('authentikPublicDetail').textContent = authentikPublicUrl
+                    ? 'Where people sign in'
+                    : 'See Step 1 in "How to protect a site" below';
                 document.getElementById('authentikHostCount').textContent = count;
                 document.getElementById('authentikHostList').textContent = count > 0
                     ? hosts.domains.join(', ')
-                    : 'None yet: see "How to protect a site" below';
+                    : 'None yet';
             } else {
                 metrics.style.display = 'none';
             }
@@ -737,9 +807,11 @@
             window.open(crowdsecUrl, '_blank');
         }
 
-        // Open Authentik the way the Umbrel dashboard does (its app port)
+        // Open Authentik at its public address once it's published (passkeys
+        // only work there), otherwise the way the Umbrel dashboard does
+        let authentikPublicUrl = null;
         function openAuthentik() {
-            window.open(`${window.location.protocol}//${window.location.hostname}:9800`, '_blank');
+            window.open(authentikPublicUrl || `${window.location.protocol}//${window.location.hostname}:9800`, '_blank');
         }
 
         // An app's page in this community app store on the Umbrel

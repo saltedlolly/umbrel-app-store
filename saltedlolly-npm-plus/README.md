@@ -104,22 +104,33 @@ The integration fails open: if CrowdSec is stopped or uninstalled, your sites ke
 
 With the [Authentik app](../saltedlolly-authentik) from this store installed, NPMplus can ask Authentik before letting anyone into a site ("forward auth"). NPMplus finds Authentik automatically and already knows its address, so you only choose **authentik** under **Auth Request** on a proxy host. Nothing is protected until you do: each site is switched on separately.
 
-**When to use it:** for sites people open in a web browser that have no login of their own (or a weak one). Apps with their own OpenID login, such as Audiobookshelf, should use that instead: forward auth would stop their mobile apps working, and people would have to sign in twice. The [Authentik README](../saltedlolly-authentik/README.md) covers both, and [Authentik's forward auth documentation](https://docs.goauthentik.io/add-secure-apps/providers/proxy/forward_auth/) explains the mechanism.
+**When to use it:** for sites people open in a web browser that have no login of their own (or a weak one). Apps with their own OpenID login, such as Audiobookshelf, should use that instead: forward auth would stop their mobile apps working, and people would have to sign in twice. For OIDC, follow the app's own documentation and [Authentik's integration guides](https://integrations.goauthentik.io/), then publish the app as a normal proxy host (Auth Request: none). [Authentik's forward auth documentation](https://docs.goauthentik.io/add-secure-apps/providers/proxy/forward_auth/) explains how forward auth works.
 
 **Setting up a site** (the launcher's Authentik card has the same steps):
 
-1. **Once, before your first site:** publish Authentik on your domain and set its public address in both places the Authentik README describes (Base URL, and the embedded outpost's `authentik_host`). Otherwise visitors are sent to a sign-in address they can't reach.
+1. **First, give Authentik a public address** such as `auth.yourdomain.com` (once, after securing your Authentik admin account with a passkey or authenticator app):
+   - **DNS:** point it at your home's public IP address, like your other sites. If you use Cloudflare and your home doesn't have a fixed IP address, the [Cloudflare DDNS app](../saltedlolly-cloudflare-ddns) keeps it up to date.
+   - **NPMplus:** add a proxy host for it: scheme `http`, forward hostname `10.21.0.1`, port `9810`, with a TLS certificate.
+   - **Authentik:** set the address in **System → Settings → Base URL** and in the embedded outpost's `authentik_host` (details in the [Authentik README](../saltedlolly-authentik/README.md)). Otherwise visitors are sent to a sign-in address they can't reach.
 2. **In Authentik:** Applications → Applications → **Create with provider**. Choose **Proxy Provider**, mode **Forward auth (single application)**, and set **External host** to the site's public address. Under **Bindings**, choose who may use it.
 3. **In Authentik:** Applications → Outposts → **authentik Embedded Outpost** → Edit, and add the application.
 4. **In NPMplus:** on the site's proxy host, set **Auth Request** to **authentik** and leave **Auth Request Upstream** empty.
 
-**Apps that use your Umbrel login.** Most apps without a login of their own keep Umbrel's login switched on. Through their Umbrel port, NPMplus (and so your visitors) would get your Umbrel's login page. Forward the proxy host to the app's container instead: the container name and port are the `APP_HOST` and `APP_PORT` under `app_proxy` in the app's `docker-compose.yml` (for example LibreSpeed: `librespeed_server_1`, port `8080`). This only works for apps on the same Umbrel as NPMplus; apps on another machine need their own login.
-
-**APIs used by other apps.** Some apps, such as Sonarr, Radarr and Prowlarr, are also used through their API by other apps and phone apps with an API key. Those can't show a login page, so protect the web pages but not the API: add a **Custom Location** for `/api` with Auth Request set to **none** (the API stays protected by its key).
+**Important:** forward auth works only for people using a web browser. Mobile apps and other programs that connect to the site directly can't show Authentik's login page, so they're blocked. If other apps use the site's API (for example Sonarr, Radarr and Prowlarr, with an API key), add a **Custom Location** for its API path (such as `/api`) with Auth Request set to **none**; the API stays protected by its key.
 
 **If Authentik is down**, protected sites show an error instead of opening ("fail closed"). Other sites are unaffected.
 
-The launcher's Authentik card shows whether Authentik is detected and lists the sites that use it, with a warning if they can't reach Authentik.
+> ⚠️ **Be careful what you share.** Authentik decides *who* gets in; once in, people can do whatever the app allows.
+>
+> 1. **If you don't need to share an app, don't.** If only you use it, use it over Tailscale (or on your home network) behind your Umbrel login instead. Never publish apps that control your Umbrel or its files, even behind Authentik: for example Portainer, terminals, file managers with access to your Home folder, NPMplus's own admin page, or the Umbrel dashboard.
+> 2. **If you must share an app that normally uses your Umbrel login** (most apps without a login of their own), forward its proxy host to the app's container, not to its Umbrel port. Otherwise visitors also get your Umbrel's login page. To find the container name and port:
+>    - Open the app's page in the Umbrel App Store: its app ID is the last part of the page's address (for example `librespeed`).
+>    - Open its `docker-compose.yml` on GitHub: for apps from the official store, `https://github.com/getumbrel/umbrel-apps/blob/master/<app-id>/docker-compose.yml` (for a community store, that store's own repository).
+>    - Under `app_proxy`, use `APP_HOST` as the forward hostname and `APP_PORT` as the port (for LibreSpeed: `librespeed_server_1` and `8080`).
+>
+>    This only works for apps on the same Umbrel as NPMplus.
+
+The launcher's Authentik card shows whether Authentik is detected, its public address (found from your proxy hosts; **Open Authentik** uses it), and the sites NPMplus checks with Authentik, with a warning if they can't reach it. Apps that sign in with OIDC aren't listed there: they talk to Authentik directly.
 
 ## Release tooling
 

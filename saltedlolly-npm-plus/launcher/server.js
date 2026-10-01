@@ -152,27 +152,43 @@ function fetchCrowdSecDecisions(lapiUrl) {
     });
 }
 
-// Proxy hosts that ask Authentik before letting visitors in: NPMplus adds
-// this auth_request line when Auth Request is set to authentik (or
-// authentik-send-basic-auth) on the host or one of its custom locations.
+// Read NPMplus's proxy host configs for two Authentik facts:
+// - sites NPMplus checks with Authentik (forward auth): NPMplus adds this
+//   auth_request line when Auth Request is set to authentik (or
+//   authentik-send-basic-auth) on the host or one of its custom locations
+// - Authentik's own public address: a host whose main upstream is the
+//   Authentik app (the gateway port 9810, or its server container)
 // Returns null if the configs can't be read (older compose file).
-function readAuthentikProtectedHosts() {
+function readAuthentikHosts() {
     let files;
     try {
         files = fs.readdirSync(PROXY_HOST_DIR).filter(f => /^\d+\.conf$/.test(f));
     } catch {
         return null;
     }
-    const domains = [];
+    const protectedDomains = [];
+    const publicDomains = [];
     for (const file of files) {
+        let conf;
         try {
-            const conf = fs.readFileSync(path.join(PROXY_HOST_DIR, file), 'utf8');
-            if (!conf.includes('auth_request /outpost.goauthentik.io/auth/nginx')) continue;
-            const match = conf.match(/^\s*server_name\s+([^;]+);/m);
-            domains.push(...(match ? match[1].trim().split(/\s+/) : [`host ${file}`]));
-        } catch { /* skip unreadable file */ }
+            conf = fs.readFileSync(path.join(PROXY_HOST_DIR, file), 'utf8');
+        } catch {
+            continue;
+        }
+        const nameMatch = conf.match(/^\s*server_name\s+([^;]+);/m);
+        const domains = nameMatch ? nameMatch[1].trim().split(/\s+/) : [];
+        if (conf.includes('auth_request /outpost.goauthentik.io/auth/nginx')) {
+            protectedDomains.push(...(domains.length ? domains : [`host ${file}`]));
+        }
+        const upstream = conf.match(/upstream upstream_\d+\s*\{[^}]*?\bserver\s+([^\s;]+)/);
+        if (upstream && /(:9810$|^saltedlolly-authentik_server_1(:|$))/.test(upstream[1])) {
+            publicDomains.push(...domains);
+        }
     }
-    return { count: domains.length, domains: domains.sort() };
+    return {
+        protected: { count: protectedDomains.length, domains: protectedDomains.sort() },
+        publicDomains: publicDomains.sort()
+    };
 }
 
 // Work out what the CrowdSec card should say, from what's reachable now
@@ -327,7 +343,14 @@ app.get('/api/integrations/status', async (req, res) => {
                 // Whether the running NPMplus has Authentik's address set for
                 // forward auth (the wrapper sets it on every start)
                 forwardAuthReady: !!(readStatusFile(AUTHENTIK_STATUS_FILE) || {}).UPSTREAM,
-                protectedHosts: readAuthentikProtectedHosts()
+                ...(() => {
+                    const hosts = readAuthentikHosts();
+                    return {
+                        protectedHosts: hosts ? hosts.protected : null,
+                        // Where NPMplus publishes Authentik itself, e.g. auth.example.com
+                        publicDomains: hosts ? hosts.publicDomains : null
+                    };
+                })()
             }
         });
     } catch (error) {
