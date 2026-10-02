@@ -32,7 +32,7 @@ services:
   # Lightweight UI service for managing and monitoring required network shares selection
   # Accessible via app_proxy on port 23378 (or via Umbreldashboard icon)
   abs-network-shares-config-tool:
-    image: ghcr.io/saltedlolly/abs-network-shares-config-tool@sha256:2e50bb1ad575fb510c756037bdd749561ad7d1685bccb3cd6debbd40196b407e
+    image: ghcr.io/saltedlolly/abs-network-shares-config-tool@sha256:9a169cb3589d52633522e383339315d9a68ade16f455c27db23d811920f43133
     container_name: saltedlolly-audiobookshelf_abs-network-shares-config-tool_1
     hostname: saltedlolly-audiobookshelf_abs-network-shares-config-tool_1
     init: true
@@ -57,7 +57,7 @@ services:
   # Background service that manages starting Audiobookshelf. At launch, it runs abs-network-share-waiter-checker  
   # repeatedly which checks all required networkshares are accessible and starts abs-server only once they are.
   abs-manager:
-    image: ghcr.io/saltedlolly/abs-manager@sha256:75cb88cf2801974250e69dd3dc664b018bec2c0447134fc89e1aaa0b3edb1c83
+    image: ghcr.io/saltedlolly/abs-manager@sha256:464acb0f9e1bb2a065843b7c6ddfef1fabdd7e066a048af1c0bd2e508cbbcb6d
     container_name: saltedlolly-audiobookshelf_abs-manager_1
     restart: unless-stopped
     environment:
