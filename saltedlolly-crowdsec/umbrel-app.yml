@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-crowdsec
 category: networking
 name: CrowdSec
-version: "v1.8.1.14"
+version: "v1.8.1.15"
 tagline: Crowd-sourced intrusion detection and IP banning for your self-hosted apps
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -32,6 +32,10 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data, including your ban history and dashboard account. Back it up before uninstalling.
 releaseNotes: >-
+  ## v1.8.1.15
+
+  - Automated update: crowdsec 1.8.1, crowdsec-web-ui 2026.10.1
+
   ## v1.8.1.14
 
   - LAPI and AppSec are no longer reachable from your local network, only from other apps on the Umbrel (requires NPMplus 2026-07-24-r1.21 or later)
