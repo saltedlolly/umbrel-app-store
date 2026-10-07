@@ -89,6 +89,16 @@ function readLogs() {
     try { return fs.readFileSync(LOG_FILE, 'utf8'); } catch { return ''; }
 }
 
+// Helper: last n lines of the log. The log can grow to megabytes; sending
+// and rendering all of it on every write made the UI sluggish (worst on
+// phones), so the live log view only gets the tail.
+const LOG_TAIL_LINES = 500;
+function readLogTail(n) {
+    const logs = readLogs();
+    const lines = logs.split('\n');
+    return lines.length > n ? lines.slice(-n).join('\n') : logs;
+}
+
 // Helper: detect public IPv4/IPv6 from logs (favonia ddns output)
 function detectPublicIPsFromLogs() {
     const logs = readLogs();
@@ -437,7 +447,12 @@ app.get('/api/service/status', (req, res) => {
 });
 
 app.get('/api/logs', (req, res) => {
-    try { res.send(fs.existsSync(LOG_FILE) ? fs.readFileSync(LOG_FILE, 'utf8') : ''); } catch (e) { res.status(500).json({ error: String(e) }); }
+    try {
+        if (!fs.existsSync(LOG_FILE)) return res.send('');
+        // ?tail=N returns only the last N lines; without it, the full file
+        const tail = parseInt(req.query.tail, 10);
+        res.send(tail > 0 ? readLogTail(tail) : fs.readFileSync(LOG_FILE, 'utf8'));
+    } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
 // Try to detect a local Uptime Kuma instance on common addresses
@@ -608,8 +623,7 @@ io.on('connection', (socket) => {
     // send last log lines
     try {
         if (fs.existsSync(LOG_FILE)) {
-            const tail = fs.readFileSync(LOG_FILE, 'utf8');
-            socket.emit('log', tail);
+            socket.emit('log', readLogTail(LOG_TAIL_LINES));
         }
     } catch (e) { }
 
@@ -617,8 +631,7 @@ io.on('connection', (socket) => {
     if (fs.existsSync(LOG_FILE)) {
         const watcher = fs.watch(LOG_FILE, () => {
             try {
-                const tail = fs.readFileSync(LOG_FILE, 'utf8');
-                socket.emit('log', tail);
+                socket.emit('log', readLogTail(LOG_TAIL_LINES));
             } catch (e) { }
         });
         socket.on('disconnect', () => { watcher.close(); });
