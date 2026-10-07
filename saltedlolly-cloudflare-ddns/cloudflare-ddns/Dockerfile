@@ -1,9 +1,10 @@
-FROM favonia/cloudflare-ddns:1.17.1 AS favonia
+# Pulled from the upstream author's own GHCR copy (identical to Docker Hub)
+FROM ghcr.io/favonia/cloudflare-ddns:1.17.1 AS favonia
 
 # Use an Alpine base with a shell for the wrapper script, and copy the favonia
 # ddns binary into it using a multi-stage build. Alpine provides busybox and
 # coreutils to support the wrapper's `stat`, `date`, and other utilities.
-FROM alpine:3.18
+FROM alpine:3.24
 
 RUN apk add --no-cache coreutils
 
