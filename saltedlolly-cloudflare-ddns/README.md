@@ -84,7 +84,7 @@ Fixes to this Umbrel app itself (the web page and setup) are released separately
 
 ## Your settings and backups
 
-The settings, including your API token, are stored on your Umbrel in a file only the system can read. Umbrel's backups don't include them yet, so after restoring a backup you may need to enter them again. A future version will move them into the app's backed-up data folder.
+The settings, including your API token, are stored in the app's data folder on your Umbrel, in a file only the system can read. Umbrel's backups include them, and uninstalling the app removes them. (Before v1.17.1.20 they were kept in a separate Docker storage area that backups didn't include; updating moves them across automatically.)
 
 ## Credits
 

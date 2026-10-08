@@ -15,7 +15,7 @@ services:
       - APP_DATA_DIR=/data
       - NODE_ENV=production
     volumes:
-      - cloudflare-ddns-data:/data
+      - ${APP_DATA_DIR}/data:/data
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
@@ -39,7 +39,7 @@ services:
       # record is managed by this app, not something to edit by hand.
       - RECORD_COMMENT=Updated by Cloudflare DDNS for Umbrel
     volumes:
-      - cloudflare-ddns-data:/data
+      - ${APP_DATA_DIR}/data:/data
     healthcheck:
       test: ["CMD", "sh", "-c", "test -f /data/status.json && grep -q '\"status\": \"running\"' /data/status.json || exit 1"]
       interval: 1m
@@ -48,5 +48,3 @@ services:
     depends_on:
       - ui
 
-volumes:
-  cloudflare-ddns-data:

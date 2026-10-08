@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# Runs on the host as root before the app's containers start (also after
+# every app update, with the new docker-compose.yml already in place).
+#
+# Until v1.17.1.20 the app kept its files in a Docker volume, which Umbrel's
+# backups don't include and uninstalling doesn't remove. They now live in the
+# app's data folder, ${APP_DATA_DIR}/data. Once, this moves the settings (incl.
+# the API token), the last-change times and the log across, checks the
+# settings arrived intact, and only then deletes the old volume. If anything
+# fails, the volume is left alone and the next start tries again. After that
+# it does nothing.
+
+DATA="${APP_DATA_DIR}/data"
+# The override is only for testing this hook against a copy
+OLD_VOLUME="${CF_OLD_VOLUME:-saltedlolly-cloudflare-ddns_cloudflare-ddns-data}"
+FILES="cloudflare-ddns.env last-change.json cloudflare-ddns.log .cloudflare-ddns-log-pos"
+
+mkdir -p "$DATA"
+
+# Leftover from the first release: an unused example settings file
+rm -f "$DATA/cloudflare-ddns/cloudflare-ddns.env.example"
+rmdir "$DATA/cloudflare-ddns" 2>/dev/null || true
+
+old=$(docker volume inspect "$OLD_VOLUME" --format '{{.Mountpoint}}' 2>/dev/null) || old=""
+
+if [ ! -f "$DATA/cloudflare-ddns.env" ] && [ -n "$old" ] && [ -f "$old/cloudflare-ddns.env" ]; then
+  for f in $FILES; do
+    [ -f "$old/$f" ] && cp -p "$old/$f" "$DATA/$f"
+  done
+  if cmp -s "$old/cloudflare-ddns.env" "$DATA/cloudflare-ddns.env"; then
+    chmod 600 "$DATA/cloudflare-ddns.env"
+    echo "$(date --iso-8601=seconds) Moved the settings and log from the old Docker volume to the app's data folder" >> "$DATA/cloudflare-ddns.log"
+  else
+    echo "Copying the settings from $OLD_VOLUME failed; it was left in place and the next start tries again" >&2
+    rm -f "$DATA/cloudflare-ddns.env"
+    exit 0
+  fi
+fi
+
+# The settings are in the data folder now, so the old volume (with its copy of
+# the token) is no longer needed
+if [ -n "$old" ] && [ -f "$DATA/cloudflare-ddns.env" ]; then
+  docker volume rm "$OLD_VOLUME" >/dev/null 2>&1 \
+    || echo "Could not remove the old volume $OLD_VOLUME; it will be tried again at the next start" >&2
+fi
+exit 0
