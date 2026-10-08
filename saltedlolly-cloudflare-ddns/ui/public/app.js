@@ -653,7 +653,7 @@ function setReportIssueLink(version) {
 }
 
 // Version badge, and a notice when the app store has a newer version (the
-// server checks the store once an hour; the page asks it every 15 minutes)
+// server checks the store every 10 minutes; the page asks it every 5)
 async function refreshVersion() {
     let v = { version: 'unknown' };
     try { v = await getJSON('/api/version'); } catch (e) { }
@@ -666,7 +666,7 @@ async function refreshVersion() {
         notice.title = 'Install it from the App Store on your Umbrel (it can take a few minutes to appear there).';
     }
 }
-every(15 * 60 * 1000, refreshVersion);
+every(5 * 60 * 1000, refreshVersion);
 refreshConfig().catch(e => console.error(e)).finally(() => {
     every(5000, refreshState);
 });

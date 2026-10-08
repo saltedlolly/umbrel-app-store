@@ -1,5 +1,20 @@
 /* Cloudflare DDNS settings page (Bootstrap 5 does most of the styling) */
 
+/* Tell the browser which colour scheme the page is using, so the area
+   around the page (e.g. when scrolling past the end) and GitHub's embedded
+   Sponsor button follow the chosen theme, not the device's */
+html {
+    background: var(--bs-body-bg);
+}
+
+[data-bs-theme="light"] {
+    color-scheme: light;
+}
+
+[data-bs-theme="dark"] {
+    color-scheme: dark;
+}
+
 body {
     background: var(--bs-body-bg);
     padding: 1rem;
