@@ -208,7 +208,7 @@ Includes a bundled headless-Chrome sidecar ([sockpuppetbrowser](https://github.c
 ### Cloudflare DDNS<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 
-A dynamic DNS client for Cloudflare powered by [favonia/cloudflare-ddns](https://github.com/favonia/cloudflare-ddns) which helps you automatically keep your Cloudflare domain or subdomain updated with your current IP address. Includes a web UI for configuration and monitoring. Supports IPv4 and IPv6, multiple domains, and Cloudflare cloud proxying.
+Keeps your Cloudflare DNS records pointing at your home's current public IP address, so a domain such as `home.example.com` keeps working when your internet provider changes your IP. Powered by [favonia/cloudflare-ddns](https://github.com/favonia/cloudflare-ddns), with a web page for setting it up and checking on it: your public IP, when Cloudflare was last updated, the state of each domain and the live log. Supports multiple domains, Cloudflare proxying, IPv4 and IPv6, and optional notifications through Healthchecks, Uptime Kuma or Shoutrrr. See the [app's own README](saltedlolly-cloudflare-ddns/README.md) for setup steps, when to use IPv6, and troubleshooting.
 
 | Name                       | Port         | Local Address                                           | Umbrel SSO    |
 |----------------------------| ------------ | ------------------------------------------------------- | ------------- |

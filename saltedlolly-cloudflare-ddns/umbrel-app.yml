@@ -6,32 +6,35 @@ icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/salt
 category: networking
 version: "v1.17.1.15"
 port: 4100
-description: >-  
-  Dynamic DDNS client for Cloudflare to keep your domain or sub-domain updated with your current public IP address.
+description: >-
+  Keeps your Cloudflare DNS records pointing at your home's current public IP address, so a domain such as home.example.com keeps working when your internet provider changes your IP. Powered by favonia/cloudflare-ddns.
 
 
   Features:
 
 
-  - Includes a simple web UI for managing and monitoring the status of the DDNS client, secured by Umbrel SSO.
+  - A simple web page, behind Umbrel's login, for entering your Cloudflare API token and the names to keep updated, and for checking that everything is working.
 
 
-  - Makes it easy to enter your Cloudflare API token and the domains or subdomains you wish to keep updated.
+  - Shows your public IP, when Cloudflare was last updated, the state of each domain, and the live log. Explains what is wrong when a domain can't be updated.
 
 
-  - Lets you view live logs and the last IP update directly from the web UI.
+  - Switches for Proxied, IPv4 and IPv6, and an Enable/Disable button. Asks before changes that could break a website or publish your home IP address.
 
 
-  - Enable/disable the DDNS client from the UI. Toggle IPv4 and/or IPv6 updates. Toggle Proxied mode for your DNS records.
+  - Optional notifications through Healthchecks, Uptime Kuma or Shoutrrr (Discord, ntfy, Slack and more).
 
 
-  - Powered by the favonia/cloudflare-ddns client.
-  
+  - IPv6 is off by default: with Proxied on, Cloudflare already serves visitors over IPv6. See the README for when to turn it on.
+
+
+  Setup instructions and troubleshooting: [README](https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-cloudflare-ddns#readme)
+
 developer: saltedlolly
-website: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddns
+website: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-cloudflare-ddns
 submitter: saltedlolly
-submission: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddns
-repo: https://github.com/saltedlolly/umbrel-app-store/saltedlolly-cloudflare-ddns
+submission: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-cloudflare-ddns
+repo: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-cloudflare-ddns
 support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery:
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/gallery/1.png

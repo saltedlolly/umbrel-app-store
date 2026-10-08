@@ -16,8 +16,5 @@ cloudflare-ddns.env
 # Build outputs
 ui/build/
 
-# Personal docs
-README.md
-
 # Local test scripts
 ui/test/
