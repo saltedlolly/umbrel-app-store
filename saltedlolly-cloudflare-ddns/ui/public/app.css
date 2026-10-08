@@ -1,0 +1,139 @@
+/* Cloudflare DDNS settings page (Bootstrap 5 does most of the styling) */
+
+body {
+    background: #ffffff;
+    padding: 1rem;
+}
+
+#logo {
+    height: 80px;
+    width: auto;
+    background: #fff;
+    padding: 6px;
+    border-radius: 10px;
+}
+
+.status-box {
+    min-width: 140px;
+    text-align: center;
+    padding: .5rem 1rem;
+    border-radius: 8px;
+}
+
+.log-area {
+    min-height: 200px;
+    /* adjust height to account for header, cards above, and footer */
+    max-height: calc(100vh - 460px);
+    overflow: auto;
+    font-family: monospace;
+    white-space: pre-wrap;
+    background: #fff;
+    border-radius: 8px;
+    padding: .75rem;
+    font-size: 0.85rem;
+    border: 1px solid #e6e6e6;
+}
+
+.page-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    border-top: 1px solid #e6e6e6;
+    padding: .5rem .75rem;
+    font-size: 1.05rem;
+    text-align: right;
+    z-index: 1000;
+}
+
+.page-footer a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* Until the first config and status have loaded, keep the values the
+   page fills in invisible (their space is kept, so nothing shifts),
+   rather than showing defaults that then visibly jump */
+body:not(.ready) .js-state {
+    visibility: hidden;
+}
+
+.proxied-toggle {
+    transform: scale(1.25);
+    transform-origin: center;
+    margin-left: .5rem;
+}
+
+/* Page layout. Desktop: status cards and logs on the left, controls
+   on the right. Mobile: one column with the controls above the logs,
+   so they aren't buried below hundreds of log lines. */
+.layout {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "ips" "domains" "side" "logs";
+}
+
+.area-ips { grid-area: ips; }
+.area-domains { grid-area: domains; }
+.area-logs { grid-area: logs; }
+.area-side { grid-area: side; }
+
+@media (min-width: 768px) {
+    body {
+        /* room for the fixed footer */
+        padding-bottom: 4rem;
+    }
+
+    .layout {
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+        grid-template-rows: auto auto 1fr;
+        grid-template-areas: "ips side" "domains side" "logs side";
+        align-items: start;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .page-footer {
+        position: static;
+        margin-top: 1rem;
+        text-align: center;
+    }
+
+    .page-footer .container {
+        flex-direction: column;
+        gap: .5rem;
+    }
+
+    .page-footer .text-end {
+        text-align: center !important;
+    }
+
+    .log-area {
+        max-height: 50vh;
+    }
+}
+
+@media (max-width: 575.98px) {
+    body {
+        padding: .5rem;
+    }
+
+    #logo {
+        height: 56px;
+    }
+
+    /* bigger touch targets */
+    .btn-sm {
+        padding: .45rem .75rem;
+        font-size: .95rem;
+    }
+}
+
+/* Shown when the page can't reach the app (see app.js) */
+#connectionLost {
+    position: sticky;
+    top: 0;
+    z-index: 1100;
+}

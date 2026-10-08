@@ -1,163 +1,182 @@
+// Settings UI for the Cloudflare DDNS app. It writes the settings file that
+// the wrapper (cloudflare-ddns/entrypoint.sh) reads, and shows the state the
+// wrapper and ddns report. Umbrel's app proxy handles login, so there is no
+// authentication here.
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const bodyParser = require('body-parser');
 const http = require('http');
+const https = require('https');
 const { Server } = require('socket.io');
-
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
 
 const DATA_DIR = process.env.APP_DATA_DIR || '/data';
 const ENV_FILE = path.join(DATA_DIR, 'cloudflare-ddns.env');
 const LOG_FILE = path.join(DATA_DIR, 'cloudflare-ddns.log');
 const STATUS_FILE = path.join(DATA_DIR, 'status.json');
 const LAST_CHANGE_FILE = path.join(DATA_DIR, 'last-change.json');
-const https = require('https');
+const PORT = 3000;
+const LOG_TAIL_LINES = 500;              // lines kept for the Live Logs view
+const LOG_INITIAL_BYTES = 256 * 1024;    // how much of the log to read at start
+const DOMAIN_STATUS_TTL_MS = 60 * 1000;  // Cloudflare check cache
 
-app.use(bodyParser.json());
-app.use(express.static('public'));
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 
-// Health endpoint used by container healthchecks
-app.get('/health', (req, res) => res.sendStatus(200));
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+// Bootstrap is bundled (npm) rather than loaded from a CDN, so the page keeps
+// its layout when the internet connection is down
+app.use('/vendor/bootstrap', express.static(path.join(__dirname, 'node_modules/bootstrap/dist/css')));
 
-// Version endpoint - reads from version.json (baked in at build time)
-app.get('/api/version', (req, res) => {
-    try {
-        const versionPath = path.join(__dirname, 'version.json');
-        const versionData = JSON.parse(fs.readFileSync(versionPath, 'utf8'));
-        res.json({ version: versionData.version || 'unknown' });
-    } catch (e) {
-        console.error('Failed to read version from version.json:', e);
-        res.json({ version: 'unknown' });
-    }
-});
+fs.mkdirSync(DATA_DIR, { recursive: true });
 
-// Note: Umbrel handles authentication at the proxy level, no need for custom auth middleware
-
-function ensureDirs() {
-    try {
-        fs.mkdirSync(DATA_DIR, { recursive: true });
-    } catch (e) {
-        console.error(`[ensureDirs] Failed to create DATA_DIR: ${e.message}`);
-    }
+function readJson(file) {
+    try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { return null; }
 }
 
-ensureDirs();
+const VERSION = (readJson(path.join(__dirname, 'version.json')) || {}).version || 'unknown';
 
-app.get('/api/config', (req, res) => {
-    // New install (no settings file yet): IPv6 starts off
-    if (!fs.existsSync(ENV_FILE)) return res.json({ IP6_PROVIDER: 'none' });
-    const content = fs.readFileSync(ENV_FILE, 'utf8');
+// ---------------------------------------------------------------------------
+// Settings file (KEY=value lines, shared with the wrapper)
+
+function readEnv() {
     const obj = {};
-    content.split('\n').filter(Boolean).forEach(line => {
-        // Split on the FIRST "=" only to avoid truncating values that contain
-        // "=" characters (e.g. Uptime Kuma URLs with query strings like
-        // "?status=up&msg=OK&ping="). Must match the logic in readEnv() below.
+    let content = '';
+    try { content = fs.readFileSync(ENV_FILE, 'utf8'); } catch (e) { return obj; }
+    for (const line of content.split('\n')) {
+        // Split on the FIRST "=" only: values such as an Uptime Kuma push URL
+        // (`?status=up&msg=OK&ping=`) contain more of them
         const eq = line.indexOf('=');
-        if (eq === -1) return;
-        const k = line.slice(0, eq);
+        if (eq < 1) continue;
         const v = line.slice(eq + 1);
-        obj[k] = (v === 'undefined' || v === 'null') ? '' : v;
-    });
-    // Support older env var names and provide a user-friendly config
-    if (obj.API_KEY && !obj.CLOUDFLARE_API_TOKEN) obj.CLOUDFLARE_API_TOKEN = obj.API_KEY;
-    // Keep DOMAINS as the single authoritative source of domain names; do not map into ZONE/SUBDOMAIN/ADDITIONAL_DOMAINS
-    // (legacy mappings removed for simplicity)
-
-    // Merge HEALTHCHECKS + HEALTHCHECKS_DISABLED (UI gets merged value, _ENABLED shows which is active)
-    // If HEALTHCHECKS exists and HEALTHCHECKS_ENABLED is not 'no', use HEALTHCHECKS
-    // Otherwise use HEALTHCHECKS_DISABLED
-    const hcEnabled = obj.HEALTHCHECKS_ENABLED === 'yes';
-    const ukEnabled = obj.UPTIMEKUMA_ENABLED === 'yes';
-    const srEnabled = obj.SHOUTRRR_ENABLED === 'yes';
-
-    obj.HEALTHCHECKS = hcEnabled ? (obj.HEALTHCHECKS || '') : (obj.HEALTHCHECKS_DISABLED || '');
-    obj.UPTIMEKUMA = ukEnabled ? (obj.UPTIMEKUMA || '') : (obj.UPTIMEKUMA_DISABLED || '');
-    obj.SHOUTRRR = srEnabled ? (obj.SHOUTRRR || '') : (obj.SHOUTRRR_DISABLED || '');
-
-    // Default _ENABLED to 'yes' if URL exists
-    if (obj.HEALTHCHECKS_ENABLED === undefined && (obj.HEALTHCHECKS || obj.HEALTHCHECKS_DISABLED)) obj.HEALTHCHECKS_ENABLED = 'yes';
-    if (obj.UPTIMEKUMA_ENABLED === undefined && (obj.UPTIMEKUMA || obj.UPTIMEKUMA_DISABLED)) obj.UPTIMEKUMA_ENABLED = 'yes';
-    if (obj.SHOUTRRR_ENABLED === undefined && (obj.SHOUTRRR || obj.SHOUTRRR_DISABLED)) obj.SHOUTRRR_ENABLED = 'yes';
-
-    res.json(obj);
-});
-
-// Helper: read full logs
-function readLogs() {
-    try { return fs.readFileSync(LOG_FILE, 'utf8'); } catch { return ''; }
-}
-
-// Helper: last n lines of the log. The log can grow to megabytes; sending
-// and rendering all of it on every write made the UI sluggish (worst on
-// phones), so the live log view only gets the tail.
-const LOG_TAIL_LINES = 500;
-function readLogTail(n) {
-    const logs = readLogs();
-    const lines = logs.split('\n');
-    return lines.length > n ? lines.slice(-n).join('\n') : logs;
-}
-
-// Helper: detect public IPv4/IPv6 from logs (favonia ddns output)
-function detectPublicIPsFromLogs() {
-    const logs = readLogs();
-    const lines = logs.split(/\r?\n/);
-    let ipv4 = null;
-    let ipv6 = null;
-    // Scan from newest to oldest so we pick up the most recently detected IP,
-    // not the first one ever logged (the log file can span weeks).
-    for (let i = lines.length - 1; i >= 0 && (!ipv4 || !ipv6); i--) {
-        const l = lines[i];
-        if (!ipv4) {
-            // "the" and the colon after "address" are both optional - current
-            // favonia/cloudflare-ddns versions log "Detected IPv4 address: X"
-            // (no "the", with a colon); older versions logged "Detected the
-            // IPv4 address X". The stricter, "the"-requiring pattern this used
-            // to be never matched current log output at all.
-            const v4 = l.match(/Detected (?:the )?IPv4 address:?\s+([0-9.]+)/i);
-            if (v4) ipv4 = v4[1];
-        }
-        if (!ipv6) {
-            const v6 = l.match(/Detected (?:the )?IPv6 address:?\s+([0-9a-f:]+)/i);
-            if (v6) ipv6 = v6[1];
-        }
+        obj[line.slice(0, eq)] = (v === 'undefined' || v === 'null') ? '' : v;
     }
-    return { ipv4, ipv6 };
+    if (obj.API_KEY && !obj.CLOUDFLARE_API_TOKEN) obj.CLOUDFLARE_API_TOKEN = obj.API_KEY;
+    return obj;
 }
 
-// Helper: minimal Cloudflare API GET
+// Write the settings file in one step (temp file + rename), so the wrapper,
+// which reads it every 3 s, never sees a half-written file. Mode 600: it
+// holds the Cloudflare API token.
+function writeEnvLines(lines) {
+    const tmp = `${ENV_FILE}.tmp`;
+    fs.writeFileSync(tmp, lines.join('\n') + '\n', { mode: 0o600 });
+    fs.renameSync(tmp, ENV_FILE);
+}
+
+function setEnabled(value) {
+    const env = readEnv();
+    env.ENABLED = value ? 'true' : 'false';
+    writeEnvLines(Object.entries(env).map(([k, v]) => `${k}=${v}`));
+}
+
+function appendLog(message) {
+    try { fs.appendFileSync(LOG_FILE, `${new Date().toISOString()} ${message}\n`); } catch (e) { console.error('Failed to append log', e); }
+}
+
+// ---------------------------------------------------------------------------
+// Log reader: follows the log file and keeps what the page needs (the last
+// lines, the detected IP addresses, the latest notifier failure) in memory.
+// Every request used to re-read and scan the whole file (megabytes) instead.
+
+const logState = { lines: [], ipv4: null, ipv6: null, notifierError: null, offset: 0, partial: '' };
+let notifierErrorSeq = 0;
+
+// favonia's notifier failures name the service: "Failed to send %s to
+// Healthchecks", "Failed to ping Uptime Kuma", "Failed to send notifications
+// via Shoutrrr" (internal/heartbeat, internal/notifier)
+function notifierService(line) {
+    if (!/\b(Failed|Could not)\b/.test(line)) return null;
+    if (/\bHealthchecks\b/.test(line)) return 'healthchecks';
+    if (/\bUptime Kuma\b/.test(line)) return 'uptimekuma';
+    if (/\bShoutrrr\b/.test(line)) return 'shoutrrr';
+    return null;
+}
+
+// Add a chunk of log text; returns the complete lines it contained
+function ingestLog(text) {
+    const parts = (logState.partial + text).split('\n');
+    logState.partial = parts.pop();
+    for (const line of parts) {
+        // "the" and the colon are optional: current favonia versions log
+        // "Detected IPv4 address: X", older ones "Detected the IPv4 address X"
+        const v4 = line.match(/Detected (?:the )?IPv4 address:?\s+([0-9.]+)/i);
+        if (v4) logState.ipv4 = v4[1];
+        const v6 = line.match(/Detected (?:the )?IPv6 address:?\s+([0-9a-f:]+)/i);
+        if (v6) logState.ipv6 = v6[1];
+        const service = notifierService(line);
+        if (service) logState.notifierError = { seq: ++notifierErrorSeq, service, line: line.trim() };
+        logState.lines.push(line);
+    }
+    if (logState.lines.length > LOG_TAIL_LINES) logState.lines.splice(0, logState.lines.length - LOG_TAIL_LINES);
+    return parts;
+}
+
+function readLogBytes(start, end) {
+    const fd = fs.openSync(LOG_FILE, 'r');
+    try {
+        const buf = Buffer.alloc(end - start);
+        fs.readSync(fd, buf, 0, buf.length, start);
+        return buf.toString('utf8');
+    } finally { fs.closeSync(fd); }
+}
+
+// (Re)load from the end of the file: at start, and when the wrapper has
+// pruned the log (the file got smaller)
+function loadLog() {
+    Object.assign(logState, { lines: [], offset: 0, partial: '' });
+    let size;
+    try { size = fs.statSync(LOG_FILE).size; } catch (e) { return; }
+    const start = Math.max(0, size - LOG_INITIAL_BYTES);
+    let text = readLogBytes(start, size);
+    if (start > 0) text = text.slice(text.indexOf('\n') + 1);  // drop the cut-off first line
+    ingestLog(text);
+    logState.offset = size;
+}
+
+// Polled once a second (fs.watchFile keeps working when the wrapper replaces
+// the file while pruning it, which fs.watch doesn't). New lines go to all open
+// pages in one message.
+function followLog(cur) {
+    if (cur.size < logState.offset) {
+        loadLog();
+        io.emit('log', logState.lines.join('\n'));
+    } else if (cur.size > logState.offset) {
+        const lines = ingestLog(readLogBytes(logState.offset, cur.size));
+        logState.offset = cur.size;
+        if (lines.length) io.emit('log-append', lines.join('\n'));
+    }
+}
+
+loadLog();
+fs.watchFile(LOG_FILE, { interval: 1000 }, followLog);
+
+// ---------------------------------------------------------------------------
+// Cloudflare: does each domain's record match the detected address?
+
 function cfGet(pathname, token) {
     return new Promise((resolve) => {
         const req = https.request({
             hostname: 'api.cloudflare.com',
             path: `/client/v4${pathname}`,
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             timeout: 10000
         }, (res) => {
             let data = '';
             res.on('data', (c) => data += c);
-            res.on('end', () => {
-                try { resolve(JSON.parse(data)); } catch { resolve(null); }
-            });
+            res.on('end', () => { try { resolve(JSON.parse(data)); } catch (e) { resolve(null); } });
         });
         req.on('error', () => resolve(null));
-        req.on('timeout', () => {
-            req.destroy();
-            resolve(null);
-        });
+        req.on('timeout', () => { req.destroy(); resolve(null); });
         req.end();
     });
 }
 
-// Helper: the zones (domains) the token can see. Used to find each domain's
-// zone by longest matching suffix; guessing "the last two labels" gave
-// "co.uk" for example.co.uk, so such domains never showed a status.
+// The zones (domains) the token can see. Each domain's zone is found by the
+// longest matching suffix; guessing "the last two labels" gave "co.uk" for
+// example.co.uk, so such domains never showed a status.
 async function listZones(token) {
     const zones = [];
     for (let page = 1; page <= 10; page++) {
@@ -177,347 +196,178 @@ function findZone(zones, domain) {
         .sort((a, b) => b.name.length - a.name.length)[0] || null;
 }
 
-// Endpoint: per-domain status by comparing Cloudflare DNS A/AAAA with detected public IPs
-// Response: { domains: [ { domain, status, reason, ipv4Match, ipv6Match } ] }
-app.get('/api/domain-status', async (req, res) => {
-    try {
-        const env = readEnv();
-        const token = env.CLOUDFLARE_API_TOKEN || env.API_KEY || '';
-        const domainsStr = env.DOMAINS || '';
-        const parts = domainsStr.split(',').map(s => s.trim()).filter(Boolean);
-        if (!parts.length) return res.json({ domains: [] });
+const NO_RECORDS = { ipv4Match: false, ipv6Match: false, ipv4Proxied: null, ipv6Proxied: null };
 
-        const detected = detectPublicIPsFromLogs();
-        const results = [];
-        if (!token) {
-            for (const d of parts) results.push({ domain: d, status: 'missing', reason: 'Token missing', ipv4Match: false, ipv6Match: false, ipv4Proxied: null, ipv6Proxied: null });
-            return res.json({ domains: results });
-        }
+async function checkDomain(zones, domain, token) {
+    const zone = findZone(zones, domain);
+    if (!zone) return Object.assign({ domain, status: 'pending', reason: 'Zone not found' }, NO_RECORDS);
+    const name = encodeURIComponent(domain);
+    const [a, aaaa] = await Promise.all([
+        cfGet(`/zones/${zone.id}/dns_records?type=A&name=${name}`, token),
+        cfGet(`/zones/${zone.id}/dns_records?type=AAAA&name=${name}`, token)
+    ]);
+    if (!a || !aaaa) return Object.assign({ domain, status: 'error', reason: 'Network error' }, NO_RECORDS);
+    if (a.success === false || aaaa.success === false) return Object.assign({ domain, status: 'invalid', reason: 'Auth error' }, NO_RECORDS);
+    const aRecords = a.result || [];
+    const aaaaRecords = aaaa.result || [];
+    const ipv4Match = !!logState.ipv4 && aRecords.some(r => r.content === logState.ipv4);
+    const ipv6Match = !!logState.ipv6 && aaaaRecords.some(r => r.content === logState.ipv6);
+    const ok = ipv4Match || ipv6Match;
+    return {
+        domain,
+        status: ok ? 'ok' : 'pending',
+        reason: ok ? 'Records match detected IPs' : 'Records differ from detected IPs',
+        ipv4Match, ipv6Match,
+        ipv4Proxied: aRecords.length ? aRecords[0].proxied : null,
+        ipv6Proxied: aaaaRecords.length ? aaaaRecords[0].proxied : null
+    };
+}
 
-        // The zones the token can see, then for each domain its zone and records
-        const zl = await listZones(token);
-        const none = { ipv4Match: false, ipv6Match: false, ipv4Proxied: null, ipv6Proxied: null };
-        if (!zl || zl.authError) {
-            for (const d of parts) results.push(Object.assign({ domain: d }, none, zl ? { status: 'invalid', reason: 'Auth error' } : { status: 'error', reason: 'Network error' }));
-            return res.json({ domains: results });
-        }
-        for (const d of parts) {
-            const zone = findZone(zl.zones, d);
-            if (!zone) {
-                results.push(Object.assign({ domain: d, status: 'pending', reason: 'Zone not found' }, none));
-                continue;
-            }
-            const zoneId = zone.id;
-            const rres = await cfGet(`/zones/${zoneId}/dns_records?type=A&name=${encodeURIComponent(d)}`, token);
-            const rres6 = await cfGet(`/zones/${zoneId}/dns_records?type=AAAA&name=${encodeURIComponent(d)}`, token);
-            // Handle network/auth errors
-            if (!rres || !rres6) {
-                results.push({ domain: d, status: 'error', reason: 'Network error', ipv4Match: false, ipv6Match: false, ipv4Proxied: null, ipv6Proxied: null });
-                continue;
-            }
-            if (rres.success === false || rres6.success === false) {
-                results.push({ domain: d, status: 'invalid', reason: 'Auth error', ipv4Match: false, ipv6Match: false, ipv4Proxied: null, ipv6Proxied: null });
-                continue;
-            }
-            const aRecords = (rres && rres.result) ? rres.result : [];
-            const aaaaRecords = (rres6 && rres6.result) ? rres6.result : [];
-            const currentA = aRecords.map(r => r.content).filter(Boolean);
-            const currentAAAA = aaaaRecords.map(r => r.content).filter(Boolean);
-            const v4Match = detected.ipv4 ? currentA.includes(detected.ipv4) : false;
-            const v6Match = detected.ipv6 ? currentAAAA.includes(detected.ipv6) : false;
-
-            // Get current proxied status from Cloudflare records
-            const ipv4Proxied = aRecords.length > 0 ? aRecords[0].proxied : null;
-            const ipv6Proxied = aaaaRecords.length > 0 ? aaaaRecords[0].proxied : null;
-
-            // Derive status
-            let status = 'pending'; let reason = '';
-            if (v4Match || v6Match) { status = 'ok'; reason = 'Records match detected IPs'; }
-            else { status = 'pending'; reason = 'Records differ from detected IPs'; }
-            results.push({ domain: d, status, reason, ipv4Match: v4Match, ipv6Match: v6Match, ipv4Proxied, ipv6Proxied });
-        }
-        res.json({ domains: results });
-    } catch (e) {
-        res.status(500).json({ error: String(e) });
+async function checkDomains() {
+    const env = readEnv();
+    const token = env.CLOUDFLARE_API_TOKEN || '';
+    const domains = (env.DOMAINS || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (!domains.length) return { domains: [] };
+    if (!token) return { domains: domains.map(d => Object.assign({ domain: d, status: 'missing', reason: 'Token missing' }, NO_RECORDS)) };
+    const zl = await listZones(token);
+    if (!zl || zl.authError) {
+        const failure = zl ? { status: 'invalid', reason: 'Auth error' } : { status: 'error', reason: 'Network error' };
+        return { domains: domains.map(d => Object.assign({ domain: d }, failure, NO_RECORDS)) };
     }
+    return { domains: await Promise.all(domains.map(d => checkDomain(zl.zones, d, token))) };
+}
+
+// Cached for a minute and shared by every open page (each page used to make
+// its own 1 + 2 per domain Cloudflare calls every 30 s). A save clears it.
+let domainCache = null;   // { at, promise }
+function domainStatus() {
+    if (!domainCache || Date.now() - domainCache.at > DOMAIN_STATUS_TTL_MS) {
+        domainCache = { at: Date.now(), promise: checkDomains().catch(e => ({ error: String(e) })) };
+    }
+    return domainCache.promise;
+}
+
+// ---------------------------------------------------------------------------
+// Routes
+
+app.get('/health', (req, res) => res.sendStatus(200));
+
+app.get('/api/version', (req, res) => res.json({ version: VERSION }));
+
+app.get('/api/config', (req, res) => {
+    // New install (no settings file yet): IPv6 starts off
+    if (!fs.existsSync(ENV_FILE)) return res.json({ IP6_PROVIDER: 'none' });
+    const cfg = readEnv();
+    // Each notifier URL is stored as X while its switch is on and X_DISABLED
+    // while off (the whole file is passed to ddns, which must not see a
+    // switched-off URL). The page gets the URL as X either way.
+    for (const n of ['HEALTHCHECKS', 'UPTIMEKUMA', 'SHOUTRRR']) {
+        const on = cfg[`${n}_ENABLED`] === 'yes';
+        cfg[n] = on ? (cfg[n] || '') : (cfg[`${n}_DISABLED`] || '');
+        if (cfg[`${n}_ENABLED`] === undefined && cfg[n]) cfg[`${n}_ENABLED`] = 'yes';
+    }
+    res.json(cfg);
 });
 
-app.post('/api/config', async (req, res) => {
+app.post('/api/config', (req, res) => {
     const existing = readEnv();
     const body = req.body || {};
 
-    // True partial-merge semantics: a field the client's request body
-    // doesn't mention at all keeps its existing stored value, rather than
-    // being silently cleared to empty. Several independent parts of the UI
-    // (each notifier's own on/off switch, the notifiers "Save" button, the
-    // main config form) each do their own "read current config, tweak one
-    // thing, POST" round trip - if two of those overlap (e.g. a switch
-    // toggled right before clicking Save), the request whose read
-    // happened to land first would silently wipe out whatever the other
-    // had already saved, because every field not in ITS payload used to
-    // default to empty rather than to what was actually stored. Confirmed
-    // as the cause of a real incident: toggling the Uptime Kuma switch and
-    // clicking Save in quick succession lost the just-pasted push URL.
-    const has = (key) => Object.prototype.hasOwnProperty.call(body, key);
-    const pick = (key, fallback) => (has(key) ? body[key] : fallback);
+    // Partial update: a field the request doesn't mention keeps its stored
+    // value. Several parts of the page save independently (each switch, each
+    // Save button), and filling unmentioned fields with blanks lost changes
+    // when two saves overlapped.
+    const pick = (key, fallback) => (Object.prototype.hasOwnProperty.call(body, key) ? body[key] : fallback);
 
-    const CLOUDFLARE_API_TOKEN = pick('CLOUDFLARE_API_TOKEN', existing.CLOUDFLARE_API_TOKEN);
-    const DOMAINS_IN = pick('DOMAINS', existing.DOMAINS);
-    const PROXIED = pick('PROXIED', existing.PROXIED);
-    const IP4_PROVIDER = pick('IP4_PROVIDER', existing.IP4_PROVIDER);
+    const token = pick('CLOUDFLARE_API_TOKEN', existing.CLOUDFLARE_API_TOKEN) || '';
+    const domains = (pick('DOMAINS', existing.DOMAINS) || '').split(',').map(s => s.trim()).filter(Boolean).join(',');
+    const proxied = pick('PROXIED', existing.PROXIED) || 'true';
+    const ip4 = pick('IP4_PROVIDER', existing.IP4_PROVIDER) || '';
     // No settings file yet means a new install, where IPv6 starts off (the
     // wrapper writes the same default when it starts)
-    const IP6_PROVIDER = pick('IP6_PROVIDER', fs.existsSync(ENV_FILE) ? existing.IP6_PROVIDER : 'none');
-    // The URL itself can be sitting in either the active or the _DISABLED
-    // slot depending on current toggle state - fall back to whichever one
-    // actually has it when the client didn't send this field at all.
-    const HEALTHCHECKS = pick('HEALTHCHECKS', existing.HEALTHCHECKS || existing.HEALTHCHECKS_DISABLED);
-    const HEALTHCHECKS_ENABLED = pick('HEALTHCHECKS_ENABLED', existing.HEALTHCHECKS_ENABLED);
-    const UPTIMEKUMA = pick('UPTIMEKUMA', existing.UPTIMEKUMA || existing.UPTIMEKUMA_DISABLED);
-    const UPTIMEKUMA_ENABLED = pick('UPTIMEKUMA_ENABLED', existing.UPTIMEKUMA_ENABLED);
-    const SHOUTRRR = pick('SHOUTRRR', existing.SHOUTRRR || existing.SHOUTRRR_DISABLED);
-    const SHOUTRRR_ENABLED = pick('SHOUTRRR_ENABLED', existing.SHOUTRRR_ENABLED);
+    const ip6 = pick('IP6_PROVIDER', fs.existsSync(ENV_FILE) ? existing.IP6_PROVIDER : 'none') || '';
 
-    // Validate notifier URLs and collect warnings (don't block save, just warn)
-    const warnings = [];
-    const localHostPatterns = /^https:\/\/(localhost|127\.0\.0\.1|umbrel\.local|::1)(:|\/)/i;
-    if (UPTIMEKUMA && localHostPatterns.test(UPTIMEKUMA)) {
-        warnings.push('Uptime Kuma URL uses HTTPS with a local hostname (localhost/umbrel.local), which may fail due to self-signed certificate validation. Consider using HTTP instead (e.g., http://localhost:8385/...)');
-    }
-    if (HEALTHCHECKS && localHostPatterns.test(HEALTHCHECKS)) {
-        warnings.push('Healthchecks URL uses HTTPS with a local hostname, which may fail due to self-signed certificate validation. Consider using HTTP instead.');
-    }
-    // SHOUTRRR can be comma-separated, check each
-    if (SHOUTRRR) {
-        const shoutUrls = SHOUTRRR.split(',').map(s => s.trim()).filter(Boolean);
-        for (const url of shoutUrls) {
-            if (localHostPatterns.test(url)) {
-                warnings.push('Shoutrrr URL uses HTTPS with a local hostname, which may fail due to self-signed certificate validation. Consider using HTTP instead.');
-                break; // Only warn once
-            }
-        }
-    }
-
-    // Use DOMAINS as the single authoritative list
-    const DOMAINS = (DOMAINS_IN || '').split(',').map(s => s.trim()).filter(Boolean).join(',');
-    const shout = (SHOUTRRR || '').split('\n').map(s => s.trim()).filter(Boolean).join(',');
-
-    // New approach: Save URLs to HEALTHCHECKS or HEALTHCHECKS_DISABLED based on toggle
-    // When toggle ON (HEALTHCHECKS_ENABLED='yes'): save to HEALTHCHECKS, clear HEALTHCHECKS_DISABLED
-    // When toggle OFF (HEALTHCHECKS_ENABLED='no'): save to HEALTHCHECKS_DISABLED, clear HEALTHCHECKS
-    const hc_enabled = HEALTHCHECKS_ENABLED === 'yes';
-    const uk_enabled = UPTIMEKUMA_ENABLED === 'yes';
-    const sr_enabled = SHOUTRRR_ENABLED === 'yes';
-
-    const token = (CLOUDFLARE_API_TOKEN === '***') ? existing.CLOUDFLARE_API_TOKEN : CLOUDFLARE_API_TOKEN;
     const lines = [
-        `CLOUDFLARE_API_TOKEN=${token || ''}`,
-        `DOMAINS=${DOMAINS}`,
-        `PROXIED=${PROXIED || 'true'}`,
-        `IP4_PROVIDER=${IP4_PROVIDER || ''}`,
-        `IP6_PROVIDER=${IP6_PROVIDER || ''}`,
-        // HEALTHCHECKS: save to active var, clear disabled var
-        `HEALTHCHECKS=${hc_enabled ? (HEALTHCHECKS || '') : ''}`,
-        `HEALTHCHECKS_DISABLED=${!hc_enabled ? (HEALTHCHECKS || '') : ''}`,
-        `HEALTHCHECKS_ENABLED=${hc_enabled ? 'yes' : 'no'}`,
-        // UPTIMEKUMA: save to active var, clear disabled var
-        `UPTIMEKUMA=${uk_enabled ? (UPTIMEKUMA || '') : ''}`,
-        `UPTIMEKUMA_DISABLED=${!uk_enabled ? (UPTIMEKUMA || '') : ''}`,
-        `UPTIMEKUMA_ENABLED=${uk_enabled ? 'yes' : 'no'}`,
-        // SHOUTRRR: save to active var, clear disabled var
-        `SHOUTRRR=${sr_enabled ? shout : ''}`,
-        `SHOUTRRR_DISABLED=${!sr_enabled ? shout : ''}`,
-        `SHOUTRRR_ENABLED=${sr_enabled ? 'yes' : 'no'}`
+        `CLOUDFLARE_API_TOKEN=${token}`,
+        `DOMAINS=${domains}`,
+        `PROXIED=${proxied}`,
+        `IP4_PROVIDER=${ip4}`,
+        `IP6_PROVIDER=${ip6}`
     ];
+    // Notifiers: the URL goes in X while the switch is on, in X_DISABLED while
+    // it's off (see GET /api/config). Shoutrrr URLs are stored comma-separated.
+    for (const n of ['HEALTHCHECKS', 'UPTIMEKUMA', 'SHOUTRRR']) {
+        const on = pick(`${n}_ENABLED`, existing[`${n}_ENABLED`]) === 'yes';
+        let url = pick(n, existing[n] || existing[`${n}_DISABLED`]) || '';
+        if (n === 'SHOUTRRR') url = url.split('\n').map(s => s.trim()).filter(Boolean).join(',');
+        lines.push(`${n}=${on ? url : ''}`, `${n}_DISABLED=${on ? '' : url}`, `${n}_ENABLED=${on ? 'yes' : 'no'}`);
+    }
+
     // Enabled state: without a token the service can't run. A new or changed
     // token starts it. Any other save keeps the current state, so a user who
-    // pressed Disable isn't switched back on by changing an unrelated setting
-    // (every save used to re-enable the service).
-    const hasToken = !!(token || existing.API_KEY);
+    // pressed Disable isn't switched back on by changing an unrelated setting.
+    const hasToken = !!token;
     const tokenChanged = hasToken && token !== existing.CLOUDFLARE_API_TOKEN;
-    const enabled = !hasToken ? 'false' : (tokenChanged ? 'true' : (existing.ENABLED || 'true'));
-    lines.push(`ENABLED=${enabled}`);
+    lines.push(`ENABLED=${!hasToken ? 'false' : (tokenChanged ? 'true' : (existing.ENABLED || 'true'))}`);
+
     try {
         writeEnvLines(lines);
+        domainCache = null;
         appendLog(`Config updated via UI by ${req.headers['x-umbrel-username'] || 'local'}`);
-        // No need to signal the ddns child: the wrapper polls the env file
-        // every 3 s and restarts the child itself when it changes. (This used
-        // to `kill` status.pid, but that pid belongs to the other container's
-        // PID namespace, so the kill either hit nothing or, when the numbers
-        // happened to match, killed this UI's own process.)
+        // No need to signal ddns: the wrapper checks the settings file every
+        // 3 s and restarts ddns when it changes
         if (tokenChanged) {
             // The wrapper's error scanning ignores auth errors logged before
             // this marker, so only write it when the token really changed
             appendLog('──── NEW TOKEN CONFIGURED ────');
             if (existing.ENABLED !== 'true') appendLog('Service auto-enabled after saving a new API token');
         }
-        // Log warnings to help users diagnose issues
-        if (warnings.length > 0) {
-            warnings.forEach(w => appendLog(`CONFIG WARNING: ${w}`));
-        }
-        res.json({ success: true, warnings: warnings.length > 0 ? warnings : undefined });
+        res.json({ success: true });
     } catch (e) {
-        console.error(`[POST /api/config] ERROR: ${String(e)}`);
-        console.error(`[POST /api/config] Stack:`, e.stack);
+        console.error('Saving settings failed', e);
         appendLog(`Config update failed: ${String(e)}`);
         res.status(500).json({ error: String(e) });
     }
 });
 
-function appendLog(message) {
-    const t = new Date().toISOString();
-    try { fs.appendFileSync(LOG_FILE, `${t} ${message}\n`); } catch (e) { console.error('Failed to append log', e); }
-}
+// Everything the page refreshes regularly, in one request. status.json is
+// written by the wrapper; last-change.json records the last real DNS change.
+app.get('/api/state', (req, res) => {
+    // Before the wrapper has written its first status.json (it starts
+    // shortly after this UI), go by the settings file
+    const s = readJson(STATUS_FILE) || { enabled: readEnv().ENABLED !== 'false', status: 'starting' };
+    const c = readJson(LAST_CHANGE_FILE) || {};
+    res.json({
+        enabled: !!s.enabled,
+        running: !!s.running,
+        status: s.status || (s.enabled ? 'starting' : 'disabled'),
+        error: s.error || null,
+        lastSuccessfulCheck: s.lastSuccessfulCheck || null,
+        lastUpdate: { ipv4: c.ipv4 || null, ipv6: c.ipv6 || null },
+        publicIp: { ipv4: logState.ipv4, ipv6: logState.ipv6 },
+        notifierError: logState.notifierError
+    });
+});
 
-function readEnv() {
-    if (!fs.existsSync(ENV_FILE)) return {};
-    try {
-        const content = fs.readFileSync(ENV_FILE, 'utf8');
-        const obj = {};
-        content.split('\n').filter(Boolean).forEach(line => {
-            // Split on the FIRST "=" only - a value containing further "="
-            // characters (e.g. an Uptime Kuma push URL's own query string,
-            // `?status=up&msg=OK&ping=`) would otherwise be silently
-            // truncated right after the second "=" in the line, since
-            // line.split('=') with no limit returns every piece and only
-            // the first two survive being destructured into k/v.
-            const eq = line.indexOf('=');
-            if (eq === -1) return;
-            const k = line.slice(0, eq);
-            const v = line.slice(eq + 1);
-            obj[k] = (v === 'undefined' || v === 'null') ? '' : v;
-        });
-        if (obj.API_KEY && !obj.CLOUDFLARE_API_TOKEN) obj.CLOUDFLARE_API_TOKEN = obj.API_KEY;
-        return obj;
-    } catch (e) { return {}; }
-}
-
-// Write the settings file in one step (temp file + rename), so the wrapper,
-// which reads it every 3 s, never sees a half-written file. Mode 600: it
-// holds the Cloudflare API token.
-function writeEnvLines(lines) {
-    const tmp = `${ENV_FILE}.tmp`;
-    fs.writeFileSync(tmp, lines.join('\n') + '\n', { mode: 0o600 });
-    fs.renameSync(tmp, ENV_FILE);
-}
-
-function writeEnv(obj) {
-    writeEnvLines(Object.keys(obj).map(k => `${k}=${obj[k] !== undefined && obj[k] !== null ? obj[k] : ''}`));
-}
-
-function setEnabled(value) {
-    const env = readEnv();
-    env.ENABLED = value ? 'true' : 'false';
-    writeEnv(env);
-}
-
-app.get('/api/service/status', (req, res) => {
-    try {
-        if (fs.existsSync(STATUS_FILE)) {
-            const s = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8'));
-            return res.json({ status: s.status || (s.enabled ? 'running' : 'stopped'), running: !!s.running, enabled: !!s.enabled, pid: s.pid || null, lastStartedAt: s.lastStartedAt || null, lastSuccessfulUpdate: s.lastSuccessfulUpdate || null, error: s.error || null });
-        }
-        const env = readEnv();
-        const enabled = env.ENABLED === 'true';
-        // heuristically determine running if log file updated in last 5 minutes
-        let running = false;
-        let error = null;
-        if (fs.existsSync(LOG_FILE)) {
-            const stat = fs.statSync(LOG_FILE);
-            const age = (Date.now() - stat.mtimeMs) / 1000;
-            running = enabled && (age < 300);
-            // Check for API token errors in recent logs
-            const logs = fs.readFileSync(LOG_FILE, 'utf8');
-            const lines = logs.split(/\r?\n/).filter(Boolean);
-            // Check last 50 lines for token/auth errors
-            const recentLines = lines.slice(-50);
-            for (const line of recentLines) {
-                if (/Cloudflare API token.*error|auth error|authentication.*failed|401.*unauthorized|403.*forbidden/gi.test(line)) {
-                    error = 'Invalid Cloudflare API token';
-                    break;
-                }
-            }
-        }
-        res.json({ status: enabled ? 'enabled' : 'disabled', running, enabled, lastSuccessfulUpdate: null, error });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+app.get('/api/domain-status', async (req, res) => {
+    const result = await domainStatus();
+    if (result.error) return res.status(500).json(result);
+    res.json(result);
 });
 
 app.get('/api/logs', (req, res) => {
-    try {
-        if (!fs.existsSync(LOG_FILE)) return res.send('');
-        // ?tail=N returns only the last N lines; without it, the full file
-        const tail = parseInt(req.query.tail, 10);
-        res.send(tail > 0 ? readLogTail(tail) : fs.readFileSync(LOG_FILE, 'utf8'));
-    } catch (e) { res.status(500).json({ error: String(e) }); }
-});
-
-
-// "Cloudflare Last Updated": the last GENUINE record change per family, as
-// recorded by the wrapper in last-change.json on the data volume (so it
-// survives restarts and upgrades). null means no change has been made since
-// that file started being kept; the UI then shows "Already up to date" once
-// lastSuccessfulCheck shows the records were confirmed. (This used to scan
-// the log, but favonia's log lines have no timestamps, so it always fell
-// back to the time of the first check after startup.)
-app.get('/api/last-update', (req, res) => {
-    try {
-        let ipv4Update = null;
-        let ipv6Update = null;
-        let lastSuccessfulCheck = null;
-        try {
-            const c = JSON.parse(fs.readFileSync(LAST_CHANGE_FILE, 'utf8'));
-            ipv4Update = c.ipv4 || null;
-            ipv6Update = c.ipv6 || null;
-        } catch (e) { /* no change recorded yet */ }
-        try {
-            const st = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8'));
-            lastSuccessfulCheck = st.lastSuccessfulCheck || null;
-        } catch (e) { /* no status yet */ }
-        const lastUpdate = [ipv4Update, ipv6Update].filter(Boolean).sort().reverse()[0] || null;
-        res.json({ lastUpdate, ipv4Update, ipv6Update, lastSuccessfulCheck });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
-});
-
-// Return last detected public IPs (IPv4 + IPv6) by scanning the logs
-app.get('/api/public-ip', (req, res) => {
-    try {
-        if (!fs.existsSync(LOG_FILE)) return res.json({ ipv4: null, ipv6: null });
-        const txt = fs.readFileSync(LOG_FILE, 'utf8');
-        const lines = txt.split(/\r?\n/).filter(Boolean);
-        let lastIpv4 = null;
-        let lastIpv6 = null;
-        // "the" and the colon after "address" are both optional - see the
-        // matching comment in detectPublicIPsFromLogs() above for why.
-        for (let i = lines.length - 1; i >= 0; i--) {
-            const l = lines[i];
-            const v4 = l.match(/Detected (?:the )?IPv4 address:?\s+([0-9.]+)/i);
-            if (v4 && !lastIpv4) lastIpv4 = v4[1];
-            const v6 = l.match(/Detected (?:the )?IPv6 address:?\s+([0-9a-f:]+)/i);
-            if (v6 && !lastIpv6) lastIpv6 = v6[1];
-            if (lastIpv4 && lastIpv6) break;
-        }
-        res.json({ ipv4: lastIpv4, ipv6: lastIpv6 });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
-});
-
-app.get('/api/errors', (req, res) => {
-    try {
-        if (!fs.existsSync(LOG_FILE)) return res.json({ errors: [] });
-        const txt = fs.readFileSync(LOG_FILE, 'utf8');
-        const lines = txt.split(/\r?\n/).filter(Boolean);
-        const errMatches = lines.filter(l => /error|failed|403|401|denied|timeout|exception/gi.test(l));
-        res.json({ errors: errMatches.slice(-20) });
-    } catch (e) { res.status(500).json({ error: String(e) }); }
+    const tail = Math.min(parseInt(req.query.tail, 10) || LOG_TAIL_LINES, LOG_TAIL_LINES);
+    res.type('text/plain').send(logState.lines.slice(-tail).join('\n'));
 });
 
 app.post('/api/service/start', (req, res) => {
     try {
         const env = readEnv();
-        const token = env.CLOUDFLARE_API_TOKEN || env.API_KEY || '';
-        const domains = env.DOMAINS || '';
-        if (!token) return res.status(400).json({ error: 'Missing Cloudflare API token (CLOUDFLARE_API_TOKEN)' });
-        if (!domains) return res.status(400).json({ error: 'Missing domain configuration; specify DOMAINS' });
+        if (!env.CLOUDFLARE_API_TOKEN) return res.status(400).json({ error: 'Missing Cloudflare API token' });
+        if (!env.DOMAINS) return res.status(400).json({ error: 'No domains configured' });
         setEnabled(true);
+        // The wrapper treats this line as a marker: token errors logged before
+        // it no longer count
         appendLog(`Service enabled via UI by ${req.headers['x-umbrel-username'] || 'local'}`);
         res.json({ success: true });
     } catch (e) { appendLog(`Enable failed: ${String(e)}`); res.status(500).json({ error: String(e) }); }
@@ -531,27 +381,7 @@ app.post('/api/service/stop', (req, res) => {
     } catch (e) { appendLog(`Disable failed: ${String(e)}`); res.status(500).json({ error: String(e) }); }
 });
 
-io.on('connection', (socket) => {
-    // send last log lines
-    try {
-        if (fs.existsSync(LOG_FILE)) {
-            socket.emit('log', readLogTail(LOG_TAIL_LINES));
-        }
-    } catch (e) { }
+// Live Logs: the current lines on connect, then only new lines (followLog)
+io.on('connection', (socket) => socket.emit('log', logState.lines.join('\n')));
 
-    // stream log-file updates
-    if (fs.existsSync(LOG_FILE)) {
-        const watcher = fs.watch(LOG_FILE, () => {
-            try {
-                socket.emit('log', readLogTail(LOG_TAIL_LINES));
-            } catch (e) { }
-        });
-        socket.on('disconnect', () => { watcher.close(); });
-    }
-
-    // Docker log streaming has been removed; we stream logs from the host log file only.
-
-});
-
-const port = 3000;
-server.listen(port, () => { console.log(`UI listening on ${port}`); appendLog('UI started'); });
+server.listen(PORT, () => { console.log(`UI listening on ${PORT}`); appendLog('UI started'); });

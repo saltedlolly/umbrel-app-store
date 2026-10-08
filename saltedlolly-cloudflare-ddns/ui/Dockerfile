@@ -11,7 +11,7 @@ ARG VERSION=unknown
 
 # Copy UI package json and install production deps
 COPY ui/package*.json ./
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 # Copy UI files into the image
 COPY ui/ ./

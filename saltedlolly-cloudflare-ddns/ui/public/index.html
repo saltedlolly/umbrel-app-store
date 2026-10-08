@@ -1,158 +1,26 @@
 <!doctype html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Cloudflare DDNS Updater</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background: #ffffff;
-            padding: 1rem;
-        }
-
-        #logo {
-            height: 80px;
-            width: auto;
-            background: #fff;
-            padding: 6px;
-            border-radius: 10px;
-        }
-
-        .status-box {
-            min-width: 140px;
-            text-align: center;
-            padding: .5rem 1rem;
-            border-radius: 8px;
-        }
-
-        .log-area {
-            min-height: 200px;
-            /* adjust height to account for header, cards above, and footer */
-            max-height: calc(100vh - 460px);
-            overflow: auto;
-            font-family: monospace;
-            white-space: pre-wrap;
-            background: #fff;
-            border-radius: 8px;
-            padding: .75rem;
-            font-size: 0.85rem;
-            border: 1px solid #e6e6e6;
-        }
-
-        .page-footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.95);
-            border-top: 1px solid #e6e6e6;
-            padding: .5rem .75rem;
-            font-size: 1.05rem;
-            text-align: right;
-            z-index: 1000;
-        }
-
-        .page-footer a {
-            color: inherit;
-            text-decoration: none;
-        }
-
-        /* Until the first config and status have loaded, keep the values the
-           page fills in invisible (their space is kept, so nothing shifts),
-           rather than showing defaults that then visibly jump */
-        body:not(.ready) .js-state {
-            visibility: hidden;
-        }
-
-        .proxied-toggle {
-            transform: scale(1.25);
-            transform-origin: center;
-            margin-left: .5rem;
-        }
-
-        /* Page layout. Desktop: status cards and logs on the left, controls
-           on the right. Mobile: one column with the controls above the logs,
-           so they aren't buried below hundreds of log lines. */
-        .layout {
-            display: grid;
-            gap: 1rem;
-            grid-template-columns: minmax(0, 1fr);
-            grid-template-areas: "ips" "domains" "side" "logs";
-        }
-
-        .area-ips { grid-area: ips; }
-        .area-domains { grid-area: domains; }
-        .area-logs { grid-area: logs; }
-        .area-side { grid-area: side; }
-
-        @media (min-width: 768px) {
-            body {
-                /* room for the fixed footer */
-                padding-bottom: 4rem;
-            }
-
-            .layout {
-                grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-                grid-template-rows: auto auto 1fr;
-                grid-template-areas: "ips side" "domains side" "logs side";
-                align-items: start;
-            }
-        }
-
-        @media (max-width: 767.98px) {
-            .page-footer {
-                position: static;
-                margin-top: 1rem;
-                text-align: center;
-            }
-
-            .page-footer .container {
-                flex-direction: column;
-                gap: .5rem;
-            }
-
-            .page-footer .text-end {
-                text-align: center !important;
-            }
-
-            .log-area {
-                max-height: 50vh;
-            }
-        }
-
-        @media (max-width: 575.98px) {
-            body {
-                padding: .5rem;
-            }
-
-            #logo {
-                height: 56px;
-            }
-
-            /* bigger touch targets */
-            .btn-sm {
-                padding: .45rem .75rem;
-                font-size: .95rem;
-            }
-        }
-    </style>
+    <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="/app.css" rel="stylesheet">
 </head>
 
 <body>
+    <div id="connectionLost" class="alert alert-warning py-2 small mb-0" role="status" hidden>Lost connection to the
+        Cloudflare DDNS app. Retrying...</div>
     <div class="container" style="padding-bottom: 15px;">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div class="d-flex align-items-center gap-3">
-                <img id="logo" src="/logo.png" alt="logo">
+                <img id="logo" src="/logo.png" alt="">
                 <div>
                     <h4 class="mb-0">Cloudflare DDNS Updater</h4>
                     <small class="text-muted">Dynamic DNS client for Cloudflare to keep your domain updated with your
                         current public IP address.</small>
                 </div>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                <!-- status moved into config column above Config panel; header tools removed for clarity -->
             </div>
         </div>
         <div id="warning" class="mb-3" style="color:#b71c1c;display:none"></div>
@@ -223,7 +91,6 @@
                     <div class="card-body">
                         <h6 class="card-title">Cloudflare Config</h6>
 
-                        <!-- Main view: two-column rows for aligned titles and statuses/toggle -->
                         <div id="configMainView">
                             <div class="mb-2 row align-items-center">
                                 <div class="col-7 small">🔑 Cloudflare API Token</div>
@@ -239,7 +106,7 @@
                                     <div
                                         class="form-check form-switch d-inline-flex align-items-center justify-content-end">
                                         <input class="form-check-input proxied-toggle" type="checkbox"
-                                            id="proxiedMainSwitch">
+                                            id="proxiedMainSwitch" aria-label="Proxied">
                                     </div>
                                 </div>
                             </div>
@@ -249,7 +116,7 @@
                                     <div
                                         class="form-check form-switch d-inline-flex align-items-center justify-content-end">
                                         <input class="form-check-input proxied-toggle" type="checkbox"
-                                            id="ipv4MainSwitch">
+                                            id="ipv4MainSwitch" aria-label="IPv4 Support">
                                     </div>
                                 </div>
                             </div>
@@ -259,7 +126,7 @@
                                     <div
                                         class="form-check form-switch d-inline-flex align-items-center justify-content-end">
                                         <input class="form-check-input proxied-toggle" type="checkbox"
-                                            id="ipv6MainSwitch">
+                                            id="ipv6MainSwitch" aria-label="IPv6 Support">
                                     </div>
                                 </div>
                             </div>
@@ -279,11 +146,10 @@
                             </div>
                         </div>
 
-                        <!-- Edit view: form for editing token, domains and proxied -->
                         <div id="configEditView" style="display:none; margin-top:.5rem">
                             <form id="configEdit">
                                 <div class="mb-2">
-                                    <label class="form-label small">🔑 Cloudflare API Token</label>
+                                    <label class="form-label small" for="edit_CLOUDFLARE_API_TOKEN">🔑 Cloudflare API Token</label>
                                     <div class="input-group input-group-sm">
                                         <input id="edit_CLOUDFLARE_API_TOKEN" name="CLOUDFLARE_API_TOKEN" type="password"
                                             class="form-control form-control-sm" autocomplete="off" spellcheck="false"
@@ -297,7 +163,7 @@
                                         The less secure API key authentication is deliberately not supported.</div>
                                 </div>
                                 <div class="mb-2">
-                                    <label class="form-label small">📍 Domain(s)</label>
+                                    <label class="form-label small" for="edit_DOMAINS">📍 Domain(s)</label>
                                     <textarea id="edit_DOMAINS" name="DOMAINS" class="form-control form-control-sm"
                                         rows="3" placeholder=""></textarea>
                                     <div class="small text-muted mt-1">Enter one or more fully qualified domain names
@@ -367,7 +233,6 @@
 
                     </div>
                 </div>
-                <!-- removed: configSaveMsg moved inline to main view -->
 
                 <div class="card mb-3" id="notifiersCard">
                     <div class="card-body d-flex flex-column" id="notifiersBody" style="min-height:220px">
@@ -379,9 +244,9 @@
                                     <div
                                         class="form-check form-switch d-inline-flex align-items-center justify-content-end">
                                         <input class="form-check-input proxied-toggle" type="checkbox"
-                                            id="notifyHealthchecksSwitch">
+                                            id="notifyHealthchecksSwitch" aria-label="Notify Healthchecks">
                                     </div>
-                                    <span id="notifyHealthchecksWarn" style="color:#b71c1c;display:none">⚠️</span>
+                                    <span id="notifyHealthchecksWarn" role="img" aria-label="Notifier problem (hover for details)" style="color:#b71c1c;display:none">⚠️</span>
                                 </div>
                             </div>
                             <div class="row mb-2 align-items-center">
@@ -390,9 +255,9 @@
                                     <div
                                         class="form-check form-switch d-inline-flex align-items-center justify-content-end">
                                         <input class="form-check-input proxied-toggle" type="checkbox"
-                                            id="notifyUptimeSwitch">
+                                            id="notifyUptimeSwitch" aria-label="Notify Uptime Kuma">
                                     </div>
-                                    <span id="notifyUptimeWarn" style="color:#b71c1c;display:none">⚠️</span>
+                                    <span id="notifyUptimeWarn" role="img" aria-label="Notifier problem (hover for details)" style="color:#b71c1c;display:none">⚠️</span>
                                 </div>
                             </div>
                             <div class="row mb-2 align-items-center">
@@ -401,9 +266,9 @@
                                     <div
                                         class="form-check form-switch d-inline-flex align-items-center justify-content-end">
                                         <input class="form-check-input proxied-toggle" type="checkbox"
-                                            id="notifyShoutrrrSwitch">
+                                            id="notifyShoutrrrSwitch" aria-label="Notify Shoutrrr">
                                     </div>
-                                    <span id="notifyShoutrrrWarn" style="color:#b71c1c;display:none">⚠️</span>
+                                    <span id="notifyShoutrrrWarn" role="img" aria-label="Notifier problem (hover for details)" style="color:#b71c1c;display:none">⚠️</span>
                                 </div>
                             </div>
                             <div class="mt-auto d-flex justify-content-between align-items-center">
@@ -420,9 +285,9 @@
                             <form id="notifiersEditForm">
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <label class="form-label small mb-0">Healthchecks URL</label>
+                                        <label class="form-label small mb-0" for="edit_HEALTHCHECKS">Healthchecks URL</label>
                                         <div class="form-check form-switch">
-                                            <input id="edit_HEALTHCHECKS_ENABLED"
+                                            <input id="edit_HEALTHCHECKS_ENABLED" aria-label="Healthchecks on"
                                                 class="form-check-input proxied-toggle" type="checkbox">
                                         </div>
                                     </div>
@@ -430,9 +295,9 @@
                                 </div>
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <label class="form-label small mb-0">Uptime Kuma Push URL</label>
+                                        <label class="form-label small mb-0" for="edit_UPTIMEKUMA">Uptime Kuma Push URL</label>
                                         <div class="form-check form-switch">
-                                            <input id="edit_UPTIMEKUMA_ENABLED" class="form-check-input proxied-toggle"
+                                            <input id="edit_UPTIMEKUMA_ENABLED" aria-label="Uptime Kuma on" class="form-check-input proxied-toggle"
                                                 type="checkbox">
                                         </div>
                                     </div>
@@ -440,9 +305,9 @@
                                 </div>
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <label class="form-label small mb-0">Shoutrrr URLs (newline separated)</label>
+                                        <label class="form-label small mb-0" for="edit_SHOUTRRR">Shoutrrr URLs (one per line)</label>
                                         <div class="form-check form-switch">
-                                            <input id="edit_SHOUTRRR_ENABLED" class="form-check-input proxied-toggle"
+                                            <input id="edit_SHOUTRRR_ENABLED" aria-label="Shoutrrr on" class="form-check-input proxied-toggle"
                                                 type="checkbox">
                                         </div>
                                     </div>
@@ -463,9 +328,7 @@
             </div>
         </div>
     </div>
-            <!-- removed: notifiersSaveMsg moved inline to main view -->
 
-            <script src="/socket.io/socket.io.js"></script>
             <footer class="page-footer">
                 <div class="container d-flex justify-content-between align-items-center">
                     <div class="small text-muted">Cloudflare DDNS Updater for Umbrel by Olly Stedall. Powered by <a
@@ -477,819 +340,8 @@
                             width="114" style="border: 0; border-radius: 6px; vertical-align: middle;"></iframe></div>
                 </div>
             </footer>
-            <script>
-                const socket = io();
-                const logsEl = document.getElementById('logs');
-                socket.on('log', (data) => { logsEl.textContent = data; logsEl.scrollTop = logsEl.scrollHeight; });
-
-                // Load version dynamically
-                (async () => {
-                    try {
-                        const versionResp = await fetch('/api/version');
-                        const versionData = await versionResp.json();
-                        document.getElementById('versionBadge').textContent = versionData.version;
-                    } catch (e) {
-                        console.error('Failed to load version:', e);
-                    }
-                })();
-                (async () => { try { const r = await fetch('/api/logs?tail=500'); const t = await r.text(); logsEl.textContent = t; logsEl.scrollTop = logsEl.scrollHeight; } catch (e) { } })();
-
-                const configEditForm = document.getElementById('configEdit');
-                const ipv4LastUpdatedEl = document.getElementById('ipv4LastUpdated');
-                const ipv6LastUpdatedEl = document.getElementById('ipv6LastUpdated');
-                const ipv4UpdateContainer = document.getElementById('ipv4UpdateContainer');
-                const ipv6UpdateContainer = document.getElementById('ipv6UpdateContainer');
-                const startBtn = document.getElementById('start');
-                const stopBtn = document.getElementById('stop');
-                const ipv4El = document.getElementById('ipv4');
-                const ipv6El = document.getElementById('ipv6');
-                const ipv4Container = document.getElementById('ipv4Container');
-                const ipv6Container = document.getElementById('ipv6Container');
-                const statusErrorEl = document.getElementById('statusError');
-                const cfgTokenStatus = document.getElementById('cfgTokenStatus');
-                const cfgDomainsStatus = document.getElementById('cfgDomainsStatus');
-                const proxiedMainSwitch = document.getElementById('proxiedMainSwitch');
-                const ipv4MainSwitch = document.getElementById('ipv4MainSwitch');
-                const ipv6MainSwitch = document.getElementById('ipv6MainSwitch');
-                const editConfigBtn = document.getElementById('editConfigBtn');
-                const configMainView = document.getElementById('configMainView');
-                const configEditView = document.getElementById('configEditView');
-                const editTokenField = document.getElementById('edit_CLOUDFLARE_API_TOKEN');
-                const editDomainsField = document.getElementById('edit_DOMAINS');
-                const editProxiedField = document.getElementById('edit_PROXIED');
-                const editIPv4Switch = document.getElementById('edit_IPV4_SUPPORT');
-                const editIPv6Switch = document.getElementById('edit_IPV6_SUPPORT');
-                const saveConfigBtn = document.getElementById('saveConfigBtn');
-                const cancelConfigBtn = document.getElementById('cancelConfigBtn');
-
-                function showAlert(msg) { alert(msg); }
-
-                // Save some settings. The server merges a partial update into what
-                // it has stored, so callers send only the fields they change
-                // (sending a whole fetched snapshot could overwrite a change made
-                // in between).
-                async function postConfig(fields) {
-                    const r = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fields) });
-                    if (!r.ok) throw new Error('HTTP ' + r.status);
-                    return r.json();
-                }
-
-                // Run fn now and then every ms after the previous run has finished
-                // (setInterval with an async fn starts new runs while slow ones are
-                // still waiting, e.g. on a Cloudflare timeout)
-                function every(ms, fn) {
-                    const run = async () => { try { await fn(); } catch (e) { } setTimeout(run, ms); };
-                    run();
-                }
-
-                function showTempMessage(elId, msg, success = true, timeout = 4000) {
-                    try {
-                        const el = document.getElementById(elId);
-                        if (!el) return;
-                        el.style.display = '';
-                        el.className = success ? 'text-success small p-2' : 'text-danger small p-2';
-                        el.innerText = msg;
-                        setTimeout(() => { try { el.style.display = 'none'; el.innerText = ''; } catch (e) { } }, timeout);
-                    } catch (e) { console.error('showTempMessage failed', e); }
-                }
-
-                // Messages shown inside an open edit form (the main view's message
-                // area is hidden while editing, so errors there were invisible)
-                function showFormMessage(elId, msg, kind) {
-                    const el = document.getElementById(elId);
-                    if (!el) return;
-                    if (!msg) { el.style.display = 'none'; el.textContent = ''; return; }
-                    el.className = 'small mt-2 p-2 rounded ' + (kind === 'warn' ? 'bg-warning-subtle text-warning-emphasis' : 'bg-danger-subtle text-danger-emphasis');
-                    el.textContent = msg;
-                    el.style.display = '';
-                }
-
-                function escapeHtml(s) {
-                    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-                }
-
-                // Names that look like a main domain (example.com, example.co.uk),
-                // as opposed to a subdomain such as home.example.com
-                const TWO_PART_SUFFIXES = ['co.uk', 'org.uk', 'me.uk', 'ltd.uk', 'plc.uk', 'net.uk', 'ac.uk', 'gov.uk',
-                    'com.au', 'net.au', 'org.au', 'co.nz', 'net.nz', 'org.nz', 'co.za', 'com.br', 'co.jp', 'co.in', 'com.mx'];
-                function looksLikeMainDomain(d) {
-                    const labels = d.toLowerCase().split('.');
-                    if (labels.length === 2) return true;
-                    return labels.length === 3 && TWO_PART_SUFFIXES.includes(labels.slice(1).join('.'));
-                }
-
-                function isValidUrl(s) {
-                    if (!s) return false;
-                    try { const u = new URL(s); return u.protocol === 'http:' || u.protocol === 'https:'; } catch (e) { return false; }
-                }
-
-                // Shoutrrr URLs use the service as the scheme (discord://, ntfy://,
-                // generic+https://...), so any scheme:// URL is allowed. No spaces or
-                // commas: the URLs are stored comma-separated in the env file.
-                function isValidShoutrrrUrl(s) {
-                    return /^[a-z][a-z0-9+.-]*:\/\/[^\s,]+$/i.test(s || '');
-                }
-
-                let currentConfig = null;
-                let lastServiceInfo = null;
-
-                // The page shows its switches and status once both have loaded
-                // (see .js-state); after 5 s it shows them regardless
-                const notReady = new Set(['config', 'status']);
-                function markReady(part) {
-                    notReady.delete(part);
-                    if (!notReady.size) document.body.classList.add('ready');
-                }
-                setTimeout(() => document.body.classList.add('ready'), 5000);
-
-                // Switches with a save in flight. Renders skip them, so a periodic
-                // refresh can't flip a switch back to its old value mid-save (which
-                // looked like the first click had been ignored).
-                const savingSwitches = new Set();
-                function setSwitch(sw, checked) { if (!savingSwitches.has(sw)) sw.checked = checked; }
-
-                // Set after Enable/Disable is clicked, until status.json (written by
-                // the wrapper, which checks every few seconds) shows the change.
-                let pendingService = null;
-
-                function ipv6SupportOn() {
-                    const cfg = currentConfig || {};
-                    return !cfg.IP6_PROVIDER || cfg.IP6_PROVIDER !== 'none';
-                }
-
-                function renderServiceButtons(info) {
-                    if (pendingService && (info.enabled === pendingService.enabled || Date.now() > pendingService.until)) {
-                        pendingService = null;
-                        startBtn.textContent = 'Enable';
-                        stopBtn.textContent = 'Disable';
-                    }
-                    if (pendingService) {
-                        startBtn.disabled = true;
-                        stopBtn.disabled = true;
-                        return;
-                    }
-                    // Enable needs a token; before the config has loaded, don't block it
-                    const hasToken = !currentConfig || !!(currentConfig.CLOUDFLARE_API_TOKEN || currentConfig.API_KEY);
-                    startBtn.disabled = !!info.enabled || !hasToken;
-                    stopBtn.disabled = !info.enabled;
-                }
-
-                async function updateStatus() {
-                    const r = await fetch('/api/service/status');
-                    const info = await r.json();
-                    lastServiceInfo = info;
-                    const state = info.enabled ? (info.running ? 'running' : (info.status || 'starting')) : 'disabled';
-                    document.getElementById('statusBoxVal').innerText = state;
-                    renderServiceButtons(info);
-                    markReady('status');
-                    // show error if provided
-                    if (info.error) {
-                        statusErrorEl.innerText = info.error;
-                    } else statusErrorEl.innerText = '';
-                    // Update config summary badges if we have config
-                    if (currentConfig) renderConfigMain(currentConfig, lastServiceInfo);
-                    // Update last update timestamps for IPv4 and IPv6 separately
-                    try {
-                        const lu = await (await fetch('/api/last-update')).json();
-
-                        // The time of the last real record change. Until there has
-                        // been one: "Already up to date" once Cloudflare has been
-                        // checked, otherwise "Not checked yet".
-                        const describeUpdate = (t) => t ? new Date(t).toLocaleString()
-                            : (lu.lastSuccessfulCheck ? 'Already up to date' : 'Not checked yet');
-                        ipv4LastUpdatedEl.innerText = describeUpdate(lu.ipv4Update);
-                        // IPv6 is only shown while IPv6 support is on
-                        ipv6LastUpdatedEl.innerText = describeUpdate(lu.ipv6Update);
-                        ipv6UpdateContainer.style.display = ipv6SupportOn() ? '' : 'none';
-
-                        // Check for staleness using the last successful CHECK (change
-                        // or confirmed no-op), not the last genuine record change - a
-                        // stable home IP can legitimately go unchanged for days, which
-                        // isn't a sign anything is broken.
-                        const lastCheck = lu.lastSuccessfulCheck;
-                        if (lastCheck) {
-                            const age = (Date.now() - new Date(lastCheck).getTime()) / 1000 / 60; // minutes
-                            if (age > 15 && info.running) {
-                                const warn = document.getElementById('warning');
-                                warn.style.display = 'block';
-                                warn.innerText = `No successful check in the last ${Math.round(age)} minutes.`;
-                            } else {
-                                const warn = document.getElementById('warning');
-                                if (!info.error) { warn.style.display = 'none'; warn.innerText = ''; }
-                            }
-                        }
-                    } catch (e) { }
-                    try {
-                        const publicIp = await (await fetch('/api/public-ip')).json();
-                        ipv4El.innerText = publicIp.ipv4 || 'n/a';
-                        if (publicIp.ipv6 && ipv6SupportOn()) {
-                            ipv6El.innerText = publicIp.ipv6;
-                            ipv6Container.style.display = '';
-                        } else {
-                            ipv6Container.style.display = 'none';
-                        }
-                    } catch (e) { }
-                }
-                every(3000, updateStatus);
-
-
-                // Show "Enabling..." / "Disabling..." straight away and keep both
-                // buttons disabled until the wrapper reports the new state
-                async function setService(enable) {
-                    const btn = enable ? startBtn : stopBtn;
-                    pendingService = { enabled: enable, until: Date.now() + 15000 };
-                    btn.textContent = enable ? 'Enabling...' : 'Disabling...';
-                    startBtn.disabled = true;
-                    stopBtn.disabled = true;
-                    try {
-                        const r = await fetch(enable ? '/api/service/start' : '/api/service/stop', { method: 'POST' });
-                        if (!r.ok) {
-                            pendingService = null;
-                            startBtn.textContent = 'Enable';
-                            stopBtn.textContent = 'Disable';
-                            let msg = 'Unknown';
-                            try { msg = (await r.json()).error || msg; } catch (e) { }
-                            showAlert((enable ? 'Failed to enable: ' : 'Failed to disable: ') + msg);
-                        }
-                    } catch (e) {
-                        pendingService = null;
-                        startBtn.textContent = 'Enable';
-                        stopBtn.textContent = 'Disable';
-                        showAlert((enable ? 'Enable' : 'Disable') + ' failed: ' + String(e));
-                    }
-                    updateStatus();
-                }
-                startBtn.addEventListener('click', () => setService(true));
-                stopBtn.addEventListener('click', () => setService(false));
-
-                configEditForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    // Save action handled by Save button; prevent default
-                });
-
-                // Utility: validate comma-separated FQDNs
-                function validateDomains(domainsStr) {
-                    if (!domainsStr) return { valid: false, reason: 'none' };
-                    const parts = domainsStr.split(',').map(s => s.trim()).filter(Boolean);
-                    if (parts.length === 0) return { valid: false, reason: 'none' };
-                    const re = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}$/;
-                    for (const p of parts) {
-                        if (!re.test(p)) return { valid: false, reason: 'invalid' };
-                    }
-                    return { valid: true, parts };
-                }
-
-                // Extract last detected public IPs from logs
-                async function getDetectedIPs() {
-                    try {
-                        const r = await fetch('/api/logs');
-                        const logs = await r.text();
-                        const ipv4Match = logs.match(/Detected the IPv4 address\s+([0-9.]+)/i);
-                        const ipv6Match = logs.match(/Detected the IPv6 address\s+([0-9a-f:]+)/i);
-                        return { ipv4: ipv4Match ? ipv4Match[1] : null, ipv6: ipv6Match ? ipv6Match[1] : null, raw: logs };
-                    } catch (e) { return { ipv4: null, ipv6: null, raw: '' }; }
-                }
-
-                // Derive per-domain status by heuristics from logs per requested rules
-                async function domainStatusSymbol(cfg, serviceInfo, domain) {
-                    const tokenSet = !!(cfg && cfg.CLOUDFLARE_API_TOKEN);
-                    const tokenInvalid = serviceInfo && typeof serviceInfo.error === 'string' && /Invalid Cloudflare API token/i.test(serviceInfo.error);
-                    // Fetch logs + detected IPs
-                    const { raw } = await getDetectedIPs();
-                    const lowerLogs = raw.toLowerCase();
-                    const name = (domain || '').toLowerCase();
-                    // If we cannot reach Cloudflare or logs empty while enabled → ⛔️
-                    const networkDown = /failed to send http\(s\) request|context deadline exceeded|timeout|network is unreachable/i.test(lowerLogs);
-                    if (networkDown && (!tokenSet || tokenInvalid || (serviceInfo && serviceInfo.running))) return '⛔️';
-
-                    // If logs say records are already up to date for this domain → ✅
-                    const idx = lowerLogs.lastIndexOf(name);
-                    if (idx !== -1) {
-                        const window = lowerLogs.substring(Math.max(0, idx - 300), Math.min(lowerLogs.length, idx + 300));
-                        if (/already up to date/i.test(window)) return '✅';
-                    }
-
-                    // If token missing or invalid AND not up-to-date → ⚠️
-                    if (!tokenSet || tokenInvalid) return '⚠️';
-
-                    // Otherwise token valid, not up-to-date yet → ⏳
-                    return '⏳';
-                }
-
-                function renderConfigMain(cfg, serviceInfo) {
-                    const tokenSet = !!(cfg && cfg.CLOUDFLARE_API_TOKEN);
-                    const tokenInvalid = serviceInfo && typeof serviceInfo.error === 'string' && /Invalid Cloudflare API token/i.test(serviceInfo.error);
-
-                    if (!tokenSet) {
-                        cfgTokenStatus.innerText = '⚠️ Missing';
-                    } else if (tokenInvalid) {
-                        cfgTokenStatus.innerText = '⚠️ Invalid';
-                    } else {
-                        cfgTokenStatus.innerText = '✅';
-                    }
-
-                    const domains = (cfg && (cfg.DOMAINS || '')) || '';
-                    const dv = validateDomains(domains);
-                    if (!domains) cfgDomainsStatus.innerText = '⚠️ None';
-                    else if (!dv.valid) cfgDomainsStatus.innerText = '⚠️ Invalid';
-                    else cfgDomainsStatus.innerText = '✅';
-
-                    // set main proxied switch
-                    setSwitch(proxiedMainSwitch, (cfg && (cfg.PROXIED === 'true' || cfg.PROXIED === true)) || false);
-
-                    // IPv4/IPv6 support switches (default ON if unset)
-                    const v4On = !cfg || cfg.IP4_PROVIDER === undefined || cfg.IP4_PROVIDER === '' ? true : (cfg.IP4_PROVIDER !== 'none');
-                    const v6On = !cfg || cfg.IP6_PROVIDER === undefined || cfg.IP6_PROVIDER === '' ? true : (cfg.IP6_PROVIDER !== 'none');
-                    setSwitch(ipv4MainSwitch, !!v4On);
-                    setSwitch(ipv6MainSwitch, !!v6On);
-                    const proxiedOn = (cfg && (cfg.PROXIED === 'true' || cfg.PROXIED === true)) || false;
-                    document.getElementById('ipv6ProxiedWarn').style.display = (v6On && proxiedOn) ? '' : 'none';
-                }
-
-                // Save a switch change. Sends only the changed fields (the server
-                // merges a partial update). The switch is disabled until the save
-                // finishes, then everything is re-rendered from the server.
-                async function saveSwitch(sws, payload, msgElId, okMsg, failMsg) {
-                    sws.forEach(sw => { savingSwitches.add(sw); sw.disabled = true; });
-                    try {
-                        await postConfig(payload);
-                        if (currentConfig) Object.assign(currentConfig, payload);
-                        showTempMessage(msgElId, okMsg, true);
-                    } catch (e) {
-                        console.error(failMsg, e);
-                        showTempMessage(msgElId, failMsg, false);
-                    } finally {
-                        sws.forEach(sw => { savingSwitches.delete(sw); sw.disabled = false; });
-                    }
-                    // Re-render from the server: shows the saved state, or puts the
-                    // switch back if the save failed
-                    try { await load(); } catch (e) { }
-                    updateStatus();
-                }
-
-                function toggleProxied(enabled) {
-                    return saveSwitch([proxiedMainSwitch], { PROXIED: enabled ? 'true' : 'false' },
-                        'configMainSaveMsg', `Proxied ${enabled ? 'enabled' : 'disabled'}.`, 'Failed to toggle proxied.');
-                }
-
-                function fillConfigEdit(cfg) {
-                    editTokenField.value = cfg.CLOUDFLARE_API_TOKEN || '';
-                    editDomainsField.value = cfg.DOMAINS || '';
-                    editProxiedField.checked = cfg.PROXIED === 'true' || cfg.PROXIED === true;
-                    // IPv4/IPv6 default ON
-                    editIPv4Switch.checked = (cfg.IP4_PROVIDER === undefined || cfg.IP4_PROVIDER === '' || cfg.IP4_PROVIDER !== 'none');
-                    editIPv6Switch.checked = (cfg.IP6_PROVIDER === undefined || cfg.IP6_PROVIDER === '' || (cfg.IP6_PROVIDER !== 'none'));
-                }
-
-                // ensure constraint: at least one must be on when toggling
-                const enforceAtLeastOne = (changed) => {
-                    const v4 = editIPv4Switch.checked;
-                    const v6 = editIPv6Switch.checked;
-                    if (!v4 && !v6) {
-                        if (changed === 'v4') editIPv6Switch.checked = true; else editIPv4Switch.checked = true;
-                    }
-                };
-                editIPv4Switch.onchange = () => enforceAtLeastOne('v4');
-                editIPv6Switch.onchange = () => enforceAtLeastOne('v6');
-
-                editConfigBtn.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    // Open at once from the config already loaded (refreshed every
-                    // 30 s and after each save). Waiting for the server first made
-                    // the button seem unresponsive.
-                    if (!currentConfig) {
-                        try { currentConfig = await (await fetch('/api/config')).json(); } catch (err) { return; }
-                    }
-                    fillConfigEdit(currentConfig);
-                    configMainView.style.display = 'none';
-                    configEditView.style.display = '';
-                });
-
-                cancelConfigBtn.addEventListener('click', (e) => { e.preventDefault(); resetConfigForm(); configEditView.style.display = 'none'; configMainView.style.display = ''; });
-
-                saveConfigBtn.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    const token = editTokenField.value.trim();
-                    const domains = editDomainsField.value.trim();
-                    const proxied = editProxiedField.checked;
-                    const v4On = editIPv4Switch.checked;
-                    const v6On = editIPv6Switch.checked;
-                    const dv = validateDomains(domains);
-                    if (dv.reason === 'invalid') {
-                        showFormMessage('configEditMsg', 'Domains are invalid. Enter names only, separated by commas, for example home.example.com (no https:// and no slashes).');
-                        return;
-                    }
-                    // enforce at least one of IPv4/IPv6 on
-                    if (!v4On && !v6On) {
-                        showFormMessage('configEditMsg', 'At least one of IPv4 or IPv6 must be enabled.');
-                        return;
-                    }
-                    // A main domain (example.com) newly added: its A record may point
-                    // at a website hosted elsewhere, which this app would replace.
-                    // Ask once; a second click on "Save anyway" goes ahead.
-                    const saved = ((currentConfig && currentConfig.DOMAINS) || '').split(',').map(x => x.trim().toLowerCase());
-                    const mainDomains = (dv.parts || []).filter(d => looksLikeMainDomain(d) && !saved.includes(d.toLowerCase()));
-                    if (mainDomains.length && saveConfigBtn.dataset.confirmed !== domains) {
-                        saveConfigBtn.dataset.confirmed = domains;
-                        saveConfigBtn.textContent = 'Save anyway';
-                        showFormMessage('configEditMsg', `${mainDomains.join(', ')} looks like a main domain. This app will point it at your home, replacing whatever it points at now (for example a website or email service hosted elsewhere). If that is what you want, click Save anyway. Otherwise use a subdomain such as home.${mainDomains[0]}.`, 'warn');
-                        return;
-                    }
-                    try {
-                        await postConfig({
-                            CLOUDFLARE_API_TOKEN: token,
-                            DOMAINS: domains,
-                            PROXIED: proxied ? 'true' : 'false',
-                            IP4_PROVIDER: v4On ? 'cloudflare.trace' : 'none',
-                            IP6_PROVIDER: v6On ? 'cloudflare.trace' : 'none'
-                        });
-                        resetConfigForm();
-                        // refresh UI
-                        configEditView.style.display = 'none';
-                        configMainView.style.display = '';
-                        await load();
-                        await updateStatus();
-                        showTempMessage('configMainSaveMsg', 'Settings saved.', true);
-                    } catch (e) { showFormMessage('configEditMsg', 'Save failed: ' + String(e)); }
-                });
-
-                // Clear the form's message and the "Save anyway" state
-                function resetConfigForm() {
-                    showFormMessage('configEditMsg', '');
-                    delete saveConfigBtn.dataset.confirmed;
-                    saveConfigBtn.textContent = 'Save';
-                    editTokenField.type = 'password';
-                    toggleTokenBtn.textContent = 'Show';
-                }
-                editDomainsField.addEventListener('input', () => { if (saveConfigBtn.dataset.confirmed) resetConfigForm(); });
-
-                const toggleTokenBtn = document.getElementById('toggleTokenBtn');
-                toggleTokenBtn.addEventListener('click', () => {
-                    const show = editTokenField.type === 'password';
-                    editTokenField.type = show ? 'text' : 'password';
-                    toggleTokenBtn.textContent = show ? 'Hide' : 'Show';
-                });
-
-                proxiedMainSwitch.addEventListener('change', async () => {
-                    // Turning Proxied off publishes the home IP address in DNS
-                    if (!proxiedMainSwitch.checked && !window.confirm('Turn Proxied off?\n\nYour home IP address will be published in DNS for anyone to see, and visitors will connect to your home directly instead of through Cloudflare. Only do this for services that are not websites.')) {
-                        proxiedMainSwitch.checked = true;
-                        return;
-                    }
-                    await toggleProxied(proxiedMainSwitch.checked);
-                });
-
-                function toggleIPSupport(kind, enabled) {
-                    // The two switches show the current state
-                    let v4On = ipv4MainSwitch.checked;
-                    let v6On = ipv6MainSwitch.checked;
-                    // enforce at least one ON by auto-enabling the other if needed
-                    if (!v4On && !v6On) {
-                        if (kind === 'v4') { v6On = true; ipv6MainSwitch.checked = true; }
-                        else { v4On = true; ipv4MainSwitch.checked = true; }
-                    }
-                    return saveSwitch([ipv4MainSwitch, ipv6MainSwitch], {
-                        IP4_PROVIDER: v4On ? 'cloudflare.trace' : 'none',
-                        IP6_PROVIDER: v6On ? 'cloudflare.trace' : 'none'
-                    }, 'configMainSaveMsg', `${kind === 'v4' ? 'IPv4' : 'IPv6'} ${enabled ? 'enabled' : 'disabled'}.`, 'Failed to update IP support setting.');
-                }
-
-                ipv4MainSwitch.addEventListener('change', async () => { await toggleIPSupport('v4', ipv4MainSwitch.checked); });
-                ipv6MainSwitch.addEventListener('change', async () => { await toggleIPSupport('v6', ipv6MainSwitch.checked); });
-
-                async function load() {
-                    const r = await fetch('/api/config');
-                    const data = await r.json();
-                    currentConfig = data;
-                    // Render switches and ticks now; the domain table below waits
-                    // for Cloudflare (about a second)
-                    renderNotifiers(data);
-                    renderConfigMain(data, lastServiceInfo);
-                    markReady('config');
-                    const summarySettings = document.getElementById('summary-settings');
-                    const domainsStr = data.DOMAINS || '';
-                    const proxied = data.PROXIED === 'true' || data.PROXIED === true;
-                    const ipv4Enabled = !data.IP4_PROVIDER || data.IP4_PROVIDER !== 'none';
-                    const ipv6Enabled = !data.IP6_PROVIDER || data.IP6_PROVIDER !== 'none';
-
-                    if (!domainsStr.trim()) {
-                        summarySettings.innerHTML = `<div class="col-12"><div class="p-2 border rounded">⚠️ No domains configured</div></div>`;
-                    } else {
-                        const parts = domainsStr.split(',').map(s => s.trim()).filter(Boolean);
-
-                        // Fetch domain status from backend
-                        let rows = '';
-                        try {
-                            const resp = await (await fetch('/api/domain-status')).json();
-                            const byDomain = new Map(resp.domains && resp.domains.map(x => [x.domain, x]) || []);
-
-                            // Get current public IPs to check if IPv6 is available
-                            const publicIp = await (await fetch('/api/public-ip')).json();
-                            const hasIPv6 = !!publicIp.ipv6;
-
-                            rows = parts.map((d) => {
-                                const info = byDomain.get(d);
-
-                                // Determine IPv4 status symbol
-                                let ipv4Symbol = '⏳';
-                                if (!info) ipv4Symbol = '⏳';
-                                else if (info.ipv4Match) ipv4Symbol = '✅';
-                                else if (info.status === 'pending') ipv4Symbol = '⏳';
-                                else if (info.status === 'missing' || info.status === 'invalid') ipv4Symbol = '⚠️';
-                                else if (info.status === 'error') ipv4Symbol = '⛔️';
-
-                                // Determine IPv6 status symbol
-                                let ipv6Symbol = '⏳';
-                                if (!hasIPv6 && ipv6Enabled) {
-                                    // Network doesn't support IPv6
-                                    ipv6Symbol = '⚠️';
-                                } else if (!info) {
-                                    ipv6Symbol = '⏳';
-                                } else if (info.ipv6Match) {
-                                    // AAAA record matches current public IPv6
-                                    ipv6Symbol = '✅';
-                                } else if (info.status === 'pending') {
-                                    // Records differ, update anticipated
-                                    ipv6Symbol = '⏳';
-                                } else if (info.status === 'missing' || info.status === 'invalid') {
-                                    ipv6Symbol = '⚠️';
-                                } else if (info.status === 'error') {
-                                    ipv6Symbol = '⛔️';
-                                }
-
-                                // Determine IPv4 proxied status display
-                                let ipv4ProxiedDisplay = '⛔️';
-                                if (info && info.ipv4Proxied !== null) {
-                                    const currentlyProxied = info.ipv4Proxied;
-                                    const configProxied = proxied;
-                                    if (currentlyProxied === configProxied) {
-                                        ipv4ProxiedDisplay = currentlyProxied ? '☁️ Yes' : 'No';
-                                    } else if (currentlyProxied && !configProxied) {
-                                        ipv4ProxiedDisplay = '☁️ Yes ‣ No ⏳';
-                                    } else {
-                                        ipv4ProxiedDisplay = 'No ‣ ☁️ Yes ⏳';
-                                    }
-                                } else if (info && info.status === 'error') {
-                                    ipv4ProxiedDisplay = '⛔️';
-                                }
-
-                                // Determine IPv6 proxied status display
-                                let ipv6ProxiedDisplay = '⛔️';
-                                if (info && info.ipv6Proxied !== null) {
-                                    const currentlyProxied = info.ipv6Proxied;
-                                    const configProxied = proxied;
-                                    if (currentlyProxied === configProxied) {
-                                        ipv6ProxiedDisplay = currentlyProxied ? '☁️ Yes' : 'No';
-                                    } else if (currentlyProxied && !configProxied) {
-                                        ipv6ProxiedDisplay = '☁️ Yes ‣ No ⏳';
-                                    } else {
-                                        ipv6ProxiedDisplay = 'No ‣ ☁️ Yes ⏳';
-                                    }
-                                } else if (info && info.status === 'error') {
-                                    ipv6ProxiedDisplay = '⛔️';
-                                }
-
-                                // Say why a domain is stuck, using the server's reason
-                                const reasons = {
-                                    'Zone not found': 'Not found in your Cloudflare account. Check the spelling, and that the domain is in the account the token belongs to.',
-                                    'Auth error': 'Cloudflare refused the token for this domain. Check the token has Edit zone DNS access to it.',
-                                    'Network error': 'Could not reach Cloudflare to check this domain.',
-                                    'Token missing': 'Add a Cloudflare API token in Edit Config.'
-                                };
-                                const why = info && info.status !== 'ok' && reasons[info.reason];
-                                let row = `<tr><td>${escapeHtml(d)}${why ? `<div class="small text-muted">${why}</div>` : ''}</td>`;
-
-                                // IPv4 columns
-                                if (ipv4Enabled) {
-                                    row += `<td class="text-center">${ipv4ProxiedDisplay}</td>`;
-                                    row += `<td class="text-center">${ipv4Symbol}</td>`;
-                                }
-
-                                // IPv6 columns
-                                if (ipv6Enabled) {
-                                    row += `<td class="text-center">${ipv6ProxiedDisplay}</td>`;
-                                    row += `<td class="text-center">${ipv6Symbol}</td>`;
-                                }
-
-                                row += '</tr>';
-                                return row;
-                            }).join('');
-                        } catch (e) {
-                            // Fallback if API fails
-                            rows = parts.map((d) => {
-                                let row = `<tr><td>${escapeHtml(d)}</td>`;
-                                if (ipv4Enabled) {
-                                    row += `<td class="text-center">${proxied ? '☁️ Yes' : 'No'}</td>`;
-                                    row += `<td class="text-center">⛔️</td>`;
-                                }
-                                if (ipv6Enabled) {
-                                    row += `<td class="text-center">${proxied ? '☁️ Yes' : 'No'}</td>`;
-                                    row += `<td class="text-center">⛔️</td>`;
-                                }
-                                row += '</tr>';
-                                return row;
-                            }).join('');
-                        }
-
-                        // Build single table with dynamic columns and two-row headers
-                        let html = '<div class="col-12"><div class="table-responsive"><table class="table table-sm mb-0"><thead class="small text-muted">';
-
-                        // First header row with spanning headers
-                        html += '<tr><th rowspan="2">Domains</th>';
-                        if (ipv4Enabled) html += '<th colspan="2" class="text-center">🌐 IPv4 → A Records</th>';
-                        if (ipv6Enabled) html += '<th colspan="2" class="text-center">🌐 IPv6 → AAAA Records</th>';
-                        html += '</tr>';
-
-                        // Second header row with column headers
-                        html += '<tr>';
-                        if (ipv4Enabled) html += '<th class="text-center">Proxied</th><th class="text-center">Status</th>';
-                        if (ipv6Enabled) html += '<th class="text-center">Proxied</th><th class="text-center">Status</th>';
-                        html += '</tr>';
-
-                        html += `</thead><tbody>${rows}</tbody></table></div></div>`;
-
-                        summarySettings.innerHTML = html;
-                    }
-                    // Populate edit fields, unless the user is editing them (this runs
-                    // every 30 s and used to wipe out half-typed changes)
-                    if (configEditView.style.display === 'none') fillConfigEdit(data);
-                    // Enable/Disable state is set by updateStatus() alone
-                    if (lastServiceInfo) renderServiceButtons(lastServiceInfo);
-                    // Render notifiers view
-                    renderNotifiers(data);
-                    // Update the config main badges
-                    renderConfigMain(data, lastServiceInfo);
-                }
-                // Refresh config and the domain status table (which asks Cloudflare,
-                // so less often than updateStatus)
-                every(30000, load);
-
-                // --- Notifiers UI logic ---
-                const notifyHealthchecksSwitch = document.getElementById('notifyHealthchecksSwitch');
-                const notifyUptimeSwitch = document.getElementById('notifyUptimeSwitch');
-                const notifyShoutrrrSwitch = document.getElementById('notifyShoutrrrSwitch');
-                const notifyHealthchecksWarn = document.getElementById('notifyHealthchecksWarn');
-                const notifyUptimeWarn = document.getElementById('notifyUptimeWarn');
-                const notifyShoutrrrWarn = document.getElementById('notifyShoutrrrWarn');
-                const editNotifiersBtn = document.getElementById('editNotifiersBtn');
-                const notifiersView = document.getElementById('notifiersView');
-                const notifiersEdit = document.getElementById('notifiersEdit');
-                const saveNotifiersBtn = document.getElementById('saveNotifiersBtn');
-                const cancelNotifiersBtn = document.getElementById('cancelNotifiersBtn');
-
-                function renderNotifiers(cfg) {
-                    // enable/disable switches based on presence of URLs
-                    const hcUrl = cfg.HEALTHCHECKS || '';
-                    const ukUrl = cfg.UPTIMEKUMA || '';
-                    const srUrl = cfg.SHOUTRRR || '';
-                    setSwitch(notifyHealthchecksSwitch, cfg.HEALTHCHECKS_ENABLED === 'yes');
-                    setSwitch(notifyUptimeSwitch, cfg.UPTIMEKUMA_ENABLED === 'yes');
-                    setSwitch(notifyShoutrrrSwitch, cfg.SHOUTRRR_ENABLED === 'yes');
-                    if (!savingSwitches.has(notifyHealthchecksSwitch)) notifyHealthchecksSwitch.disabled = !hcUrl;
-                    if (!savingSwitches.has(notifyUptimeSwitch)) notifyUptimeSwitch.disabled = !ukUrl;
-                    if (!savingSwitches.has(notifyShoutrrrSwitch)) notifyShoutrrrSwitch.disabled = !srUrl;
-                    // prefills for editor, unless the user is editing it
-                    if (notifiersEdit.style.display === 'none') fillNotifiersEdit(cfg);
-                }
-
-                function fillNotifiersEdit(cfg) {
-                    document.getElementById('edit_HEALTHCHECKS').value = cfg.HEALTHCHECKS || '';
-                    document.getElementById('edit_UPTIMEKUMA').value = cfg.UPTIMEKUMA || '';
-                    document.getElementById('edit_SHOUTRRR').value = (cfg.SHOUTRRR || '').replace(/,/g, '\n');
-                    document.getElementById('edit_HEALTHCHECKS_ENABLED').checked = cfg.HEALTHCHECKS_ENABLED === 'yes';
-                    document.getElementById('edit_UPTIMEKUMA_ENABLED').checked = cfg.UPTIMEKUMA_ENABLED === 'yes';
-                    document.getElementById('edit_SHOUTRRR_ENABLED').checked = cfg.SHOUTRRR_ENABLED === 'yes';
-                    // Clear any previous error styling
-                    document.getElementById('edit_HEALTHCHECKS').classList.remove('is-invalid');
-                    document.getElementById('edit_UPTIMEKUMA').classList.remove('is-invalid');
-                    document.getElementById('edit_SHOUTRRR').classList.remove('is-invalid');
-                }
-
-                editNotifiersBtn.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    // Open at once from the config already loaded (see editConfigBtn)
-                    if (!currentConfig) {
-                        try { currentConfig = await (await fetch('/api/config')).json(); } catch (err) { return; }
-                    }
-                    fillNotifiersEdit(currentConfig);
-                    notifiersView.style.display = 'none';
-                    notifiersEdit.style.display = '';
-                });
-
-                cancelNotifiersBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    showFormMessage('notifiersEditMsg', '');
-                    // Discard changes: the form is refilled the next time it opens
-                    notifiersEdit.style.display = 'none';
-                    notifiersView.style.display = '';
-                });
-
-                saveNotifiersBtn.addEventListener('click', async (e) => {
-                    e.preventDefault();
-
-                    // Clear previous error styling
-                    const hcField = document.getElementById('edit_HEALTHCHECKS');
-                    const ukField = document.getElementById('edit_UPTIMEKUMA');
-                    const srField = document.getElementById('edit_SHOUTRRR');
-                    hcField.classList.remove('is-invalid');
-                    ukField.classList.remove('is-invalid');
-                    srField.classList.remove('is-invalid');
-
-                    // Get values and toggle states
-                    const hc = hcField.value.trim();
-                    const uk = ukField.value.trim();
-                    const sr = srField.value.trim();
-                    const hcEnabled = document.getElementById('edit_HEALTHCHECKS_ENABLED').checked ? 'yes' : 'no';
-                    const ukEnabled = document.getElementById('edit_UPTIMEKUMA_ENABLED').checked ? 'yes' : 'no';
-                    const srEnabled = document.getElementById('edit_SHOUTRRR_ENABLED').checked ? 'yes' : 'no';
-
-                    // Validate URLs
-                    if (hc && !isValidUrl(hc)) {
-                        hcField.classList.add('is-invalid');
-                        showFormMessage('notifiersEditMsg', 'Invalid URL. It must start with http:// or https://');
-                        return;
-                    }
-                    if (uk && !isValidUrl(uk)) {
-                        ukField.classList.add('is-invalid');
-                        showFormMessage('notifiersEditMsg', 'Invalid URL. It must start with http:// or https://');
-                        return;
-                    }
-
-                    const srLines = sr ? sr.split('\n').map(s => s.trim()).filter(Boolean) : [];
-                    for (const line of srLines) {
-                        if (!isValidShoutrrrUrl(line)) {
-                            srField.classList.add('is-invalid');
-                            showFormMessage('notifiersEditMsg', line.includes(',') ? 'Shoutrrr URLs cannot contain commas.' : 'Invalid Shoutrrr URL. Each line must be a URL such as discord://token@id.');
-                            return;
-                        }
-                    }
-
-                    try {
-                        await postConfig({
-                            HEALTHCHECKS: hc,
-                            HEALTHCHECKS_ENABLED: hcEnabled,
-                            UPTIMEKUMA: uk,
-                            UPTIMEKUMA_ENABLED: ukEnabled,
-                            SHOUTRRR: srLines.join(','),
-                            SHOUTRRR_ENABLED: srEnabled
-                        });
-
-                        // refresh UI
-                        const refreshed = await (await fetch('/api/config')).json();
-                        currentConfig = refreshed;
-                        notifiersEdit.style.display = 'none';
-                        notifiersView.style.display = '';
-                        renderNotifiers(refreshed);
-                        Object.values(notifierWarns).forEach(clearNotifierWarn);
-                        showFormMessage('notifiersEditMsg', '');
-                        showTempMessage('notifiersMainSaveMsg', 'Settings saved.', true);
-                    } catch (e) {
-                        showFormMessage('notifiersEditMsg', 'Save failed: ' + String(e));
-                    }
-                });
-
-                // Toggle handlers send ONLY the one field being changed (via
-                // saveSwitch); the server merges a partial update against its
-                // own current state, so this can't race with (and silently lose)
-                // a concurrent edit such as the notifiers "Save" button.
-                const notifierLabels = { HEALTHCHECKS_ENABLED: 'Healthchecks', UPTIMEKUMA_ENABLED: 'Uptime Kuma', SHOUTRRR_ENABLED: 'Shoutrrr' };
-                const notifierWarns = { HEALTHCHECKS_ENABLED: notifyHealthchecksWarn, UPTIMEKUMA_ENABLED: notifyUptimeWarn, SHOUTRRR_ENABLED: notifyShoutrrrWarn };
-                function clearNotifierWarn(el) { el.style.display = 'none'; el.title = ''; }
-                function onNotifierSwitch(sw, name) {
-                    sw.addEventListener('change', () => clearNotifierWarn(notifierWarns[name]));
-                    sw.addEventListener('change', () => saveSwitch([sw], { [name]: sw.checked ? 'yes' : 'no' },
-                        'notifiersMainSaveMsg', `${notifierLabels[name]} ${sw.checked ? 'enabled' : 'disabled'}.`, 'Failed to update notifier.'));
-                }
-                onNotifierSwitch(notifyHealthchecksSwitch, 'HEALTHCHECKS_ENABLED');
-                onNotifierSwitch(notifyUptimeSwitch, 'UPTIMEKUMA_ENABLED');
-                onNotifierSwitch(notifyShoutrrrSwitch, 'SHOUTRRR_ENABLED');
-
-                // Show a warning next to a notifier when a new delivery failure
-                // appears in the log. It used to switch the notifier off as well,
-                // so one failed ping (say, Uptime Kuma restarting) silently stopped
-                // all later pings. Matches favonia's own messages, e.g. "Failed to
-                // send %s to Healthchecks", "Failed to ping Uptime Kuma", "Failed to
-                // send notifications via Shoutrrr" (internal/heartbeat, notifier).
-                // Only errors that appear after the page loaded count.
-                let lastSeenError = null;
-                async function checkNotifierErrors() {
-                    try {
-                        const r = await fetch('/api/errors');
-                        const err = await r.json();
-                        if (!err.errors) return;
-                        const last = err.errors[err.errors.length - 1] || '';
-                        if (lastSeenError === null || last === lastSeenError) { lastSeenError = last; return; }
-                        lastSeenError = last;
-                        if (!/\b(Failed|Could not)\b/.test(last)) return;
-                        const warn = (el) => { el.style.display = ''; el.title = last.trim(); };
-                        if (/\bHealthchecks\b/.test(last)) warn(notifyHealthchecksWarn);
-                        if (/\bUptime Kuma\b/.test(last)) warn(notifyUptimeWarn);
-                        if (/\bShoutrrr\b/.test(last)) warn(notifyShoutrrrWarn);
-                    } catch (e) { }
-                }
-                every(5000, checkNotifierErrors);
-
-            </script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/app.js"></script>
 
 </body>
 
