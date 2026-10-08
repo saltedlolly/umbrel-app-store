@@ -600,7 +600,37 @@ socket.on('log-append', (text) => showLog(text, true));
 // ---------------------------------------------------------------------------
 // Start
 
-getJSON('/api/version').then(v => { el.version.textContent = v.version; }).catch(() => { });
+// "Report Issue" opens a new GitHub issue with the version filled in and a
+// reminder to update first (the problem may already be fixed)
+function setReportIssueLink(version) {
+    const body = [
+        `**App:** Cloudflare DDNS (saltedlolly App Store)`,
+        `**Version:** ${version}`,
+        '',
+        '> Before reporting, please make sure you are running the latest version: open the App Store on your Umbrel and install any update for Cloudflare DDNS. The problem may already be fixed.',
+        '',
+        '**What happened?**',
+        '',
+        '',
+        '**What did you expect to happen?**',
+        '',
+        '',
+        '**Steps to reproduce**',
+        '',
+        '',
+        '**Relevant lines from Live Logs** (please remove anything private, such as your domain names and IP addresses)',
+        '```',
+        '',
+        '```'
+    ].join('\n');
+    const params = new URLSearchParams({ title: `[Cloudflare DDNS] `, body });
+    $('reportIssue').href = `https://github.com/saltedlolly/umbrel-app-store/issues/new?${params}`;
+}
+
+getJSON('/api/version').then(v => {
+    el.version.textContent = v.version;
+    setReportIssueLink(v.version);
+}).catch(() => setReportIssueLink('unknown'));
 refreshConfig().catch(e => console.error(e)).finally(() => {
     every(5000, refreshState);
 });
