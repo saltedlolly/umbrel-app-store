@@ -512,6 +512,13 @@
                     try { const u = new URL(s); return u.protocol === 'http:' || u.protocol === 'https:'; } catch (e) { return false; }
                 }
 
+                // Shoutrrr URLs use the service as the scheme (discord://, ntfy://,
+                // generic+https://...), so any scheme:// URL is allowed. No spaces or
+                // commas: the URLs are stored comma-separated in the env file.
+                function isValidShoutrrrUrl(s) {
+                    return /^[a-z][a-z0-9+.-]*:\/\/[^\s,]+$/i.test(s || '');
+                }
+
                 let currentConfig = null;
                 let lastServiceInfo = null;
 
@@ -1094,9 +1101,9 @@
 
                     const srLines = sr ? sr.split('\n').map(s => s.trim()).filter(Boolean) : [];
                     for (const line of srLines) {
-                        if (!isValidUrl(line)) {
+                        if (!isValidShoutrrrUrl(line)) {
                             srField.classList.add('is-invalid');
-                            showTempMessage('notifiersMainSaveMsg', 'Invalid URL!', false);
+                            showTempMessage('notifiersMainSaveMsg', line.includes(',') ? 'Shoutrrr URLs cannot contain commas.' : 'Invalid URL!', false);
                             return;
                         }
                     }
