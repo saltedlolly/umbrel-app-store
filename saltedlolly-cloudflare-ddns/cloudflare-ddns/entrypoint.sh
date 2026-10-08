@@ -110,10 +110,22 @@ EOF
 
 load_env() {
   if [ -f "$ENVFILE" ]; then
-    set -a
-    # shellcheck disable=SC1090
-    . "$ENVFILE"
-    set +a
+    # Read KEY=value lines literally. The file used to be sourced as shell
+    # code (`. "$ENVFILE"`), which cut values at the first `&` (e.g. an
+    # Uptime Kuma push URL ending `?status=up&msg=OK&ping=`) and would run
+    # anything after a `;` or `$(`. Values are written unquoted by the UI.
+    while IFS= read -r line || [ -n "$line" ]; do
+      case "$line" in ''|\#*) continue ;; esac
+      key=${line%%=*}
+      [ "$key" = "$line" ] && continue
+      case "$key" in ''|[0-9]*|*[!A-Za-z0-9_]*) continue ;; esac
+      export "$key=${line#*=}"
+    done < "$ENVFILE"
+    # The UI stores Shoutrrr URLs comma-separated (the env file is one line
+    # per key); ddns expects one URL per line
+    case "${SHOUTRRR:-}" in
+      *,*) SHOUTRRR=$(printf '%s' "$SHOUTRRR" | tr ',' '\n'); export SHOUTRRR ;;
+    esac
     # Normalize common 'undefined' values that can be accidentally written
     if [ "$ENABLED" = "undefined" ]; then
       unset ENABLED
