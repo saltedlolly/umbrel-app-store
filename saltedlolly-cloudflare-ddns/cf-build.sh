@@ -851,7 +851,7 @@ if [[ "$LOCAL_TEST" == "true" ]]; then
   echo "Steps to test:"
   echo
   echo "  1. REINSTALL from App Store:"
-  echo "     • Go to App Store → Find 'Cloudflare DDNS Client'"
+  echo "     • Go to App Store → Find 'Cloudflare DDNS'"
   echo "     • Click Install"
   echo "     • This will pull the NEW images from GHCR"
   echo
