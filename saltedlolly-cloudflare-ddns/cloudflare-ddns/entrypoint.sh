@@ -195,9 +195,11 @@ check_for_token_error() {
     return 1
   fi
   txt=$(tail -n 200 "$LOGFILE" 2>/dev/null || true)
-  # Find the most recent "NEW TOKEN CONFIGURED" marker, if any
-  # Only check for errors AFTER this marker (ignore old errors from previous tokens)
-  marker_line=$(echo "$txt" | grep -n "NEW TOKEN CONFIGURED" | tail -1 | cut -d: -f1)
+  # Find the most recent marker, if any, and only check for errors after it:
+  # "NEW TOKEN CONFIGURED" (the UI saved a new token) or "Service enabled via
+  # UI" (the user pressed Enable). Without the second, Enable after a token
+  # error was undone at once, because the old error was still in these lines.
+  marker_line=$(echo "$txt" | grep -n -E "NEW TOKEN CONFIGURED|Service enabled via UI" | tail -1 | cut -d: -f1)
   if [ -n "$marker_line" ]; then
     # Only scan lines after the marker
     txt=$(echo "$txt" | tail -n +$((marker_line + 1)))
@@ -513,6 +515,8 @@ if [ ! -f "$ENVFILE" ]; then
   echo "IP6_PROVIDER=none" > "$ENVFILE"
   log "New install: IPv6 support starts switched off"
 fi
+# The settings file holds the Cloudflare API token: readable by root only
+chmod 600 "$ENVFILE" 2>/dev/null || true
 
 # Initial environment & child
 load_env

@@ -39,7 +39,6 @@ app.get('/api/version', (req, res) => {
 function ensureDirs() {
     try {
         fs.mkdirSync(DATA_DIR, { recursive: true });
-        console.log(`[ensureDirs] Created DATA_DIR: ${DATA_DIR}`);
     } catch (e) {
         console.error(`[ensureDirs] Failed to create DATA_DIR: ${e.message}`);
     }
@@ -330,48 +329,27 @@ app.post('/api/config', async (req, res) => {
         `SHOUTRRR_DISABLED=${!sr_enabled ? shout : ''}`,
         `SHOUTRRR_ENABLED=${sr_enabled ? 'yes' : 'no'}`
     ];
+    // Enabled state: without a token the service can't run. A new or changed
+    // token starts it. Any other save keeps the current state, so a user who
+    // pressed Disable isn't switched back on by changing an unrelated setting
+    // (every save used to re-enable the service).
+    const hasToken = !!(token || existing.API_KEY);
+    const tokenChanged = hasToken && token !== existing.CLOUDFLARE_API_TOKEN;
+    const enabled = !hasToken ? 'false' : (tokenChanged ? 'true' : (existing.ENABLED || 'true'));
+    lines.push(`ENABLED=${enabled}`);
     try {
-        // Ensure directories exist before writing
-        ensureDirs();
-
-        // preserve `ENABLED` flag if present
-        if (existing.ENABLED !== undefined) {
-            lines.push(`ENABLED=${existing.ENABLED}`);
-        }
-
-        console.log(`[POST /api/config] Writing ENV to: ${ENV_FILE}`);
-        console.log(`[POST /api/config] ENV_FILE exists before write: ${fs.existsSync(ENV_FILE)}`);
-        console.log(`[POST /api/config] DATA_DIR exists: ${fs.existsSync(DATA_DIR)}`);
-        console.log(`[POST /api/config] DATA_DIR stats:`, fs.statSync(DATA_DIR));
-
-        fs.writeFileSync(ENV_FILE, lines.join('\n'));
-
-        console.log(`[POST /api/config] Write successful. ENV_FILE exists after write: ${fs.existsSync(ENV_FILE)}`);
-        console.log(`[POST /api/config] ENV_FILE size: ${fs.statSync(ENV_FILE).size}`);
-
+        writeEnvLines(lines);
         appendLog(`Config updated via UI by ${req.headers['x-umbrel-username'] || 'local'}`);
         // No need to signal the ddns child: the wrapper polls the env file
         // every 3 s and restarts the child itself when it changes. (This used
         // to `kill` status.pid, but that pid belongs to the other container's
         // PID namespace, so the kill either hit nothing or, when the numbers
         // happened to match, killed this UI's own process.)
-        // Auto-start if token present; otherwise make sure the service stays disabled
-        const savedEnv = readEnv();
-        const hasToken = !!(savedEnv.CLOUDFLARE_API_TOKEN || savedEnv.API_KEY);
-        if (hasToken) {
-            // The wrapper's own error-scanning treats this exact marker as
-            // "ignore any auth errors logged before this point" - only
-            // write it when the token genuinely changed value, not on
-            // every unrelated config save (e.g. adding a notifier URL),
-            // which used to claim "NEW TOKEN CONFIGURED" even though
-            // nothing about the token had changed at all.
-            if (token !== existing.CLOUDFLARE_API_TOKEN) {
-                appendLog('──── NEW TOKEN CONFIGURED ────');
-            }
-            setEnabled(true);
-            appendLog('Service auto-enabled after saving config with API token');
-        } else {
-            setEnabled(false);
+        if (tokenChanged) {
+            // The wrapper's error scanning ignores auth errors logged before
+            // this marker, so only write it when the token really changed
+            appendLog('──── NEW TOKEN CONFIGURED ────');
+            if (existing.ENABLED !== 'true') appendLog('Service auto-enabled after saving a new API token');
         }
         // Log warnings to help users diagnose issues
         if (warnings.length > 0) {
@@ -414,9 +392,17 @@ function readEnv() {
     } catch (e) { return {}; }
 }
 
+// Write the settings file in one step (temp file + rename), so the wrapper,
+// which reads it every 3 s, never sees a half-written file. Mode 600: it
+// holds the Cloudflare API token.
+function writeEnvLines(lines) {
+    const tmp = `${ENV_FILE}.tmp`;
+    fs.writeFileSync(tmp, lines.join('\n') + '\n', { mode: 0o600 });
+    fs.renameSync(tmp, ENV_FILE);
+}
+
 function writeEnv(obj) {
-    const lines = Object.keys(obj).map(k => `${k}=${obj[k] !== undefined && obj[k] !== null ? obj[k] : ''}`);
-    fs.writeFileSync(ENV_FILE, lines.join('\n'));
+    writeEnvLines(Object.keys(obj).map(k => `${k}=${obj[k] !== undefined && obj[k] !== null ? obj[k] : ''}`));
 }
 
 function setEnabled(value) {

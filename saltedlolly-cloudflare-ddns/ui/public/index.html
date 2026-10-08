@@ -524,6 +524,24 @@
 
                 function showAlert(msg) { alert(msg); }
 
+                // Save some settings. The server merges a partial update into what
+                // it has stored, so callers send only the fields they change
+                // (sending a whole fetched snapshot could overwrite a change made
+                // in between).
+                async function postConfig(fields) {
+                    const r = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fields) });
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                }
+
+                // Run fn now and then every ms after the previous run has finished
+                // (setInterval with an async fn starts new runs while slow ones are
+                // still waiting, e.g. on a Cloudflare timeout)
+                function every(ms, fn) {
+                    const run = async () => { try { await fn(); } catch (e) { } setTimeout(run, ms); };
+                    run();
+                }
+
                 function showTempMessage(elId, msg, success = true, timeout = 4000) {
                     try {
                         const el = document.getElementById(elId);
@@ -672,8 +690,7 @@
                         }
                     } catch (e) { }
                 }
-                setInterval(updateStatus, 3000);
-                updateStatus();
+                every(3000, updateStatus);
 
 
                 // Show "Enabling..." / "Disabling..." straight away and keep both
@@ -795,8 +812,7 @@
                 async function saveSwitch(sws, payload, msgElId, okMsg, failMsg) {
                     sws.forEach(sw => { savingSwitches.add(sw); sw.disabled = true; });
                     try {
-                        const r = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        await postConfig(payload);
                         if (currentConfig) Object.assign(currentConfig, payload);
                         showTempMessage(msgElId, okMsg, true);
                     } catch (e) {
@@ -880,16 +896,13 @@
                         return;
                     }
                     try {
-                        const cur = await (await fetch('/api/config')).json();
-                        const payload = Object.assign({}, cur, {
-                            CLOUDFLARE_API_TOKEN: token || '',
-                            DOMAINS: domains || '',
+                        await postConfig({
+                            CLOUDFLARE_API_TOKEN: token,
+                            DOMAINS: domains,
                             PROXIED: proxied ? 'true' : 'false',
                             IP4_PROVIDER: v4On ? 'cloudflare.trace' : 'none',
                             IP6_PROVIDER: v6On ? 'cloudflare.trace' : 'none'
                         });
-                        const r = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                        if (!r.ok) throw new Error('HTTP ' + r.status);
                         resetConfigForm();
                         // refresh UI
                         configEditView.style.display = 'none';
@@ -1107,11 +1120,9 @@
                     // Update the config main badges
                     renderConfigMain(data, lastServiceInfo);
                 }
-                load();
-                // Periodically refresh the domain status table (✅/⏳ icons, proxied status)
-                // so it reflects reality without requiring a page reload or user action.
-                // Kept at a longer interval than updateStatus() since this hits the Cloudflare API.
-                setInterval(load, 30000);
+                // Refresh config and the domain status table (which asks Cloudflare,
+                // so less often than updateStatus)
+                every(30000, load);
 
                 // --- Notifiers UI logic ---
                 const notifyHealthchecksSwitch = document.getElementById('notifyHealthchecksSwitch');
@@ -1214,17 +1225,14 @@
                     }
 
                     try {
-                        // merge with existing config
-                        const cur = await (await fetch('/api/config')).json();
-                        const payload = Object.assign({}, cur, {
-                            HEALTHCHECKS: hc || '',
+                        await postConfig({
+                            HEALTHCHECKS: hc,
                             HEALTHCHECKS_ENABLED: hcEnabled,
-                            UPTIMEKUMA: uk || '',
+                            UPTIMEKUMA: uk,
                             UPTIMEKUMA_ENABLED: ukEnabled,
-                            SHOUTRRR: srLines.length ? srLines.join(',') : '',
+                            SHOUTRRR: srLines.join(','),
                             SHOUTRRR_ENABLED: srEnabled
                         });
-                        await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 
                         // refresh UI
                         const refreshed = await (await fetch('/api/config')).json();
@@ -1279,7 +1287,7 @@
                         if (/\bShoutrrr\b/.test(last)) warn(notifyShoutrrrWarn);
                     } catch (e) { }
                 }
-                setInterval(checkNotifierErrors, 5000);
+                every(5000, checkNotifierErrors);
 
             </script>
 
