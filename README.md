@@ -145,7 +145,7 @@ Selected application icons are sourced from [selfh.st/icons](https://github.com/
 
 | Name                          | Port         | Local Address                                            | Umbrel SSO    |
 |-------------------------------| ------------ | -------------------------------------------------------- | ------------- |
-| ABS Network Share Config Tool | `23378`      | [http://umbrel.local:23378](http://umbrel.local:23378/)  | ✅            |
+| ABS Network Share Config Tool | `23378`      | [https://umbrel.local:23378](https://umbrel.local:23378/)  | ✅            |
 | Audiobookshelf Web UI         | `13378`      | [http://umbrel.local:13378](http://umbrel.local:13378/)  |               | 
 
 #### Audiobookshelf Data Folders
@@ -193,7 +193,7 @@ One login for the apps you share from your Umbrel, powered by [Authentik](https:
 
 | Name          | Port         | Local Address                                            | Umbrel SSO    |
 |---------------| ------------ | --------------------------------------------------------- | ------------- |
-| Admin interface | `9800`     | [http://umbrel.local:9800](http://umbrel.local:9800/)    | ✅            |
+| Admin interface | `9800`     | [https://umbrel.local:9800](https://umbrel.local:9800/)    | ✅            |
 
 ---
 
@@ -207,7 +207,7 @@ Includes a bundled headless-Chrome sidecar ([sockpuppetbrowser](https://github.c
 
 | Name          | Port         | Local Address                                            | Umbrel SSO    |
 |---------------| ------------ | --------------------------------------------------------- | ------------- |
-| Web UI        | `5000`       | [http://umbrel.local:5000](http://umbrel.local:5000/)    | ✅            |
+| Web UI        | `5000`       | [https://umbrel.local:5000](https://umbrel.local:5000/)    | ✅            |
 
 ---
 
@@ -218,7 +218,7 @@ Keeps your Cloudflare DNS records pointing at your home's current public IP addr
 
 | Name                       | Port         | Local Address                                           | Umbrel SSO    |
 |----------------------------| ------------ | ------------------------------------------------------- | ------------- |
-| Cloudflare DDNS Updater    | `4100`       | [http://umbrel.local:4100](http://umbrel.local:4100/)   | ✅            | 
+| Cloudflare DDNS Updater    | `4100`       | [https://umbrel.local:4100](https://umbrel.local:4100/)   | ✅            | 
 
 ---
 
@@ -230,7 +230,7 @@ On its own, CrowdSec doesn't protect anything - it needs a "bouncer" wired into 
 
 | Name              | Port         | Local Address                                            | Umbrel SSO    |
 |-------------------| ------------ | --------------------------------------------------------- | ------------- |
-| CrowdSec Dashboard| `5190`       | [http://umbrel.local:5190](http://umbrel.local:5190/)    | ✅            |
+| CrowdSec Dashboard| `5190`       | [https://umbrel.local:5190](https://umbrel.local:5190/)    | ✅            |
 
 ---
 
@@ -242,7 +242,7 @@ A self-hosted [Kubo](https://github.com/ipfs/kubo) node - the reference implemen
 
 | Name          | Port         | Local Address                                            | Umbrel SSO    |
 |---------------| ------------ | --------------------------------------------------------- | ------------- |
-| WebUI + API   | `5001`       | [http://umbrel.local:5001](http://umbrel.local:5001/)    | ✅            |
+| WebUI + API   | `5001`       | [https://umbrel.local:5001](https://umbrel.local:5001/)    | ✅            |
 | Swarm (P2P)   | `4001`       | —                                                          |               |
 
 ---
@@ -257,7 +257,7 @@ This app uses host networking (no Umbrel SSO, no app proxy) rather than the usua
 
 | Name          | Port         | Local Address                                            | Umbrel SSO    |
 |---------------| ------------ | --------------------------------------------------------- | ------------- |
-| Web Admin UI  | `30380`      | [http://umbrel.local:30380](http://umbrel.local:30380/)  |               |
+| Web Admin UI  | `30380`      | [https://umbrel.local:30380](https://umbrel.local:30380/)  |               |
 
 ---
 
@@ -269,7 +269,7 @@ There is no Lightning Network support for Nito, and none is possible - Bitcoin's
 
 | Name          | Port         | Local Address                                            | Umbrel SSO    |
 |---------------| ------------ | --------------------------------------------------------- | ------------- |
-| Dashboard     | `3000`       | [http://umbrel.local:3000](http://umbrel.local:3000/)    | ✅            |
+| Dashboard     | `3000`       | [https://umbrel.local:3000](https://umbrel.local:3000/)    | ✅            |
 | Swarm (P2P)   | `8820`       | —                                                          |               |
 
 ---
@@ -282,7 +282,7 @@ NPMplus's administration interface is unconditionally served over HTTPS. Opening
 
 | Name                     | Port         | Local Address                                            | Umbrel SSO    |
 |--------------------------| ------------ | --------------------------------------------------------- | ------------- |
-| NPMplus Setup            | `5180`       | [http://umbrel.local:5180](http://umbrel.local:5180/)    | ✅            |
+| NPMplus Setup            | `5180`       | [https://umbrel.local:5180](https://umbrel.local:5180/)    | ✅            |
 | NPMplus Administration   | `5181`       | [https://umbrel.local:5181](https://umbrel.local:5181/)  |               |
 | Proxy HTTP               | `50080`      | —                                                         |               |
 | Proxy HTTPS / HTTP/3     | `50443`      | —                                                         |               |
@@ -303,7 +303,7 @@ The icon is sourced from [selfh.st/icons](https://github.com/selfhst/icons), use
 
 | Name          | Port         | Local Address                                            | Umbrel SSO    |
 |---------------| ------------ | -------------------------------------------------------- | ------------- |
-| Web UI        | `3030`       | [http://umbrel.local:3030](http://umbrel.local:3030/)    |               |
+| Web UI        | `3030`       | [https://umbrel.local:3030](https://umbrel.local:3030/)    |               |
 
 ---
 
@@ -315,4 +315,4 @@ This app has its own account system (create your account on first visit) rather 
 
 | Name           | Port         | Local Address                                              | Umbrel SSO    |
 |----------------| ------------ | ----------------------------------------------------------- | ------------- |
-| Tronbyt Server | `19191`      | [http://umbrel.local:19191](http://umbrel.local:19191/)     |               |
+| Tronbyt Server | `19191`      | [https://umbrel.local:19191](https://umbrel.local:19191/)     |               |
