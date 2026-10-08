@@ -42,7 +42,7 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
     <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="#cloudflare-ddns">Cloudflare DDNS</a></td>
-      <td nowrap id="saltedlolly-cloudflare-ddns-version"><code>v1.17.1.13</code></td>
+      <td nowrap id="saltedlolly-cloudflare-ddns-version"><code>v1.17.1.14</code></td>
       <td nowrap id="saltedlolly-cloudflare-ddns-date">2026-10-08</td>
       <td>A dynamic DNS client for domains hosted on Cloudflare</td>
     </tr>
