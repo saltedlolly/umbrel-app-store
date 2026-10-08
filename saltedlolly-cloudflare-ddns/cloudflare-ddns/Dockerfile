@@ -6,7 +6,9 @@ FROM ghcr.io/favonia/cloudflare-ddns:1.17.1 AS favonia
 # coreutils to support the wrapper's `stat`, `date`, and other utilities.
 FROM alpine:3.24
 
-RUN apk add --no-cache coreutils
+# su-exec: the wrapper runs as root (it writes /data) but starts ddns as an
+# unprivileged user, since ddns only needs outbound network access
+RUN apk add --no-cache coreutils su-exec
 
 # Copy the favonia ddns binary from the base image into the Alpine image
 COPY --from=favonia /bin/ddns /bin/ddns

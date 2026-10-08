@@ -396,6 +396,12 @@ start_child() {
   else
     if command -v ddns >/dev/null 2>&1; then
       CMD="ddns --foreground"
+      # ddns needs no privileges (outbound HTTPS only; its output is written
+      # to the log by this shell), so drop root for it. favonia's own docs
+      # recommend a non-root user, and ddns warns when run as root.
+      if [ "$(id -u)" = "0" ] && command -v su-exec >/dev/null 2>&1; then
+        CMD="su-exec nobody:nobody $CMD"
+      fi
     elif command -v ddclient >/dev/null 2>&1; then
       CMD="ddclient --foreground"
     elif [ -x /usr/local/bin/ddclient ]; then
