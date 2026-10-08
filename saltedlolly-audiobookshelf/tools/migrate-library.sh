@@ -4,7 +4,7 @@
 # 
 # This script helps you migrate your Audiobookshelf library between:
 # - Official Audiobookshelf app from Umbrel App Store
-# - Audiobookshelf: NAS Edition from Olly's Umbrel Community App Store
+# - Audiobookshelf: NAS Edition from the saltedlolly App Store
 #
 # The script backs up and restores:
 # - Library configuration (settings, library data)
@@ -321,7 +321,7 @@ get_app_name() {
             echo "Audiobookshelf (Official Umbrel App Store)"
             ;;
         "${NAS_APP_ID}")
-            echo "Audiobookshelf: NAS Edition (Olly's Umbrel Community App Store)"
+            echo "Audiobookshelf: NAS Edition (saltedlolly App Store)"
             ;;
         *)
             echo "${app_id}"
@@ -934,7 +934,7 @@ no_backup_menu() {
         echo "     - Click the ••• button in the top right, and click 'Community App Stores'"
         echo "     - Paste this URL: https://github.com/saltedlolly/umbrel-app-store"
         echo "     - Click 'Add'"
-        echo "     - Click 'Open' next to \"Olly's Umbrel Community App Store\""
+        echo "     - Click 'Open' next to \"saltedlolly App Store\""
         echo "     - Find 'Audiobookshelf: NAS Edition' and install it"
         echo "     - Wait for the install to finish"
     fi

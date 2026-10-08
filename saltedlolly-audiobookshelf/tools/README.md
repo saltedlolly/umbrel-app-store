@@ -38,7 +38,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/saltedlolly/umbrel-app-store
 
 2. **Install** the other version:
    - **Official App**: Find "Audiobookshelf" in Umbrel App Store
-   - **NAS Edition**: Add saltedlolly's Community App Store, then install "Audiobookshelf: NAS Edition"
+   - **NAS Edition**: Add the saltedlolly App Store, then install "Audiobookshelf: NAS Edition"
 
 ### Step 3: Restore Your Library
 

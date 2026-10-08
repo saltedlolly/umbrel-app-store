@@ -1,4 +1,4 @@
-## 🌂 Olly's Umbrel App Store
+## 🌂 saltedlolly App Store for UmbrelOS
 
 Welcome to my Umbrel Community App Store containing all the apps I have developed for [Umbrel](https://umbrel.com/).
 
@@ -106,7 +106,7 @@ More details about each App can be found below.
 1. Launch the **App Store** from your Umbrel Dashboard.
 2. Click the **•••** button in the top right, and click "Community App Stores".
 3. Paste this URL `https://github.com/saltedlolly/umbrel-app-store` and click 'Add'.
-4. Click 'Open' next to "Olly's Umbrel Community App Store".
+4. Click 'Open' next to "saltedlolly App Store".
 
 **Disclaimer:** This is a community project, not an official Umbrel service. Stuff might break. Please back up your data and don’t rely on any app without testing first. By using this app store, you accept that you’re responsible for your own system.
 
