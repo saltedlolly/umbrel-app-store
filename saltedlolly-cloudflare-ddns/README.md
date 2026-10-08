@@ -76,7 +76,7 @@ If you're still stuck, use **Report Issue** at the bottom of the page. Please in
 
 ## Updates
 
-The app follows new releases of [favonia/cloudflare-ddns](https://github.com/favonia/cloudflare-ddns/releases) automatically. Once a day, a check looks for a new release. When one has been out for **two days**, the app is rebuilt with it, tested, and published here, and it appears as an update in your Umbrel App Store. Draft and pre-release versions are skipped.
+The app follows new releases of [favonia/cloudflare-ddns](https://github.com/favonia/cloudflare-ddns/releases) automatically. Once a day, a check looks for a new release. When one has been out for **two days**, the app is rebuilt with it, tested, and published here, and it appears as an update in the Umbrel App Store. Draft and pre-release versions are skipped.
 
 Why wait two days? A brand-new release occasionally has a problem that is found and fixed in a follow-up release within a day or two. The wait means you usually get the corrected version instead of being among the first to run into the problem, while still getting fixes and improvements without anyone having to remember to update the app by hand.
 

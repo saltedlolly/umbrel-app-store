@@ -107,7 +107,7 @@ The app uses pre-built multi-architecture Docker images hosted on GitHub Contain
 
 ### Initial Setup
 
-1. **Install Audiobookshelf from your Umbrel app store**
+1. **Install Audiobookshelf from the Umbrel App Store**
    - The app will start automatically with default settings
    - No configuration needed if you don't use network shares
 

@@ -23,7 +23,7 @@ The app uses the pre-built multi-arch image published upstream at `ghcr.io/tronb
 
 ### First run
 
-1. Install Tronbyt Server from your Umbrel app store and open it at `http://umbrel.local:19191`.
+1. Install Tronbyt Server from the Umbrel App Store and open it at `http://umbrel.local:19191`.
 2. Create your account (self-registration is enabled by default — the first account you create becomes an admin).
 3. Add a device, then click **Firmware**, enter your WiFi credentials, and generate/download the firmware.
 4. Use the ESPHome firmware flasher (linked from the Firmware page) to flash your Tidbyt into a Tronbyt.
