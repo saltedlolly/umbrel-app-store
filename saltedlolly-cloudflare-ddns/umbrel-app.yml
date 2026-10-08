@@ -4,7 +4,7 @@ name: Cloudflare DDNS Client
 tagline: Dynamic DNS client for Cloudflare to keep your domain updated with your changing IP address.
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/icon.png
 category: networking
-version: "v1.17.1.14"
+version: "v1.17.1.15"
 port: 4100
 description: >-  
   Dynamic DDNS client for Cloudflare to keep your domain or sub-domain updated with your current public IP address.
@@ -36,6 +36,10 @@ support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery:
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/gallery/1.png
 releaseNotes: >-
+  ## v1.17.1.15
+
+  - Settings page rebuilt to be lighter: far fewer requests, nothing reads the whole log any more, the Cloudflare check is shared and cached, refreshing pauses while the tab is hidden, and Live Logs only sends new lines; the page keeps its layout when the internet is down; a banner shows if the page loses its connection; better labels for screen readers
+
   ## v1.17.1.14
 
   - Changing a setting no longer switches a disabled service back on; Enable now works after an invalid-token error; saving settings only sends what changed and can no longer overwrite another change; the settings file is written safely and is readable by root only; background refreshes no longer pile up on a slow connection
