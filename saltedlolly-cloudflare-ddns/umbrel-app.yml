@@ -4,7 +4,7 @@ name: Cloudflare DDNS Client
 tagline: Dynamic DNS client for Cloudflare to keep your domain updated with your changing IP address.
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/icon.png
 category: networking
-version: "v1.17.1.9"
+version: "v1.17.1.10"
 port: 4100
 description: >-  
   Dynamic DDNS client for Cloudflare to keep your domain or sub-domain updated with your current public IP address.
@@ -36,6 +36,10 @@ support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery:
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/gallery/1.png
 releaseNotes: >-
+  ## v1.17.1.10
+
+  - Shoutrrr URLs (discord://, ntfy:// and so on) can now be saved, and several work at once; notifier URLs containing & (such as Uptime Kuma push URLs with ?status=up&msg=OK&ping=) now work; the settings page no longer restarts itself after saving; the updater runs without root privileges; base image updated to Alpine 3.24
+
   ## v1.17.1.9
 
   - Fix switches and buttons that sometimes needed a second click; mobile-friendly layout; live logs show the last 500 lines
