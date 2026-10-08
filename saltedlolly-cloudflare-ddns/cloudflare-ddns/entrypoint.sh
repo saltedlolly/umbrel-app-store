@@ -397,6 +397,24 @@ check_for_update() {
   return 1
 }
 
+# With IPv4 or IPv6 support switched off (IP4/IP6_PROVIDER=none), favonia
+# leaves that family's existing records in place, where they go stale. On
+# Umbrel a stale AAAA record is also wrong: it points at the Umbrel itself,
+# whose port 443 is umbrelOS, not NPMplus. So before each start, run
+# favonia's one-off cleanup (static.empty + UPDATE_CRON=@once, as its README
+# suggests) for the switched-off family, with notifiers off so it sends no
+# start/stop pings. Running it again when nothing is left is harmless.
+cleanup_disabled_family() {
+  c4=none; c6=none; fams=
+  [ "${IP4_PROVIDER:-}" = "none" ] && { c4=static.empty; fams="A"; }
+  [ "${IP6_PROVIDER:-}" = "none" ] && { c6=static.empty; fams="${fams:+$fams and }AAAA"; }
+  [ -n "$fams" ] || return 0
+  log "Support for this IP family is off: removing any $fams records managed by this app"
+  env IP4_PROVIDER="$c4" IP6_PROVIDER="$c6" UPDATE_CRON=@once UPDATE_ON_START=true \
+    HEALTHCHECKS= UPTIMEKUMA= SHOUTRRR= sh -c "$1" >> "$LOGFILE" 2>&1 \
+    || log "Cleanup of $fams records failed; existing records were left in place"
+}
+
 start_child() {
   # Validate minimum config before starting the child; CLOUDFLARE_API_TOKEN and DOMAINS are required
   if [ -z "${CLOUDFLARE_API_TOKEN}" ]; then
@@ -424,6 +442,7 @@ start_child() {
       if [ "$(id -u)" = "0" ] && command -v su-exec >/dev/null 2>&1; then
         CMD="su-exec nobody:nobody $CMD"
       fi
+      cleanup_disabled_family "$CMD"
     elif command -v ddclient >/dev/null 2>&1; then
       CMD="ddclient --foreground"
     elif [ -x /usr/local/bin/ddclient ]; then

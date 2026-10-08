@@ -321,6 +321,7 @@
                                     </div>
                                     <div class="small text-muted mt-1 w-100">In most cases, there should be no need to
                                         turn this off, except for the rare situation where your network only uses IPv6.
+                                        Turning it off removes the A records this app created.
                                     </div>
                                 </div>
                                 <div class="mb-2">
@@ -332,9 +333,12 @@
                                                 type="checkbox">
                                         </div>
                                     </div>
-                                    <div class="small text-muted mt-1 w-100">There is no harm leaving this on, even if
-                                        your network does not support IPv6, but if you want to avoid seeing the errors
-                                        in the logs can turn it off.</div>
+                                    <div class="small text-muted mt-1 w-100">Best left off for websites. With Proxied
+                                        on, Cloudflare already serves visitors over IPv6. An IPv6 (AAAA) record points
+                                        straight at your Umbrel rather than through your router, so port 443 reaches
+                                        umbrelOS instead of a reverse proxy such as NPMplus. Turn it on only for services
+                                        you know you want reachable directly over IPv6. Turning it off removes the AAAA
+                                        records this app created.</div>
                                 </div>
                                 <div class="d-flex gap-2 justify-content-end mt-2 w-100">
                                     <button id="saveConfigBtn" class="btn btn-primary btn-sm">Save</button>
