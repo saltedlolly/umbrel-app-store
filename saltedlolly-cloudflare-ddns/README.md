@@ -63,7 +63,7 @@ Each settings change restarts the updater, so Healthchecks and Shoutrrr may rece
 - **Domain table**: ✅ the record matches your current IP; ⏳ waiting for the next update; ⚠️ or ⛔️ a problem, explained under the domain name.
 - **Live Logs**: the last 500 lines of the updater's log.
 - **Theme** (top right): light, dark, or **system** to follow your device. Your choice is remembered in that browser.
-- **Footer**: your app version, with an **Update available** notice when a newer version is in the app store; **🐛 Report Issue** opens a new GitHub issue with your version filled in; the **?** icon opens this page.
+- **Footer**: your app version, with an **Update available** notice when a newer version is in the app store; **🐛 Report Issue** opens a new GitHub issue with your version filled in. Edit Config and Edit Notifiers link to this page.
 
 ## Troubleshooting
 

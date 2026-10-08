@@ -181,6 +181,8 @@
 
                         <div id="configEditView" style="display:none; margin-top:.5rem">
                             <form id="configEdit">
+                                <div class="small text-muted mb-2">Need more detailed instructions? See the <a href="https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-cloudflare-ddns/README.md" target="_blank"
+                                        rel="noopener">help page</a>.</div>
                                 <div class="mb-2">
                                     <label class="form-label small" for="edit_CLOUDFLARE_API_TOKEN">🔑 Cloudflare API Token</label>
                                     <div class="input-group input-group-sm">
@@ -318,8 +320,9 @@
                         </div>
                         <div id="notifiersEdit" style="display:none; margin-top:.5rem">
                             <form id="notifiersEditForm">
-                                <div class="small text-muted mb-2">Optional. <a href="https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-cloudflare-ddns/README.md#notifications-optional"
-                                        target="_blank" rel="noopener">How to set these up</a></div>
+                                <div class="small text-muted mb-2">Optional. Need more detailed instructions? See the
+                                    <a href="https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-cloudflare-ddns/README.md#notifications-optional" target="_blank" rel="noopener">help
+                                        page</a>.</div>
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <label class="form-label small mb-0" for="edit_HEALTHCHECKS">Healthchecks URL</label>
@@ -367,23 +370,19 @@
     </div>
 
             <footer class="page-footer">
-                <div class="container d-flex justify-content-between align-items-center gap-2">
-                    <div class="small text-muted">Cloudflare DDNS Updater for Umbrel by Olly Stedall. Powered by <a
+                <div class="container footer-grid">
+                    <div class="footer-about small text-muted"><a href="https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-cloudflare-ddns" target="_blank"
+                            rel="noopener">Cloudflare DDNS Updater for Umbrel</a> by Olly Stedall. Powered by <a
                             href="https://github.com/favonia/cloudflare-ddns" target="_blank" rel="noopener">cloudflare-ddns</a>.
                         <span id="versionBadge" class="badge bg-secondary ms-1">v...</span>
                         <span id="updateNotice" class="badge bg-warning text-dark ms-1" hidden></span>
                     </div>
-                    <div class="footer-actions d-flex align-items-center gap-2">
+                    <div class="footer-issue">
                         <a id="reportIssue" class="btn btn-outline-secondary btn-sm py-0 text-nowrap"
                             href="https://github.com/saltedlolly/umbrel-app-store/issues/new" target="_blank"
                             rel="noopener">🐛 Report Issue</a>
-                        <a class="footer-help" href="https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-cloudflare-ddns/README.md" target="_blank" rel="noopener" title="Help" aria-label="Help">
-                            <svg viewBox="0 0 16 16" width="22" height="22" aria-hidden="true">
-                                <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4" />
-                                <text x="8" y="11.6" text-anchor="middle" font-size="10" font-weight="700"
-                                    font-family="system-ui, sans-serif" fill="currentColor">?</text>
-                            </svg>
-                        </a>
+                    </div>
+                    <div class="footer-sponsor d-flex align-items-center gap-2">
                         <span class="small text-muted text-nowrap">Please sponsor Olly on GitHub</span>
                         <iframe src="https://github.com/sponsors/saltedlolly/button" title="Sponsor saltedlolly"
                             height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
