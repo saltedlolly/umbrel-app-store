@@ -336,15 +336,11 @@ app.post('/api/config', async (req, res) => {
         console.log(`[POST /api/config] ENV_FILE size: ${fs.statSync(ENV_FILE).size}`);
 
         appendLog(`Config updated via UI by ${req.headers['x-umbrel-username'] || 'local'}`);
-        // Force immediate config reload by killing the running ddns child (if any)
-        // The wrapper will detect the death and restart with new config
-        try {
-            const status = fs.existsSync(STATUS_FILE) ? JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8')) : {};
-            if (status.pid && status.running) {
-                require('child_process').execSync(`kill -TERM ${status.pid} 2>/dev/null || true`);
-                appendLog(`Stopped child process ${status.pid} to apply new config immediately`);
-            }
-        } catch (e) { /* ignore if kill fails */ }
+        // No need to signal the ddns child: the wrapper polls the env file
+        // every 3 s and restarts the child itself when it changes. (This used
+        // to `kill` status.pid, but that pid belongs to the other container's
+        // PID namespace, so the kill either hit nothing or, when the numbers
+        // happened to match, killed this UI's own process.)
         // Auto-start if token present; otherwise make sure the service stays disabled
         const savedEnv = readEnv();
         const hasToken = !!(savedEnv.CLOUDFLARE_API_TOKEN || savedEnv.API_KEY);
