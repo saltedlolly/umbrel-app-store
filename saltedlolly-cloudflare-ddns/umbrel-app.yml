@@ -4,7 +4,7 @@ name: Cloudflare DDNS Client
 tagline: Dynamic DNS client for Cloudflare to keep your domain updated with your changing IP address.
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/icon.png
 category: networking
-version: "v1.17.1.12"
+version: "v1.17.1.13"
 port: 4100
 description: >-  
   Dynamic DDNS client for Cloudflare to keep your domain or sub-domain updated with your current public IP address.
@@ -36,6 +36,10 @@ support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery:
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/gallery/1.png
 releaseNotes: >-
+  ## v1.17.1.13
+
+  - Save errors now show inside the settings form; a failed notifier ping shows a warning instead of switching the notifier off; domain status works for domains such as example.co.uk; a notifier error can no longer be mistaken for an invalid Cloudflare token; asks before saving a main domain such as example.com and before turning Proxied off; the API token is hidden; the domain table says why a domain is stuck
+
   ## v1.17.1.12
 
   - New installs start with IPv6 off; the IPv6 help explains when to turn it on (no public IPv4 address of your own, or a service published directly) and links to Cloudflare Origin Rules; a warning shows when IPv6 and Proxied are both on; help text corrected: while IPv4 or IPv6 is off, the app removes those records for your domains
