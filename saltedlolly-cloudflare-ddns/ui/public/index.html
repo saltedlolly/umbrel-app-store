@@ -171,9 +171,9 @@
                             <div class="col-12 col-sm-6 text-sm-end">
                                 <div class="small text-muted">Cloudflare Last Updated</div>
                                 <div id="ipv4UpdateContainer"><span class="text-muted small">IPv4:</span> <span
-                                        id="ipv4LastUpdated">Never</span></div>
+                                        id="ipv4LastUpdated" class="js-state">&nbsp;</span></div>
                                 <div id="ipv6UpdateContainer" style="display:none;"><span
-                                        class="text-muted small">IPv6:</span> <span id="ipv6LastUpdated">Never</span>
+                                        class="text-muted small">IPv6:</span> <span id="ipv6LastUpdated" class="js-state">&nbsp;</span>
                                 </div>
                             </div>
                         </div>
@@ -586,16 +586,14 @@
                     try {
                         const lu = await (await fetch('/api/last-update')).json();
 
-                        // Update IPv4 timestamp
-                        if (lu.ipv4Update) {
-                            const d4 = new Date(lu.ipv4Update);
-                            ipv4LastUpdatedEl.innerText = d4.toLocaleString();
-                        } else {
-                            ipv4LastUpdatedEl.innerText = 'Not Yet';
-                        }
-
-                        // Update IPv6 timestamp; only shown while IPv6 support is on
-                        ipv6LastUpdatedEl.innerText = lu.ipv6Update ? new Date(lu.ipv6Update).toLocaleString() : 'Not Yet';
+                        // The time of the last real record change. Until there has
+                        // been one: "Already up to date" once Cloudflare has been
+                        // checked, otherwise "Not checked yet".
+                        const describeUpdate = (t) => t ? new Date(t).toLocaleString()
+                            : (lu.lastSuccessfulCheck ? 'Already up to date' : 'Not checked yet');
+                        ipv4LastUpdatedEl.innerText = describeUpdate(lu.ipv4Update);
+                        // IPv6 is only shown while IPv6 support is on
+                        ipv6LastUpdatedEl.innerText = describeUpdate(lu.ipv6Update);
                         ipv6UpdateContainer.style.display = ipv6SupportOn() ? '' : 'none';
 
                         // Check for staleness using the last successful CHECK (change

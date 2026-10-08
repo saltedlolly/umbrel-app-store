@@ -13,6 +13,7 @@ const DATA_DIR = process.env.APP_DATA_DIR || '/data';
 const ENV_FILE = path.join(DATA_DIR, 'cloudflare-ddns.env');
 const LOG_FILE = path.join(DATA_DIR, 'cloudflare-ddns.log');
 const STATUS_FILE = path.join(DATA_DIR, 'status.json');
+const LAST_CHANGE_FILE = path.join(DATA_DIR, 'last-change.json');
 const https = require('https');
 
 app.use(bodyParser.json());
@@ -476,89 +477,29 @@ app.get('/api/discover/uptimekuma', async (req, res) => {
     res.json({ available: false });
 });
 
-function findLastUpdateLine(text) {
-    const lines = text.split(/\r?\n/).filter(Boolean);
-    for (let i = lines.length - 1; i >= 0; i--) {
-        const l = lines[i];
-        // Only match lines that indicate a successful *change* to DNS records
-        // Exclude: config updates, service starts, and "already up to date" checks
-        if (!/Config updated|UI started|Service (auto-)?enabled|Service (auto-)?disabled|already up to date|unchanged|no change/gi.test(l) &&
-            /a{1,4} records.*were|updated.*record|record.*updated|added.*new.*record|set the ip|successfully updated|update successful|were updated/gi.test(l)) {
-            return l;
-        }
-    }
-    return null;
-}
-
-function extractTimestampFromLine(line) {
-    if (!line) return null;
-    // look for ISO8601 timestamp
-    const iso = line.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z/);
-    if (iso) return new Date(iso[0]);
-    // fallback: look for local date e.g., 2025-12-13 09:12
-    const dt = line.match(/\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/);
-    if (dt) return new Date(dt[0]);
-    return null;
-}
-
+// "Cloudflare Last Updated": the last GENUINE record change per family, as
+// recorded by the wrapper in last-change.json on the data volume (so it
+// survives restarts and upgrades). null means no change has been made since
+// that file started being kept; the UI then shows "Already up to date" once
+// lastSuccessfulCheck shows the records were confirmed. (This used to scan
+// the log, but favonia's log lines have no timestamps, so it always fell
+// back to the time of the first check after startup.)
 app.get('/api/last-update', (req, res) => {
     try {
-        // A persisted lastSuccessfulUpdate from the status file covers the case where
-        // records already matched Cloudflare from the moment the service started (no
-        // genuine DNS change was ever logged, so the log scan below would find nothing).
-        // lastSuccessfulCheck is the last time the wrapper confirmed state with
-        // Cloudflare at all (change or no-op) - updated every cycle, so it's the
-        // right signal for "is this still working," unlike lastSuccessfulUpdate
-        // which only reflects genuine record changes and can legitimately go
-        // unchanged for days on a stable connection.
-        let statusLastSuccessful = null;
-        let statusLastCheck = null;
-        if (fs.existsSync(STATUS_FILE)) {
-            try {
-                const s = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8'));
-                statusLastSuccessful = s.lastSuccessfulUpdate || null;
-                statusLastCheck = s.lastSuccessfulCheck || null;
-            } catch (e) { /* ignore malformed status file */ }
-        }
-        if (!fs.existsSync(LOG_FILE)) {
-            return res.json({ lastUpdate: statusLastSuccessful, ipv4Update: statusLastSuccessful, ipv6Update: statusLastSuccessful, lastSuccessfulCheck: statusLastCheck });
-        }
-        const txt = fs.readFileSync(LOG_FILE, 'utf8');
-        const lines = txt.split(/\r?\n/).filter(Boolean);
-
         let ipv4Update = null;
         let ipv6Update = null;
-
-        // Scan logs from newest to oldest to find last IPv4 and IPv6 updates
-        for (let i = lines.length - 1; i >= 0; i--) {
-            const l = lines[i];
-            // Skip non-update lines
-            if (/Config updated|UI started|Service (auto-)?enabled|Service (auto-)?disabled|already up to date|unchanged|no change/gi.test(l)) continue;
-
-            // Check for IPv4 (A record) updates
-            if (!ipv4Update && /\bA\b.*record|added.*new.*A\b.*record|updated.*A\b.*record/gi.test(l)) {
-                const ts = extractTimestampFromLine(l);
-                if (ts) ipv4Update = ts.toISOString();
-            }
-
-            // Check for IPv6 (AAAA record) updates
-            if (!ipv6Update && /AAAA.*record|added.*new.*AAAA.*record|updated.*AAAA.*record/gi.test(l)) {
-                const ts = extractTimestampFromLine(l);
-                if (ts) ipv6Update = ts.toISOString();
-            }
-
-            // Stop once we have both
-            if (ipv4Update && ipv6Update) break;
-        }
-
-        // Fall back to the wrapper's recorded successful-update time for whichever
-        // family never had a genuine DNS change logged.
-        if (!ipv4Update) ipv4Update = statusLastSuccessful;
-        if (!ipv6Update) ipv6Update = statusLastSuccessful;
-
-        // For backward compatibility, return the most recent of the two as lastUpdate
-        const mostRecent = [ipv4Update, ipv6Update].filter(Boolean).sort().reverse()[0] || null;
-        res.json({ lastUpdate: mostRecent, ipv4Update, ipv6Update, lastSuccessfulCheck: statusLastCheck });
+        let lastSuccessfulCheck = null;
+        try {
+            const c = JSON.parse(fs.readFileSync(LAST_CHANGE_FILE, 'utf8'));
+            ipv4Update = c.ipv4 || null;
+            ipv6Update = c.ipv6 || null;
+        } catch (e) { /* no change recorded yet */ }
+        try {
+            const st = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8'));
+            lastSuccessfulCheck = st.lastSuccessfulCheck || null;
+        } catch (e) { /* no status yet */ }
+        const lastUpdate = [ipv4Update, ipv6Update].filter(Boolean).sort().reverse()[0] || null;
+        res.json({ lastUpdate, ipv4Update, ipv6Update, lastSuccessfulCheck });
     } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 

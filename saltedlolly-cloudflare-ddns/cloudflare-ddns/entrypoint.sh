@@ -48,6 +48,21 @@ prune_log() {
   fi
 }
 
+# Times of the last genuine A / AAAA record change, kept on the data volume
+# so "Cloudflare Last Updated" survives restarts and upgrades
+LASTCHANGEFILE=/data/last-change.json
+
+# record_change <ipv4|ipv6> <iso-time>: update one family, keep the other
+record_change() {
+  v4=null; v6=null
+  if [ -f "$LASTCHANGEFILE" ]; then
+    v4=$(sed -n 's/.*"ipv4": *\("[^"]*"\).*/\1/p' "$LASTCHANGEFILE"); [ -n "$v4" ] || v4=null
+    v6=$(sed -n 's/.*"ipv6": *\("[^"]*"\).*/\1/p' "$LASTCHANGEFILE"); [ -n "$v6" ] || v6=null
+  fi
+  if [ "$1" = "ipv4" ]; then v4="\"$2\""; else v6="\"$2\""; fi
+  printf '{"ipv4": %s, "ipv6": %s}\n' "$v4" "$v6" > "${LASTCHANGEFILE}.tmp" && mv "${LASTCHANGEFILE}.tmp" "$LASTCHANGEFILE"
+}
+
 write_status() {
   enabled="${ENABLED:-true}"
   running="false"
@@ -340,7 +355,10 @@ check_for_update() {
   # right now - refresh this on every batch of new activity, since long
   # stretches with nothing to update are the normal, healthy state for a
   # stable home IP, not a sign anything is stuck.
-  if echo "$txt" | grep -Eqi "already up to date|(a records.*were|updated.*record|record.*updated|set the ip|successfully updated|update successful)"; then
+  # favonia's exact wording (internal/setter/setter.go). The old, looser
+  # pattern ("a records.*were") also matched the failure message "Could not
+  # confirm that A records for ... were updated".
+  if echo "$txt" | grep -Eq "are already up to date|were already deleted|(Updated an outdated|Added a new|Deleted an outdated) (A|AAAA) record for"; then
     LAST_SUCCESSFUL_CHECK=$(date --iso-8601=seconds)
     ERROR_MSG=""
     found_something=0
@@ -359,12 +377,16 @@ check_for_update() {
   # changes (e.g. a stable A record alongside a rotating IPv6 privacy
   # address), and checking the whole block for the SAME up-to-date phrase
   # used by a different, unrelated line would wrongly veto a real change.
-  if [ -z "$LAST_SUCCESSFUL_UPDATE" ] && echo "$txt" | grep -Eqi "already up to date|(a records.*were|updated.*record|record.*updated|set the ip|successfully updated|update successful)"; then
-    LAST_SUCCESSFUL_UPDATE=$(date --iso-8601=seconds)
-    found_something=0
-  elif echo "$txt" | grep -Ei "(a records.*were|updated.*record|record.*updated|set the ip|successfully updated|update successful)" \
-     | grep -Eqvi "already up to date|unchanged|no change"; then
-    LAST_SUCCESSFUL_UPDATE=$(date --iso-8601=seconds)
+  # Only a genuine change counts. favonia logs these as "Updated an outdated
+  # A record for ...", "Added a new AAAA record for ..." and "Deleted an
+  # outdated A record for ..." (internal/setter/setter.go). An "already up
+  # to date" check is not an update, so it no longer stamps startup time.
+  changes=$(echo "$txt" | grep -E "(Updated an outdated|Added a new|Deleted an outdated) (A|AAAA) record for" || true)
+  if [ -n "$changes" ]; then
+    now=$(date --iso-8601=seconds)
+    LAST_SUCCESSFUL_UPDATE=$now
+    echo "$changes" | grep -qE " A record for" && record_change ipv4 "$now"
+    echo "$changes" | grep -qE " AAAA record for" && record_change ipv6 "$now"
     found_something=0
   fi
 
