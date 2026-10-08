@@ -165,7 +165,19 @@ body:not(.ready) .js-state {
     justify-self: end;
 }
 
-@media (max-width: 767.98px) {
+.sponsor-text {
+    text-align: center;
+    line-height: 1.25;
+}
+
+/* Below 1200 px the three footer columns get cramped: stack them, and let
+   the footer sit at the end of the page instead of covering it */
+@media (max-width: 1199.98px) {
+    .page-footer {
+        position: static;
+        margin-top: 1rem;
+    }
+
     .footer-grid {
         grid-template-columns: 1fr;
         justify-items: center;
