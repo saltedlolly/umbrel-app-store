@@ -4,7 +4,7 @@ name: Cloudflare DDNS
 tagline: Dynamic DNS client for Cloudflare to keep your domain updated with your changing IP address.
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/icon.png
 category: networking
-version: "v1.17.1.18"
+version: "v1.17.1.19"
 port: 4100
 description: >-
   Keeps your Cloudflare DNS records pointing at your home's current public IP address, so a domain such as home.example.com keeps working when your internet provider changes your IP. Powered by favonia/cloudflare-ddns.
@@ -39,6 +39,10 @@ support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery:
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/gallery/1.png
 releaseNotes: >-
+  ## v1.17.1.19
+
+  - The footer now shows a new version within about an hour of its release (it checked only every 6 hours)
+
   ## v1.17.1.18
 
   - Tidier footer: the app name links to its help page, Report Issue is centred, and the help link has moved to the top of Edit Config and Edit Notifiers
