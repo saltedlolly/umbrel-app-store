@@ -172,7 +172,8 @@
                                         DNS zone. The app points these names at your home and takes over their A (and,
                                         with IPv6 on, AAAA) records. If your main domain (such as example.com) already
                                         points at a website or service hosted elsewhere, use a subdomain such as
-                                        home.example.com instead.</div>
+                                        home.example.com instead. <a href="https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-cloudflare-ddns/README.md#choosing-a-name" target="_blank"
+                                            rel="noopener">More about choosing a name</a></div>
                                 </div>
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between align-items-center">
@@ -221,7 +222,8 @@
                                         <a href="https://developers.cloudflare.com/rules/origin-rules/" target="_blank">Origin
                                         Rule</a> that sends traffic to your proxy's port, and your router must allow
                                         incoming IPv6 to that port. While this is off, the app removes the AAAA (IPv6)
-                                        records for your domains.</div>
+                                        records for your domains. <a href="https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-cloudflare-ddns/README.md#ipv6" target="_blank" rel="noopener">More
+                                            about IPv6</a></div>
                                 </div>
                                 <div id="configEditMsg" class="small mt-2" role="alert" style="display:none"></div>
                                 <div class="d-flex gap-2 justify-content-end mt-2 w-100">
@@ -283,6 +285,8 @@
                         </div>
                         <div id="notifiersEdit" style="display:none; margin-top:.5rem">
                             <form id="notifiersEditForm">
+                                <div class="small text-muted mb-2">Optional. <a href="https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-cloudflare-ddns/README.md#notifications-optional"
+                                        target="_blank" rel="noopener">How to set these up</a></div>
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <label class="form-label small mb-0" for="edit_HEALTHCHECKS">Healthchecks URL</label>
@@ -334,9 +338,13 @@
                     <div class="small text-muted">Cloudflare DDNS Updater for Umbrel by Olly Stedall. Powered by <a
                             href="https://github.com/favonia/cloudflare-ddns" target="_blank">cloudflare-ddns</a>.
                         <span id="versionBadge" class="badge bg-secondary ms-2">v...</span>
-                        <a id="reportIssue" class="btn btn-outline-secondary btn-sm ms-2 py-0"
+                        <span class="text-nowrap ms-2">
+                        <a class="btn btn-outline-secondary btn-sm py-0" href="https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-cloudflare-ddns/README.md" target="_blank"
+                            rel="noopener">Help</a>
+                        <a id="reportIssue" class="btn btn-outline-secondary btn-sm ms-1 py-0"
                             href="https://github.com/saltedlolly/umbrel-app-store/issues/new" target="_blank"
                             rel="noopener">Report Issue</a>
+                        </span>
                     </div>
                     <div class="small text-muted text-end">Please Sponsor Olly on GitHub Sponsors:&nbsp;<iframe
                             src="https://github.com/sponsors/saltedlolly/button" title="Sponsor saltedlolly" height="32"

@@ -55,7 +55,7 @@ Each settings change restarts the updater, so Healthchecks and Shoutrrr may rece
 - **Cloudflare Last Updated**: when the app last actually changed a record. Until it has had to change one, it says **Already up to date**.
 - **Domain table**: ✅ the record matches your current IP; ⏳ waiting for the next update; ⚠️ or ⛔️ a problem, explained under the domain name.
 - **Live Logs**: the last 500 lines of the updater's log.
-- **Report Issue** (footer): opens a new GitHub issue with your app version filled in.
+- **Help** (footer) opens this page; **Report Issue** opens a new GitHub issue with your app version filled in.
 
 ## Troubleshooting
 
@@ -67,40 +67,17 @@ Each settings change restarts the updater, so Healthchecks and Shoutrrr may rece
 
 If you're still stuck, use **Report Issue** at the bottom of the page. Please install the latest version first: the problem may already be fixed.
 
-## How it works
+## Updates
 
-The app runs two containers:
+The app follows new releases of [favonia/cloudflare-ddns](https://github.com/favonia/cloudflare-ddns/releases) automatically. Once a day, a check looks for a new release. When one has been out for **two days**, the app is rebuilt with it, tested, and published here, and it appears as an update in your Umbrel App Store. Draft and pre-release versions are skipped.
 
-- **ui**: the web page (Node.js). It writes the settings file and shows the state the updater reports.
-- **cloudflare-ddns**: a small wrapper ([`cloudflare-ddns/entrypoint.sh`](cloudflare-ddns/entrypoint.sh)) around favonia's `ddns` program. It checks the settings file every 3 seconds and restarts `ddns` when it changes, so no Docker socket access is needed. `ddns` runs as an unprivileged user; it only needs outbound internet access. This container uses the host network, so it detects the Umbrel's own addresses.
+Why wait two days? A brand-new release occasionally has a problem that is found and fixed in a follow-up release within a day or two. The wait means you usually get the corrected version instead of being among the first to run into the problem, while still getting fixes and improvements without anyone having to remember to update the app by hand.
 
-They share these files in the app's data volume:
+Fixes to this Umbrel app itself (the web page and setup) are released separately, with a fourth version number: for example, v1.17.1.12 is favonia's v1.17.1 with this app's 12th set of changes.
 
-| File | Contents |
-|---|---|
-| `cloudflare-ddns.env` | Settings, including the API token. Readable by root only. |
-| `status.json` | Running, enabled, last successful check, errors (written by the wrapper) |
-| `last-change.json` | When an A or AAAA record last really changed (survives restarts and updates) |
-| `cloudflare-ddns.log` | The updater's log. Trimmed to the last 10,000 lines when it passes 5 MB. |
+## Your settings and backups
 
-Note: the settings currently live in a Docker volume that Umbrel's backups don't include, so after restoring a backup you may need to enter them again. A future version will move them into the app's backed-up data folder.
-
-## Release tooling
-
-`cf-build.sh` (run from this folder) builds both images for amd64 and arm64, pushes them to GHCR (`ghcr.io/saltedlolly/cloudflare-ddns` and `cloudflare-ddns-ui`), pins their digests in `docker-compose.yml`, and updates the version in `umbrel-app.yml`, `ui/package.json`, `ui/public/version.json` and the root README, plus the release notes. With `--publish` it commits only this folder and the root README, and pushes. New upstream releases of favonia/cloudflare-ddns are picked up by the daily auto-release workflow (`.github/workflows/cloudflare-ddns-auto-release.yml`).
-
-```bash
-# One-time: log in to GHCR with a GitHub token that can write packages
-docker login ghcr.io -u saltedlolly
-
-# Release a packaging change (adds or increments the 4th version number)
-./cf-build.sh --bump --notes "What changed" --publish
-
-# Build and deploy to a local umbrel-dev (192.168.215.2) for testing, without publishing
-./cf-build.sh --bump --localtest
-```
-
-For local testing you can bypass Umbrel's login by setting `path: "/"` in `umbrel-app.yml`; `cf-build.sh` sets it back to `path: ""` before any build that isn't `--localtest`, so a release can't go out without the login. The version in the page footer comes from the image itself (the `VERSION` build argument, served by `/api/version`), so it always matches what is running.
+The settings, including your API token, are stored on your Umbrel in a file only the system can read. Umbrel's backups don't include them yet, so after restoring a backup you may need to enter them again. A future version will move them into the app's backed-up data folder.
 
 ## Credits
 
