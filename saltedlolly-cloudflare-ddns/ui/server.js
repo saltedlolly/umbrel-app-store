@@ -48,7 +48,8 @@ function ensureDirs() {
 ensureDirs();
 
 app.get('/api/config', (req, res) => {
-    if (!fs.existsSync(ENV_FILE)) return res.json({});
+    // New install (no settings file yet): IPv6 starts off
+    if (!fs.existsSync(ENV_FILE)) return res.json({ IP6_PROVIDER: 'none' });
     const content = fs.readFileSync(ENV_FILE, 'utf8');
     const obj = {};
     content.split('\n').filter(Boolean).forEach(line => {
@@ -255,7 +256,9 @@ app.post('/api/config', async (req, res) => {
     const DOMAINS_IN = pick('DOMAINS', existing.DOMAINS);
     const PROXIED = pick('PROXIED', existing.PROXIED);
     const IP4_PROVIDER = pick('IP4_PROVIDER', existing.IP4_PROVIDER);
-    const IP6_PROVIDER = pick('IP6_PROVIDER', existing.IP6_PROVIDER);
+    // No settings file yet means a new install, where IPv6 starts off (the
+    // wrapper writes the same default when it starts)
+    const IP6_PROVIDER = pick('IP6_PROVIDER', fs.existsSync(ENV_FILE) ? existing.IP6_PROVIDER : 'none');
     // The URL itself can be sitting in either the active or the _DISABLED
     // slot depending on current toggle state - fall back to whichever one
     // actually has it when the client didn't send this field at all.

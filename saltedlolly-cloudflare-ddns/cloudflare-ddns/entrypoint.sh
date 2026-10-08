@@ -496,6 +496,15 @@ cleanup() {
 
 trap 'cleanup' INT TERM
 
+# New installs start with IPv6 off: on Umbrel an AAAA record points at the
+# Umbrel itself, whose port 443 is umbrelOS, and with Proxied on Cloudflare
+# already serves IPv6 visitors. Only done when there is no settings file yet,
+# so existing installs keep their choice.
+if [ ! -f "$ENVFILE" ]; then
+  echo "IP6_PROVIDER=none" > "$ENVFILE"
+  log "New install: IPv6 support starts switched off"
+fi
+
 # Initial environment & child
 load_env
 # Log loaded configuration (avoid logging secrets)
