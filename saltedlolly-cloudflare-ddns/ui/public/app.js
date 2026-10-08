@@ -598,6 +598,31 @@ socket.on('log', (text) => showLog(text, false));
 socket.on('log-append', (text) => showLog(text, true));
 
 // ---------------------------------------------------------------------------
+// Colour theme: light / system / dark, remembered in this browser. The saved
+// theme is applied by a small script in index.html before the page is drawn;
+// this keeps the picker in step and follows the device while on "system".
+
+const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+function savedTheme() {
+    try { return localStorage.getItem('theme') || 'system'; } catch (e) { return 'system'; }
+}
+function applyTheme(choice) {
+    const dark = choice === 'dark' || (choice === 'system' && darkQuery.matches);
+    document.documentElement.setAttribute('data-bs-theme', dark ? 'dark' : 'light');
+    document.querySelectorAll('[data-theme-value]').forEach(b => {
+        const on = b.dataset.themeValue === choice;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+}
+document.querySelectorAll('[data-theme-value]').forEach(b => b.addEventListener('click', () => {
+    try { localStorage.setItem('theme', b.dataset.themeValue); } catch (e) { }
+    applyTheme(b.dataset.themeValue);
+}));
+darkQuery.addEventListener('change', () => { if (savedTheme() === 'system') applyTheme('system'); });
+applyTheme(savedTheme());
+
+// ---------------------------------------------------------------------------
 // Start
 
 // "Report Issue" opens a new GitHub issue with the version filled in and a
