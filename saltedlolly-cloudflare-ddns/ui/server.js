@@ -254,11 +254,12 @@ app.get('/health', (req, res) => res.sendStatus(200));
 
 // ---------------------------------------------------------------------------
 // Update check: the version published in the app store (this app's
-// umbrel-app.yml on GitHub), fetched at most every 6 hours and shared by all
-// pages. Fails silently when offline.
+// umbrel-app.yml on GitHub), fetched at most once an hour and shared by all
+// pages, so a new release shows within about an hour. Fails silently when
+// offline.
 
 const STORE_MANIFEST_URL = 'https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/umbrel-app.yml';
-const UPDATE_CHECK_MS = 6 * 60 * 60 * 1000;
+const UPDATE_CHECK_MS = 60 * 60 * 1000;
 let storeVersion = { value: null, at: 0 };
 
 function fetchText(url) {
