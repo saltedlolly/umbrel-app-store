@@ -1,11 +1,11 @@
+<h1>Audiobookshelf for Umbrel with Network Shares Support
 <a href="https://saltedlolly.com">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../assets/saltedlolly/saltedlolly-wordmark-dark-bg.png">
   <img alt="saltedlolly" src="../assets/saltedlolly/saltedlolly-wordmark-light-bg.png" height="36" align="right">
 </picture>
 </a>
-
-# Audiobookshelf for Umbrel with Network Shares Support
+</h1>
 
 This is a custom version of Audiobookshelf for Umbrel that includes robust support for network shares (NAS/SMB/NFS) mounted via Umbrel's Files app.
 

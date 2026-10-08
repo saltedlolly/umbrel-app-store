@@ -1,11 +1,11 @@
+<h1>Nito for Umbrel
 <a href="https://saltedlolly.com">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../assets/saltedlolly/saltedlolly-wordmark-dark-bg.png">
   <img alt="saltedlolly" src="../assets/saltedlolly/saltedlolly-wordmark-light-bg.png" height="36" align="right">
 </picture>
 </a>
-
-# Nito for Umbrel
+</h1>
 
 A self-hosted [Nito](https://nito.network/) node - a fair-launch, SHA-256 proof-of-work blockchain with a 200-year emission schedule, built as a direct Bitcoin Core fork. Includes an original dashboard showing block height, sync progress, peers, and mempool activity.
 

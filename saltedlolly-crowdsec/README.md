@@ -1,11 +1,11 @@
+<h1>CrowdSec for Umbrel
 <a href="https://saltedlolly.com">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../assets/saltedlolly/saltedlolly-wordmark-dark-bg.png">
   <img alt="saltedlolly" src="../assets/saltedlolly/saltedlolly-wordmark-light-bg.png" height="36" align="right">
 </picture>
 </a>
-
-# CrowdSec for Umbrel
+</h1>
 
 Crowd-sourced intrusion detection and automatic IP banning, powered by [CrowdSec](https://www.crowdsec.net/). This app runs the CrowdSec engine plus a local web dashboard ([crowdsec-web-ui](https://github.com/TheDuffman85/crowdsec-web-ui)) so you can browse alerts and manage bans without needing SSH or the `cscli` command line.
 

@@ -1,11 +1,11 @@
+<h2>🌂 saltedlolly App Store for UmbrelOS
 <a href="https://saltedlolly.com">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/saltedlolly/saltedlolly-wordmark-dark-bg.png">
-  <img alt="saltedlolly" src="assets/saltedlolly/saltedlolly-wordmark-light-bg.png" height="64">
+  <img alt="saltedlolly" src="assets/saltedlolly/saltedlolly-wordmark-light-bg.png" height="40" align="right">
 </picture>
 </a>
-
-## 🌂 saltedlolly App Store for UmbrelOS
+</h2>
 
 Welcome to my Umbrel Community App Store containing all the apps I have developed for [Umbrel](https://umbrel.com/).
 

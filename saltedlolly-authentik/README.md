@@ -1,11 +1,11 @@
+<h1>Authentik for Umbrel
 <a href="https://saltedlolly.com">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../assets/saltedlolly/saltedlolly-wordmark-dark-bg.png">
   <img alt="saltedlolly" src="../assets/saltedlolly/saltedlolly-wordmark-light-bg.png" height="36" align="right">
 </picture>
 </a>
-
-# Authentik for Umbrel
+</h1>
 
 One login for the apps you share from your Umbrel, powered by [Authentik](https://goauthentik.io). Share the services you want, with the people you want, securing each account how you want. Supports MFA, TOTP, passkey, Google account login and more.
 
