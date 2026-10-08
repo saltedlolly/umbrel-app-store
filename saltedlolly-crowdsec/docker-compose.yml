@@ -48,7 +48,7 @@ services:
       start_period: 20s
 
   crowdsec-web-ui:
-    image: ghcr.io/theduffman85/crowdsec-web-ui:2026.10.1@sha256:4c6ac131e01c5688beb0a76353fbe558025ac9dd0537398d36e50936c6465f1b
+    image: ghcr.io/theduffman85/crowdsec-web-ui:2026.10.2@sha256:c334d8fdf7a86fa3f201e07c8d2fe9d755f0458fc7cb18bd1df40a7d13d5d140
     container_name: saltedlolly-crowdsec_crowdsec-web-ui_1
     hostname: saltedlolly-crowdsec_crowdsec-web-ui_1
     init: true
