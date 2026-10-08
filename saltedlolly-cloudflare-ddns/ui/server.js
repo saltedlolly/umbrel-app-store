@@ -252,7 +252,54 @@ function domainStatus() {
 
 app.get('/health', (req, res) => res.sendStatus(200));
 
-app.get('/api/version', (req, res) => res.json({ version: VERSION }));
+// ---------------------------------------------------------------------------
+// Update check: the version published in the app store (this app's
+// umbrel-app.yml on GitHub), fetched at most every 6 hours and shared by all
+// pages. Fails silently when offline.
+
+const STORE_MANIFEST_URL = 'https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/umbrel-app.yml';
+const UPDATE_CHECK_MS = 6 * 60 * 60 * 1000;
+let storeVersion = { value: null, at: 0 };
+
+function fetchText(url) {
+    return new Promise((resolve) => {
+        const req = https.get(url, { timeout: 10000 }, (res) => {
+            if (res.statusCode !== 200) { res.resume(); return resolve(null); }
+            let data = '';
+            res.on('data', (c) => data += c);
+            res.on('end', () => resolve(data));
+        });
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
+    });
+}
+
+async function latestStoreVersion() {
+    if (Date.now() - storeVersion.at > UPDATE_CHECK_MS) {
+        storeVersion.at = Date.now();
+        const yml = await fetchText(STORE_MANIFEST_URL);
+        const m = yml && yml.match(/^version:\s*"?([^"\s]+)"?/m);
+        if (m) storeVersion.value = m[1];
+    }
+    return storeVersion.value;
+}
+
+// True if version a is newer than b ("v1.17.1.12" style, any number of parts)
+function isNewer(a, b) {
+    const pa = String(a).replace(/^v/, '').split('.').map(Number);
+    const pb = String(b).replace(/^v/, '').split('.').map(Number);
+    if (pa.some(isNaN) || pb.some(isNaN)) return false;
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+        const x = pa[i] || 0, y = pb[i] || 0;
+        if (x !== y) return x > y;
+    }
+    return false;
+}
+
+app.get('/api/version', async (req, res) => {
+    const latest = await latestStoreVersion();
+    res.json({ version: VERSION, latestVersion: latest, updateAvailable: !!latest && isNewer(latest, VERSION) });
+});
 
 app.get('/api/config', (req, res) => {
     // New install (no settings file yet): IPv6 starts off

@@ -334,21 +334,27 @@
     </div>
 
             <footer class="page-footer">
-                <div class="container d-flex justify-content-between align-items-center">
+                <div class="container d-flex justify-content-between align-items-center gap-2">
                     <div class="small text-muted">Cloudflare DDNS Updater for Umbrel by Olly Stedall. Powered by <a
-                            href="https://github.com/favonia/cloudflare-ddns" target="_blank">cloudflare-ddns</a>.
-                        <span id="versionBadge" class="badge bg-secondary ms-2">v...</span>
-                        <span class="text-nowrap ms-2">
-                        <a class="btn btn-outline-secondary btn-sm py-0" href="https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-cloudflare-ddns/README.md" target="_blank"
-                            rel="noopener">Help</a>
-                        <a id="reportIssue" class="btn btn-outline-secondary btn-sm ms-1 py-0"
-                            href="https://github.com/saltedlolly/umbrel-app-store/issues/new" target="_blank"
-                            rel="noopener">Report Issue</a>
-                        </span>
+                            href="https://github.com/favonia/cloudflare-ddns" target="_blank" rel="noopener">cloudflare-ddns</a>.
+                        <span id="versionBadge" class="badge bg-secondary ms-1">v...</span>
+                        <span id="updateNotice" class="badge bg-warning text-dark ms-1" hidden></span>
                     </div>
-                    <div class="small text-muted text-end">Please Sponsor Olly on GitHub Sponsors:&nbsp;<iframe
-                            src="https://github.com/sponsors/saltedlolly/button" title="Sponsor saltedlolly" height="32"
-                            width="114" style="border: 0; border-radius: 6px; vertical-align: middle;"></iframe></div>
+                    <div class="footer-actions d-flex align-items-center gap-2">
+                        <a id="reportIssue" class="btn btn-outline-secondary btn-sm py-0 text-nowrap"
+                            href="https://github.com/saltedlolly/umbrel-app-store/issues/new" target="_blank"
+                            rel="noopener">🐛 Report Issue</a>
+                        <a class="footer-help" href="https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-cloudflare-ddns/README.md" target="_blank" rel="noopener" title="Help" aria-label="Help">
+                            <svg viewBox="0 0 16 16" width="22" height="22" aria-hidden="true">
+                                <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4" />
+                                <text x="8" y="11.6" text-anchor="middle" font-size="10" font-weight="700"
+                                    font-family="system-ui, sans-serif" fill="currentColor">?</text>
+                            </svg>
+                        </a>
+                        <span class="small text-muted text-nowrap">Please sponsor Olly on GitHub</span>
+                        <iframe src="https://github.com/sponsors/saltedlolly/button" title="Sponsor saltedlolly"
+                            height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
+                    </div>
                 </div>
             </footer>
     <script src="/socket.io/socket.io.js"></script>

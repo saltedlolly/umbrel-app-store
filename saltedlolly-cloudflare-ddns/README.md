@@ -55,7 +55,7 @@ Each settings change restarts the updater, so Healthchecks and Shoutrrr may rece
 - **Cloudflare Last Updated**: when the app last actually changed a record. Until it has had to change one, it says **Already up to date**.
 - **Domain table**: ✅ the record matches your current IP; ⏳ waiting for the next update; ⚠️ or ⛔️ a problem, explained under the domain name.
 - **Live Logs**: the last 500 lines of the updater's log.
-- **Help** (footer) opens this page; **Report Issue** opens a new GitHub issue with your app version filled in.
+- **Footer**: your app version, with an **Update available** notice when a newer version is in the app store; **🐛 Report Issue** opens a new GitHub issue with your version filled in; the **?** icon opens this page.
 
 ## Troubleshooting
 

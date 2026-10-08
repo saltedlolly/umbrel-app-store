@@ -106,8 +106,9 @@ body:not(.ready) .js-state {
         gap: .5rem;
     }
 
-    .page-footer .text-end {
-        text-align: center !important;
+    .page-footer .footer-actions {
+        flex-wrap: wrap;
+        justify-content: center;
     }
 
     .log-area {
@@ -129,6 +130,15 @@ body:not(.ready) .js-state {
         padding: .45rem .75rem;
         font-size: .95rem;
     }
+}
+
+.footer-help {
+    color: var(--bs-secondary-color);
+    line-height: 0;
+}
+
+.footer-help:hover {
+    color: var(--bs-body-color);
 }
 
 /* Shown when the page can't reach the app (see app.js) */

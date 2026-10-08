@@ -627,10 +627,21 @@ function setReportIssueLink(version) {
     $('reportIssue').href = `https://github.com/saltedlolly/umbrel-app-store/issues/new?${params}`;
 }
 
-getJSON('/api/version').then(v => {
+// Version badge, and a notice when the app store has a newer version (the
+// server checks the store every few hours)
+async function refreshVersion() {
+    let v = { version: 'unknown' };
+    try { v = await getJSON('/api/version'); } catch (e) { }
     el.version.textContent = v.version;
     setReportIssueLink(v.version);
-}).catch(() => setReportIssueLink('unknown'));
+    const notice = $('updateNotice');
+    notice.hidden = !v.updateAvailable;
+    if (v.updateAvailable) {
+        notice.textContent = `Update available: ${v.latestVersion}`;
+        notice.title = 'Install it from the App Store on your Umbrel (it can take a few minutes to appear there).';
+    }
+}
+every(60 * 60 * 1000, refreshVersion);
 refreshConfig().catch(e => console.error(e)).finally(() => {
     every(5000, refreshState);
 });
