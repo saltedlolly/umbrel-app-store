@@ -62,7 +62,7 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
     </tr>
     <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-kubo/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
-      <td><a href="#kubo-ipfs">Kubo (IPFS)</a></td>
+      <td><a href="#kubo-ipfs">Kubo IPFS</a></td>
       <td nowrap id="saltedlolly-kubo-version"><code>v0.43.1.7</code></td>
       <td nowrap id="saltedlolly-kubo-date">2026-09-23</td>
       <td>Run a full IPFS node with the official WebUI for peers, pins, and files</td>
@@ -235,7 +235,7 @@ On its own, CrowdSec doesn't protect anything - it needs a "bouncer" wired into 
 
 ---
 
-### Kubo (IPFS)<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-kubo/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+### Kubo IPFS<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-kubo/icon.png" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
 
 A self-hosted [Kubo](https://github.com/ipfs/kubo) node - the reference implementation of [IPFS](https://ipfs.tech/), a peer-to-peer network for storing and sharing content-addressed data. Includes the official WebUI for managing peers, pinning and browsing content, and monitoring bandwidth and repository usage. Built from scratch rather than derived from any existing community Kubo package - see the [app's own README](saltedlolly-kubo/README.md) for why.
 

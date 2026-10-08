@@ -5,7 +5,7 @@
 </picture>
 </a>
 
-# Kubo (IPFS) for Umbrel
+# Kubo IPFS for Umbrel
 
 A self-hosted [Kubo](https://github.com/ipfs/kubo) node - the reference implementation of [IPFS](https://ipfs.tech/), a peer-to-peer network for storing and sharing content-addressed data. Includes the official WebUI for managing peers, pinning and browsing content, and monitoring bandwidth and repository usage.
 

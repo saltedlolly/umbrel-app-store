@@ -378,10 +378,10 @@ publish_package() {
 
   git -C "$STORE_ROOT" add -- "$APP_ROOT" "$STORE_ROOT/.github/workflows/kubo-auto-release.yml" "$STORE_ROOT/README.md"
   git -C "$STORE_ROOT" diff --cached --quiet && fail "There are no Kubo changes to publish"
-  release_msg="release: Kubo (IPFS) $TARGET_VERSION - $RELEASE_NOTES"
+  release_msg="release: Kubo IPFS $TARGET_VERSION - $RELEASE_NOTES"
   git -C "$STORE_ROOT" commit -m "$release_msg" || explain_failed_commit "$release_msg"
   git -C "$STORE_ROOT" push || explain_failed_push
-  echo "Published Kubo (IPFS) $TARGET_VERSION."
+  echo "Published Kubo IPFS $TARGET_VERSION."
 }
 
 ########################################

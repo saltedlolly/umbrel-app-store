@@ -1,4 +1,4 @@
-name: Kubo (IPFS) - Auto Release
+name: Kubo IPFS - Auto Release
 
 on:
   schedule:
