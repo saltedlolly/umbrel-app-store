@@ -1,7 +1,9 @@
-<a href="https://saltedlolly.com"><picture>
+<a href="https://saltedlolly.com">
+<picture>
   <source media="(prefers-color-scheme: dark)" srcset="../assets/saltedlolly/saltedlolly-wordmark-dark-bg.png">
   <img alt="saltedlolly" src="../assets/saltedlolly/saltedlolly-wordmark-light-bg.png" height="36" align="right">
-</picture></a>
+</picture>
+</a>
 
 # Audiobookshelf for Umbrel with Network Shares Support
 
