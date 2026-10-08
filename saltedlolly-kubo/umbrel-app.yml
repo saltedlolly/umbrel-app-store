@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-kubo
 category: files
 name: Kubo IPFS
-version: "v0.43.1.7"
+version: "v0.43.1.8"
 tagline: Run a full IPFS node with the official WebUI for peers, pins, and files
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -22,6 +22,10 @@ description: >-
 
   The peer-to-peer (swarm) port is published normally so this node can find and be found by other IPFS peers. The public Gateway (port 8395) is also exposed, so anyone who reaches it can fetch content through this node - a deliberate tradeoff for being able to actually use IPFS links, not an oversight.
 releaseNotes: >-
+  ## v0.43.1.8
+
+  - The app is now called Kubo IPFS on the Umbrel dashboard
+
   ## v0.43.1.7
 
   - Fix the WebUI CORS error for real: replace the container-init.d bind-mount approach (which doesn't reliably sync on an app update) with an inline entrypoint override in docker-compose.yml itself. Also expose the public Gateway on port 8395, matching github.com/dennysubke/dennys-umbrel-app-store's Kubo package, so IPFS links actually work.
