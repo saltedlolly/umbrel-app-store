@@ -59,6 +59,13 @@
             text-decoration: none;
         }
 
+        /* Until the first config and status have loaded, keep the values the
+           page fills in invisible (their space is kept, so nothing shifts),
+           rather than showing defaults that then visibly jump */
+        body:not(.ready) .js-state {
+            visibility: hidden;
+        }
+
         .proxied-toggle {
             transform: scale(1.25);
             transform-origin: center;
@@ -193,11 +200,11 @@
                         <div class="mb-2">
                             <div class="status-box bg-light border" style="display:block; padding:.5rem;">
                                 <div class="small text-muted">Status</div>
-                                <div id="statusBoxVal" class="fw-bold">unknown</div>
+                                <div id="statusBoxVal" class="fw-bold js-state">&nbsp;</div>
                                 <div id="statusError" class="small text-muted" style="color:#b71c1c;"></div>
                             </div>
                         </div>
-                        <div class="mt-3">
+                        <div class="mt-3 js-state">
                             <div class="row g-2">
                                 <div class="col-6">
                                     <button id="start" class="btn btn-success btn-sm w-100">Enable</button>
@@ -220,17 +227,15 @@
                         <div id="configMainView">
                             <div class="mb-2 row align-items-center">
                                 <div class="col-7 small">🔑 Cloudflare API Token</div>
-                                <div class="col-5 text-end"><span id="cfgTokenStatus" class="small text-danger">⚠️
-                                        None</span></div>
+                                <div class="col-5 text-end js-state"><span id="cfgTokenStatus" class="small text-danger"></span></div>
                             </div>
                             <div class="mb-2 row align-items-center">
                                 <div class="col-7 small">📍 Domain(s)</div>
-                                <div class="col-5 text-end"><span id="cfgDomainsStatus" class="small text-danger">⚠️
-                                        None</span></div>
+                                <div class="col-5 text-end js-state"><span id="cfgDomainsStatus" class="small text-danger"></span></div>
                             </div>
                             <div class="mb-2 row align-items-center">
                                 <div class="col-7 small">☁️ Proxied</div>
-                                <div class="col-5 text-end">
+                                <div class="col-5 text-end js-state">
                                     <div
                                         class="form-check form-switch d-inline-flex align-items-center justify-content-end">
                                         <input class="form-check-input proxied-toggle" type="checkbox"
@@ -240,7 +245,7 @@
                             </div>
                             <div class="mb-2 row align-items-center">
                                 <div class="col-7 small">🌐 IPv4 Support</div>
-                                <div class="col-5 text-end">
+                                <div class="col-5 text-end js-state">
                                     <div
                                         class="form-check form-switch d-inline-flex align-items-center justify-content-end">
                                         <input class="form-check-input proxied-toggle" type="checkbox"
@@ -250,7 +255,7 @@
                             </div>
                             <div class="mb-2 row align-items-center">
                                 <div class="col-7 small">🌐 IPv6 Support</div>
-                                <div class="col-5 text-end">
+                                <div class="col-5 text-end js-state">
                                     <div
                                         class="form-check form-switch d-inline-flex align-items-center justify-content-end">
                                         <input class="form-check-input proxied-toggle" type="checkbox"
@@ -348,7 +353,7 @@
                         <div id="notifiersView">
                             <div class="row mb-2 align-items-center">
                                 <div class="col-7 small">Notify Healthchecks</div>
-                                <div class="col-5 text-end">
+                                <div class="col-5 text-end js-state">
                                     <div
                                         class="form-check form-switch d-inline-flex align-items-center justify-content-end">
                                         <input class="form-check-input proxied-toggle" type="checkbox"
@@ -359,7 +364,7 @@
                             </div>
                             <div class="row mb-2 align-items-center">
                                 <div class="col-7 small">Notify Kuma Uptime</div>
-                                <div class="col-5 text-end">
+                                <div class="col-5 text-end js-state">
                                     <div
                                         class="form-check form-switch d-inline-flex align-items-center justify-content-end">
                                         <input class="form-check-input proxied-toggle" type="checkbox"
@@ -370,7 +375,7 @@
                             </div>
                             <div class="row mb-2 align-items-center">
                                 <div class="col-7 small">Notify Shoutrrr</div>
-                                <div class="col-5 text-end">
+                                <div class="col-5 text-end js-state">
                                     <div
                                         class="form-check form-switch d-inline-flex align-items-center justify-content-end">
                                         <input class="form-check-input proxied-toggle" type="checkbox"
@@ -522,6 +527,15 @@
                 let currentConfig = null;
                 let lastServiceInfo = null;
 
+                // The page shows its switches and status once both have loaded
+                // (see .js-state); after 5 s it shows them regardless
+                const notReady = new Set(['config', 'status']);
+                function markReady(part) {
+                    notReady.delete(part);
+                    if (!notReady.size) document.body.classList.add('ready');
+                }
+                setTimeout(() => document.body.classList.add('ready'), 5000);
+
                 // Switches with a save in flight. Renders skip them, so a periodic
                 // refresh can't flip a switch back to its old value mid-save (which
                 // looked like the first click had been ignored).
@@ -561,6 +575,7 @@
                     const state = info.enabled ? (info.running ? 'running' : (info.status || 'starting')) : 'disabled';
                     document.getElementById('statusBoxVal').innerText = state;
                     renderServiceButtons(info);
+                    markReady('status');
                     // show error if provided
                     if (info.error) {
                         statusErrorEl.innerText = info.error;
@@ -845,6 +860,11 @@
                     const r = await fetch('/api/config');
                     const data = await r.json();
                     currentConfig = data;
+                    // Render switches and ticks now; the domain table below waits
+                    // for Cloudflare (about a second)
+                    renderNotifiers(data);
+                    renderConfigMain(data, lastServiceInfo);
+                    markReady('config');
                     const summarySettings = document.getElementById('summary-settings');
                     const domainsStr = data.DOMAINS || '';
                     const proxied = data.PROXIED === 'true' || data.PROXIED === true;
