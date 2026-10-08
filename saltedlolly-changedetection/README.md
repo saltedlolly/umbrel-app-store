@@ -1,3 +1,8 @@
+<a href="https://saltedlolly.com"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/saltedlolly/saltedlolly-wordmark-dark-bg.png">
+  <img alt="saltedlolly" src="../assets/saltedlolly/saltedlolly-wordmark-light-bg.png" height="36" align="right">
+</picture></a>
+
 # changedetection.io for Umbrel
 
 A self-hosted [changedetection.io](https://changedetection.io/) - watch any web page for changes and get notified (email, Discord, Slack, Telegram, and dozens more) the moment something changes: a price drop, a restock, a keyword appearing, or any part of a page you care about.

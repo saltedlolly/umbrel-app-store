@@ -1,3 +1,8 @@
+<a href="https://saltedlolly.com"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/saltedlolly/saltedlolly-wordmark-dark-bg.png">
+  <img alt="saltedlolly" src="../assets/saltedlolly/saltedlolly-wordmark-light-bg.png" height="36" align="right">
+</picture></a>
+
 # Cloudflare DDNS for Umbrel
 
 Keeps your Cloudflare DNS records pointing at your home's current public IP address, so a domain such as `home.example.com` keeps working when your internet provider changes your IP. Powered by [favonia/cloudflare-ddns](https://github.com/favonia/cloudflare-ddns), with a web page for setting it up and checking on it. Open it from the Umbrel home screen (port `4100`, behind Umbrel's login).

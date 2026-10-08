@@ -141,6 +141,11 @@ body:not(.ready) .js-state {
     color: var(--bs-body-color);
 }
 
+.footer-logo img {
+    display: block;
+    border-radius: 50%;
+}
+
 /* Shown when the page can't reach the app (see app.js) */
 #connectionLost {
     position: sticky;

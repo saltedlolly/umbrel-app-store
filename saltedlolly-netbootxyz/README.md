@@ -1,3 +1,8 @@
+<a href="https://saltedlolly.com"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/saltedlolly/saltedlolly-wordmark-dark-bg.png">
+  <img alt="saltedlolly" src="../assets/saltedlolly/saltedlolly-wordmark-light-bg.png" height="36" align="right">
+</picture></a>
+
 # netboot.xyz for Umbrel
 
 A self-hosted [netboot.xyz](https://netboot.xyz/) server - network-boot (PXE) a menu of OS installers, live rescue/diagnostic tools, and utilities to any machine on your LAN, no USB stick required.

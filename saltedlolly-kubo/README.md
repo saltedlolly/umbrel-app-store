@@ -1,3 +1,8 @@
+<a href="https://saltedlolly.com"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/saltedlolly/saltedlolly-wordmark-dark-bg.png">
+  <img alt="saltedlolly" src="../assets/saltedlolly/saltedlolly-wordmark-light-bg.png" height="36" align="right">
+</picture></a>
+
 # Kubo (IPFS) for Umbrel
 
 A self-hosted [Kubo](https://github.com/ipfs/kubo) node - the reference implementation of [IPFS](https://ipfs.tech/), a peer-to-peer network for storing and sharing content-addressed data. Includes the official WebUI for managing peers, pinning and browsing content, and monitoring bandwidth and repository usage.
