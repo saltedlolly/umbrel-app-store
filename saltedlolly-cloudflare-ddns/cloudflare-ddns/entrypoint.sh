@@ -204,8 +204,17 @@ check_for_token_error() {
   fi
   # Note: 401/403 are matched with surrounding non-hex boundaries so we don't false-positive
   # on Cloudflare record/zone IDs (random hex strings that can coincidentally contain "401"/"403").
+  # Notifier lines are left out first: favonia names the service in them ("Failed to
+  # send ... to Healthchecks", "Failed to ping Uptime Kuma", "... via Shoutrrr"), and
+  # a notifier answering 401/403 must not be mistaken for a bad Cloudflare token
+  # (which disables the whole service).
+  txt=$(echo "$txt" | grep -Ev "Healthchecks|Uptime Kuma|Shoutrrr" || true)
   if echo "$txt" | grep -Ei "Needs either CLOUDFLARE_API_TOKEN|Invalid request headers|Invalid request header|Invalid or missing authentication|(^|[^0-9a-fA-F])40[13]([^0-9a-fA-F]|$)|Unauthorized|permission denied|invalid auth|invalid token" >/dev/null 2>&1; then
-    log "Detected Cloudflare API token/auth error in logs; disabling service and stopping child"
+    # Log once per error, not on every 3-second check while the error line is
+    # still among the last 200 log lines (that wrote about 200 identical lines)
+    if [ "$ERROR_MSG" != "Invalid Cloudflare API token" ]; then
+      log "Detected Cloudflare API token/auth error in logs; disabling service and stopping child"
+    fi
     set_env_var ENABLED false
     # mark error for status file so UI can show a clear message
     ERROR_MSG="Invalid Cloudflare API token"

@@ -284,8 +284,12 @@
                             <form id="configEdit">
                                 <div class="mb-2">
                                     <label class="form-label small">🔑 Cloudflare API Token</label>
-                                    <input id="edit_CLOUDFLARE_API_TOKEN" name="CLOUDFLARE_API_TOKEN"
-                                        class="form-control form-control-sm" />
+                                    <div class="input-group input-group-sm">
+                                        <input id="edit_CLOUDFLARE_API_TOKEN" name="CLOUDFLARE_API_TOKEN" type="password"
+                                            class="form-control form-control-sm" autocomplete="off" spellcheck="false"
+                                            data-1p-ignore data-lpignore="true" />
+                                        <button id="toggleTokenBtn" class="btn btn-outline-secondary" type="button">Show</button>
+                                    </div>
                                     <div class="small text-muted mt-1">This must be a Cloudflare API token (not an API
                                         key), which can be obtained from the <a
                                             href="https://dash.cloudflare.com/profile/api-tokens" target="_blank">API
@@ -299,7 +303,10 @@
                                     <div class="small text-muted mt-1">Enter one or more fully qualified domain names
                                         (FQDNs) separated by commas. For example,
                                         "example.org,www.example.org,example.io". Domains do not have to share the same
-                                        DNS zone.</div>
+                                        DNS zone. The app points these names at your home and takes over their A (and,
+                                        with IPv6 on, AAAA) records. If your main domain (such as example.com) already
+                                        points at a website or service hosted elsewhere, use a subdomain such as
+                                        home.example.com instead.</div>
                                 </div>
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between align-items-center">
@@ -309,11 +316,10 @@
                                                 class="form-check-input proxied-toggle" type="checkbox">
                                         </div>
                                     </div>
-                                    <div class="small text-muted mt-1 w-100">If enabled, Cloudflare will cache webpages
-                                        and hide your IP addresses. Disable it to expose your actual IP addresses (e.g.,
-                                        for
-                                        non-HTTP traffic). If you are running an email server, you should keep this
-                                        disabled.
+                                    <div class="small text-muted mt-1 w-100">If enabled, visitors connect to Cloudflare,
+                                        which hides your home IP address and can cache webpages. Turning it off publishes
+                                        your home IP address in DNS for anyone to see; only do that for services that
+                                        are not websites (for example an email server, which must not be proxied).
                                     </div>
                                 </div>
                                 <div class="mb-2">
@@ -351,6 +357,7 @@
                                         incoming IPv6 to that port. While this is off, the app removes the AAAA (IPv6)
                                         records for your domains.</div>
                                 </div>
+                                <div id="configEditMsg" class="small mt-2" role="alert" style="display:none"></div>
                                 <div class="d-flex gap-2 justify-content-end mt-2 w-100">
                                     <button id="saveConfigBtn" class="btn btn-primary btn-sm">Save</button>
                                     <button id="cancelConfigBtn" class="btn btn-secondary btn-sm">Cancel</button>
@@ -442,6 +449,7 @@
                                     <textarea id="edit_SHOUTRRR" class="form-control form-control-sm"
                                         rows="3"></textarea>
                                 </div>
+                                <div id="notifiersEditMsg" class="small mt-2" role="alert" style="display:none"></div>
                                 <div class="d-flex gap-2 justify-content-end mt-2">
                                     <button id="saveNotifiersBtn" class="btn btn-primary btn-sm">Save</button>
                                     <button id="cancelNotifiersBtn" class="btn btn-secondary btn-sm">Cancel</button>
@@ -525,6 +533,31 @@
                         el.innerText = msg;
                         setTimeout(() => { try { el.style.display = 'none'; el.innerText = ''; } catch (e) { } }, timeout);
                     } catch (e) { console.error('showTempMessage failed', e); }
+                }
+
+                // Messages shown inside an open edit form (the main view's message
+                // area is hidden while editing, so errors there were invisible)
+                function showFormMessage(elId, msg, kind) {
+                    const el = document.getElementById(elId);
+                    if (!el) return;
+                    if (!msg) { el.style.display = 'none'; el.textContent = ''; return; }
+                    el.className = 'small mt-2 p-2 rounded ' + (kind === 'warn' ? 'bg-warning-subtle text-warning-emphasis' : 'bg-danger-subtle text-danger-emphasis');
+                    el.textContent = msg;
+                    el.style.display = '';
+                }
+
+                function escapeHtml(s) {
+                    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+                }
+
+                // Names that look like a main domain (example.com, example.co.uk),
+                // as opposed to a subdomain such as home.example.com
+                const TWO_PART_SUFFIXES = ['co.uk', 'org.uk', 'me.uk', 'ltd.uk', 'plc.uk', 'net.uk', 'ac.uk', 'gov.uk',
+                    'com.au', 'net.au', 'org.au', 'co.nz', 'net.nz', 'org.nz', 'co.za', 'com.br', 'co.jp', 'co.in', 'com.mx'];
+                function looksLikeMainDomain(d) {
+                    const labels = d.toLowerCase().split('.');
+                    if (labels.length === 2) return true;
+                    return labels.length === 3 && TWO_PART_SUFFIXES.includes(labels.slice(1).join('.'));
                 }
 
                 function isValidUrl(s) {
@@ -816,7 +849,7 @@
                     configEditView.style.display = '';
                 });
 
-                cancelConfigBtn.addEventListener('click', (e) => { e.preventDefault(); configEditView.style.display = 'none'; configMainView.style.display = ''; });
+                cancelConfigBtn.addEventListener('click', (e) => { e.preventDefault(); resetConfigForm(); configEditView.style.display = 'none'; configMainView.style.display = ''; });
 
                 saveConfigBtn.addEventListener('click', async (e) => {
                     e.preventDefault();
@@ -826,10 +859,24 @@
                     const v4On = editIPv4Switch.checked;
                     const v6On = editIPv6Switch.checked;
                     const dv = validateDomains(domains);
-                    if (dv.reason === 'invalid') { showTempMessage('configMainSaveMsg', 'Domains are invalid. Please enter comma-separated valid domain names.', false); return; }
+                    if (dv.reason === 'invalid') {
+                        showFormMessage('configEditMsg', 'Domains are invalid. Enter names only, separated by commas, for example home.example.com (no https:// and no slashes).');
+                        return;
+                    }
                     // enforce at least one of IPv4/IPv6 on
                     if (!v4On && !v6On) {
-                        showTempMessage('configMainSaveMsg', 'At least one of IPv4 or IPv6 must be enabled.', false);
+                        showFormMessage('configEditMsg', 'At least one of IPv4 or IPv6 must be enabled.');
+                        return;
+                    }
+                    // A main domain (example.com) newly added: its A record may point
+                    // at a website hosted elsewhere, which this app would replace.
+                    // Ask once; a second click on "Save anyway" goes ahead.
+                    const saved = ((currentConfig && currentConfig.DOMAINS) || '').split(',').map(x => x.trim().toLowerCase());
+                    const mainDomains = (dv.parts || []).filter(d => looksLikeMainDomain(d) && !saved.includes(d.toLowerCase()));
+                    if (mainDomains.length && saveConfigBtn.dataset.confirmed !== domains) {
+                        saveConfigBtn.dataset.confirmed = domains;
+                        saveConfigBtn.textContent = 'Save anyway';
+                        showFormMessage('configEditMsg', `${mainDomains.join(', ')} looks like a main domain. This app will point it at your home, replacing whatever it points at now (for example a website or email service hosted elsewhere). If that is what you want, click Save anyway. Otherwise use a subdomain such as home.${mainDomains[0]}.`, 'warn');
                         return;
                     }
                     try {
@@ -841,17 +888,43 @@
                             IP4_PROVIDER: v4On ? 'cloudflare.trace' : 'none',
                             IP6_PROVIDER: v6On ? 'cloudflare.trace' : 'none'
                         });
-                        await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                        const r = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        resetConfigForm();
                         // refresh UI
                         configEditView.style.display = 'none';
                         configMainView.style.display = '';
                         await load();
                         await updateStatus();
                         showTempMessage('configMainSaveMsg', 'Settings saved.', true);
-                    } catch (e) { showTempMessage('configMainSaveMsg', 'Save failed: ' + String(e), false); }
+                    } catch (e) { showFormMessage('configEditMsg', 'Save failed: ' + String(e)); }
                 });
 
-                proxiedMainSwitch.addEventListener('change', async () => { await toggleProxied(proxiedMainSwitch.checked); });
+                // Clear the form's message and the "Save anyway" state
+                function resetConfigForm() {
+                    showFormMessage('configEditMsg', '');
+                    delete saveConfigBtn.dataset.confirmed;
+                    saveConfigBtn.textContent = 'Save';
+                    editTokenField.type = 'password';
+                    toggleTokenBtn.textContent = 'Show';
+                }
+                editDomainsField.addEventListener('input', () => { if (saveConfigBtn.dataset.confirmed) resetConfigForm(); });
+
+                const toggleTokenBtn = document.getElementById('toggleTokenBtn');
+                toggleTokenBtn.addEventListener('click', () => {
+                    const show = editTokenField.type === 'password';
+                    editTokenField.type = show ? 'text' : 'password';
+                    toggleTokenBtn.textContent = show ? 'Hide' : 'Show';
+                });
+
+                proxiedMainSwitch.addEventListener('change', async () => {
+                    // Turning Proxied off publishes the home IP address in DNS
+                    if (!proxiedMainSwitch.checked && !window.confirm('Turn Proxied off?\n\nYour home IP address will be published in DNS for anyone to see, and visitors will connect to your home directly instead of through Cloudflare. Only do this for services that are not websites.')) {
+                        proxiedMainSwitch.checked = true;
+                        return;
+                    }
+                    await toggleProxied(proxiedMainSwitch.checked);
+                });
 
                 function toggleIPSupport(kind, enabled) {
                     // The two switches show the current state
@@ -963,7 +1036,15 @@
                                     ipv6ProxiedDisplay = '⛔️';
                                 }
 
-                                let row = `<tr><td>${d}</td>`;
+                                // Say why a domain is stuck, using the server's reason
+                                const reasons = {
+                                    'Zone not found': 'Not found in your Cloudflare account. Check the spelling, and that the domain is in the account the token belongs to.',
+                                    'Auth error': 'Cloudflare refused the token for this domain. Check the token has Edit zone DNS access to it.',
+                                    'Network error': 'Could not reach Cloudflare to check this domain.',
+                                    'Token missing': 'Add a Cloudflare API token in Edit Config.'
+                                };
+                                const why = info && info.status !== 'ok' && reasons[info.reason];
+                                let row = `<tr><td>${escapeHtml(d)}${why ? `<div class="small text-muted">${why}</div>` : ''}</td>`;
 
                                 // IPv4 columns
                                 if (ipv4Enabled) {
@@ -983,7 +1064,7 @@
                         } catch (e) {
                             // Fallback if API fails
                             rows = parts.map((d) => {
-                                let row = `<tr><td>${d}</td>`;
+                                let row = `<tr><td>${escapeHtml(d)}</td>`;
                                 if (ipv4Enabled) {
                                     row += `<td class="text-center">${proxied ? '☁️ Yes' : 'No'}</td>`;
                                     row += `<td class="text-center">⛔️</td>`;
@@ -1025,14 +1106,6 @@
                     renderNotifiers(data);
                     // Update the config main badges
                     renderConfigMain(data, lastServiceInfo);
-                    // Discover UptimeKuma if present and prefill push URL
-                    try {
-                        const d = await (await fetch('/api/discover/uptimekuma')).json();
-                        if (d.available) {
-                            const editUK = document.getElementById('edit_UPTIMEKUMA');
-                            if (editUK && !editUK.value) editUK.value = `${d.url}/push/`;
-                        }
-                    } catch (e) { }
                 }
                 load();
                 // Periodically refresh the domain status table (✅/⏳ icons, proxied status)
@@ -1064,10 +1137,6 @@
                     if (!savingSwitches.has(notifyHealthchecksSwitch)) notifyHealthchecksSwitch.disabled = !hcUrl;
                     if (!savingSwitches.has(notifyUptimeSwitch)) notifyUptimeSwitch.disabled = !ukUrl;
                     if (!savingSwitches.has(notifyShoutrrrSwitch)) notifyShoutrrrSwitch.disabled = !srUrl;
-                    // clear warnings
-                    notifyHealthchecksWarn.style.display = 'none';
-                    notifyUptimeWarn.style.display = 'none';
-                    notifyShoutrrrWarn.style.display = 'none';
                     // prefills for editor, unless the user is editing it
                     if (notifiersEdit.style.display === 'none') fillNotifiersEdit(cfg);
                 }
@@ -1098,6 +1167,7 @@
 
                 cancelNotifiersBtn.addEventListener('click', (e) => {
                     e.preventDefault();
+                    showFormMessage('notifiersEditMsg', '');
                     // Discard changes: the form is refilled the next time it opens
                     notifiersEdit.style.display = 'none';
                     notifiersView.style.display = '';
@@ -1125,12 +1195,12 @@
                     // Validate URLs
                     if (hc && !isValidUrl(hc)) {
                         hcField.classList.add('is-invalid');
-                        showTempMessage('notifiersMainSaveMsg', 'Invalid URL!', false);
+                        showFormMessage('notifiersEditMsg', 'Invalid URL. It must start with http:// or https://');
                         return;
                     }
                     if (uk && !isValidUrl(uk)) {
                         ukField.classList.add('is-invalid');
-                        showTempMessage('notifiersMainSaveMsg', 'Invalid URL!', false);
+                        showFormMessage('notifiersEditMsg', 'Invalid URL. It must start with http:// or https://');
                         return;
                     }
 
@@ -1138,7 +1208,7 @@
                     for (const line of srLines) {
                         if (!isValidShoutrrrUrl(line)) {
                             srField.classList.add('is-invalid');
-                            showTempMessage('notifiersMainSaveMsg', line.includes(',') ? 'Shoutrrr URLs cannot contain commas.' : 'Invalid URL!', false);
+                            showFormMessage('notifiersEditMsg', line.includes(',') ? 'Shoutrrr URLs cannot contain commas.' : 'Invalid Shoutrrr URL. Each line must be a URL such as discord://token@id.');
                             return;
                         }
                     }
@@ -1162,25 +1232,23 @@
                         notifiersEdit.style.display = 'none';
                         notifiersView.style.display = '';
                         renderNotifiers(refreshed);
+                        Object.values(notifierWarns).forEach(clearNotifierWarn);
+                        showFormMessage('notifiersEditMsg', '');
                         showTempMessage('notifiersMainSaveMsg', 'Settings saved.', true);
                     } catch (e) {
-                        showTempMessage('notifiersMainSaveMsg', 'Save failed: ' + String(e), false);
+                        showFormMessage('notifiersEditMsg', 'Save failed: ' + String(e));
                     }
                 });
 
-                // Toggle handlers: send ONLY the one field being changed, not
-                // a full fetch-then-repost of the whole config - the server
-                // now merges a partial update against its own current state,
-                // so this can no longer race with (and silently lose) a
-                // concurrent edit elsewhere, such as the notifiers "Save"
-                // button, the way re-posting a possibly-stale full snapshot
-                // could.
-                async function toggleNotifier(name, enabled) {
-                    await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [name]: enabled ? 'yes' : 'no' }) });
-                }
-
+                // Toggle handlers send ONLY the one field being changed (via
+                // saveSwitch); the server merges a partial update against its
+                // own current state, so this can't race with (and silently lose)
+                // a concurrent edit such as the notifiers "Save" button.
                 const notifierLabels = { HEALTHCHECKS_ENABLED: 'Healthchecks', UPTIMEKUMA_ENABLED: 'Uptime Kuma', SHOUTRRR_ENABLED: 'Shoutrrr' };
+                const notifierWarns = { HEALTHCHECKS_ENABLED: notifyHealthchecksWarn, UPTIMEKUMA_ENABLED: notifyUptimeWarn, SHOUTRRR_ENABLED: notifyShoutrrrWarn };
+                function clearNotifierWarn(el) { el.style.display = 'none'; el.title = ''; }
                 function onNotifierSwitch(sw, name) {
+                    sw.addEventListener('change', () => clearNotifierWarn(notifierWarns[name]));
                     sw.addEventListener('change', () => saveSwitch([sw], { [name]: sw.checked ? 'yes' : 'no' },
                         'notifiersMainSaveMsg', `${notifierLabels[name]} ${sw.checked ? 'enabled' : 'disabled'}.`, 'Failed to update notifier.'));
                 }
@@ -1188,10 +1256,13 @@
                 onNotifierSwitch(notifyUptimeSwitch, 'UPTIMEKUMA_ENABLED');
                 onNotifierSwitch(notifyShoutrrrSwitch, 'SHOUTRRR_ENABLED');
 
-                // Periodic check for notifier-related errors and disable the notifier (and show warning) if found.
-                // Only reacts to an error that appears after the page loaded: it used to
-                // act on the last error in the whole log, so an old error could switch a
-                // notifier straight back off after the user turned it on.
+                // Show a warning next to a notifier when a new delivery failure
+                // appears in the log. It used to switch the notifier off as well,
+                // so one failed ping (say, Uptime Kuma restarting) silently stopped
+                // all later pings. Matches favonia's own messages, e.g. "Failed to
+                // send %s to Healthchecks", "Failed to ping Uptime Kuma", "Failed to
+                // send notifications via Shoutrrr" (internal/heartbeat, notifier).
+                // Only errors that appear after the page loaded count.
                 let lastSeenError = null;
                 async function checkNotifierErrors() {
                     try {
@@ -1201,10 +1272,11 @@
                         const last = err.errors[err.errors.length - 1] || '';
                         if (lastSeenError === null || last === lastSeenError) { lastSeenError = last; return; }
                         lastSeenError = last;
-                        // heuristic matching
-                        if (/healthcheck/i.test(last)) { notifyHealthchecksWarn.style.display = ''; notifyHealthchecksSwitch.checked = false; await toggleNotifier('HEALTHCHECKS_ENABLED', false); }
-                        if (/uptimekuma|uptime kuma|uptime/i.test(last)) { notifyUptimeWarn.style.display = ''; notifyUptimeSwitch.checked = false; await toggleNotifier('UPTIMEKUMA_ENABLED', false); }
-                        if (/shoutrrr|webhook|discord|slack|matrix/i.test(last)) { notifyShoutrrrWarn.style.display = ''; notifyShoutrrrSwitch.checked = false; await toggleNotifier('SHOUTRRR_ENABLED', false); }
+                        if (!/\b(Failed|Could not)\b/.test(last)) return;
+                        const warn = (el) => { el.style.display = ''; el.title = last.trim(); };
+                        if (/\bHealthchecks\b/.test(last)) warn(notifyHealthchecksWarn);
+                        if (/\bUptime Kuma\b/.test(last)) warn(notifyUptimeWarn);
+                        if (/\bShoutrrr\b/.test(last)) warn(notifyShoutrrrWarn);
                     } catch (e) { }
                 }
                 setInterval(checkNotifierErrors, 5000);

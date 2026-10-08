@@ -156,11 +156,26 @@ function cfGet(pathname, token) {
     });
 }
 
-// Helper: derive zone candidate from domain (last two labels)
-function getZoneName(domain) {
-    const parts = (domain || '').split('.');
-    if (parts.length < 2) return domain;
-    return parts.slice(-2).join('.');
+// Helper: the zones (domains) the token can see. Used to find each domain's
+// zone by longest matching suffix; guessing "the last two labels" gave
+// "co.uk" for example.co.uk, so such domains never showed a status.
+async function listZones(token) {
+    const zones = [];
+    for (let page = 1; page <= 10; page++) {
+        const r = await cfGet(`/zones?per_page=50&page=${page}`, token);
+        if (!r) return null;                      // network error
+        if (r.success === false) return { authError: true };
+        zones.push(...(r.result || []).map(z => ({ id: z.id, name: z.name.toLowerCase() })));
+        const totalPages = (r.result_info && r.result_info.total_pages) || 1;
+        if (page >= totalPages) break;
+    }
+    return { zones };
+}
+
+function findZone(zones, domain) {
+    const d = domain.toLowerCase();
+    return zones.filter(z => d === z.name || d.endsWith('.' + z.name))
+        .sort((a, b) => b.name.length - a.name.length)[0] || null;
 }
 
 // Endpoint: per-domain status by comparing Cloudflare DNS A/AAAA with detected public IPs
@@ -180,25 +195,20 @@ app.get('/api/domain-status', async (req, res) => {
             return res.json({ domains: results });
         }
 
-        // For each domain: fetch zone id, then its DNS records
+        // The zones the token can see, then for each domain its zone and records
+        const zl = await listZones(token);
+        const none = { ipv4Match: false, ipv6Match: false, ipv4Proxied: null, ipv6Proxied: null };
+        if (!zl || zl.authError) {
+            for (const d of parts) results.push(Object.assign({ domain: d }, none, zl ? { status: 'invalid', reason: 'Auth error' } : { status: 'error', reason: 'Network error' }));
+            return res.json({ domains: results });
+        }
         for (const d of parts) {
-            const zoneName = getZoneName(d);
-            const zres = await cfGet(`/zones?name=${encodeURIComponent(zoneName)}`, token);
-            if (!zres) {
-                results.push({ domain: d, status: 'error', reason: 'Network error', ipv4Match: false, ipv6Match: false, ipv4Proxied: null, ipv6Proxied: null });
+            const zone = findZone(zl.zones, d);
+            if (!zone) {
+                results.push(Object.assign({ domain: d, status: 'pending', reason: 'Zone not found' }, none));
                 continue;
             }
-            if (zres.success === false) {
-                // Treat auth failures as invalid token
-                results.push({ domain: d, status: 'invalid', reason: 'Auth error', ipv4Match: false, ipv6Match: false, ipv4Proxied: null, ipv6Proxied: null });
-                continue;
-            }
-            if (!zres.result || !zres.result.length) {
-                // Could be wrong zone heuristic; classify as pending rather than hard error
-                results.push({ domain: d, status: 'pending', reason: 'Zone not found', ipv4Match: false, ipv6Match: false, ipv4Proxied: null, ipv6Proxied: null });
-                continue;
-            }
-            const zoneId = zres.result[0].id;
+            const zoneId = zone.id;
             const rres = await cfGet(`/zones/${zoneId}/dns_records?type=A&name=${encodeURIComponent(d)}`, token);
             const rres6 = await cfGet(`/zones/${zoneId}/dns_records?type=AAAA&name=${encodeURIComponent(d)}`, token);
             // Handle network/auth errors
@@ -455,30 +465,6 @@ app.get('/api/logs', (req, res) => {
     } catch (e) { res.status(500).json({ error: String(e) }); }
 });
 
-// Try to detect a local Uptime Kuma instance on common addresses
-app.get('/api/discover/uptimekuma', async (req, res) => {
-    const hosts = ['http://host.docker.internal:8385', 'http://umbrel.local:8385', 'http://localhost:8385', 'http://172.17.0.1:8385'];
-    const http = require('http');
-    const tryFetch = (url) => new Promise((resolve) => {
-        const timeout = setTimeout(() => resolve(null), 1000);
-        http.get(url, (r) => {
-            let data = '';
-            r.on('data', (chunk) => data += chunk);
-            r.on('end', () => {
-                clearTimeout(timeout);
-                if (data && data.toLowerCase().includes('uptime kuma')) resolve(url);
-                else resolve(null);
-            });
-        }).on('error', () => { clearTimeout(timeout); resolve(null); });
-    });
-    for (const h of hosts) {
-        try {
-            const found = await tryFetch(h);
-            if (found) return res.json({ available: true, url: found });
-        } catch (e) { }
-    }
-    res.json({ available: false });
-});
 
 // "Cloudflare Last Updated": the last GENUINE record change per family, as
 // recorded by the wrapper in last-change.json on the data volume (so it
