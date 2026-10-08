@@ -1,11 +1,10 @@
-<h1>NPMplus for umbrelOS
-<a href="https://saltedlolly.com">
+<h1><a href="https://saltedlolly.com">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../assets/saltedlolly/saltedlolly-wordmark-dark-bg.png">
   <img alt="saltedlolly" src="../assets/saltedlolly/saltedlolly-wordmark-light-bg.png" height="36" align="right">
 </picture>
 </a>
-</h1>
+NPMplus for umbrelOS</h1>
 
 This package runs NPMplus directly under Umbrel's Docker engine. It does not use Portainer. It works on its own, and connects automatically to the CrowdSec and Authentik apps from this store if you install them.
 
