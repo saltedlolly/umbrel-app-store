@@ -58,6 +58,8 @@ async function writeConfig(cfg) {
   };
   const tmp = `${CONFIG_FILE}.${process.pid}.tmp`;
   await fsp.writeFile(tmp, JSON.stringify(safeConfig, null, 2), 'utf8');
+  // Runs as root; keep the file owned by the config tool's user (1000)
+  if (process.getuid && process.getuid() === 0) await fsp.chown(tmp, 1000, 1000);
   await fsp.rename(tmp, CONFIG_FILE);
 }
 
