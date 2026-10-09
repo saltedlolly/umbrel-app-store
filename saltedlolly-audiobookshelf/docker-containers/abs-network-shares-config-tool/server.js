@@ -14,8 +14,8 @@ const AUDIOBOOKSHELF_CONTAINER = 'saltedlolly-audiobookshelf_abs-server_1';
 const SHARE_CHECKER_CONTAINER = 'saltedlolly-audiobookshelf_abs-network-shares-checker_1';
 const SHARE_CHECKER_HEALTH_URL = 'http://saltedlolly-audiobookshelf_abs-network-shares-checker_1:8080/health';
 const ABS_MANAGER_CONTAINER = 'saltedlolly-audiobookshelf_abs-manager_1';
-const DOCKER_PROXY_HOST = 'saltedlolly-audiobookshelf_docker-socket-proxy_1';
-const DOCKER_PROXY_PORT = 2375;
+const DOCKER_PROXY_HOST = process.env.DOCKER_PROXY_HOST || 'saltedlolly-audiobookshelf_docker-socket-proxy_1';
+const DOCKER_PROXY_PORT = Number(process.env.DOCKER_PROXY_PORT || 2375);
 
 // Status constants used across the manager, checker, and config-tool
 const STATUS = {
@@ -339,54 +339,58 @@ async function getShareStatus(sharePath) {
     }
 }
 
-// Check if Audiobookshelf container is running
+// Is Audiobookshelf up and ready to use?
+//
+// A single slow answer doesn't mean much: Audiobookshelf can take seconds to
+// answer while it's busy (a scan, or a large library query). So the first time
+// /healthcheck answers, that run of the container (identified by its start
+// time) is marked ready, and it stays ready until the container restarts or
+// stops. If a ready Audiobookshelf stops answering for over a minute, it's
+// reported as not responding rather than as starting up.
 const http = require('http');
-async function getAudiobookshelfStatus() {
-    // Try to reach the Audiobookshelf web UI (health check)
-    // Use the Docker Compose service name for Audiobookshelf (network alias)
+const READY_GRACE_MS = Number(process.env.READY_GRACE_MS || 60000);
+let absRun = { startedAt: null, readyAt: null, lastOkAt: 0 };
+
+function probeAudiobookshelf() {
     const absHost = process.env.ABS_SERVICE_NAME || 'saltedlolly-audiobookshelf_abs-server_1';
-    // Use port 80 for internal Docker network communication
     const absPort = process.env.ABS_SERVICE_PORT || 80;
-    const options = {
-        hostname: absHost,
-        port: absPort,
-        path: '/',
-        method: 'GET',
-        timeout: 2000,
-    };
     return new Promise((resolve) => {
-        const req = http.request(options, (res) => {
-            if (res.statusCode && res.statusCode < 500) {
-                resolve({
-                    running: true,
-                    status: 'running',
-                    message: 'Audiobookshelf is available',
-                });
-            } else {
-                resolve({
-                    running: false,
-                    status: 'unhealthy',
-                    message: `Audiobookshelf is not available - ${res.statusCode}`,
-                });
-            }
+        const req = http.request({ hostname: absHost, port: absPort, path: '/healthcheck', method: 'GET', timeout: 5000 }, (res) => {
+            res.resume();
+            resolve(res.statusCode === 200);
         });
-        req.on('error', (err) => {
-            resolve({
-                running: false,
-                status: 'not-responding',
-                message: `Audiobookshelf is not available - ${err.message}`,
-            });
-        });
-        req.on('timeout', () => {
-            req.destroy();
-            resolve({
-                running: false,
-                status: 'timeout',
-                message: 'Audiobookshelf is not available',
-            });
-        });
+        req.on('error', () => resolve(false));
+        req.on('timeout', () => { req.destroy(); resolve(false); });
         req.end();
     });
+}
+
+async function getAudiobookshelfStatus() {
+    const [ok, container] = await Promise.all([probeAudiobookshelf(), getAbsContainer()]);
+    const now = Date.now();
+    if (container && container.startedAt !== absRun.startedAt) {
+        // A different run of the container: it has to answer once before it counts as ready
+        absRun = { startedAt: container.startedAt, readyAt: null, lastOkAt: 0 };
+    }
+    if (ok) {
+        absRun.lastOkAt = now;
+        if (!absRun.readyAt) absRun.readyAt = now;
+        return { running: true, status: 'running', message: 'Audiobookshelf is available' };
+    }
+    if (!container || !container.running) {
+        // No container (abs-manager removes and recreates it on a restart) or stopped
+        absRun.readyAt = null;
+        return { running: false, status: container ? 'stopped' : 'timeout',
+            message: container ? 'Audiobookshelf is not running' : 'Audiobookshelf is starting up...' };
+    }
+    if (absRun.readyAt && now - absRun.lastOkAt < READY_GRACE_MS) {
+        // Ready earlier and still the same run: busy, not starting
+        return { running: true, status: 'busy', message: 'Audiobookshelf is busy and answering slowly' };
+    }
+    if (absRun.readyAt) {
+        return { running: false, status: 'not-responding', message: 'Audiobookshelf is running but not responding' };
+    }
+    return { running: false, status: 'timeout', message: 'Audiobookshelf is starting up...' };
 }
 
 // Restart a container via docker-socket-proxy (no docker CLI dependency)
@@ -549,7 +553,11 @@ app.get('/api/config', async (req, res) => {
 // proxy, at most every 15 seconds), so the page can say how long it has been
 // starting
 let absStarted = { at: 0, value: null };
-function getAbsStartedAt() {
+async function getAbsStartedAt() {
+    const c = await getAbsContainer();
+    return c ? c.startedAt : null;
+}
+function getAbsContainer() {
     if (Date.now() - absStarted.at < 15000) return Promise.resolve(absStarted.value);
     absStarted.at = Date.now();
     return new Promise((resolve) => {
@@ -564,8 +572,10 @@ function getAbsStartedAt() {
             r.on('data', (c) => data += c);
             r.on('end', () => {
                 try {
-                    const started = JSON.parse(data).State?.StartedAt;
-                    absStarted.value = started && !started.startsWith('0001') ? started : null;
+                    const state = JSON.parse(data).State || {};
+                    const started = state.StartedAt;
+                    absStarted.value = started && !started.startsWith('0001')
+                        ? { startedAt: started, running: !!state.Running } : null;
                 } catch {
                     absStarted.value = null;
                 }

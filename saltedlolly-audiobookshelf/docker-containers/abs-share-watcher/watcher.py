@@ -49,7 +49,8 @@ STATE_FILE = os.path.join(DATA_DIR, "state.json")
 TICK = 2                   # seconds between main-loop passes
 KEY_CHECK_EVERY = 300      # check the API key every 5 minutes
 LIBRARIES_EVERY = 600      # refresh libraries and folders every 10 minutes
-ITEMS_EVERY = 900          # refresh the list of known book folders every 15 minutes
+ITEMS_EVERY = 3600         # refresh the list of known book folders every hour (and before each light check)
+ITEMS_PAGE = 500           # books per request, with a short pause between pages, so Audiobookshelf stays responsive
 GAP_SECONDS = 120          # not watching for longer than this means changes may have been missed
 LONG_GAP_SECONDS = 3600    # a gap this long gets a full scan; a shorter one only a light check
 RETRY_SECONDS = 15         # wait before reopening a folder whose watch failed
@@ -276,7 +277,7 @@ class Watcher:
         self.light_thread = None
         self.light_running = None       # host being checked, for the status
         self.recent_evidence = {}       # (host, kind, path) -> time, to count each change once
-        self.items_dirty = False        # changes were reported, so the book list is out of date
+        self.items_thread = None
 
     def save_state(self):
         with self.lock:
@@ -347,15 +348,41 @@ class Watcher:
         self.save_state()
 
     def refresh_items(self):
+        """Read Audiobookshelf's books on network shares, a page at a time (a whole large
+        library in one request kept Audiobookshelf busy for several seconds)."""
         items = {}
         for lib in self.libraries:
             if not lib["nasFolders"]:
                 continue
-            data = Abs(self.key).call("GET", f"/api/libraries/{lib['id']}/items?minified=1", timeout=60)
-            items[lib["id"]] = {i["path"].rstrip("/"): bool(i.get("isFile"))
-                                for i in data.get("results", []) if not i.get("isMissing")}
+            books, page = {}, 0
+            while True:
+                data = Abs(self.key).call(
+                    "GET", f"/api/libraries/{lib['id']}/items?minified=1&limit={ITEMS_PAGE}&page={page}", timeout=60)
+                results = data.get("results", [])
+                for i in results:
+                    if not i.get("isMissing"):
+                        books[i["path"].rstrip("/")] = bool(i.get("isFile"))
+                page += 1
+                if len(results) < ITEMS_PAGE or page * ITEMS_PAGE >= (data.get("total") or 0):
+                    break
+                time.sleep(0.5)
+            items[lib["id"]] = books
         with self.lock:
             self.items = items
+
+    def refresh_items_in_background(self):
+        if self.items_thread and self.items_thread.is_alive():
+            return
+
+        def run():
+            try:
+                self.refresh_items()
+            except (OSError, ValueError) as e:
+                log(f"Couldn't read Audiobookshelf's book list: {e}; will try again")
+                self.last_items = time.time() - ITEMS_EVERY + 300   # retry in 5 minutes
+
+        self.items_thread = threading.Thread(target=run, daemon=True)
+        self.items_thread.start()
 
     def scan_running(self, lib_id):
         """True if Audiobookshelf is running a full scan of this library (or can't say)."""
@@ -506,8 +533,6 @@ class Watcher:
                     self.pending.pop(0)
             sent += 1
         if sent:
-            # Audiobookshelf's book list changes once it has scanned these; read it again soon
-            self.items_dirty = True
             self.reported_total += sent
             self.last_report = {"at": now_iso(), "count": sent}
             log(f"Reported {sent} change(s) to Audiobookshelf")
@@ -887,10 +912,9 @@ class Watcher:
                 if now - self.last_libraries > LIBRARIES_EVERY:
                     self.refresh_libraries()
                     self.last_libraries = now
-                if now - self.last_items > ITEMS_EVERY or (self.items_dirty and now - self.last_items > 60):
-                    self.refresh_items()
+                if now - self.last_items > ITEMS_EVERY:
                     self.last_items = now
-                    self.items_dirty = False
+                    self.refresh_items_in_background()
             elif self.key_status[0] == "abs-unavailable" and now - self.last_key_check > 30:
                 self.last_key_check = 0   # Audiobookshelf starting up: try again soon
         self.sync_watches(enabled and bool(self.key))
