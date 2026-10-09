@@ -9,8 +9,10 @@ services:
       PROXY_AUTH_ADD: "true"
 
   docker-socket-proxy:
-    image: tecnativa/docker-socket-proxy:latest
-    container_name: docker-socket-proxy
+    image: tecnativa/docker-socket-proxy@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
+    # App-specific name: a generic "docker-socket-proxy" could clash with
+    # another app's container of the same name
+    container_name: saltedlolly-audiobookshelf_docker-socket-proxy_1
     restart: unless-stopped
     environment:
       - CONTAINERS=1      # Allow container read operations
@@ -27,7 +29,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     # No published port: abs-manager and the config tool reach the proxy as
-    # docker-socket-proxy:2375 on the app network. Publishing 2375 made the
+    # saltedlolly-audiobookshelf_docker-socket-proxy_1:2375 on the app network. Publishing 2375 made the
     # Docker API reachable without a password from every device on the LAN.
 
   # Lightweight UI service for managing and monitoring required network shares selection
@@ -38,7 +40,7 @@ services:
     hostname: saltedlolly-audiobookshelf_abs-network-shares-config-tool_1
     init: true
     restart: unless-stopped
-    user: "1000:999"  # node user with docker group for socket access
+    user: "1000:1000"
     environment:
       - APP_DATA_DIR=${APP_DATA_DIR}
       - NODE_ENV=production
@@ -46,8 +48,6 @@ services:
       - ${APP_DATA_DIR}/data:/data
       # Mount the Umbrel network storage root (read-only) so we can discover shares
       - ${UMBREL_ROOT}/network:/umbrel-network:ro
-      # Mount docker socket to check Audiobookshelf container status
-      - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3001/health"]
       interval: 5s

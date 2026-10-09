@@ -35,6 +35,13 @@ log_warn() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] [PRE-START] WARN: $*" >&2
 }
 
+# Give everything under a folder to 1000:1000, touching only the files that
+# need it. A plain "chown -R" rewrote every file's inode on every start,
+# which is slow with a large library or metadata folder.
+fix_ownership() {
+    find "$1" \( ! -uid 1000 -o ! -gid 1000 \) -exec chown -h 1000:1000 {} +
+}
+
 # Fix permissions on APP_DATA_DIR (Umbrel creates these but not with correct ownership)
 log "Checking permissions on app data directories..."
 
@@ -42,7 +49,7 @@ if [[ -d "${APP_DATA_DIR}/data" ]]; then
     # Check ownership on the data directory and subdirectories
     log_info "Fixing ownership on ${APP_DATA_DIR}/data and subdirectories..."
     
-    if ! chown -R 1000:1000 "${APP_DATA_DIR}/data"; then
+    if ! fix_ownership "${APP_DATA_DIR}/data"; then
         log_error "Failed to fix ownership on ${APP_DATA_DIR}/data"
         log_error "Please run manually: sudo chown -R 1000:1000 ${APP_DATA_DIR}/data"
         exit 1
@@ -52,7 +59,7 @@ if [[ -d "${APP_DATA_DIR}/data" ]]; then
 else
     log_warn "Data directory not found at ${APP_DATA_DIR}/data; creating it now..."
     if mkdir -p "${APP_DATA_DIR}/data"; then
-        if chown -R 1000:1000 "${APP_DATA_DIR}/data"; then
+        if fix_ownership "${APP_DATA_DIR}/data"; then
             log "✓ Created data directory and fixed ownership"
         else
             log_error "Failed to fix ownership on newly created ${APP_DATA_DIR}/data"
@@ -96,6 +103,8 @@ else
 fi
 
 # Create README in Audiobooks directory
+# Written once; the user may edit or delete it
+if [[ ! -f "${AUDIOBOOKS_DIR}/README.txt" ]]; then
 cat > "${AUDIOBOOKS_DIR}/README.txt" << 'EOF'
 ═══════════════════════════════════════════════════════════════════════════════
                         AUDIOBOOKS FOLDER - ORGANIZATION GUIDE
@@ -172,6 +181,7 @@ https://www.audiobookshelf.org/docs/#book-directory-structure
 
 ═══════════════════════════════════════════════════════════════════════════════
 EOF
+fi
 
 # Create Podcasts directory
 if [[ ! -d "${PODCASTS_DIR}" ]]; then
@@ -187,6 +197,8 @@ else
 fi
 
 # Create README in Podcasts directory
+# Written once; the user may edit or delete it
+if [[ ! -f "${PODCASTS_DIR}/README.txt" ]]; then
 cat > "${PODCASTS_DIR}/README.txt" << 'EOF'
 ═══════════════════════════════════════════════════════════════════════════════
                          PODCASTS FOLDER - ORGANIZATION GUIDE
@@ -244,10 +256,11 @@ https://www.audiobookshelf.org/docs/#podcast-directory-structure
 
 ═══════════════════════════════════════════════════════════════════════════════
 EOF
+fi
 
 # Set ownership to 1000:1000 so Audiobookshelf container can write to media directories
 log "Setting ownership to 1000:1000 on media directories..."
-if ! chown -R 1000:1000 "${AUDIOBOOKSHELF_HOME}"; then
+if ! fix_ownership "${AUDIOBOOKSHELF_HOME}"; then
     log_error "Failed to set ownership on ${AUDIOBOOKSHELF_HOME}"
     log_error "Please run manually: sudo chown -R 1000:1000 ~/umbrel/home/Audiobookshelf/"
     exit 1
@@ -257,40 +270,8 @@ log "✓ Media directories ready at ${AUDIOBOOKSHELF_HOME}"
 log "These directories are visible in Files app at /Home/Audiobookshelf and survive app uninstalls"
 
 log "Network share readiness will now be handled by the share-waiter service."
-log "Resetting required shares to 'checking' status for fresh startup check..."
-
-# Reset share statuses before starting - ensures fresh check on every startup
-# This handles both normal restarts and unclean shutdowns (power outage)
-if [[ -f "${CONFIG_FILE}" ]]; then
-    # Read the current config to preserve enabledShares and shareSettings
-    if command -v jq &> /dev/null; then
-        # jq is available - use it for precise JSON manipulation
-        local enabledShares
-        enabledShares=$(jq -r '.enabledShares // []' "${CONFIG_FILE}")
-        local shareSettings
-        shareSettings=$(jq -r '.shareSettings // {}' "${CONFIG_FILE}")
-        
-        # Build new shares object with all required shares set to 'checking'
-        local newShares='{}'
-        for share in $(echo "$enabledShares" | jq -r '.[]'); do
-            newShares=$(echo "$newShares" | jq --arg share "$share" '.[$share] = {"status": "checking", "lastCheckedAt": null}')
-        done
-        
-        # Create new config with reset statuses and removed non-required shares
-        local newConfig='{}'
-        newConfig=$(echo "$newConfig" | jq --argjson enabled "$enabledShares" '.enabledShares = $enabled')
-        newConfig=$(echo "$newConfig" | jq --argjson settings "$shareSettings" '.shareSettings = $settings')
-        newConfig=$(echo "$newConfig" | jq --argjson shares "$newShares" '.shares = $shares')
-        
-        echo "$newConfig" > "${CONFIG_FILE}"
-        log "✓ Reset network shares to 'checking' status (removed non-required shares)"
-        log "  Required shares awaiting check: $(echo "$enabledShares" | jq -r '.[]' | tr '\n' ', ' | sed 's/,$//')"
-    else
-        log_warn "jq not available; skipping automatic reset"
-    fi
-else
-    log_warn "No network-shares.json found yet; will be created when config-tool starts"
-fi
+# Share statuses are reset to "checking" by abs-manager at every start
+# (resetShareStatuses), so the hook doesn't need to do it.
 
 log "Starting app immediately."
 exit 0

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const docker = new Docker({ host: 'docker-socket-proxy', port: 2375 });
+const docker = new Docker({ host: 'saltedlolly-audiobookshelf_docker-socket-proxy_1', port: 2375 });
 
 const fsp = fs.promises;
 const DATA_DIR = '/data';
@@ -127,6 +127,19 @@ async function containerIsHealthy(name) {
   }
 }
 
+// Pull only when the image isn't already on the Umbrel, so Audiobookshelf
+// starts without waiting for a download (and without internet access)
+async function ensureImage(imageRef) {
+  try {
+    await docker.getImage(imageRef).inspect();
+    console.log(`Image already present: ${imageRef}`);
+    return;
+  } catch (err) {
+    if (err.statusCode !== 404) throw err;
+  }
+  await pullImage(imageRef);
+}
+
 async function pullImage(imageRef) {
   console.log(`Pulling image: ${imageRef}`);
   return new Promise((resolve, reject) => {
@@ -202,34 +215,28 @@ async function cleanupOldImages(imageRef) {
       return;
     }
 
-    // Extract repo name (e.g., "saltedlolly/abs-network-shares-checker" or "ghcr.io/advplyr/audiobookshelf")
+    // Extract repo name (e.g., "ghcr.io/saltedlolly/abs-network-shares-checker" or "ghcr.io/advplyr/audiobookshelf")
     const repoName = imageRef.split('@')[0].split(':')[0];
     console.log(`Cleaning up old images for ${repoName} (keeping digest: ${currentDigest.substring(0, 12)}...)`);
 
     // List all images
     const images = await docker.listImages();
 
-    // Find images matching this repo that don't have the current digest
+    // Images pulled by digest have no tags, only RepoDigests, so match on
+    // those. Removal is not forced: an image another container still uses
+    // (for example another Audiobookshelf app) is left alone.
     let cleaned = 0;
     for (const imgInfo of images) {
-      for (const repoTag of imgInfo.RepoTags || []) {
-        // Check if this image is from the same repo
-        if (repoTag.startsWith(repoName + ':') || repoTag.startsWith(repoName + '@')) {
-          // Skip if it's the current digest
-          if (repoTag.includes(`@sha256:${currentDigest}`)) {
-            console.log(`  ✓ Keeping current: ${repoTag}`);
-            continue;
-          }
-
-          // Remove old image
-          try {
-            console.log(`  ✗ Removing old: ${repoTag}`);
-            await docker.getImage(imgInfo.Id).remove({ force: true });
-            cleaned++;
-          } catch (err) {
-            console.warn(`  ⚠ Failed to remove ${repoTag}: ${err.message}`);
-          }
-        }
+      const refs = [...(imgInfo.RepoDigests || []), ...(imgInfo.RepoTags || [])];
+      const sameRepo = refs.some(r => r.startsWith(repoName + '@') || r.startsWith(repoName + ':'));
+      if (!sameRepo) continue;
+      if (refs.some(r => r.includes(`@sha256:${currentDigest}`))) continue;
+      try {
+        console.log(`  ✗ Removing old: ${refs[0]}`);
+        await docker.getImage(imgInfo.Id).remove();
+        cleaned++;
+      } catch (err) {
+        console.warn(`  ⚠ Kept ${refs[0]}: ${err.message}`);
       }
     }
 
@@ -248,7 +255,7 @@ async function launchChecker() {
   try { await docker.getContainer(CHECKER_NAME).remove({ force: true }); } catch { }
   // Pull checker image first
   const checkerImage = getCheckerImage();
-  await pullImage(checkerImage);
+  await ensureImage(checkerImage);
   // Clean up old images
   await cleanupOldImages(checkerImage);
   const networkMode = await getCurrentNetwork();
@@ -289,8 +296,8 @@ async function ensureAbsServer() {
   try { await docker.getContainer(ABS_SERVER_NAME).remove({ force: true }); } catch { }
   // Read image reference dynamically
   const absServerImage = getAbsServerImage();
-  // Pull ABS server image first
-  await pullImage(absServerImage);
+  // Pull the ABS server image if it isn't here yet
+  await ensureImage(absServerImage);
   // Clean up old images
   await cleanupOldImages(absServerImage);
   const networkMode = await getCurrentNetwork();

@@ -2,10 +2,7 @@ const express = require('express');
 const fs = require('fs').promises;
 const https = require('https');
 const path = require('path');
-const { exec } = require('child_process');
-const { promisify } = require('util');
 
-const execAsync = promisify(exec);
 
 const app = express();
 const PORT = 3001;
@@ -17,7 +14,7 @@ const AUDIOBOOKSHELF_CONTAINER = 'saltedlolly-audiobookshelf_abs-server_1';
 const SHARE_CHECKER_CONTAINER = 'saltedlolly-audiobookshelf_abs-network-shares-checker_1';
 const SHARE_CHECKER_HEALTH_URL = 'http://saltedlolly-audiobookshelf_abs-network-shares-checker_1:8080/health';
 const ABS_MANAGER_CONTAINER = 'saltedlolly-audiobookshelf_abs-manager_1';
-const DOCKER_PROXY_HOST = 'docker-socket-proxy';
+const DOCKER_PROXY_HOST = 'saltedlolly-audiobookshelf_docker-socket-proxy_1';
 const DOCKER_PROXY_PORT = 2375;
 
 // Status constants used across the manager, checker, and config-tool
