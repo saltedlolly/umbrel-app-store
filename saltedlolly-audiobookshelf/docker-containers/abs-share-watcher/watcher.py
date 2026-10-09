@@ -276,6 +276,7 @@ class Watcher:
         self.light_thread = None
         self.light_running = None       # host being checked, for the status
         self.recent_evidence = {}       # (host, kind, path) -> time, to count each change once
+        self.items_dirty = False        # changes were reported, so the book list is out of date
 
     def save_state(self):
         with self.lock:
@@ -401,9 +402,11 @@ class Watcher:
             self.evidence(host, "deleted", "reported", key)
         elif action == ADDED and (os.path.isdir(path) or is_media(rel)):
             self.evidence(host, "new", "reported", key)
-        elif action == MODIFIED and is_media(rel):
+        elif action == MODIFIED and (is_media(rel) or os.path.isdir(path)):
+            # A changed file, or a folder reported as changed (a Drobo reports the author folder when
+            # Finder replaces a file), in or around a book Audiobookshelf already has
             books = self.items.get(lib["id"], {})
-            if any(path.startswith(b + "/") or path == b for b in books):
+            if any(path == b or path.startswith(b + "/") or b.startswith(path + "/") for b in books):
                 self.evidence(host, "changed", "reported", key)
 
     # ---- watching ---------------------------------------------------------
@@ -502,9 +505,9 @@ class Watcher:
                 if self.pending and self.pending[0] is body:
                     self.pending.pop(0)
             sent += 1
-            if body["type"] == "unlink":
-                self.last_items = 0   # the book list changed
         if sent:
+            # Audiobookshelf's book list changes once it has scanned these; read it again soon
+            self.items_dirty = True
             self.reported_total += sent
             self.last_report = {"at": now_iso(), "count": sent}
             log(f"Reported {sent} change(s) to Audiobookshelf")
@@ -884,9 +887,10 @@ class Watcher:
                 if now - self.last_libraries > LIBRARIES_EVERY:
                     self.refresh_libraries()
                     self.last_libraries = now
-                if now - self.last_items > ITEMS_EVERY:
+                if now - self.last_items > ITEMS_EVERY or (self.items_dirty and now - self.last_items > 60):
                     self.refresh_items()
                     self.last_items = now
+                    self.items_dirty = False
             elif self.key_status[0] == "abs-unavailable" and now - self.last_key_check > 30:
                 self.last_key_check = 0   # Audiobookshelf starting up: try again soon
         self.sync_watches(enabled and bool(self.key))

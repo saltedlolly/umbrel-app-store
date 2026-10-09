@@ -1520,7 +1520,8 @@
                                 onclick="cancelKeyInput()">Cancel</button>
                         </div>
                         <div class="watcher-help">In Audiobookshelf, go to <strong>Settings &gt; API Keys &gt; Add
-                                API Key</strong>, choose an administrator as the user, and copy the key here. If you give
+                                API Key</strong>, choose an administrator as the user, make sure the key is switched on (active),
+                            and copy the key here. If you give
                             the key an expiry date, imports stop when it expires and this page will say so. The key is
                             kept with this app's settings, included in Umbrel backups, and not shown again after
                             saving.</div>
@@ -2527,7 +2528,7 @@
                 if (s.lastChange) meta.push(`Last change seen: ${esc(when(s.lastChange.at))}, <code>${esc(sharePath(s.lastChange.path))}</code>`);
                 if (s.lastReport) meta.push(`Last sent to Audiobookshelf: ${esc(when(s.lastReport.at))} (${s.lastReport.count} change${s.lastReport.count === 1 ? '' : 's'})`);
                 if (s.pending) meta.push(`${s.pending} change${s.pending === 1 ? '' : 's'} waiting for Audiobookshelf`);
-                if (s.lastCatchup) meta.push(`Last catch-up scan: ${esc(when(s.lastCatchup.at))}`);
+                if (s.lastCatchup) meta.push(`Last full scan: ${esc(when(s.lastCatchup.at))}`);
             }
             document.getElementById('watcher-meta').innerHTML = meta.join('<br>');
         }

@@ -231,6 +231,11 @@ class Evidence(unittest.TestCase):
         nas = w.state["nas"]["NAS.local"]
         self.assertEqual({k: v["reported"] for k, v in nas.items()}, {"new": 1, "deleted": 1, "changed": 1})
 
+    def test_modified_folder_around_a_known_book_counts_as_changed(self):
+        os.makedirs(f"{self.folder}/Author/Book", exist_ok=True)
+        self.w.notification_evidence(self.lib, self.folder, watcher.MODIFIED, "Author")
+        self.assertEqual(self.w.state["nas"]["NAS.local"]["changed"]["reported"], 1)
+
     def test_three_renames_confirm(self):
         for i in range(3):
             self.w.notification_evidence(self.lib, self.folder, watcher.RENAMED_OLD, f"Author {i}/Book")
@@ -301,6 +306,61 @@ class Scheduling(unittest.TestCase):
     def test_bad_time_falls_back_to_four(self):
         self.assertEqual((self.w.next_run("nonsense").hour, self.w.next_run("nonsense").minute), (4, 0))
         self.assertEqual(self.w.next_run("23:15").minute, 15)
+
+
+class FullScans(unittest.TestCase):
+    """Scheduled full scans, with a stand-in for Audiobookshelf."""
+
+    def setUp(self):
+        self.w = make_watcher({"enabled": True})
+        self.w.libraries = [{"id": "lib1", "name": "Lib", "nasFolders": [f"{ROOT}/NAS.local/x"]}]
+        self.calls = []
+        self.running = False
+        test = self
+
+        class FakeAbs:
+            def __init__(self, key):
+                pass
+
+            def call(self, method, path, body=None, timeout=15):
+                test.calls.append((method, path))
+                if path == "/api/tasks":
+                    return {"tasks": [{"action": "library-scan", "isFinished": False,
+                                       "data": {"libraryId": "lib1"}}] if test.running else []}
+                return "OK"
+
+        self.real_abs = watcher.Abs
+        watcher.Abs = FakeAbs
+        self.w.schedule_full_scan(["lib1"], "test")
+
+    def tearDown(self):
+        watcher.Abs = self.real_abs
+
+    def test_not_due_yet(self):
+        self.w.run_full_scans_if_due(None)
+        self.assertNotIn(("POST", "/api/libraries/lib1/scan"), self.calls)
+        self.assertIsNotNone(self.w.state.get("catchup"))
+
+    def test_scan_now(self):
+        self.w.run_full_scans_if_due({"action": "run"})
+        self.assertIn(("POST", "/api/libraries/lib1/scan"), self.calls)
+        self.assertIsNone(self.w.state.get("catchup"))
+        self.assertIn("lib1", self.w.state["lastFullScan"])
+
+    def test_waits_while_abs_is_scanning(self):
+        self.running = True
+        self.w.run_full_scans_if_due({"action": "run"})
+        self.assertNotIn(("POST", "/api/libraries/lib1/scan"), self.calls)
+        self.assertEqual(self.w.state["catchup"]["libraries"], ["lib1"])   # still waiting
+        self.running = False
+        self.w.state["catchup"]["at"] = "2000-01-01T04:00"                  # now due
+        self.w.run_full_scans_if_due(None)
+        self.assertIn(("POST", "/api/libraries/lib1/scan"), self.calls)
+
+    def test_skip(self):
+        self.w.run_full_scans_if_due({"action": "skip"})
+        self.assertIsNone(self.w.state.get("catchup"))
+        self.assertNotIn(("POST", "/api/libraries/lib1/scan"), self.calls)
 
 
 if __name__ == "__main__":
