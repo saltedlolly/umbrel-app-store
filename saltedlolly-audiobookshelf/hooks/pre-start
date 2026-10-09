@@ -1,19 +1,23 @@
 #!/usr/bin/env bash
 #
-# Pre-start hook for Audiobookshelf
-# Waits for selected network shares to be mounted before allowing the app to start
-# This prevents the "share isn't mounted yet" problem after reboots
+# Pre-start hook for Audiobookshelf NAS Edition (runs on the Umbrel as root,
+# before the app's containers start)
 #
-# Configuration is read from ${APP_DATA_DIR}/data/network-shares.json
-# This file is managed by the abs-network-share-config-tool sidecar service
+# - Gives the app's data folder and the Audiobookshelf home folder to the
+#   app's user (1000)
+# - Creates network-shares.json if it's missing (managed by the network
+#   shares page; waiting for shares is done by abs-network-shares-checker)
+# - Creates the Audiobooks and Podcasts folders and their README files
 #
-set -euo pipefail
+# A step that fails is logged and the others still run: umbrelOS starts the
+# app whatever this hook returns, and users don't see this log, so stopping
+# early would only skip the remaining steps. Each step runs again at the
+# next start.
+#
+set -uo pipefail
 
 # Configuration
 readonly CONFIG_FILE="${APP_DATA_DIR}/data/network-shares.json"
-readonly MAX_WAIT_SECONDS=300  # 5 minutes total timeout
-readonly CHECK_INTERVAL=2      # Check every 2 seconds
-readonly NETWORK_MOUNT_ROOT="${UMBREL_ROOT}/network"
 readonly AUDIOBOOKSHELF_HOME="${UMBREL_ROOT}/home/Audiobookshelf"
 readonly AUDIOBOOKS_DIR="${AUDIOBOOKSHELF_HOME}/Audiobooks"
 readonly PODCASTS_DIR="${AUDIOBOOKSHELF_HOME}/Podcasts"
@@ -49,40 +53,37 @@ if [[ -d "${APP_DATA_DIR}/data" ]]; then
     # Check ownership on the data directory and subdirectories
     log_info "Fixing ownership on ${APP_DATA_DIR}/data and subdirectories..."
     
-    if ! fix_ownership "${APP_DATA_DIR}/data"; then
-        log_error "Failed to fix ownership on ${APP_DATA_DIR}/data"
-        log_error "Please run manually: sudo chown -R 1000:1000 ${APP_DATA_DIR}/data"
-        exit 1
+    if fix_ownership "${APP_DATA_DIR}/data"; then
+        log "✓ App data directory ownership fixed"
+    else
+        log_warn "Could not fix ownership of everything in ${APP_DATA_DIR}/data; trying again at the next start"
     fi
-    
-    log "✓ App data directory ownership fixed"
 else
     log_warn "Data directory not found at ${APP_DATA_DIR}/data; creating it now..."
     if mkdir -p "${APP_DATA_DIR}/data"; then
         if fix_ownership "${APP_DATA_DIR}/data"; then
             log "✓ Created data directory and fixed ownership"
         else
-            log_error "Failed to fix ownership on newly created ${APP_DATA_DIR}/data"
-            log_error "Please run manually: sudo chown -R 1000:1000 ${APP_DATA_DIR}/data"
-            exit 1
+            log_warn "Could not fix ownership of ${APP_DATA_DIR}/data; trying again at the next start"
         fi
     else
         log_error "Failed to create data directory at ${APP_DATA_DIR}/data"
-        exit 1
     fi
 fi
 
 # Ensure network-shares.json is writable (network-shares-ui runs as node user - UID 1000)
 # Create it with correct permissions if it doesn't exist
-if [[ ! -f "${CONFIG_FILE}" ]]; then
-    log "Creating network-shares.json with default configuration..."
-    echo '{"enabledShares":[],"shareSettings":{},"shares":{}}' > "${CONFIG_FILE}"
+if [[ -d "${APP_DATA_DIR}/data" ]]; then
+    if [[ ! -f "${CONFIG_FILE}" ]]; then
+        log "Creating network-shares.json with default configuration..."
+        echo '{"enabledShares":[],"shareSettings":{},"shares":{}}' > "${CONFIG_FILE}"
+    fi
+    if chown 1000:1000 "${CONFIG_FILE}" && chmod 644 "${CONFIG_FILE}"; then
+        log "✓ Network shares configuration file is ready"
+    else
+        log_warn "Could not set permissions on ${CONFIG_FILE}"
+    fi
 fi
-
-log "Fixing permissions on network-shares.json..."
-chown 1000:1000 "${CONFIG_FILE}"
-chmod 644 "${CONFIG_FILE}"
-log "✓ Network shares configuration file is ready"
 
 # Share-waiter script is now included in its own container image; no copy needed.
 
@@ -96,7 +97,6 @@ if [[ ! -d "${AUDIOBOOKS_DIR}" ]]; then
         log "✓ Audiobooks directory created successfully"
     else
         log_error "Failed to create Audiobooks directory"
-        exit 1
     fi
 else
     log "✓ Audiobooks directory already exists"
@@ -104,7 +104,7 @@ fi
 
 # Create README in Audiobooks directory
 # Written once; the user may edit or delete it
-if [[ ! -f "${AUDIOBOOKS_DIR}/README.txt" ]]; then
+if [[ -d "${AUDIOBOOKS_DIR}" && ! -f "${AUDIOBOOKS_DIR}/README.txt" ]]; then
 cat > "${AUDIOBOOKS_DIR}/README.txt" << 'EOF'
 ═══════════════════════════════════════════════════════════════════════════════
                         AUDIOBOOKS FOLDER - ORGANIZATION GUIDE
@@ -190,7 +190,6 @@ if [[ ! -d "${PODCASTS_DIR}" ]]; then
         log "✓ Podcasts directory created successfully"
     else
         log_error "Failed to create Podcasts directory"
-        exit 1
     fi
 else
     log "✓ Podcasts directory already exists"
@@ -198,7 +197,7 @@ fi
 
 # Create README in Podcasts directory
 # Written once; the user may edit or delete it
-if [[ ! -f "${PODCASTS_DIR}/README.txt" ]]; then
+if [[ -d "${PODCASTS_DIR}" && ! -f "${PODCASTS_DIR}/README.txt" ]]; then
 cat > "${PODCASTS_DIR}/README.txt" << 'EOF'
 ═══════════════════════════════════════════════════════════════════════════════
                          PODCASTS FOLDER - ORGANIZATION GUIDE
@@ -260,18 +259,14 @@ fi
 
 # Set ownership to 1000:1000 so Audiobookshelf container can write to media directories
 log "Setting ownership to 1000:1000 on media directories..."
-if ! fix_ownership "${AUDIOBOOKSHELF_HOME}"; then
-    log_error "Failed to set ownership on ${AUDIOBOOKSHELF_HOME}"
-    log_error "Please run manually: sudo chown -R 1000:1000 ~/umbrel/home/Audiobookshelf/"
-    exit 1
+if [[ -d "${AUDIOBOOKSHELF_HOME}" ]] && fix_ownership "${AUDIOBOOKSHELF_HOME}"; then
+    log "✓ Media directories ready at ${AUDIOBOOKSHELF_HOME}"
+else
+    log_warn "Could not set ownership of everything in ${AUDIOBOOKSHELF_HOME}; trying again at the next start"
 fi
-
-log "✓ Media directories ready at ${AUDIOBOOKSHELF_HOME}"
 log "These directories are visible in Files app at /Home/Audiobookshelf and survive app uninstalls"
 
-log "Network share readiness will now be handled by the share-waiter service."
 # Share statuses are reset to "checking" by abs-manager at every start
 # (resetShareStatuses), so the hook doesn't need to do it.
 
-log "Starting app immediately."
 exit 0
