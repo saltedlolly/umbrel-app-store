@@ -1173,6 +1173,138 @@
             overflow-wrap: anywhere;
         }
 
+        .watcher-box select {
+            padding: 8px 10px;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            font-size: 14px;
+            background: var(--surface);
+            color: var(--gray-800);
+        }
+
+        /* "Your NAS": what each NAS reports, and the light check */
+        .nas-block {
+            margin-top: 22px;
+        }
+
+        .nas-block > h3 {
+            font-size: 15px;
+            color: var(--gray-800);
+            margin-bottom: 6px;
+        }
+
+        .nas-entry {
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-top: 10px;
+            scroll-margin-top: 20px;
+        }
+
+        .nas-entry.highlight {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+        }
+
+        .nas-entry-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        .nas-entry-libs {
+            font-size: 12px;
+            color: var(--gray-500);
+            margin-top: 2px;
+        }
+
+        .nas-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 13px;
+            table-layout: fixed;
+        }
+
+        .nas-table th:nth-child(1) { width: 30%; }
+        .nas-table th:nth-child(2) { width: 32%; }
+
+        .nas-table th,
+        .nas-table td {
+            text-align: left;
+            padding: 6px 8px 6px 0;
+            border-top: 1px solid var(--gray-200);
+            vertical-align: top;
+            color: var(--gray-700);
+        }
+
+        .nas-table th {
+            font-weight: 600;
+            color: var(--gray-500);
+            border-top: 0;
+        }
+
+        .nas-table .evidence {
+            color: var(--gray-500);
+            font-size: 12px;
+        }
+
+        .cap-reported {
+            color: var(--green-800);
+        }
+
+        .cap-not-reported {
+            color: var(--amber-800);
+        }
+
+        .cap-unknown {
+            color: var(--gray-500);
+        }
+
+        .nas-light {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+            font-size: 13px;
+            color: var(--gray-600);
+        }
+
+        /* Badge on a share card: how well that NAS's changes are picked up */
+        .nas-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+            border: 0;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .nas-badge.all {
+            background: var(--green-100);
+            color: var(--green-800);
+        }
+
+        .nas-badge.partial {
+            background: var(--amber-100);
+            color: var(--amber-800);
+        }
+
+        .nas-badge.learning {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
         .watcher-folders .status-light {
             flex-shrink: 0;
         }
@@ -1194,6 +1326,34 @@
             .watcher-box input[type="password"] {
                 min-width: 0;
                 width: 100%;
+            }
+
+            /* Phones: each change as a small block (label, how, evidence) */
+            .nas-table,
+            .nas-table tbody,
+            .nas-table tr,
+            .nas-table td {
+                display: block;
+                width: auto;
+            }
+
+            .nas-table tr:first-child {
+                display: none;
+            }
+
+            .nas-table tr {
+                border-top: 1px solid var(--gray-200);
+                padding: 8px 0;
+            }
+
+            .nas-table td {
+                border: 0;
+                padding: 1px 0;
+            }
+
+            .nas-table td:first-child {
+                font-weight: 600;
+                color: var(--gray-800);
             }
         }
 
@@ -1324,7 +1484,7 @@
                 <section class="watcher-box" id="watcher-box">
                     <div class="watcher-head">
                         <div>
-                            <h2 class="watcher-title">📥 Automatic imports</h2>
+                            <h2 class="watcher-title">📥 Automatic imports from network shares</h2>
                             <p class="watcher-intro">Audiobookshelf can't see books added to a network share from
                                 another computer, so new books normally only appear after a library scan. When this is
                                 on, changes on your network shares are passed to Audiobookshelf as they happen, and it
@@ -1368,13 +1528,29 @@
                     </div>
 
                     <div class="watcher-field">
-                        <label for="watcher-time">Catch-up scan time</label>
+                        <label for="watcher-time">Nightly check time</label>
                         <input type="time" id="watcher-time" onchange="saveWatcherSettings({ catchupTime: this.value })">
-                        <div class="watcher-help">Changes made while this app isn't running (for example while the
-                            Umbrel is off or updating) can't be noticed afterwards. When that happens, the libraries on
-                            network shares are scanned once, at this time.</div>
+                        <div class="watcher-help">Some NAS models don't report every change, so a light check runs
+                            once a night at this time: it lists only the folders above your books (never the files in
+                            them) to find books that were renamed, moved or deleted. If this app wasn't running for an
+                            hour or more, a full scan of the libraries on network shares runs at this time instead,
+                            because more could have changed.</div>
                     </div>
 
+                    <div class="watcher-field">
+                        <label for="watcher-lightcheck">Light check</label>
+                        <select id="watcher-lightcheck" onchange="saveWatcherSettings({ lightCheck: this.value })">
+                            <option value="auto">Automatic (recommended)</option>
+                            <option value="daily">Every night</option>
+                            <option value="weekly">Once a week</option>
+                            <option value="off">Off</option>
+                        </select>
+                        <div class="watcher-help">Automatic runs it every night until your NAS has been seen
+                            reporting renamed and deleted books itself, then once a week as a safety net. A scheduled
+                            scan in Audiobookshelf isn't needed while automatic imports are on.</div>
+                    </div>
+
+                    <div id="watcher-nas"></div>
                     <div id="watcher-folders" class="watcher-folders"></div>
                     <div id="watcher-meta" class="watcher-meta"></div>
                 </section>
@@ -1871,7 +2047,7 @@
                                 ${share.host} / ${share.shareName}
                             </label>
                         ${(isEnabled && (statusClass === 'not-accessible' || statusClass === 'not-mounted' || statusClass === 'permission-denied' || statusClass === 'restart-required')) ? '<span class="share-alert-inline">⚠️</span>' : ''}
-                        <span class="${badgeClasses}">${statusText}</span>
+                        ${nasBadge(share.host)}<span class="${badgeClasses}">${statusText}</span>
                     </div>
                         <div class="share-help-text">
                             ${helpText}
@@ -2258,6 +2434,7 @@
 
         // ---- Automatic imports (abs-share-watcher) ----
         let watcherKeyEditing = false;
+        let watcherNas = null;   // latest per-NAS status, shown as a badge on the share cards
 
         function esc(text) {
             const d = document.createElement('div');
@@ -2293,6 +2470,8 @@
             if (document.activeElement !== enabled) enabled.checked = w.enabled;
             const time = document.getElementById('watcher-time');
             if (document.activeElement !== time) time.value = w.catchupTime;
+            const lightSel = document.getElementById('watcher-lightcheck');
+            if (document.activeElement !== lightSel) lightSel.value = w.lightCheck || 'auto';
 
             const editing = !w.hasKey || watcherKeyEditing;
             document.getElementById('watcher-key-saved').style.display = editing ? 'none' : 'flex';
@@ -2329,6 +2508,12 @@
                     </div>
                 </div>` : '';
 
+            const nas = live && s.nas && s.nas.length ? s.nas : null;
+            const nasChanged = JSON.stringify(nas) !== JSON.stringify(watcherNas);
+            watcherNas = nas;
+            document.getElementById('watcher-nas').innerHTML = nas ? renderNas(nas) : '';
+            if (nasChanged) renderShares();   // update the badges on the share cards
+
             document.getElementById('watcher-folders').innerHTML = live && s.folders && s.folders.length
                 ? '<strong>Watched library folders</strong>' + s.folders.map(f => `
                     <div class="folder-row" title="${esc(f.error || 'Watching')}">
@@ -2345,6 +2530,106 @@
                 if (s.lastCatchup) meta.push(`Last catch-up scan: ${esc(when(s.lastCatchup.at))}`);
             }
             document.getElementById('watcher-meta').innerHTML = meta.join('<br>');
+        }
+
+        const NAS_KINDS = [
+            ['new', 'New books and files'],
+            ['changed', 'Changed files (for example edited tags)'],
+            ['renamed', 'Renamed or moved books'],
+            ['deleted', 'Deleted books'],
+        ];
+
+        function times(n) {
+            return n === 1 ? 'once' : n === 2 ? 'twice' : `${n} times`;
+        }
+
+        function lightCheckWhen(lc) {
+            return { daily: 'every night', weekly: 'once a week', off: 'off' }[lc.effective] || lc.effective;
+        }
+
+        function capabilityCells(kind, c, lc) {
+            const fallback = lc.effective === 'off'
+                ? 'Not picked up until you scan the library'
+                : `Found by the light check (${lightCheckWhen(lc)})`;
+            if (c.state === 'reported') {
+                return `<td class="cap-reported">✓ Straight away</td>
+                    <td class="evidence">Your NAS reported this ${times(c.reported)}${c.missed ? `, missed it ${times(c.missed)} earlier` : ''}</td>`;
+            }
+            if (c.state === 'not-reported') {
+                return `<td class="cap-not-reported">${fallback}</td>
+                    <td class="evidence">Your NAS didn't report this (missed ${times(c.missed)})</td>`;
+            }
+            if (kind === 'changed') {
+                return `<td class="cap-unknown">Straight away, if your NAS reports it</td>
+                    <td class="evidence">Not known yet: the light check can't see changed files, so this is only
+                        confirmed when your NAS reports a change</td>`;
+            }
+            return `<td class="cap-unknown">Straight away if reported, otherwise ${fallback.charAt(0).toLowerCase() + fallback.slice(1)}</td>
+                <td class="evidence">Not known yet${c.reported ? `: reported ${times(c.reported)} so far` : ''}</td>`;
+        }
+
+        function nasBadgeInfo(n) {
+            const missing = Object.values(n.capabilities).some(c => c.state === 'not-reported');
+            if (n.score === 4) return { cls: 'all', text: '✓ All changes', title: 'Your NAS reports every kind of change' };
+            if (missing) return { cls: 'partial', text: `${n.score} of 4`, title: `Your NAS reports ${n.score} of 4 kinds of change; the light check covers the rest` };
+            return { cls: 'learning', text: n.score ? `${n.score} of 4 so far` : 'Learning', title: 'Still learning which changes your NAS reports' };
+        }
+
+        function renderNas(list) {
+            return `<div class="nas-block">
+                <h3>Your NAS</h3>
+                <div class="watcher-help">Network shares can tell this app about changes, but not every NAS reports
+                    every kind of change. This is learned from the changes you make, and anything a NAS doesn't
+                    report is found by the nightly light check instead.</div>
+                ${list.map(n => {
+                    const lc = n.lightCheck;
+                    const b = nasBadgeInfo(n);
+                    const last = lc.lastRun
+                        ? `last ran ${esc(when(lc.lastRun))}${lc.lastFound ? ` (found ${lc.lastFound.missing} gone, ${lc.lastFound.new} new)` : ''}`
+                        : 'hasn\'t run yet';
+                    const next = lc.running ? 'running now' : lc.nextWindow ? `next window ${esc(when(lc.nextWindow))}` : '';
+                    return `<div class="nas-entry" id="nas-${esc(n.host)}">
+                        <div class="nas-entry-head">${esc(n.host)}
+                            <span class="nas-badge ${b.cls}" title="${esc(b.title)}">${esc(b.text)}</span></div>
+                        <div class="nas-entry-libs">Libraries: ${esc(n.libraries.join(', '))}</div>
+                        <table class="nas-table">
+                            <tr><th>Change</th><th>How it's picked up</th><th>Evidence</th></tr>
+                            ${NAS_KINDS.map(([k, label]) => `<tr><td>${label}</td>${capabilityCells(k, n.capabilities[k], lc)}</tr>`).join('')}
+                        </table>
+                        <div class="nas-light">
+                            <span>Light check: ${esc(lightCheckWhen(lc))}${lc.mode === 'auto' ? ' (automatic)' : ''}; ${last}${next ? `; ${next}` : ''}</span>
+                            <button class="btn btn-secondary btn-small" onclick="watcherLightCheck('${esc(n.host)}')"
+                                ${lc.running ? 'disabled' : ''}>Check now</button>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>`;
+        }
+
+        // Badge for a share card, if automatic imports watch libraries on that NAS
+        function nasBadge(host) {
+            const n = watcherNas && watcherNas.find(x => x.host === host);
+            if (!n) return '';
+            const b = nasBadgeInfo(n);
+            return `<button type="button" class="nas-badge ${b.cls}" title="${esc(b.title)}: click for details"
+                onclick="showNas('${esc(host)}')">📥 ${esc(b.text)}</button>`;
+        }
+
+        function showNas(host) {
+            const el = document.getElementById(`nas-${host}`);
+            if (!el) return;
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            el.classList.add('highlight');
+            setTimeout(() => el.classList.remove('highlight'), 2000);
+        }
+
+        async function watcherLightCheck(host) {
+            await fetch('/api/share-watcher/catchup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'lightcheck', host }),
+            });
+            setTimeout(loadWatcher, 3000);
         }
 
         async function saveWatcherSettings(change) {
