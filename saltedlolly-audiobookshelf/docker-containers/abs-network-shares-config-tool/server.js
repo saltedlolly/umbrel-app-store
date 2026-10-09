@@ -578,6 +578,49 @@ function getAbsStartedAt() {
     });
 }
 
+// How long Audiobookshelf usually takes to start. Checked every 20 seconds in
+// the background: when it answers after having been starting, the time from
+// the container starting to answering is recorded (last 5 kept), and the
+// median is shown as "usually ready after about N minutes".
+const STARTUP_TIMES_FILE = path.join(DATA_DIR, 'startup-times.json');
+let startupWatch = { startedAt: null };
+
+async function readStartupTimes() {
+    try {
+        const d = JSON.parse(await fs.readFile(STARTUP_TIMES_FILE, 'utf8'));
+        return Array.isArray(d.starts) ? d.starts : [];
+    } catch {
+        return [];
+    }
+}
+
+async function usualStartupSeconds() {
+    const secs = (await readStartupTimes()).map(s => s.seconds).sort((a, b) => a - b);
+    return secs.length ? secs[Math.floor((secs.length - 1) / 2)] : null;
+}
+
+async function trackStartup() {
+    const app = await getAudiobookshelfStatus();
+    if (!app.running) {
+        // Remember the start time of the container that's starting
+        const started = await getAbsStartedAt();
+        if (started) startupWatch.startedAt = started;
+        return;
+    }
+    const started = startupWatch.startedAt;
+    startupWatch.startedAt = null;
+    if (!started) return;
+    const seconds = Math.round((Date.now() - Date.parse(started)) / 1000);
+    if (!(seconds > 30 && seconds < 3 * 3600)) return;   // ignore odd values
+    const starts = (await readStartupTimes()).filter(s => s.startedAt !== started);
+    starts.push({ startedAt: started, seconds });
+    const tmp = `${STARTUP_TIMES_FILE}.${process.pid}.tmp`;
+    await fs.writeFile(tmp, JSON.stringify({ starts: starts.slice(-5) }, null, 2));
+    await fs.rename(tmp, STARTUP_TIMES_FILE);
+    log('info', `Audiobookshelf took ${Math.round(seconds / 60)} minute(s) to start`);
+}
+setInterval(() => trackStartup().catch(() => { }), 20000);
+
 // Get combined status (app + shares)
 app.get('/api/status', async (req, res) => {
     try {
@@ -606,12 +649,14 @@ app.get('/api/status', async (req, res) => {
             message = 'Audiobookshelf is starting up...';
         }
         const startedAt = overallStatus === 'starting' ? await getAbsStartedAt() : null;
+        const usualStartSeconds = startedAt ? await usualStartupSeconds() : null;
 
         res.json({
             app: {
                 ...appStatus,
                 overallStatus,
                 startedAt,
+                usualStartSeconds,
                 message,
             },
             shares: shares.map(share => ({

@@ -2195,8 +2195,16 @@
                 document.getElementById('startup-slow-note').style.display = minutes >= 2 ? 'block' : 'none';
                 if (isStarting) {
                     banner.style.display = 'flex';
-                    if (bannerText) bannerText.textContent = minutes >= 2
-                        ? `Audiobookshelf is starting up... (${minutes} minutes so far)`
+                    // "usually ready after about N minutes", from the last few starts
+                    const usual = status.app.usualStartSeconds ? Math.max(1, Math.round(status.app.usualStartSeconds / 60)) : null;
+                    let progress = '';
+                    if (minutes >= 2) {
+                        progress = `${minutes} minute${minutes === 1 ? '' : 's'} so far`;
+                        if (usual && minutes < usual) progress += `, usually ready after about ${usual} minutes`;
+                        else if (usual) progress += `, taking longer than usual (usually about ${usual} minutes)`;
+                    }
+                    if (bannerText) bannerText.textContent = progress
+                        ? `Audiobookshelf is starting up... ${progress}`
                         : 'Audiobookshelf is starting up...';
                     if (bannerIcon) bannerIcon.textContent = '⏳';
                     if (bannerSpinner) {
