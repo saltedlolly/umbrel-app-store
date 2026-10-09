@@ -7,6 +7,12 @@
  *     abs-manager can relaunch shortly (fresh filesystem view each time).
  *   - When all required shares are accessible, stays running, exposes a health
  *     endpoint, and performs maintenance re-checks every 15 minutes.
+ *   - Maintenance checks are light (the share is still there, readable and not
+ *     empty), so the NAS isn't asked to list up to 20 folders every 15 minutes;
+ *     the full check runs only if the light one fails. A required share must
+ *     fail RECHECK_ATTEMPTS checks in a row, RECHECK_DELAY_MS apart, before this
+ *     reports not ready (which makes abs-manager restart Audiobookshelf), so one
+ *     slow answer from the NAS doesn't cost a restart.
  * 
  * Exit codes:
  *   0 - All required shares are accessible (or no required shares) AND we will keep running
@@ -22,6 +28,8 @@ const http = require('http');
 const CONFIG_FILE = process.env.CONFIG_FILE || '/data/network-shares.json';
 const NETWORK_ROOT = process.env.NETWORK_MOUNT_ROOT || '/umbrel-network';
 const MAINTENANCE_INTERVAL_MS = Number(process.env.MAINTENANCE_INTERVAL_MS || 15 * 60 * 1000); // default 15 minutes
+const RECHECK_ATTEMPTS = Number(process.env.RECHECK_ATTEMPTS || 3);
+const RECHECK_DELAY_MS = Number(process.env.RECHECK_DELAY_MS || 60 * 1000);
 
 const STATUS = {
     NOT_MOUNTED: 'not-mounted',
@@ -66,11 +74,15 @@ async function writeConfig(config) {
     await fsp.rename(tmp, CONFIG_FILE);
 }
 
+// Only writes when the status actually changes, so routine checks don't
+// rewrite the file the config tool and manager also update
 async function setShareStatus(fullPath, updates) {
     const cfg = await readConfig();
     cfg.shares = cfg.shares || {};
     const existing = cfg.shares[fullPath] || {};
     const isRequired = (cfg.enabledShares || []).includes(fullPath);
+    if (existing.status === updates.status && !!existing.foundReadableFile === !!updates.foundReadableFile
+        && existing.isRequired === isRequired) return;
     cfg.shares[fullPath] = {
         fullPath,
         isRequired,
@@ -147,7 +159,21 @@ async function checkShareAccessibility(mountPath) {
     return { status: STATUS.ACCESSIBLE, foundReadableFile: true };
 }
 
-async function evaluateShares() {
+// Light check for a share that was accessible last time: still a readable,
+// non-empty folder. One request to the NAS instead of walking its folders.
+async function shareStillAccessible(mountPath) {
+    try {
+        const stat = await fsp.stat(mountPath);
+        if (!stat.isDirectory()) return false;
+        await fsp.access(mountPath, fs.constants.R_OK);
+        return (await fsp.readdir(mountPath)).length > 0;
+    } catch {
+        return false;
+    }
+}
+
+// light: trust a share that was accessible and still passes the light check
+async function evaluateShares({ light = false } = {}) {
     const config = await readConfig();
     const discoveredShares = Object.keys(config.shares || {});
     const requiredShares = config.enabledShares || [];
@@ -163,8 +189,10 @@ async function evaluateShares() {
         if (!share) continue;
         const mountPath = path.join(NETWORK_ROOT, share);
 
-        // Always check the share (no caching - fresh check each run)
-        const result = await checkShareAccessibility(mountPath);
+        const previous = (config.shares || {})[share] || {};
+        const result = light && previous.status === STATUS.ACCESSIBLE && await shareStillAccessible(mountPath)
+            ? { status: STATUS.ACCESSIBLE, foundReadableFile: true }
+            : await checkShareAccessibility(mountPath);
         const status = result.status;
         const foundReadableFile = result.foundReadableFile;
 
@@ -221,24 +249,40 @@ const server = http.createServer((req, res) => {
     }
 });
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function maintenanceCheck() {
+    let result = await evaluateShares({ light: true });
+    // A required share failed: check again a few times before reporting not
+    // ready, so a NAS that is briefly slow or busy doesn't restart Audiobookshelf
+    for (let attempt = 2; !result.ready && lastReady && attempt <= RECHECK_ATTEMPTS; attempt++) {
+        const list = result.outstanding.map(s => `${s.name} (${s.status})`).join(', ');
+        log(`Maintenance check: ${list} not accessible; checking again in ${Math.round(RECHECK_DELAY_MS / 1000)}s (${attempt}/${RECHECK_ATTEMPTS})`);
+        await sleep(RECHECK_DELAY_MS);
+        result = await evaluateShares();
+    }
+    const { total, outstanding, ready } = result;
+    const wasReady = lastReady;
+    lastReady = ready;
+    if (ready && !wasReady) {
+        log('All required shares are accessible (maintenance loop)');
+    } else if (!ready) {
+        const list = outstanding.map(s => `${s.name} (${s.status})`).join(', ');
+        log(`Maintenance check: waiting for ${outstanding.length}/${total} required share(s): ${list}`);
+    }
+}
+
 async function runMaintenanceLoop() {
     log(`Entering maintenance loop (every ${Math.round(MAINTENANCE_INTERVAL_MS / 1000)}s)`);
-    setInterval(async () => {
+    // One check at a time: the next starts MAINTENANCE_INTERVAL_MS after the last one finished
+    for (;;) {
+        await sleep(MAINTENANCE_INTERVAL_MS);
         try {
-            const { total, outstanding, ready } = await evaluateShares();
-            const wasReady = lastReady;
-            lastReady = ready;
-
-            if (ready && !wasReady) {
-                log('All required shares are accessible (maintenance loop)');
-            } else if (!ready) {
-                const list = outstanding.map(s => `${s.name} (${s.status})`).join(', ');
-                log(`Maintenance check: waiting for ${outstanding.length}/${total} required share(s): ${list}`);
-            }
+            await maintenanceCheck();
         } catch (err) {
             log('ERROR during maintenance check:', err.message || err);
         }
-    }, MAINTENANCE_INTERVAL_MS);
+    }
 }
 
 async function main() {
@@ -256,8 +300,9 @@ async function main() {
 
         // Ready: keep running, expose health endpoint, and start maintenance loop
         lastReady = true;
-        server.listen(8080, () => {
-            log('Health endpoint listening on :8080');
+        const port = Number(process.env.HEALTH_PORT || 8080);   // 8080 in the app; set only for local tests
+        server.listen(port, () => {
+            log(`Health endpoint listening on :${port}`);
         });
 
         log(`All ${total} required share(s) are accessible; staying up`);
