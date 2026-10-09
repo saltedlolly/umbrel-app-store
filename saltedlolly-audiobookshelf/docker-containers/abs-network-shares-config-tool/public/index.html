@@ -2189,19 +2189,22 @@
 
             // Startup banner logic
             if (banner) {
-                // After 2 minutes of starting, say how long, and why it can take a while
+                // After a minute of starting, say how long is left (from the usual start time), and why it can take a while
                 const startedMs = status.app.startedAt ? Date.parse(status.app.startedAt) : NaN;
                 const minutes = isStarting && !isNaN(startedMs) ? Math.floor((Date.now() - startedMs) / 60000) : 0;
-                document.getElementById('startup-slow-note').style.display = minutes >= 2 ? 'block' : 'none';
+                document.getElementById('startup-slow-note').style.display = minutes >= 1 ? 'block' : 'none';
                 if (isStarting) {
                     banner.style.display = 'flex';
                     // "usually ready after about N minutes", from the last few starts
                     const usual = status.app.usualStartSeconds ? Math.max(1, Math.round(status.app.usualStartSeconds / 60)) : null;
                     let progress = '';
-                    if (minutes >= 2) {
-                        progress = `${minutes} minute${minutes === 1 ? '' : 's'} so far`;
-                        if (usual && minutes < usual) progress += `, usually ready after about ${usual} minutes`;
-                        else if (usual) progress += `, taking longer than usual (usually about ${usual} minutes)`;
+                    if (minutes >= 1) {
+                        const left = usual ? usual - minutes : null;
+                        if (left > 1) progress = `about ${left} minutes to go (usually takes about ${usual})`;
+                        else if (left === 1) progress = `about a minute to go (usually takes about ${usual})`;
+                        else if (left === 0) progress = `should be ready any moment now (usually takes about ${usual})`;
+                        else if (usual) progress = `taking longer than usual (${minutes} minutes so far, usually about ${usual})`;
+                        else progress = `${minutes} minute${minutes === 1 ? '' : 's'} so far`;
                     }
                     if (bannerText) bannerText.textContent = progress
                         ? `Audiobookshelf is starting up... ${progress}`
