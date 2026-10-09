@@ -7,10 +7,15 @@
     <title>Network Share Config Tool for Audiobookshelf</title>
     <link rel="icon" href="/abs-icon-purple.svg" type="image/svg+xml">
     <style>
-        /* The page is light only, so embedded widgets (the GitHub Sponsor
-           button) must not switch to their dark style */
+        /* The page is light only. The GitHub Sponsor button follows the colour
+           scheme of its iframe, so it is set to dark there: a prominent dark
+           grey button on every device */
         :root {
             color-scheme: light;
+        }
+
+        .sponsor-button iframe {
+            color-scheme: dark;
         }
 
         * {
