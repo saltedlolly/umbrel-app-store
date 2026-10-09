@@ -1032,6 +1032,207 @@
             }
         }
 
+        /* Automatic imports (abs-share-watcher) */
+        .watcher-box {
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 10px;
+        }
+
+        .watcher-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .watcher-title {
+            font-size: 18px;
+            color: var(--gray-800);
+            margin-bottom: 6px;
+        }
+
+        .watcher-intro,
+        .watcher-help,
+        .watcher-meta {
+            font-size: 13px;
+            color: var(--gray-500);
+            line-height: 1.5;
+        }
+
+        .watcher-switch {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 26px;
+            flex-shrink: 0;
+        }
+
+        .watcher-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .watcher-slider {
+            position: absolute;
+            inset: 0;
+            cursor: pointer;
+            background: var(--gray-300);
+            border-radius: 26px;
+            transition: background 0.2s;
+        }
+
+        .watcher-slider::before {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            left: 3px;
+            top: 3px;
+            background: #ffffff;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+
+        .watcher-switch input:checked + .watcher-slider {
+            background: #10b981;
+        }
+
+        .watcher-switch input:checked + .watcher-slider::before {
+            transform: translateX(20px);
+        }
+
+        .watcher-switch input:focus-visible + .watcher-slider {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+
+        .watcher-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 16px 0 6px;
+            font-size: 14px;
+            color: var(--gray-700);
+        }
+
+        .watcher-status .status-light {
+            flex-shrink: 0;
+        }
+
+        .watcher-field {
+            margin-top: 18px;
+        }
+
+        .watcher-field > label {
+            display: block;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--gray-800);
+            margin-bottom: 6px;
+        }
+
+        .watcher-key-input,
+        .watcher-key-saved {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 6px;
+        }
+
+        .watcher-key-saved {
+            font-size: 14px;
+            color: var(--green-800);
+        }
+
+        .watcher-box input[type="password"],
+        .watcher-box input[type="time"] {
+            padding: 8px 10px;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            font-size: 14px;
+            background: var(--surface);
+            color: var(--gray-800);
+        }
+
+        .watcher-box input[type="password"] {
+            flex: 1;
+            min-width: 220px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 13px;
+            margin-right: 0;
+        }
+
+        .watcher-key-message {
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        .watcher-key-message.error {
+            color: var(--red-800);
+        }
+
+        .watcher-key-message.success {
+            color: var(--green-800);
+        }
+
+        .watcher-box .message {
+            font-size: 13px;
+            margin: 10px 0 0;
+            padding: 10px 14px;
+        }
+
+        .watcher-catchup-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .watcher-folders {
+            margin-top: 18px;
+            font-size: 13px;
+            color: var(--gray-600);
+        }
+
+        .watcher-folders .folder-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 3px 0;
+            overflow-wrap: anywhere;
+        }
+
+        .watcher-folders .status-light {
+            flex-shrink: 0;
+        }
+
+        .watcher-meta {
+            margin-top: 10px;
+        }
+
+        .watcher-folders code,
+        .watcher-meta code {
+            overflow-wrap: anywhere;
+        }
+
+        @media (max-width: 768px) {
+            .watcher-box .btn {
+                width: auto;
+            }
+
+            .watcher-box input[type="password"] {
+                min-width: 0;
+                width: 100%;
+            }
+        }
+
         /* Reconnect Overlay Styles */
         .reconnect-overlay {
             position: fixed;
@@ -1155,6 +1356,64 @@
                         Restart Audiobookshelf</button>
                     <span id="save-status" class="save-status"></span>
                 </div>
+
+                <section class="watcher-box" id="watcher-box">
+                    <div class="watcher-head">
+                        <div>
+                            <h2 class="watcher-title">📥 Automatic imports</h2>
+                            <p class="watcher-intro">Audiobookshelf can't see books added to a network share from
+                                another computer, so new books normally only appear after a library scan. When this is
+                                on, changes on your network shares are passed to Audiobookshelf as they happen, and it
+                                scans just the books that changed.</p>
+                        </div>
+                        <label class="watcher-switch" title="Switch automatic imports on or off">
+                            <input type="checkbox" id="watcher-enabled" aria-label="Automatic imports"
+                                onchange="saveWatcherSettings({ enabled: this.checked })">
+                            <span class="watcher-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="watcher-status">
+                        <span class="status-light gray" id="watcher-light"></span>
+                        <span id="watcher-message">Loading...</span>
+                    </div>
+                    <div id="watcher-warnings"></div>
+                    <div id="watcher-catchup"></div>
+
+                    <div class="watcher-field">
+                        <label for="watcher-key">Audiobookshelf API key</label>
+                        <div id="watcher-key-saved" class="watcher-key-saved" style="display:none">
+                            <span>✓ API key saved</span>
+                            <button class="btn btn-secondary btn-small" onclick="showKeyInput()">Replace</button>
+                            <button class="btn btn-secondary btn-small" onclick="removeKey()">Remove</button>
+                        </div>
+                        <div id="watcher-key-input" class="watcher-key-input">
+                            <input type="password" id="watcher-key" autocomplete="off" spellcheck="false"
+                                placeholder="Paste the API key from Audiobookshelf">
+                            <button class="btn btn-primary btn-small" id="watcher-key-save" onclick="saveKey()">Save
+                                key</button>
+                            <button class="btn btn-secondary btn-small" id="watcher-key-cancel" style="display:none"
+                                onclick="cancelKeyInput()">Cancel</button>
+                        </div>
+                        <div class="watcher-help">In Audiobookshelf, go to <strong>Settings &gt; API Keys &gt; Add
+                                API Key</strong>, choose an administrator as the user, and copy the key here. If you give
+                            the key an expiry date, imports stop when it expires and this page will say so. The key is
+                            kept with this app's settings, included in Umbrel backups, and not shown again after
+                            saving.</div>
+                        <div id="watcher-key-message" class="watcher-key-message"></div>
+                    </div>
+
+                    <div class="watcher-field">
+                        <label for="watcher-time">Catch-up scan time</label>
+                        <input type="time" id="watcher-time" onchange="saveWatcherSettings({ catchupTime: this.value })">
+                        <div class="watcher-help">Changes made while this app isn't running (for example while the
+                            Umbrel is off or updating) can't be noticed afterwards. When that happens, the libraries on
+                            network shares are scanned once, at this time.</div>
+                    </div>
+
+                    <div id="watcher-folders" class="watcher-folders"></div>
+                    <div id="watcher-meta" class="watcher-meta"></div>
+                </section>
             </div>
 
             <footer>
@@ -2033,6 +2292,7 @@
             document.getElementById('content').style.display = 'none';
 
             await loadVersion();
+            loadWatcher();
             await loadConfiguration();
             await discoverShares();
 
@@ -2051,6 +2311,177 @@
             document.getElementById('loading').style.display = 'none';
             document.getElementById('content').style.display = 'block';
         }
+
+        // ---- Automatic imports (abs-share-watcher) ----
+        let watcherKeyEditing = false;
+
+        function esc(text) {
+            const d = document.createElement('div');
+            d.textContent = text == null ? '' : String(text);
+            return d.innerHTML;
+        }
+
+        // Paths as the Files app shows them (without the internal /media/network/ prefix)
+        function sharePath(p) {
+            return String(p || '').replace(/^\/media\/network\//, '');
+        }
+
+        function when(iso) {
+            if (!iso) return '';
+            const d = new Date(iso);
+            return isNaN(d) ? iso : d.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+        }
+
+        const WATCHER_LIGHTS = {
+            watching: 'green', off: 'gray', 'abs-unavailable': 'orange', 'no-key': 'orange',
+            'no-network-libraries': 'orange', 'watch-error': 'red', 'key-rejected': 'red', 'not-admin': 'red',
+        };
+
+        async function loadWatcher() {
+            let w;
+            try {
+                const r = await fetch('/api/share-watcher');
+                if (!r.ok) return;
+                w = await r.json();
+            } catch { return; }
+
+            const enabled = document.getElementById('watcher-enabled');
+            if (document.activeElement !== enabled) enabled.checked = w.enabled;
+            const time = document.getElementById('watcher-time');
+            if (document.activeElement !== time) time.value = w.catchupTime;
+
+            const editing = !w.hasKey || watcherKeyEditing;
+            document.getElementById('watcher-key-saved').style.display = editing ? 'none' : 'flex';
+            document.getElementById('watcher-key-input').style.display = editing ? 'flex' : 'none';
+            document.getElementById('watcher-key-cancel').style.display = w.hasKey && watcherKeyEditing ? '' : 'none';
+
+            const s = w.status;
+            let light, message;
+            if (!w.enabled) {
+                light = 'gray';
+                message = 'Automatic imports are switched off.';
+            } else if (!w.helperRunning || !s) {
+                light = 'red';
+                message = "The import helper isn't running. Restarting the app from the Umbrel dashboard should start it.";
+            } else {
+                light = WATCHER_LIGHTS[s.state] || 'gray';
+                message = s.message;
+            }
+            document.getElementById('watcher-light').className = `status-light ${light}`;
+            document.getElementById('watcher-message').textContent = message;
+
+            const live = w.enabled && w.helperRunning && s;
+            document.getElementById('watcher-warnings').innerHTML = live
+                ? (s.warnings || []).map(t => `<div class="message warning">⚠️ ${esc(t)}</div>`).join('')
+                : '';
+
+            const c = live && s.catchup;
+            document.getElementById('watcher-catchup').innerHTML = c ? `
+                <div class="message info">A catch-up scan of <strong>${esc(c.libraries.join(', '))}</strong> is
+                    scheduled for ${esc(when(c.at))}, because ${esc(c.reasons.join('; '))}.
+                    <div class="watcher-catchup-actions">
+                        <button class="btn btn-primary btn-small" onclick="watcherCatchup('run')">Scan now</button>
+                        <button class="btn btn-secondary btn-small" onclick="watcherCatchup('skip')">Skip</button>
+                    </div>
+                </div>` : '';
+
+            document.getElementById('watcher-folders').innerHTML = live && s.folders && s.folders.length
+                ? '<strong>Watched library folders</strong>' + s.folders.map(f => `
+                    <div class="folder-row" title="${esc(f.error || 'Watching')}">
+                        <span class="status-light ${f.ok ? 'green' : 'red'}"></span>
+                        <span>${esc(f.library)}: <code>${esc(sharePath(f.path))}</code>${f.ok ? '' : ` (${esc(f.error || 'not watching')})`}</span>
+                    </div>`).join('')
+                : '';
+
+            const meta = [];
+            if (live) {
+                if (s.lastChange) meta.push(`Last change seen: ${esc(when(s.lastChange.at))}, <code>${esc(sharePath(s.lastChange.path))}</code>`);
+                if (s.lastReport) meta.push(`Last sent to Audiobookshelf: ${esc(when(s.lastReport.at))} (${s.lastReport.count} change${s.lastReport.count === 1 ? '' : 's'})`);
+                if (s.pending) meta.push(`${s.pending} change${s.pending === 1 ? '' : 's'} waiting for Audiobookshelf`);
+                if (s.lastCatchup) meta.push(`Last catch-up scan: ${esc(when(s.lastCatchup.at))}`);
+            }
+            document.getElementById('watcher-meta').innerHTML = meta.join('<br>');
+        }
+
+        async function saveWatcherSettings(change) {
+            try {
+                const r = await fetch('/api/share-watcher/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(change),
+                });
+                const j = await r.json();
+                if (!r.ok) showMessage(`✗ ${esc(j.error || 'Could not save')}`, 'error');
+            } catch (e) {
+                showMessage(`✗ Could not save: ${esc(e.message)}`, 'error');
+            }
+            loadWatcher();
+        }
+
+        function keyMessage(text, kind) {
+            const el = document.getElementById('watcher-key-message');
+            el.className = `watcher-key-message ${kind || ''}`;
+            el.textContent = text;
+        }
+
+        async function saveKey() {
+            const input = document.getElementById('watcher-key');
+            const button = document.getElementById('watcher-key-save');
+            if (!input.value.trim()) return keyMessage('Paste the API key first.', 'error');
+            button.disabled = true;
+            keyMessage('Checking the key with Audiobookshelf...');
+            try {
+                const r = await fetch('/api/share-watcher/key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apiKey: input.value }),
+                });
+                const j = await r.json();
+                if (!r.ok) {
+                    keyMessage(j.error || 'The key could not be saved.', 'error');
+                } else {
+                    input.value = '';
+                    watcherKeyEditing = false;
+                    keyMessage(j.message, 'success');
+                }
+            } catch (e) {
+                keyMessage(`The key could not be saved: ${e.message}`, 'error');
+            }
+            button.disabled = false;
+            loadWatcher();
+        }
+
+        function showKeyInput() {
+            watcherKeyEditing = true;
+            keyMessage('');
+            loadWatcher().then(() => document.getElementById('watcher-key').focus());
+        }
+
+        function cancelKeyInput() {
+            watcherKeyEditing = false;
+            document.getElementById('watcher-key').value = '';
+            keyMessage('');
+            loadWatcher();
+        }
+
+        async function removeKey() {
+            if (!confirm('Remove the saved Audiobookshelf API key? Automatic imports stop until you save a new one.')) return;
+            await fetch('/api/share-watcher/key', { method: 'DELETE' });
+            keyMessage('');
+            loadWatcher();
+        }
+
+        async function watcherCatchup(action) {
+            await fetch('/api/share-watcher/catchup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action }),
+            });
+            setTimeout(loadWatcher, 2500);   // the helper picks the command up within a couple of seconds
+        }
+
+        document.getElementById('watcher-key').addEventListener('keydown', e => { if (e.key === 'Enter') saveKey(); });
+        setInterval(() => { if (!document.hidden) loadWatcher(); }, 10000);
 
         // Theme picker: light, dark, or system (follows the device). The
         // choice is remembered in this browser.

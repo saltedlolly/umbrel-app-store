@@ -1,0 +1,4 @@
+test_watcher.py
+__pycache__
+*.md
+.DS_Store

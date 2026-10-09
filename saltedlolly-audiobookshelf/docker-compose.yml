@@ -62,6 +62,19 @@ services:
       retries: 5
       start_period: 2s
 
+  # Tells Audiobookshelf about books added, changed or removed on network
+  # shares (its own folder watcher can't see changes made from other
+  # computers). Switched on and set up from the network shares page.
+  abs-share-watcher:
+    image: ghcr.io/saltedlolly/abs-share-watcher
+    container_name: saltedlolly-audiobookshelf_abs-share-watcher_1
+    init: true
+    restart: unless-stopped
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+      # Same path as Audiobookshelf uses, so library folder paths match
+      - ${UMBREL_ROOT}/network:/media/network:ro
+
   # Background service that manages starting Audiobookshelf. At launch, it runs abs-network-share-waiter-checker  
   # repeatedly which checks all required networkshares are accessible and starts abs-server only once they are.
   abs-manager:

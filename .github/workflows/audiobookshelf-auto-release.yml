@@ -200,5 +200,5 @@ jobs:
         if: github.event.inputs.dry_run != 'true'
         uses: dataaxiom/ghcr-cleanup-action@v1.2.2
         with:
-          package: 'abs-network-shares-config-tool,abs-manager,abs-network-shares-checker'
+          package: 'abs-network-shares-config-tool,abs-manager,abs-network-shares-checker,abs-share-watcher'
           keep-n-tagged: 5

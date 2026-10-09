@@ -6,7 +6,7 @@ const path = require('path');
 
 const app = express();
 const PORT = 3001;
-const DATA_DIR = '/data';
+const DATA_DIR = process.env.DATA_DIR || '/data';
 const CONFIG_FILE = process.env.CONFIG_FILE || '/data/network-shares.json';
 const NETWORK_MOUNT_ROOT = '/umbrel-network';
 const NETWORK_HOST_PATH = '/home/umbrel/umbrel/network'; // Host path for display
@@ -837,6 +837,115 @@ app.post('/api/config/save', async (req, res) => {
         log('error', `Error saving config: ${error.message}`);
         res.status(500).json({ error: 'Failed to save configuration' });
     }
+});
+
+// ---------------------------------------------------------------------------
+// Automatic imports (the abs-share-watcher container). Settings and the API
+// key live in /data/share-watcher, which Umbrel backups include. The key is
+// never sent back to the page.
+
+const WATCHER_DIR = path.join(DATA_DIR, 'share-watcher');
+const WATCHER_SETTINGS = path.join(WATCHER_DIR, 'settings.json');
+const WATCHER_KEY = path.join(WATCHER_DIR, 'api-key');
+const WATCHER_STATUS = path.join(WATCHER_DIR, 'status.json');
+const WATCHER_COMMAND = path.join(WATCHER_DIR, 'command.json');
+const ABS_URL = 'http://saltedlolly-audiobookshelf_abs-server_1:80';
+
+async function readJsonFile(file, fallback) {
+    try {
+        return JSON.parse(await fs.readFile(file, 'utf8'));
+    } catch {
+        return fallback;
+    }
+}
+
+async function writeWatcherFile(file, content, mode = 0o644) {
+    await fs.mkdir(WATCHER_DIR, { recursive: true });
+    const tmp = `${file}.${process.pid}.tmp`;
+    await fs.writeFile(tmp, content, { mode });
+    await fs.chmod(tmp, mode);
+    await fs.rename(tmp, file);
+}
+
+async function watcherSettings() {
+    const s = await readJsonFile(WATCHER_SETTINGS, {});
+    return { enabled: !!s.enabled, catchupTime: s.catchupTime || '04:00' };
+}
+
+// Ask Audiobookshelf who a key belongs to: { ok, state, message }
+async function checkAbsKey(key) {
+    try {
+        const r = await fetch(`${ABS_URL}/api/me`, {
+            headers: { Authorization: `Bearer ${key}` },
+            signal: AbortSignal.timeout(8000),
+        });
+        if (r.status === 401 || r.status === 403) {
+            return { ok: false, state: 'key-rejected', message: 'Audiobookshelf rejected this API key. Check you copied all of it, and that it is active and not expired.' };
+        }
+        if (!r.ok) return { ok: false, state: 'abs-error', message: `Audiobookshelf answered with an error (${r.status}).` };
+        const me = await r.json();
+        if (!['admin', 'root'].includes(me.type)) {
+            return { ok: false, state: 'not-admin', message: `This key belongs to "${me.username}", who isn't an Audiobookshelf administrator. Create the key on an administrator account.` };
+        }
+        return { ok: true, state: 'ok', message: `Key works: connected as "${me.username}".` };
+    } catch {
+        return { ok: true, state: 'abs-unavailable', message: "Key saved. Audiobookshelf isn't answering yet, so it will be checked as soon as it is." };
+    }
+}
+
+app.get('/api/share-watcher', async (req, res) => {
+    const settings = await watcherSettings();
+    let hasKey = false;
+    try {
+        await fs.access(WATCHER_KEY);
+        hasKey = true;
+    } catch { }
+    const status = await readJsonFile(WATCHER_STATUS, null);
+    // The helper rewrites its status every few seconds
+    const helperRunning = !!(status && Date.now() - Date.parse(status.updatedAt) < 30000);
+    res.json({ ...settings, hasKey, helperRunning, status });
+});
+
+app.post('/api/share-watcher/settings', async (req, res) => {
+    const current = await watcherSettings();
+    const { enabled, catchupTime } = req.body || {};
+    if (catchupTime !== undefined && !/^([01]\d|2[0-3]):[0-5]\d$/.test(catchupTime)) {
+        return res.status(400).json({ error: 'The catch-up time must look like 04:00' });
+    }
+    const next = {
+        enabled: enabled === undefined ? current.enabled : !!enabled,
+        catchupTime: catchupTime === undefined ? current.catchupTime : catchupTime,
+    };
+    await writeWatcherFile(WATCHER_SETTINGS, JSON.stringify(next, null, 2));
+    log('info', `Automatic imports: ${next.enabled ? 'on' : 'off'}, catch-up time ${next.catchupTime}`);
+    res.json(next);
+});
+
+app.post('/api/share-watcher/key', async (req, res) => {
+    const key = String((req.body || {}).apiKey || '').trim();
+    if (!key || key.length > 4096 || /\s/.test(key)) {
+        return res.status(400).json({ error: 'Paste the whole API key from Audiobookshelf' });
+    }
+    const result = await checkAbsKey(key);
+    if (!result.ok) return res.status(400).json({ error: result.message, state: result.state });
+    await writeWatcherFile(WATCHER_KEY, key, 0o600);
+    log('info', 'Automatic imports: API key saved');
+    res.json(result);
+});
+
+app.delete('/api/share-watcher/key', async (req, res) => {
+    try {
+        await fs.unlink(WATCHER_KEY);
+    } catch { }
+    log('info', 'Automatic imports: API key removed');
+    res.json({ success: true });
+});
+
+app.post('/api/share-watcher/catchup', async (req, res) => {
+    const action = (req.body || {}).action;
+    if (!['run', 'skip'].includes(action)) return res.status(400).json({ error: 'action must be run or skip' });
+    await writeWatcherFile(WATCHER_COMMAND, JSON.stringify({ action }));
+    res.json({ success: true });
 });
 
 // Serve index page

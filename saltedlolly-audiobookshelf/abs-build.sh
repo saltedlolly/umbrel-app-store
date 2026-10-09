@@ -26,6 +26,8 @@ CONFIG_TOOL_UI_REPO="$APP_ROOT/docker-containers/abs-network-shares-config-tool"
 CONFIG_TOOL_UI_IMAGE_NAME="ghcr.io/saltedlolly/abs-network-shares-config-tool"
 ABS_MANAGER_REPO="$APP_ROOT/docker-containers/abs-manager"
 ABS_MANAGER_IMAGE="ghcr.io/saltedlolly/abs-manager"
+SHARE_WATCHER_REPO="$APP_ROOT/docker-containers/abs-share-watcher"
+SHARE_WATCHER_IMAGE="ghcr.io/saltedlolly/abs-share-watcher"
 
 # Images used in abs-manager to deploy other services
 ABS_NETWORK_SHARES_CHECKER_REPO="$APP_ROOT/docker-containers/abs-network-shares-checker"
@@ -817,6 +819,18 @@ else
   echo "[DEBUG] No changes detected, CHECKER_HAS_CHANGES: $CHECKER_HAS_CHANGES"
 fi
 
+# abs-share-watcher: rebuild when its code changed, or when docker-compose.yml
+# doesn't pin it by digest yet (first release, or a missing .build-hashes)
+echo ""
+echo "Checking for abs-share-watcher changes..."
+SHARE_WATCHER_HAS_CHANGES=false
+if has_docker_container_changed "abs-share-watcher" || ! grep -q "image: ${SHARE_WATCHER_IMAGE}@sha256:" "$DOCKER_COMPOSE_FILE"; then
+  echo "✓ abs-share-watcher needs building"
+  SHARE_WATCHER_HAS_CHANGES=true
+else
+  echo "✓ No changes detected in abs-share-watcher"
+fi
+
 # Check for changes in abs-manager (rebuild if checker changed, server changed, or abs-manager code changed)
 echo ""
 echo "Checking for abs-manager changes..."
@@ -989,6 +1003,41 @@ else
   # No source changes for this component, so abs-network-shares-checker-image.txt
   # already has the correct reference. Deliberately not re-querying GHCR here:
   # see the matching comment in the config-tool branch above for why.
+fi
+
+# Build abs-share-watcher if it has changes
+if [[ "$SHARE_WATCHER_HAS_CHANGES" == true ]]; then
+  echo ""
+  echo "================================================="
+  echo "Building 'ABS Share Watcher' Docker image"
+  echo "================================================="
+  echo "Image: $SHARE_WATCHER_IMAGE:$FULL_VERSION"
+
+  ensure_buildx
+
+  docker buildx build \
+    --platform linux/amd64,linux/arm64 \
+    -t "$SHARE_WATCHER_IMAGE:$FULL_VERSION" \
+    -t "$SHARE_WATCHER_IMAGE:latest" \
+    -f "$SHARE_WATCHER_REPO/Dockerfile" \
+    --push \
+    "$SHARE_WATCHER_REPO"
+
+  echo ""
+  echo "Fetching manifest digest for abs-share-watcher..."
+  SHARE_WATCHER_DIGEST=$(docker buildx imagetools inspect "$SHARE_WATCHER_IMAGE:$FULL_VERSION" 2>/dev/null | grep "^Digest:" | awk '{print $2}')
+  if [[ -z "$SHARE_WATCHER_DIGEST" ]]; then
+    echo "Error: Failed to obtain image digest for abs-share-watcher" >&2
+    exit 1
+  fi
+  echo "abs-share-watcher image digest: $SHARE_WATCHER_DIGEST"
+
+  update_compose_digest "$SHARE_WATCHER_IMAGE" "$SHARE_WATCHER_DIGEST"
+  update_container_hash "abs-share-watcher"
+  echo "✓ abs-share-watcher build complete"
+else
+  echo ""
+  echo "✓ No abs-share-watcher changes, using existing image"
 fi
 
 # Build abs-manager if it has changes (or config-tool/checker were built)
