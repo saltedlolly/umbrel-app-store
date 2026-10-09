@@ -111,15 +111,48 @@
             --sky-800: #7dd3fc;
         }
 
-        /* The GitHub Sponsor button follows the colour scheme of its iframe.
-           It is set to the opposite of the page so it stands out: dark grey on
-           the light theme, light on the dark theme */
-        .sponsor-button iframe {
-            color-scheme: dark;
+        /* Donate button: opposite of the page so it stands out (dark grey on the
+           light theme, light on the dark theme) */
+        :root {
+            --donate-bg: #2d333b;
+            --donate-fg: #ffffff;
+            --donate-hover: #1f2328;
         }
 
-        :root[data-theme="dark"] .sponsor-button iframe {
-            color-scheme: light;
+        :root[data-theme="dark"] {
+            --donate-bg: #e6e9ee;
+            --donate-fg: #1f2328;
+            --donate-hover: #ffffff;
+        }
+
+        .donate-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 16px;
+            border-radius: 6px;
+            background: var(--donate-bg);
+            color: var(--donate-fg) !important;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none !important;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        .donate-btn:hover {
+            background: var(--donate-hover);
+        }
+
+        .donate-btn:focus-visible {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+
+        .donate-heart {
+            color: #db61a2;
+            font-size: 15px;
+            line-height: 1;
         }
 
         * {
@@ -855,15 +888,6 @@
             gap: 6px;
         }
 
-        .sponsor-container iframe {
-            opacity: 0.85;
-            transition: opacity 0.2s;
-        }
-
-        .sponsor-container iframe:hover {
-            opacity: 1;
-        }
-
         .sponsor-text {
             font-size: 11px;
             color: var(--gray-500);
@@ -1587,9 +1611,10 @@
                     <div class="sponsor-container">
                         <div class="sponsor-text">Please Support <br>App Development:</div>
                         <div class="sponsor-button">
-                            <iframe src="https://github.com/sponsors/saltedlolly/button" title="Sponsor saltedlolly"
-                                height="32" width="114" style="border: 0; border-radius: 6px;">
-                            </iframe>
+                            <a class="donate-btn" href="https://github.com/sponsors/saltedlolly?frequency=one-time"
+                                target="_blank" rel="noopener"
+                                title="Make a one-off donation (or sponsor monthly) on GitHub Sponsors"><span
+                                    class="donate-heart" aria-hidden="true">♥</span>Donate</a>
                         </div>
                     </div>
                     <a href="https://saltedlolly.com" target="_blank" rel="noopener" title="saltedlolly.com"
