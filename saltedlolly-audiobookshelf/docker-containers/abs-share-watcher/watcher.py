@@ -340,7 +340,9 @@ class Watcher:
             libs.append({"id": lib["id"], "name": lib["name"], "mediaType": lib.get("mediaType"),
                          "folders": folders,
                          "nasFolders": [f for f in folders if f.startswith(NETWORK_ROOT + "/")],
-                         "watcherDisabled": bool((lib.get("settings") or {}).get("disableWatcher"))})
+                         "watcherDisabled": bool((lib.get("settings") or {}).get("disableWatcher")),
+                         # Audiobookshelf's "Schedule Automatic Library Scans" (a cron expression, or None)
+                         "scanSchedule": (lib.get("settings") or {}).get("autoScanCronExpression") or None})
         with self.lock:
             self.libraries = libs
             self.folder_library = {f: lib for lib in libs for f in lib["nasFolders"]}
@@ -815,6 +817,7 @@ class Watcher:
         return {
             "host": host,
             "libraries": [l["name"] for l in libs],
+            "scheduledScans": [{"library": l["name"], "cron": l["scanSchedule"]} for l in libs if l.get("scanSchedule")],
             "capabilities": caps,
             "score": sum(1 for c in caps.values() if c["state"] == "reported"),
             "lightCheck": {

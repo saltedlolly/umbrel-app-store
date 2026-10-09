@@ -241,6 +241,15 @@ class Evidence(unittest.TestCase):
             self.w.notification_evidence(self.lib, self.folder, watcher.RENAMED_OLD, f"Author {i}/Book")
         self.assertEqual(self.w.host_status("NAS.local")["capabilities"]["renamed"]["state"], "reported")
 
+    def test_scheduled_scans_listed_per_nas(self):
+        self.w.libraries = [
+            {"id": "a", "name": "Fantasy", "nasFolders": [f"{ROOT}/NAS.local/Share/F"], "scanSchedule": "0 03 * * 0,1,3,5"},
+            {"id": "b", "name": "Fiction", "nasFolders": [f"{ROOT}/NAS.local/Share/G"], "scanSchedule": None},
+            {"id": "c", "name": "Other NAS", "nasFolders": [f"{ROOT}/Other.local/S/H"], "scanSchedule": "0 2 * * *"},
+        ]
+        self.assertEqual(self.w.host_status("NAS.local")["scheduledScans"], [{"library": "Fantasy", "cron": "0 03 * * 0,1,3,5"}])
+        self.assertEqual(self.w.host_status("Other.local")["scheduledScans"], [{"library": "Other NAS", "cron": "0 2 * * *"}])
+
     def test_changed_is_never_ruled_out(self):
         self.w.evidence("NAS.local", "changed", "missed")
         self.assertEqual(self.w.host_status("NAS.local")["capabilities"]["changed"]["state"], "unknown")
