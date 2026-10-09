@@ -869,7 +869,8 @@ async function writeWatcherFile(file, content, mode = 0o644) {
 
 async function watcherSettings() {
     const s = await readJsonFile(WATCHER_SETTINGS, {});
-    return { enabled: !!s.enabled, catchupTime: s.catchupTime || '04:00' };
+    const lightCheck = ['auto', 'daily', 'weekly', 'off'].includes(s.lightCheck) ? s.lightCheck : 'auto';
+    return { enabled: !!s.enabled, catchupTime: s.catchupTime || '04:00', lightCheck };
 }
 
 // Ask Audiobookshelf who a key belongs to: { ok, state, message }
@@ -908,16 +909,20 @@ app.get('/api/share-watcher', async (req, res) => {
 
 app.post('/api/share-watcher/settings', async (req, res) => {
     const current = await watcherSettings();
-    const { enabled, catchupTime } = req.body || {};
+    const { enabled, catchupTime, lightCheck } = req.body || {};
     if (catchupTime !== undefined && !/^([01]\d|2[0-3]):[0-5]\d$/.test(catchupTime)) {
-        return res.status(400).json({ error: 'The catch-up time must look like 04:00' });
+        return res.status(400).json({ error: 'The nightly time must look like 04:00' });
+    }
+    if (lightCheck !== undefined && !['auto', 'daily', 'weekly', 'off'].includes(lightCheck)) {
+        return res.status(400).json({ error: 'The light check must be auto, daily, weekly or off' });
     }
     const next = {
         enabled: enabled === undefined ? current.enabled : !!enabled,
         catchupTime: catchupTime === undefined ? current.catchupTime : catchupTime,
+        lightCheck: lightCheck === undefined ? current.lightCheck : lightCheck,
     };
     await writeWatcherFile(WATCHER_SETTINGS, JSON.stringify(next, null, 2));
-    log('info', `Automatic imports: ${next.enabled ? 'on' : 'off'}, catch-up time ${next.catchupTime}`);
+    log('info', `Automatic imports: ${next.enabled ? 'on' : 'off'}, nightly time ${next.catchupTime}, light check ${next.lightCheck}`);
     res.json(next);
 });
 
@@ -942,9 +947,13 @@ app.delete('/api/share-watcher/key', async (req, res) => {
 });
 
 app.post('/api/share-watcher/catchup', async (req, res) => {
-    const action = (req.body || {}).action;
-    if (!['run', 'skip'].includes(action)) return res.status(400).json({ error: 'action must be run or skip' });
-    await writeWatcherFile(WATCHER_COMMAND, JSON.stringify({ action }));
+    const { action, host } = req.body || {};
+    if (!['run', 'skip', 'lightcheck'].includes(action)) {
+        return res.status(400).json({ error: 'action must be run, skip or lightcheck' });
+    }
+    const cmd = { action };
+    if (action === 'lightcheck' && typeof host === 'string' && /^[\w.-]+$/.test(host)) cmd.host = host;
+    await writeWatcherFile(WATCHER_COMMAND, JSON.stringify(cmd));
     res.json({ success: true });
 });
 
