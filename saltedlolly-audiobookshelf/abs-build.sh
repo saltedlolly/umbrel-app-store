@@ -880,7 +880,11 @@ update_migration_script_version "$FULL_VERSION"
 echo "[DEBUG] Calling update_readme_version with $FULL_VERSION"
 update_readme_version "$FULL_VERSION"
 
-if [[ "$UI_HAS_CHANGES" == true ]] || [[ "$ABS_VERSION_CHANGED" == true ]]; then
+# The config tool's image carries version.json (shown in the page footer and
+# used for the update notice), so any version change must rebuild it,
+# including a --bump release with no config-tool code changes. Skipping it
+# left 2.37.1.2 reporting itself as 2.37.1.1 with a false update notice.
+if [[ "$UI_HAS_CHANGES" == true ]] || [[ "$ABS_VERSION_CHANGED" == true ]] || [[ "$FORCE_BUMP" == true ]]; then
   echo "======================================================"
   echo "Building 'ABS Network Shares Config Tool' Docker image"
   echo "======================================================"
