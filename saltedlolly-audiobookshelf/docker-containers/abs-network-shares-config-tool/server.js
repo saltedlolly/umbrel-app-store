@@ -71,7 +71,9 @@ async function readConfig() {
     }
 }
 
-// Write configuration file
+// Written to a temporary file and renamed into place, so the other two
+// processes that read this file (config tool, manager, checker) never see
+// it half-written
 async function writeConfig(config) {
     const cfg = {
         ...DEFAULT_CONFIG,
@@ -80,7 +82,9 @@ async function writeConfig(config) {
         shareSettings: config.shareSettings || {},
         shares: config.shares || {},
     };
-    await fs.writeFile(CONFIG_FILE, JSON.stringify(cfg, null, 2), 'utf8');
+    const tmp = `${CONFIG_FILE}.${process.pid}.tmp`;
+    await fs.writeFile(tmp, JSON.stringify(cfg, null, 2), 'utf8');
+    await fs.rename(tmp, CONFIG_FILE);
     log('info', 'Configuration saved');
 }
 
@@ -634,13 +638,21 @@ app.post('/api/restart', async (req, res) => {
     }
 });
 
+// A share path is "<host>/<share>" as listed under the network root; reject
+// anything else (such as "../") so requests can't reach other paths
+function isValidSharePath(sharePath) {
+    if (typeof sharePath !== 'string') return false;
+    const parts = sharePath.split('/');
+    return parts.length === 2 && parts.every(p => p && p !== '.' && p !== '..');
+}
+
 // Test access to a specific share
 app.post('/api/shares/test', async (req, res) => {
     try {
         const { sharePath } = req.body;
 
-        if (!sharePath) {
-            return res.status(400).json({ error: 'Share path is required' });
+        if (!isValidSharePath(sharePath)) {
+            return res.status(400).json({ error: 'A valid share path is required' });
         }
 
         const systemPath = path.join(NETWORK_MOUNT_ROOT, sharePath);
@@ -697,8 +709,8 @@ app.post('/api/shares/trigger-scan', async (req, res) => {
     try {
         const { sharePath } = req.body;
 
-        if (!sharePath) {
-            return res.status(400).json({ error: 'Share path is required' });
+        if (!isValidSharePath(sharePath)) {
+            return res.status(400).json({ error: 'A valid share path is required' });
         }
 
         log('info', `Triggering immediate scan for share: ${sharePath}`);

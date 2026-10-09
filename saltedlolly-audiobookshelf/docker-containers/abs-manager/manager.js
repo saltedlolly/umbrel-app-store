@@ -47,13 +47,18 @@ async function readConfig() {
   }
 }
 
+// Written to a temporary file and renamed into place, so the other two
+// processes that read this file (config tool, manager, checker) never see
+// it half-written
 async function writeConfig(cfg) {
   const safeConfig = {
     enabledShares: Array.isArray(cfg.enabledShares) ? cfg.enabledShares : [],
     shareSettings: cfg.shareSettings || {},
     shares: cfg.shares || {},
   };
-  await fsp.writeFile(CONFIG_FILE, JSON.stringify(safeConfig, null, 2), 'utf8');
+  const tmp = `${CONFIG_FILE}.${process.pid}.tmp`;
+  await fsp.writeFile(tmp, JSON.stringify(safeConfig, null, 2), 'utf8');
+  await fsp.rename(tmp, CONFIG_FILE);
 }
 
 // Reset share statuses at the start of each manager session
