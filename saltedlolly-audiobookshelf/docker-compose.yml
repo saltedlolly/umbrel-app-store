@@ -39,7 +39,7 @@ services:
   # Lightweight UI service for managing and monitoring required network shares selection
   # Accessible via app_proxy on port 23378 (or via Umbreldashboard icon)
   abs-network-shares-config-tool:
-    image: ghcr.io/saltedlolly/abs-network-shares-config-tool@sha256:4ee5bab86e4a4ba8991fa9c8c1c6b3f2a8b020de074586ee25784bf9a72a9c02
+    image: ghcr.io/saltedlolly/abs-network-shares-config-tool@sha256:9a5092eab28b545b0fbac285ff0f3c7acbfb0c25dcf8949dae79cd9ded9e9292
     container_name: saltedlolly-audiobookshelf_abs-network-shares-config-tool_1
     hostname: saltedlolly-audiobookshelf_abs-network-shares-config-tool_1
     init: true
@@ -66,7 +66,7 @@ services:
   # shares (its own folder watcher can't see changes made from other
   # computers). Switched on and set up from the network shares page.
   abs-share-watcher:
-    image: ghcr.io/saltedlolly/abs-share-watcher@sha256:b6ef0c2e039fb3b514d91b40d1560debcb089add890f9cd22e902d6f60733074
+    image: ghcr.io/saltedlolly/abs-share-watcher@sha256:db03b20a32fa9bceeca2acc89c38167ea1461eecb3e2bd508903df849f39205d
     container_name: saltedlolly-audiobookshelf_abs-share-watcher_1
     init: true
     restart: unless-stopped
@@ -78,7 +78,7 @@ services:
   # Background service that manages starting Audiobookshelf. At launch, it runs abs-network-share-waiter-checker  
   # repeatedly which checks all required networkshares are accessible and starts abs-server only once they are.
   abs-manager:
-    image: ghcr.io/saltedlolly/abs-manager@sha256:5e0f33432f889036f04c7115db2d9440142614f37efaf024e51486f58aaf05fc
+    image: ghcr.io/saltedlolly/abs-manager@sha256:acd45ff595dba8b9511667364fe8028a24726dfd8067d25e8846fb7bd2f20c3a
     container_name: saltedlolly-audiobookshelf_abs-manager_1
     restart: unless-stopped
     environment:

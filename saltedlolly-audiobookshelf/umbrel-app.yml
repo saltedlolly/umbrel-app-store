@@ -3,7 +3,7 @@ id: saltedlolly-audiobookshelf
 name: ABS NAS Edition
 tagline: Audiobookshelf with NAS support
 category: media
-version: "2.37.1.7"
+version: "2.37.1.8"
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/icon.svg
 port: 23378
 description: >-
@@ -138,6 +138,10 @@ gallery:
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/gallery/3.jpg
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/gallery/4.jpg
 releaseNotes: >-
+  ## 2.37.1.8
+
+  - More reliable with a NAS: a NAS that is briefly slow to answer no longer makes the app restart Audiobookshelf, saved network share settings can no longer be lost, and the config tool page does much less work. While Audiobookshelf starts, the config tool shows roughly how long is left. It also lists libraries that have scheduled full scans, with advice, and its footer has a Donate button. README rewritten as user documentation
+
   ## 2.37.1.7
 
   - Fixes the config tool showing "Audiobookshelf is starting up" every few minutes after automatic imports are switched on. While Audiobookshelf starts, the config tool now shows how long it has been starting, how long it usually takes, and why large libraries on a network share take a while
