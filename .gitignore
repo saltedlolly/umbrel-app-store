@@ -10,6 +10,10 @@
 **/build/
 **/dist/
 
+# Python caches (created by running tests)
+**/__pycache__/
+*.pyc
+
 # Logs
 *.log
 
