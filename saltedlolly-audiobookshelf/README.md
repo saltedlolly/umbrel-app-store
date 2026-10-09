@@ -27,6 +27,71 @@ This is a custom version of Audiobookshelf for Umbrel that includes robust suppo
 - **Configuration UI**: Simple web interface to manage share access and view status
 - **Reboot Resilience**: Solves the "share isn't mounted yet" problem after Umbrel reboots
 - **Automatic Restart**: Restarts Audiobookshelf when required shares become available
+- **Automatic Imports from Network Shares**: New books copied to a network share from another computer appear in Audiobookshelf automatically (see [below](#automatic-imports-from-network-shares))
+
+## Start-up time with large libraries on a NAS
+
+With a large library on a network share, Audiobookshelf can take a long time to start: 10 to 20 minutes is possible with tens of thousands of files. While it starts, the app's status light is orange and Audiobookshelf doesn't answer yet. This is normal, and it happens after every restart, including app updates and Umbrel restarts.
+
+**Why:** at start-up, Audiobookshelf's folder watcher sets up a watch on every folder in every library. On a network share that means asking the NAS about every folder and file over the network before Audiobookshelf can answer, and on a busy or slower NAS this adds up. The watcher is needed for [automatic imports](#automatic-imports-from-network-shares).
+
+You can make Audiobookshelf start much faster by switching off its folder watcher (**Automatically watch libraries for changes** in Audiobookshelf's settings), but then new books on network shares only appear after you scan the library, and automatic imports stop working.
+
+## Automatic imports from network shares
+
+### Why it's needed
+
+Audiobookshelf can watch its library folders and add new books by itself, but on Umbrel that only works for folders on the Umbrel itself. When you copy a book to a network share from another computer (for example from your laptop to your NAS), the change happens on the NAS, so the Umbrel is never told about it. Without this feature, new books only appear after you scan the library, which can take a long time with a large library on a NAS.
+
+### What it does
+
+When it's switched on, this app asks your NAS to report changes in your Audiobookshelf library folders, and passes each change straight to Audiobookshelf. Audiobookshelf then scans just the books involved, not the whole library. A newly copied book normally appears a few seconds after the copy finishes. If you copy many books one after another, Audiobookshelf waits until files stop changing and works through them in order.
+
+Libraries on the Umbrel's own storage (such as `Home/Audiobookshelf/Audiobooks`) don't need this: Audiobookshelf's own folder watcher already handles them.
+
+### Setting it up
+
+1. In Audiobookshelf, go to **Settings > API Keys > Add API Key**. Choose an administrator as the user, make sure the key is switched on (active), and copy the key.
+2. Open this app from the Umbrel dashboard. In **Automatic imports from network shares**, paste the key and click **Save key**. The page checks the key with Audiobookshelf straight away.
+3. Switch **Automatic imports** on.
+
+Keep Audiobookshelf's own folder watcher switched on: **Automatically watch libraries for changes** in Audiobookshelf's settings, and **Automatically watch library for changes** in each library's settings. This app hands changes to Audiobookshelf through it, and the page warns you if it's switched off.
+
+The API key is stored with this app's settings, readable only by the app, and included in Umbrel backups. It isn't shown again after saving; use **Replace** or **Remove** to change it. If the key stops working (for example it was deleted or expired in Audiobookshelf), the page tells you.
+
+### Which changes your NAS reports
+
+Not every NAS reports every kind of change. Some report everything; others, for example, report new files but not a book folder that was renamed or deleted from another computer. This app learns what your NAS reports from the changes you make, and shows it in **Your NAS** on the page, and as a badge on each network share:
+
+| Badge | Meaning |
+|---|---|
+| ✓ All changes | Your NAS has been seen reporting every kind of change |
+| *n* of 4 | Your NAS reports some kinds of change; the nightly light check (below) finds the rest |
+| Learning | Not enough changes seen yet to tell |
+
+The four kinds of change are new books and files, changed files (for example edited tags), renamed or moved books, and deleted books. The learning happens per NAS, so if you have shares on more than one NAS, each one gets its own entry.
+
+### The nightly light check
+
+To catch changes a NAS doesn't report, a light check runs once a night at the **Nightly check time** (04:00 by default). It lists only the folders above your books and compares them with Audiobookshelf's library, so it finds books that were renamed, moved, added or deleted. It never opens the files inside your books, so it's much lighter than a library scan and usually finishes within a few minutes. Many NAS models keep folder listings in memory or on an SSD cache, so it often doesn't need to spin up the hard drives.
+
+**Light check** can be set to:
+
+- **Automatic (recommended)**: every night until your NAS has been seen reporting renamed and deleted books itself, then once a week as a safety net
+- **Every night** or **Once a week**
+- **Off**: renamed or deleted books are then only picked up when you scan the library
+
+**Check now** runs it straight away for one NAS. A scheduled library scan in Audiobookshelf isn't needed while automatic imports are on.
+
+### When the app wasn't running
+
+Changes made while this app isn't running (for example while the Umbrel is off, restarting or updating) can't be noticed afterwards. When the app starts again it schedules a catch-up for the nightly check time: a light check after a short break (under an hour, such as an app update), or a full scan of the libraries on network shares after a longer one, because more could have changed. The page shows what's scheduled, with **Scan now** and **Skip**.
+
+### Things to know
+
+- **Changed files**: if your NAS doesn't report edited files (for example tags edited in a tag editor, or a replaced cover image), the light check can't see that either, because it doesn't look inside books. Rescan the library in Audiobookshelf to pick them up. New files, such as a cover image added to a book folder, are a different case: they're picked up like any new file. What Audiobookshelf does with a changed file depends on its own metadata settings.
+- **Renamed books on some NAS models**: Audiobookshelf recognises a renamed or moved book by its file IDs. Some NAS models don't give files permanent IDs, and on those Audiobookshelf treats a renamed or moved book folder as a new book and marks the old entry as missing (this happens with a library scan too, not just with automatic imports). Listening progress stays with the old entry. You can remove missing books from the library's **Issues** list.
+- Automatic imports only watch Audiobookshelf libraries whose folders are on network shares added in Umbrel's Files app.
 
 ## Architecture
 
@@ -68,7 +133,7 @@ This solution consists of four main components working together:
 Umbrel mounts network shares with this structure:
 - **Virtual path (in Umbrel UI)**: `/Network/<host>/<share-name>`
 - **System path (on host)**: `${UMBREL_ROOT}/network/<host>/<share-name>`
-- **Path in Audiobookshelf**: `/umbrel-network/<host>/<share-name>`
+- **Path in Audiobookshelf**: `/media/network/<host>/<share-name>`
 
 ### Workflow
 
@@ -93,7 +158,7 @@ Umbrel mounts network shares with this structure:
    - If shares come back online, manager automatically restarts Audiobookshelf
 
 5. **User adds audiobook library in Audiobookshelf**
-   - Points to `/umbrel-network/<host>/<share>/Audiobooks`
+   - Points to `/media/network/<host>/<share>/Audiobooks`
    - App can now access the network share content
 
 ## Installation
@@ -130,9 +195,12 @@ The app uses pre-built multi-architecture Docker images hosted on GitHub Contain
    - Status updates in real-time in the config tool UI
 
 5. **Access Audiobookshelf directly**
-   - From the config tool, click "Go to Audiobookshelf Server" link in footer
+   - From the config tool, click **Open Audiobookshelf**
    - Or install/use the Audiobookshelf mobile apps
-   - Add libraries pointing to `/umbrel-network/<host>/<share>/...`
+   - Add libraries pointing to `/media/network/<host>/<share>/...`
+
+6. **(Optional) Switch on automatic imports**
+   - See [Automatic imports from network shares](#automatic-imports-from-network-shares)
 
 ### Accessing the Interfaces
 
@@ -140,10 +208,11 @@ The app uses pre-built multi-architecture Docker images hosted on GitHub Contain
 - Accessible via the Umbrel dashboard app icon
 - Shows real-time share status
 - Allows enabling/disabling shares
-- Provides link to Audiobookshelf server
+- Provides a button to open Audiobookshelf
+- Sets up automatic imports from network shares
 
 **Audiobookshelf Server**:
-- Accessible via link in config tool footer
+- Opens from the **Open Audiobookshelf** button in the config tool
 - Or directly via mobile apps
 - Standard Audiobookshelf interface for managing libraries
 
@@ -198,6 +267,16 @@ The manager waits for all enabled shares to be accessible before starting Audiob
    - Save configuration
    - Manager will automatically restart Audiobookshelf
 
+#### Automatic Imports Don't Work
+
+The status line in **Automatic imports from network shares** says what's wrong:
+
+- **Audiobookshelf rejected the API key**: the key was deleted, deactivated or has expired, or was never switched on. Create a new active key and click **Replace**
+- **The API key belongs to a user who isn't an administrator**: create the key on an administrator account
+- **Audiobookshelf isn't answering yet**: Audiobookshelf can take several minutes to start with large libraries on a NAS. Changes are kept and sent when it's ready
+- **A warning that the folder watcher is switched off**: switch it back on in Audiobookshelf (see [Setting it up](#setting-it-up))
+- **A red dot next to a watched folder**: the share can't be reached right now. Check it in Umbrel's Files app; watching resumes by itself when the share is back
+
 #### Configuration Changes Don't Save
 
 Check config tool logs:
@@ -213,8 +292,8 @@ ls -la ~/umbrel/app-data/saltedlolly-audiobookshelf/data/
 #### Audiobookshelf Can't See My Files
 
 Make sure you're using the correct path in Audiobookshelf libraries:
-- **Correct**: `/umbrel-network/<host>/<share>/path/to/audiobooks`
-- **Incorrect**: `/media/network/...` or other paths
+- **Correct**: `/media/network/<host>/<share>/path/to/audiobooks`
+- **Incorrect**: `/umbrel-network/...` (that's where the config tool sees the shares, not Audiobookshelf) or other paths
 
 Verify the share is enabled in the config tool and shows as "Accessible".
 
@@ -240,6 +319,9 @@ saltedlolly-audiobookshelf/
 │   ├── abs-network-shares-checker/
 │   │   ├── Dockerfile
 │   │   └── wait-for-shares.js # Share monitoring service
+│   ├── abs-share-watcher/
+│   │   ├── Dockerfile
+│   │   └── watcher.py        # Automatic imports from network shares
 │   └── abs-server/
 │       └── Dockerfile        # Custom ABS server build
 └── data/                     # Persistent data directories
@@ -262,7 +344,8 @@ saltedlolly-audiobookshelf/
 3. **abs-network-shares-config-tool**: Web UI and API (port 3001)
 4. **abs-manager**: Orchestration service
 5. **abs-network-shares-checker**: Background monitoring (created by manager)
-6. **abs-server**: Audiobookshelf server (created by manager when shares are ready)
+6. **abs-share-watcher**: Automatic imports: passes changes on network shares to Audiobookshelf
+7. **abs-server**: Audiobookshelf server (created by manager when shares are ready)
 
 ### Configuration File Format
 
@@ -314,6 +397,7 @@ The `/data/network-shares.json` configuration file:
 - Share monitoring checks every 5 seconds (with 15-minute caching to reduce I/O)
 - Manager must restart Audiobookshelf when share status changes
 - No notification system for share availability changes (status visible in config tool only)
+- Automatic imports depend on what each NAS reports; see [Which changes your NAS reports](#which-changes-your-nas-reports)
 
 ## License
 

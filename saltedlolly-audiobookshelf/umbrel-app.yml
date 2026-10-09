@@ -25,7 +25,7 @@ description: >-
   - You can use the 'ABS Library Migration Tool' to help you migrate your existing library from the official app. See the instructions here: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-audiobookshelf/tools#readme
 
 
-  Audioookshelf - NAS Edition Features:
+  Audiobookshelf - NAS Edition Features:
 
 
   - Audiobookshelf can access your media stored on a network share elsewhere on your local network (e.g. NAS, SMB, NFS, etc.)
@@ -36,6 +36,8 @@ description: >-
 
   - After a system restart, Audiobookshelf will wait for the required network shares to become available before starting up, preventing errors due to missing media.
 
+  - Automatic imports from network shares: books you copy to your NAS from another computer appear in Audiobookshelf automatically, without scanning the whole library (switch it on in the ABS Network Shares Config Tool; needs an Audiobookshelf API key)
+
   - Local folders for Audiobooks and Podcasts are accessible in the Files app
 
   - Your user accounts, libraries & metadata, along with any Audiobooks and Podcasts stored on your Umbrel, are all backed up by Umbrel's backup system
@@ -43,12 +45,18 @@ description: >-
 
   Direct Access URLs:
 
-  - ABS Network Shares Config Tool: http://umbrel.local:23378 (opens from Umbrel dashboard icon)
+  - ABS Network Shares Config Tool: https://umbrel.local:23378 (opens from Umbrel dashboard icon)
 
   - Audiobookshelf Web App: http://umbrel.local:13378 (opens from ABS Network Shares Config Tool)
 
 
   ⚠️ After mounting a new network share in the Umbrel Files app, you will need to RESTART Audiobookshelf to access it. (Click the "Restart Audiobookshelf" button in the ABS Network Shares Config Tool.)
+
+
+  ⏳ With a large library on a network share, Audiobookshelf can take a long time to start (10 to 20 minutes is possible with tens of thousands of files). At start-up its folder watcher has to look at every folder on the share over the network before Audiobookshelf can answer. This is normal and happens after every restart, including app updates. Details: https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-audiobookshelf/README.md#start-up-time-with-large-libraries-on-a-nas
+
+
+  Why automatic imports? Audiobookshelf's own folder watcher can only see changes made on the Umbrel itself, so books added to a network share from another computer would otherwise only appear after a library scan. Not every NAS reports every kind of change; the app learns what yours reports and a light nightly check catches the rest. Full details: https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-audiobookshelf/README.md#automatic-imports-from-network-shares
 
 
   Audiobookshelf - Main Features:
@@ -64,7 +72,7 @@ description: >-
 
   - Keeps progress per user and syncs across devices
 
-  - Auto-detects library updates, no need to re-scan
+  - Auto-detects library updates, no need to re-scan (for network shares, switch on automatic imports above)
 
   - Upload books and podcasts w/ bulk upload drag and drop folders
 
