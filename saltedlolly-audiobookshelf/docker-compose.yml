@@ -28,6 +28,10 @@ services:
       - SERVICES=0
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    # Only on the app's private network: other apps' containers on the
+    # shared Umbrel network can't reach the Docker API
+    networks:
+      - docker-proxy
     # No published port: abs-manager and the config tool reach the proxy as
     # saltedlolly-audiobookshelf_docker-socket-proxy_1:2375 on the app network. Publishing 2375 made the
     # Docker API reachable without a password from every device on the LAN.
@@ -48,6 +52,9 @@ services:
       - ${APP_DATA_DIR}/data:/data
       # Mount the Umbrel network storage root (read-only) so we can discover shares
       - ${UMBREL_ROOT}/network:/umbrel-network:ro
+    networks:
+      - default
+      - docker-proxy
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3001/health"]
       interval: 5s
@@ -70,3 +77,10 @@ services:
       - docker-socket-proxy
     networks:
       - default
+      - docker-proxy
+
+networks:
+  # Private network for the Docker socket proxy and the two containers that
+  # use it (internal: no outside access)
+  docker-proxy:
+    internal: true

@@ -80,10 +80,12 @@ async function getCurrentNetwork() {
     const selfId = process.env.HOSTNAME;
     if (!selfId) throw new Error('HOSTNAME not set');
     const selfInfo = await docker.getContainer(selfId).inspect();
-    const networks = selfInfo.NetworkSettings?.Networks || {};
-    const first = Object.keys(networks)[0];
-    if (first) {
-      currentNetworkName = first;
+    // The manager is also on the private Docker proxy network; the
+    // containers it creates belong on the shared Umbrel network
+    const names = Object.keys(selfInfo.NetworkSettings?.Networks || {});
+    const chosen = names.find(n => n === 'umbrel_main_network') || names.find(n => !n.endsWith('_docker-proxy')) || names[0];
+    if (chosen) {
+      currentNetworkName = chosen;
       return currentNetworkName;
     }
   } catch (err) {
