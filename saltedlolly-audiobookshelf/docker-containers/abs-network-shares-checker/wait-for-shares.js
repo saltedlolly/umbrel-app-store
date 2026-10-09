@@ -74,27 +74,69 @@ async function writeConfig(config) {
     await fsp.rename(tmp, CONFIG_FILE);
 }
 
+// network-shares.json is changed by three processes (config tool, manager,
+// checker). Each change takes a lock file next to it, then reads the latest
+// file, changes it and writes it, so one process can't overwrite a change
+// another made a moment earlier. A lock older than 10 seconds is left over
+// from a process that died and is removed; after 15 seconds of waiting the
+// change goes ahead anyway rather than being lost.
+async function withConfigLock(fn) {
+    const lock = `${CONFIG_FILE}.lock`;
+    const started = Date.now();
+    let owned = false;
+    while (!owned) {
+        try {
+            await (await fsp.open(lock, 'wx')).close();
+            owned = true;
+        } catch (err) {
+            if (err.code !== 'EEXIST') break;
+            try {
+                if (Date.now() - (await fsp.stat(lock)).mtimeMs > 10000) {
+                    await fsp.unlink(lock);
+                    continue;
+                }
+            } catch { continue; }
+            if (Date.now() - started > 15000) break;
+            await new Promise((r) => setTimeout(r, 50));
+        }
+    }
+    try {
+        return await fn();
+    } finally {
+        if (owned) await fsp.unlink(lock).catch(() => { });
+    }
+}
+
+// change(cfg) edits the latest config in place; returning false skips the write
+async function updateConfig(change) {
+    return withConfigLock(async () => {
+        const cfg = await readConfig();
+        if ((await change(cfg)) === false) return cfg;
+        await writeConfig(cfg);
+        return cfg;
+    });
+}
+
 // Only writes when the status actually changes, so routine checks don't
 // rewrite the file the config tool and manager also update
 async function setShareStatus(fullPath, updates) {
-    const cfg = await readConfig();
-    cfg.shares = cfg.shares || {};
-    const existing = cfg.shares[fullPath] || {};
-    const isRequired = (cfg.enabledShares || []).includes(fullPath);
-    if (existing.status === updates.status && !!existing.foundReadableFile === !!updates.foundReadableFile
-        && existing.isRequired === isRequired) return;
-    cfg.shares[fullPath] = {
-        fullPath,
-        isRequired,
-        status: STATUS.CHECKING,
-        foundReadableFile: false,
-        lastCheckedAt: null,
-        ...existing,
-        ...updates,
-        isRequired,
-        lastCheckedAt: new Date().toISOString(),
-    };
-    await writeConfig(cfg);
+    await updateConfig((cfg) => {
+        const existing = cfg.shares[fullPath] || {};
+        const isRequired = (cfg.enabledShares || []).includes(fullPath);
+        if (existing.status === updates.status && !!existing.foundReadableFile === !!updates.foundReadableFile
+            && existing.isRequired === isRequired) return false;
+        cfg.shares[fullPath] = {
+            fullPath,
+            isRequired,
+            status: STATUS.CHECKING,
+            foundReadableFile: false,
+            lastCheckedAt: null,
+            ...existing,
+            ...updates,
+            isRequired,
+            lastCheckedAt: new Date().toISOString(),
+        };
+    });
 }
 
 async function checkShareAccessibility(mountPath) {

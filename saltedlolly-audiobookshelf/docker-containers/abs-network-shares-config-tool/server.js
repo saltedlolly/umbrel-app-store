@@ -88,43 +88,85 @@ async function writeConfig(config) {
     log('info', 'Configuration saved');
 }
 
+// network-shares.json is changed by three processes (config tool, manager,
+// checker). Each change takes a lock file next to it, then reads the latest
+// file, changes it and writes it, so one process can't overwrite a change
+// another made a moment earlier. A lock older than 10 seconds is left over
+// from a process that died and is removed; after 15 seconds of waiting the
+// change goes ahead anyway rather than being lost.
+async function withConfigLock(fn) {
+    const lock = `${CONFIG_FILE}.lock`;
+    const started = Date.now();
+    let owned = false;
+    while (!owned) {
+        try {
+            await (await fs.open(lock, 'wx')).close();
+            owned = true;
+        } catch (err) {
+            if (err.code !== 'EEXIST') break;
+            try {
+                if (Date.now() - (await fs.stat(lock)).mtimeMs > 10000) {
+                    await fs.unlink(lock);
+                    continue;
+                }
+            } catch { continue; }
+            if (Date.now() - started > 15000) break;
+            await new Promise((r) => setTimeout(r, 50));
+        }
+    }
+    try {
+        return await fn();
+    } finally {
+        if (owned) await fs.unlink(lock).catch(() => { });
+    }
+}
+
+// change(cfg) edits the latest config in place; returning false skips the write
+async function updateConfig(change) {
+    return withConfigLock(async () => {
+        const cfg = await readConfig();
+        if ((await change(cfg)) === false) return cfg;
+        await writeConfig(cfg);
+        return cfg;
+    });
+}
+
 // Upsert a single share status record and persist
 async function upsertShareStatus(fullPath, updates) {
-    const cfg = await readConfig();
-    if (!cfg.shares) cfg.shares = {};
-    const existing = cfg.shares[fullPath] || {};
-    const isRequired = cfg.enabledShares.includes(fullPath);
-    cfg.shares[fullPath] = {
-        fullPath,
-        isRequired,
-        foundReadableFile: false,
-        status: STATUS.CHECKING,
-        lastCheckedAt: null,
-        ...existing,
-        ...updates,
-        isRequired,
-        lastCheckedAt: new Date().toISOString(),
-    };
-    await writeConfig(cfg);
+    const cfg = await updateConfig((cfg) => {
+        const existing = cfg.shares[fullPath] || {};
+        const isRequired = cfg.enabledShares.includes(fullPath);
+        cfg.shares[fullPath] = {
+            fullPath,
+            isRequired,
+            foundReadableFile: false,
+            status: STATUS.CHECKING,
+            lastCheckedAt: null,
+            ...existing,
+            ...updates,
+            isRequired,
+            lastCheckedAt: new Date().toISOString(),
+        };
+    });
     return cfg.shares[fullPath];
 }
 
 // Reset share status list on startup: keep required, drop others, set to checking
 async function resetShareStatusesOnStartup() {
-    const cfg = await readConfig();
-    // Wipe all shares, then re-add only required shares with CHECKING status
-    const nextShares = {};
-    for (const fullPath of cfg.enabledShares) {
-        nextShares[fullPath] = {
-            fullPath,
-            isRequired: true,
-            status: STATUS.CHECKING,
-            foundReadableFile: false,
-            lastCheckedAt: new Date().toISOString(),
-        };
-    }
-    cfg.shares = nextShares;
-    await writeConfig(cfg);
+    await updateConfig((cfg) => {
+        // Wipe all shares, then re-add only required shares with CHECKING status
+        const nextShares = {};
+        for (const fullPath of cfg.enabledShares) {
+            nextShares[fullPath] = {
+                fullPath,
+                isRequired: true,
+                status: STATUS.CHECKING,
+                foundReadableFile: false,
+                lastCheckedAt: new Date().toISOString(),
+            };
+        }
+        cfg.shares = nextShares;
+    });
     log('info', 'Reset all shares on startup (required shares set to checking, non-required forgotten)');
 }
 
@@ -143,9 +185,11 @@ async function discoverShares(appStatus = null) {
             log('warn', `Network mount root ${NETWORK_MOUNT_ROOT} not accessible`);
         }
 
-        // Track all found shares by fullPath
+        // Track all found shares by fullPath. Changes to the config are
+        // collected and applied to the latest file at the end (see updateConfig)
         const foundShares = new Set();
         let configDirty = false;
+        const changes = {};   // fullPath -> new record, or null to remove
 
         for (const host of hosts) {
             const hostPath = path.join(NETWORK_MOUNT_ROOT, host);
@@ -185,7 +229,7 @@ async function discoverShares(appStatus = null) {
                         };
                         // Ensure new shares are written to config for checker to find
                         if (!existing) {
-                            config.shares[fullMountPath] = statusRecord;
+                            config.shares[fullMountPath] = changes[fullMountPath] = statusRecord;
                             configDirty = true;
                         }
                     }
@@ -200,7 +244,7 @@ async function discoverShares(appStatus = null) {
                         lastCheckedAt: new Date().toISOString(),
                     };
                     if (!existing || existing.status !== STATUS.PERMISSION_DENIED) {
-                        config.shares[fullMountPath] = statusRecord;
+                        config.shares[fullMountPath] = changes[fullMountPath] = statusRecord;
                         configDirty = true;
                     }
                 }
@@ -231,7 +275,7 @@ async function discoverShares(appStatus = null) {
 
                 // Persist missing required share status immediately
                 if (existing.status !== STATUS.NOT_MOUNTED) {
-                    config.shares[fullPath] = {
+                    config.shares[fullPath] = changes[fullPath] = {
                         fullPath,
                         isRequired: true,
                         status,
@@ -261,13 +305,23 @@ async function discoverShares(appStatus = null) {
             const isMounted = foundShares.has(fullPath);
             if (!isRequired && !isMounted) {
                 delete config.shares[fullPath];
+                changes[fullPath] = null;
                 configDirty = true;
             }
         }
 
         if (configDirty) {
             log('info', `Writing config: ${Object.keys(config.shares || {}).length} shares total`);
-            await writeConfig(config);
+            await updateConfig((cfg) => {
+                for (const [fullPath, record] of Object.entries(changes)) {
+                    if (record === null) {
+                        // Only forget it if it still isn't required in the latest config
+                        if (!cfg.enabledShares.includes(fullPath)) delete cfg.shares[fullPath];
+                    } else {
+                        cfg.shares[fullPath] = record;
+                    }
+                }
+            });
             
             // Trigger checker to scan newly detected shares (if ABS is already running)
             if (absRunning) {
@@ -717,20 +771,17 @@ app.post('/api/restart', async (req, res) => {
         // Reset required shares to 'checking' status before restart
         // Non-required shares are removed so they must be re-detected
         try {
-            const cfg = await readConfig();
-            const requiredShares = cfg.enabledShares || [];
-            
-            // Rebuild shares object with only required shares, all set to 'checking'
-            cfg.shares = {};
-            for (const sharePath of requiredShares) {
-                cfg.shares[sharePath] = {
-                    status: STATUS.CHECKING,
-                    lastCheckedAt: null,
-                };
-            }
-            
-            await writeConfig(cfg);
-            log('info', `Reset ${requiredShares.length} required shares to 'checking' status`);
+            const cfg = await updateConfig((cfg) => {
+                // Rebuild shares object with only required shares, all set to 'checking'
+                cfg.shares = {};
+                for (const sharePath of cfg.enabledShares || []) {
+                    cfg.shares[sharePath] = {
+                        status: STATUS.CHECKING,
+                        lastCheckedAt: null,
+                    };
+                }
+            });
+            log('info', `Reset ${cfg.enabledShares.length} required shares to 'checking' status`);
         } catch (err) {
             log('warn', `Could not reset share statuses before restart: ${err.message}`);
             // Continue with restart anyway
@@ -899,38 +950,37 @@ app.post('/api/config/save', async (req, res) => {
             return res.status(400).json({ error: 'enabledShares must be an array' });
         }
 
-        const existing = await readConfig();
         const enabledSet = new Set(enabledShares || []);
-        const shares = { ...(existing.shares || {}) };
+        let config;
+        await updateConfig((existing) => {
+            const shares = { ...(existing.shares || {}) };
 
-        // Mark previously required shares that are now disabled as optional
-        for (const fullPath of Object.keys(shares)) {
-            if (!enabledSet.has(fullPath)) {
+            // Mark previously required shares that are now disabled as optional
+            for (const fullPath of Object.keys(shares)) {
+                if (!enabledSet.has(fullPath)) {
+                    shares[fullPath] = {
+                        ...shares[fullPath],
+                        isRequired: false,
+                    };
+                }
+            }
+
+            // Ensure all enabled shares exist in the map and are marked as required/checking
+            for (const fullPath of enabledShares || []) {
                 shares[fullPath] = {
-                    ...shares[fullPath],
-                    isRequired: false,
+                    fullPath,
+                    isRequired: true,
+                    status: shares[fullPath]?.status || STATUS.CHECKING,
+                    foundReadableFile: shares[fullPath]?.foundReadableFile || false,
+                    lastCheckedAt: new Date().toISOString(),
                 };
             }
-        }
 
-        // Ensure all enabled shares exist in the map and are marked as required/checking
-        for (const fullPath of enabledShares || []) {
-            shares[fullPath] = {
-                fullPath,
-                isRequired: true,
-                status: shares[fullPath]?.status || STATUS.CHECKING,
-                foundReadableFile: shares[fullPath]?.foundReadableFile || false,
-                lastCheckedAt: new Date().toISOString(),
-            };
-        }
-
-        const config = {
-            enabledShares: enabledShares || [],
-            shareSettings: shareSettings || {},
-            shares,
-        };
-
-        await writeConfig(config);
+            existing.enabledShares = enabledShares || [];
+            existing.shareSettings = shareSettings || {};
+            existing.shares = shares;
+            config = { enabledShares: existing.enabledShares, shareSettings: existing.shareSettings, shares };
+        });
 
         log('info', `Configuration saved: ${enabledShares.length} shares enabled`);
 

@@ -63,21 +63,65 @@ async function writeConfig(cfg) {
   await fsp.rename(tmp, CONFIG_FILE);
 }
 
+// network-shares.json is changed by three processes (config tool, manager,
+// checker). Each change takes a lock file next to it, then reads the latest
+// file, changes it and writes it, so one process can't overwrite a change
+// another made a moment earlier. A lock older than 10 seconds is left over
+// from a process that died and is removed; after 15 seconds of waiting the
+// change goes ahead anyway rather than being lost.
+async function withConfigLock(fn) {
+  const lock = `${CONFIG_FILE}.lock`;
+  const started = Date.now();
+  let owned = false;
+  while (!owned) {
+    try {
+      await (await fsp.open(lock, 'wx')).close();
+      owned = true;
+    } catch (err) {
+      if (err.code !== 'EEXIST') break;
+      try {
+        if (Date.now() - (await fsp.stat(lock)).mtimeMs > 10000) {
+          await fsp.unlink(lock);
+          continue;
+        }
+      } catch { continue; }
+      if (Date.now() - started > 15000) break;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+  }
+  try {
+    return await fn();
+  } finally {
+    if (owned) await fsp.unlink(lock).catch(() => { });
+  }
+}
+
+// change(cfg) edits the latest config in place; returning false skips the write
+async function updateConfig(change) {
+  return withConfigLock(async () => {
+    const cfg = await readConfig();
+    if ((await change(cfg)) === false) return cfg;
+    await writeConfig(cfg);
+    return cfg;
+  });
+}
+
 // Reset share statuses at the start of each manager session
 async function resetShareStatuses() {
-  const cfg = await readConfig();
-  const nextShares = {};
-  for (const fullPath of cfg.enabledShares || []) {
-    nextShares[fullPath] = {
-      fullPath,
-      isRequired: true,
-      status: STATUS.CHECKING,
-      foundReadableFile: false,
-      lastCheckedAt: new Date().toISOString(),
-    };
-  }
-  cfg.shares = nextShares;
-  await writeConfig(cfg);
+  let nextShares = {};
+  await updateConfig((cfg) => {
+    nextShares = {};
+    for (const fullPath of cfg.enabledShares || []) {
+      nextShares[fullPath] = {
+        fullPath,
+        isRequired: true,
+        status: STATUS.CHECKING,
+        foundReadableFile: false,
+        lastCheckedAt: new Date().toISOString(),
+      };
+    }
+    cfg.shares = nextShares;
+  });
   console.log(`[${new Date().toISOString()}] Reset share statuses to checking for ${Object.keys(nextShares).length} required share(s)`);
 }
 
