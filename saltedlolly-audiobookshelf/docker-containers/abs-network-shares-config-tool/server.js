@@ -631,55 +631,71 @@ async function trackStartup() {
 }
 setInterval(() => trackStartup().catch(() => { }), 20000);
 
-// Get combined status (app + shares)
+// Get combined status (app + shares). Every open tab asks for this every few
+// seconds, so the answer is shared: worked out at most once every 1.5 seconds,
+// however many tabs are open, and requests arriving meanwhile wait for the
+// same answer.
+const STATUS_CACHE_MS = 1500;
+let statusCache = { at: 0, body: null, pending: null };
+
 app.get('/api/status', async (req, res) => {
+    if (statusCache.body && Date.now() - statusCache.at < STATUS_CACHE_MS) return res.json(statusCache.body);
+    if (!statusCache.pending) {
+        statusCache.pending = buildStatus()
+            .then((body) => { statusCache = { at: Date.now(), body, pending: null }; return body; })
+            .catch((error) => { statusCache.pending = null; throw error; });
+    }
     try {
-        const appStatus = await getAudiobookshelfStatus();
-        const [config, shares, shareWaiterReady] = await Promise.all([
-            readConfig(),
-            discoverShares(appStatus),
-            checkShareWaiterReady(),
-        ]);
-
-        // Determine if any required shares are blocking
-        const requiredShares = shares.filter(s => config.enabledShares.includes(s.fullPath));
-        const blockingShares = requiredShares.filter(s => s.status !== STATUS.ACCESSIBLE);
-        const hasRequiredShares = config.enabledShares && config.enabledShares.length > 0;
-
-        let overallStatus = appStatus.status;
-        let message = appStatus.message;
-
-        // If there are no required shares, skip share-checker requirement and allow ABS to start
-        // If there are required shares, only allow 'starting' (orange) if share-checker has allowed ABS to start
-        if (hasRequiredShares && !shareWaiterReady) {
-            overallStatus = 'waiting';
-            message = `Waiting for ${blockingShares.length} required share(s) to become available`;
-        } else if (!appStatus.running && blockingShares.length === 0) {
-            overallStatus = 'starting';
-            message = 'Audiobookshelf is starting up...';
-        }
-        const startedAt = overallStatus === 'starting' ? await getAbsStartedAt() : null;
-        const usualStartSeconds = startedAt ? await usualStartupSeconds() : null;
-
-        res.json({
-            app: {
-                ...appStatus,
-                overallStatus,
-                startedAt,
-                usualStartSeconds,
-                message,
-            },
-            shares: shares.map(share => ({
-                ...share,
-                isRequired: config.enabledShares.includes(share.fullPath),
-                isBlocking: config.enabledShares.includes(share.fullPath) && share.status !== STATUS.ACCESSIBLE,
-            })),
-        });
+        res.json(await statusCache.pending);
     } catch (error) {
         log('error', `Error getting status: ${error.message}`);
         res.status(500).json({ error: 'Failed to get status' });
     }
 });
+
+async function buildStatus() {
+    const appStatus = await getAudiobookshelfStatus();
+    const [config, shares, shareWaiterReady] = await Promise.all([
+        readConfig(),
+        discoverShares(appStatus),
+        checkShareWaiterReady(),
+    ]);
+
+    // Determine if any required shares are blocking
+    const requiredShares = shares.filter(s => config.enabledShares.includes(s.fullPath));
+    const blockingShares = requiredShares.filter(s => s.status !== STATUS.ACCESSIBLE);
+    const hasRequiredShares = config.enabledShares && config.enabledShares.length > 0;
+
+    let overallStatus = appStatus.status;
+    let message = appStatus.message;
+
+    // If there are no required shares, skip share-checker requirement and allow ABS to start
+    // If there are required shares, only allow 'starting' (orange) if share-checker has allowed ABS to start
+    if (hasRequiredShares && !shareWaiterReady) {
+        overallStatus = 'waiting';
+        message = `Waiting for ${blockingShares.length} required share(s) to become available`;
+    } else if (!appStatus.running && blockingShares.length === 0) {
+        overallStatus = 'starting';
+        message = 'Audiobookshelf is starting up...';
+    }
+    const startedAt = overallStatus === 'starting' ? await getAbsStartedAt() : null;
+    const usualStartSeconds = startedAt ? await usualStartupSeconds() : null;
+
+    return {
+        app: {
+            ...appStatus,
+            overallStatus,
+            startedAt,
+            usualStartSeconds,
+            message,
+        },
+        shares: shares.map(share => ({
+            ...share,
+            isRequired: config.enabledShares.includes(share.fullPath),
+            isBlocking: config.enabledShares.includes(share.fullPath) && share.status !== STATUS.ACCESSIBLE,
+        })),
+    };
+}
 
 // Discover available shares
 app.get('/api/shares/discover', async (req, res) => {
