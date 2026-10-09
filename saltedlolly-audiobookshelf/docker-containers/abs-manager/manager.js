@@ -173,9 +173,24 @@ async function streamContainerLogs(container, label) {
   // Avoid double-attaching to the same logical container label
   if (activeLogStreams.has(label)) return;
 
+  let droppedAt = 0;
+  // The Docker socket proxy drops long-lived connections (after about 10
+  // minutes), so reconnect while the container is still running
+  const reattach = async (stream) => {
+    if (activeLogStreams.get(label) === stream) activeLogStreams.delete(label);
+    if (shuttingDown) return;
+    await new Promise(r => setTimeout(r, 2000));
+    try {
+      const info = await container.inspect();
+      if (info.State.Running && !activeLogStreams.has(label)) await attach();
+    } catch { }
+  };
+
   const attach = async () => {
     try {
-      const stream = await container.logs({ follow: true, stdout: true, stderr: true, tail: 50 });
+      // tail 50 the first time; on a reconnect, only lines since it dropped
+      const since = droppedAt ? Math.floor(droppedAt / 1000) : 0;
+      const stream = await container.logs({ follow: true, stdout: true, stderr: true, ...(since ? { since } : { tail: 50 }) });
       activeLogStreams.set(label, stream);
 
       // Prefix log lines so they identify the source container in the manager logs
@@ -192,15 +207,15 @@ async function streamContainerLogs(container, label) {
 
       docker.modem.demuxStream(stream, prefixWriter(process.stdout), prefixWriter(process.stderr));
 
-      stream.on('end', () => {
-        console.warn(`[${new Date().toISOString()}] Log stream ended for ${label}`);
-        activeLogStreams.delete(label);
-      });
-
-      stream.on('error', (err) => {
-        console.warn(`[${new Date().toISOString()}] Log stream error for ${label}:`, err.message);
-        activeLogStreams.delete(label);
-      });
+      let reconnecting = false;
+      const onDrop = () => {
+        if (reconnecting) return;
+        reconnecting = true;
+        droppedAt = Date.now();
+        reattach(stream);
+      };
+      stream.on('end', onDrop);
+      stream.on('error', onDrop);
     } catch (err) {
       console.warn(`[${new Date().toISOString()}] Failed to stream logs for ${label}:`, err.message);
     }
