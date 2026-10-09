@@ -89,7 +89,7 @@ Changes made while this app isn't running (for example while the Umbrel is off, 
 
 ### Things to know
 
-- **Changed files**: if your NAS doesn't report edited files (for example tags edited in a tag editor, or a replaced cover image), the light check can't see that either, because it doesn't look inside books. Rescan the library in Audiobookshelf to pick them up. New files, such as a cover image added to a book folder, are a different case: they're picked up like any new file. What Audiobookshelf does with a changed file depends on its own metadata settings.
+- **Changed files**: if your NAS doesn't report changed files (for example a replaced audio file or cover image), the light check can't see that either, because it doesn't look inside books. A library scan in Audiobookshelf picks those up. Edited book details such as title or author in the tags of a book Audiobookshelf already has are a different matter: Audiobookshelf keeps its own saved details for that book, so neither automatic imports nor a scan apply them. New files, such as a cover image added to a book folder, are picked up like any new file.
 - **Renamed books on some NAS models**: Audiobookshelf recognises a renamed or moved book by its file IDs. Some NAS models don't give files permanent IDs, and on those Audiobookshelf treats a renamed or moved book folder as a new book and marks the old entry as missing (this happens with a library scan too, not just with automatic imports). Listening progress stays with the old entry. You can remove missing books from the library's **Issues** list.
 - Automatic imports only watch Audiobookshelf libraries whose folders are on network shares added in Umbrel's Files app.
 
