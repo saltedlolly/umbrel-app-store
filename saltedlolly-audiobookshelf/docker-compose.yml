@@ -33,7 +33,7 @@ services:
   # Lightweight UI service for managing and monitoring required network shares selection
   # Accessible via app_proxy on port 23378 (or via Umbreldashboard icon)
   abs-network-shares-config-tool:
-    image: ghcr.io/saltedlolly/abs-network-shares-config-tool@sha256:b1c7309947a4198c9a9a4ec5ddac7331b78c3e82d5b8f09db79314b84a279baa
+    image: ghcr.io/saltedlolly/abs-network-shares-config-tool@sha256:f6c5f04e7a34e3c3de25335248da3b9703fe0b921ecef8a17dce7d45ba4e5f6b
     container_name: saltedlolly-audiobookshelf_abs-network-shares-config-tool_1
     hostname: saltedlolly-audiobookshelf_abs-network-shares-config-tool_1
     init: true

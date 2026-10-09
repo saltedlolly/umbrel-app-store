@@ -3,7 +3,7 @@ id: saltedlolly-audiobookshelf
 name: ABS NAS Edition
 tagline: Audiobookshelf with NAS support
 category: media
-version: "2.37.1.2"
+version: "2.37.1.3"
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/icon.svg
 port: 23378
 description: >-
@@ -130,6 +130,10 @@ gallery:
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/gallery/3.jpg
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/gallery/4.jpg
 releaseNotes: >-
+  ## 2.37.1.3
+
+  - Fixes the version shown on the network shares page and a false Update available notice; the notice is easier to read in dark mode
+
   ## 2.37.1.2
 
   - Security fix
