@@ -26,8 +26,9 @@ services:
       - SERVICES=0
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - "2375:2375"       # Expose proxy on port 2375 (internal only)
+    # No published port: abs-manager and the config tool reach the proxy as
+    # docker-socket-proxy:2375 on the app network. Publishing 2375 made the
+    # Docker API reachable without a password from every device on the LAN.
 
   # Lightweight UI service for managing and monitoring required network shares selection
   # Accessible via app_proxy on port 23378 (or via Umbreldashboard icon)
