@@ -6,16 +6,124 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Network Share Config Tool for Audiobookshelf</title>
     <link rel="icon" href="/abs-icon-purple.svg" type="image/svg+xml">
+    <script>
+        // Apply the saved theme (light / dark / system) before the page is
+        // drawn, so it doesn't flash white first. The picker is at the end.
+        (function () {
+            var t = 'system';
+            try { t = localStorage.getItem('theme') || 'system'; } catch (e) { }
+            var dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+            document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+        })();
+    </script>
     <style>
-        /* The page is light only. The GitHub Sponsor button follows the colour
-           scheme of its iframe, so it is set to dark there: a prominent dark
-           grey button on every device */
+        /* Colours. Light values first; dark mode redefines them. The theme
+           picker sets data-theme on <html> (see the script in <head>). */
         :root {
             color-scheme: light;
+            --page-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --surface: #ffffff;
+            --accent-text: #667eea;
+            --link: #3b82f6;
+            --overlay: rgba(255, 255, 255, 0.92);
+            --overlay-strong: rgba(255, 255, 255, 0.96);
+            --text: #333;
+            --text-2: #444;
+            --text-3: #555;
+            --text-4: #666;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --info-bg: #f0f4ff;
+            --indigo-100: #e0e7ff;
+            --amber-50: #fffbeb;
+            --amber-100: #fef3c7;
+            --amber-200: #fde68a;
+            --yellow-200: #fef08a;
+            --amber-800: #92400e;
+            --amber-700: #b45309;
+            --yellow-800: #854d0e;
+            --orange-50: #fff7ed;
+            --green-50: #f0fdf4;
+            --green-50b: #ecfdf5;
+            --green-100b: #dcfce7;
+            --green-100: #d1fae5;
+            --green-800: #065f46;
+            --red-50: #fef2f2;
+            --red-100: #fee2e2;
+            --red-200: #fecaca;
+            --red-300: #fca5a5;
+            --red-700: #b91c1c;
+            --red-800: #991b1b;
+            --red-900: #7f1d1d;
+            --sky-100: #e0f2fe;
+            --sky-200: #bae6fd;
+            --sky-800: #0b5394;
         }
 
+        :root[data-theme="dark"] {
+            color-scheme: dark;
+            --page-bg: linear-gradient(135deg, #2c356f 0%, #3a2353 100%);
+            --surface: #151922;
+            --accent-text: #93a3f8;
+            --link: #7aa7ff;
+            --overlay: rgba(21, 25, 34, 0.92);
+            --overlay-strong: rgba(21, 25, 34, 0.96);
+            --text: #e5e7eb;
+            --text-2: #d1d5db;
+            --text-3: #c4c9d2;
+            --text-4: #aab0ba;
+            --gray-50: #1c212c;
+            --gray-100: #252b37;
+            --gray-200: #323947;
+            --gray-300: #465061;
+            --gray-400: #6b7385;
+            --gray-500: #a1a8b5;
+            --gray-600: #b8bec8;
+            --gray-700: #d1d5db;
+            --gray-800: #e8ebf0;
+            --info-bg: #232a45;
+            --indigo-100: #2f3768;
+            --amber-50: #2a2412;
+            --amber-100: #3a3013;
+            --amber-200: #7c6420;
+            --yellow-200: #4a4212;
+            --amber-800: #fcd34d;
+            --amber-700: #fbbf24;
+            --yellow-800: #fde047;
+            --orange-50: #2e2214;
+            --green-50: #11281e;
+            --green-50b: #133024;
+            --green-100b: #143a27;
+            --green-100: #15402f;
+            --green-800: #6ee7b7;
+            --red-50: #2b1717;
+            --red-100: #3d1c1c;
+            --red-200: #4d2020;
+            --red-300: #9b4040;
+            --red-700: #f87171;
+            --red-800: #fca5a5;
+            --red-900: #fca5a5;
+            --sky-100: #11303f;
+            --sky-200: #1e5a7a;
+            --sky-800: #7dd3fc;
+        }
+
+        /* The GitHub Sponsor button follows the colour scheme of its iframe.
+           It is set to the opposite of the page so it stands out: dark grey on
+           the light theme, light on the dark theme */
         .sponsor-button iframe {
             color-scheme: dark;
+        }
+
+        :root[data-theme="dark"] .sponsor-button iframe {
+            color-scheme: light;
         }
 
         * {
@@ -26,10 +134,10 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--page-bg);
             min-height: 100vh;
             padding: 20px;
-            color: #333;
+            color: var(--text);
         }
 
         .container {
@@ -38,7 +146,7 @@
         }
 
         .card {
-            background: white;
+            background: var(--surface);
             border-radius: 12px;
             padding: 30px;
             margin-bottom: 20px;
@@ -46,19 +154,19 @@
         }
 
         h1 {
-            color: #667eea;
+            color: var(--accent-text);
             margin-bottom: 10px;
             font-size: 28px;
         }
 
         .subtitle {
-            color: #666;
+            color: var(--text-4);
             margin-bottom: 30px;
             font-size: 14px;
         }
 
         .info-box {
-            background: #f0f4ff;
+            background: var(--info-bg);
             border-left: 4px solid #667eea;
             padding: 15px;
             margin-bottom: 15px;
@@ -68,13 +176,13 @@
         .info-box p {
             margin: 5px 0;
             font-size: 14px;
-            color: #555;
+            color: var(--text-3);
         }
 
         .hiw-bullets li {
             margin: 5px 20px;
             font-size: 14px;
-            color: #555;
+            color: var(--text-3);
             line-height: 1.3em;
         }
 
@@ -82,11 +190,11 @@
             margin-left: 35px;
             margin-top: 10px;
             padding: 10px 15px;
-            background: #fef3c7;
+            background: var(--amber-100);
             border-left: 3px solid #f59e0b;
             border-radius: 4px;
             font-size: 13px;
-            color: #92400e;
+            color: var(--amber-800);
             display: none;
         }
 
@@ -99,7 +207,7 @@
             width: 14px;
             height: 14px;
             border: 2px solid #f59e0b;
-            border-top: 2px solid #92400e;
+            border-top: 2px solid var(--amber-800);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             margin: 0 6px;
@@ -117,7 +225,7 @@
 
         .share-item {
             position: relative;
-            border: 2px solid #e5e7eb;
+            border: 2px solid var(--gray-200);
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 15px;
@@ -131,29 +239,29 @@
 
         .share-item.enabled {
             border-color: #10b981;
-            background: #f0fdf4;
+            background: var(--green-50);
         }
 
         .share-item.optional {
-            border-color: #fde68a;
-            background: #fffbeb;
+            border-color: var(--amber-200);
+            background: var(--amber-50);
         }
 
         .share-item.not-mounted {
-            border-color: #fca5a5;
-            background: #fef2f2;
+            border-color: var(--red-300);
+            background: var(--red-50);
         }
 
         .share-item.not-mounted .share-help-text {
-            background: #fee2e2;
+            background: var(--red-100);
             border-left-color: #ef4444;
-            color: #991b1b;
+            color: var(--red-800);
         }
 
         .share-alert-icon {
             text-align: right;
             font-size: 26px;
-            color: #b91c1c;
+            color: var(--red-700);
             margin-top: 6px;
             display: none;
         }
@@ -164,15 +272,15 @@
 
         .share-alert-inline {
             font-size: 18px;
-            color: #b91c1c;
+            color: var(--red-700);
             margin-left: 16px;
         }
 
         .confirm-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(255, 255, 255, 0.92);
-            border: 2px solid #fca5a5;
+            background: var(--overlay);
+            border: 2px solid var(--red-300);
             border-radius: 8px;
             display: none;
             flex-direction: column;
@@ -189,7 +297,7 @@
         }
 
         .confirm-text {
-            color: #991b1b;
+            color: var(--red-800);
             font-weight: 600;
         }
 
@@ -215,7 +323,7 @@
         .share-name {
             font-weight: 600;
             font-size: 16px;
-            color: #1f2937;
+            color: var(--gray-800);
             flex: 1;
         }
 
@@ -227,55 +335,55 @@
         }
 
         .status-badge.accessible {
-            background: #d1fae5;
-            color: #065f46;
+            background: var(--green-100);
+            color: var(--green-800);
         }
 
         .status-badge.empty {
-            background: #fef3c7;
-            color: #92400e;
+            background: var(--amber-100);
+            color: var(--amber-800);
         }
 
         .status-badge.permission-denied {
-            background: #fecaca;
-            color: #7f1d1d;
+            background: var(--red-200);
+            color: var(--red-900);
         }
 
         .status-badge.not-accessible {
-            background: #fecaca;
-            color: #7f1d1d;
+            background: var(--red-200);
+            color: var(--red-900);
         }
 
         .status-badge.restart-required {
-            background: #fef3c7;
-            color: #92400e;
+            background: var(--amber-100);
+            color: var(--amber-800);
             border: 1px dashed #d97706;
         }
 
         .status-badge.checking {
-            background: #fef08a;
-            color: #854d0e;
+            background: var(--yellow-200);
+            color: var(--yellow-800);
         }
 
         .status-badge.not-mounted {
-            background: #fecaca;
-            color: #7f1d1d;
+            background: var(--red-200);
+            color: var(--red-900);
         }
 
         /* Legacy support */
         .status-badge.mounted {
-            background: #d1fae5;
-            color: #065f46;
+            background: var(--green-100);
+            color: var(--green-800);
         }
 
         .status-badge.unmounted {
-            background: #fee2e2;
-            color: #991b1b;
+            background: var(--red-100);
+            color: var(--red-800);
         }
 
         .share-details {
             margin-left: 35px;
-            color: #6b7280;
+            color: var(--gray-500);
             font-size: 14px;
         }
 
@@ -283,33 +391,38 @@
             margin: 5px 0;
         }
 
+        /* Long share paths wrap instead of running past the card on phones */
+        .share-details code {
+            overflow-wrap: anywhere;
+        }
+
         .share-help-text {
             margin-left: 35px;
             margin-top: 8px;
             padding: 8px 12px;
-            background: #f9fafb;
-            border-left: 3px solid #d1d5db;
+            background: var(--gray-50);
+            border-left: 3px solid var(--gray-300);
             border-radius: 4px;
             font-size: 13px;
-            color: #6b7280;
+            color: var(--gray-500);
         }
 
         .share-item.enabled .share-help-text {
-            background: #ecfdf5;
+            background: var(--green-50b);
             border-left-color: #10b981;
-            color: #065f46;
+            color: var(--green-800);
         }
 
         .share-item.optional .share-help-text {
-            background: #fff7ed;
+            background: var(--orange-50);
             border-left-color: #f59e0b;
-            color: #b45309;
+            color: var(--amber-700);
         }
 
         .share-item.not-mounted.enabled .share-help-text {
-            background: #fee2e2;
+            background: var(--red-100);
             border-left-color: #ef4444;
-            color: #991b1b;
+            color: var(--red-800);
         }
 
         .share-actions {
@@ -340,12 +453,12 @@
         }
 
         .btn-secondary {
-            background: #e5e7eb;
-            color: #374151;
+            background: var(--gray-200);
+            color: var(--gray-700);
         }
 
         .btn-secondary:hover {
-            background: #d1d5db;
+            background: var(--gray-300);
         }
 
         .btn-test {
@@ -374,7 +487,7 @@
 
         .save-status {
             font-size: 13px;
-            color: #6b7280;
+            color: var(--gray-500);
         }
 
         .message-text {
@@ -388,7 +501,7 @@
         .banner-spinner {
             width: 28px;
             height: 28px;
-            border: 2px solid #bae6fd;
+            border: 2px solid var(--sky-200);
             border-top: 2px solid #0ea5e9;
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -403,11 +516,11 @@
         .loading {
             text-align: center;
             padding: 40px;
-            color: #6b7280;
+            color: var(--gray-500);
         }
 
         .spinner {
-            border: 3px solid #f3f4f6;
+            border: 3px solid var(--gray-100);
             border-top: 3px solid #667eea;
             border-radius: 50%;
             width: 40px;
@@ -436,8 +549,8 @@
         }
 
         .message.success {
-            background: #d1fae5;
-            color: #065f46;
+            background: var(--green-100);
+            color: var(--green-800);
             border-left: 4px solid #10b981;
         }
 
@@ -456,20 +569,20 @@
         }
 
         .message.error {
-            background: #fee2e2;
-            color: #991b1b;
+            background: var(--red-100);
+            color: var(--red-800);
             border-left: 4px solid #ef4444;
         }
 
         .message.info {
-            background: #e0f2fe;
-            color: #0b5394;
+            background: var(--sky-100);
+            color: var(--sky-800);
             border-left: 4px solid #0ea5e9;
         }
 
         .message.warning {
-            background: #fef3c7;
-            color: #92400e;
+            background: var(--amber-100);
+            color: var(--amber-800);
             border-left: 4px solid #f59e0b;
         }
 
@@ -491,7 +604,7 @@
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #6b7280;
+            color: var(--gray-500);
         }
 
         .app-header {
@@ -520,7 +633,7 @@
         .header-text .subtitle {
             margin: 4px 0 0;
             font-size: 16px;
-            color: #4b5563;
+            color: var(--gray-600);
         }
 
         .header-actions {
@@ -532,7 +645,7 @@
         }
 
         .app-status-pill {
-            background: #f3f4f6;
+            background: var(--gray-100);
             border-radius: 999px;
             padding: 6px 16px;
             display: flex;
@@ -542,18 +655,18 @@
         }
 
         .app-status-pill.status-running {
-            background: #dcfce7;
-            color: #065f46;
+            background: var(--green-100b);
+            color: var(--green-800);
         }
 
         .app-status-pill.status-starting {
-            background: #fef3c7;
-            color: #92400e;
+            background: var(--amber-100);
+            color: var(--amber-800);
         }
 
         .app-status-pill.status-stopped {
-            background: #fee2e2;
-            color: #991b1b;
+            background: var(--red-100);
+            color: var(--red-800);
         }
 
         .status-light {
@@ -578,7 +691,7 @@
         }
 
         .status-light.gray {
-            background: #d1d5db;
+            background: var(--gray-300);
             box-shadow: 0 0 6px rgba(209, 213, 219, 0.6);
         }
 
@@ -587,7 +700,7 @@
             font-size: 12px;
             text-transform: none;
             letter-spacing: 0.2px;
-            color: #6b7280;
+            color: var(--gray-500);
         }
 
         .header-actions .btn {
@@ -596,7 +709,7 @@
 
         .status-indicator-label {
             font-size: 11px;
-            color: #6b7280;
+            color: var(--gray-500);
         }
 
         .empty-state-icon {
@@ -613,20 +726,20 @@
         }
 
         .test-result.success {
-            background: #d1fae5;
-            color: #065f46;
+            background: var(--green-100);
+            color: var(--green-800);
         }
 
         .test-result.error {
-            background: #fee2e2;
-            color: #991b1b;
+            background: var(--red-100);
+            color: var(--red-800);
         }
 
         footer {
             margin: 30px -30px -30px -30px;
             padding: 20px 30px;
-            background: #f9fafb;
-            border-top: 1px solid #e5e7eb;
+            background: var(--gray-50);
+            border-top: 1px solid var(--gray-200);
             border-radius: 0 0 12px 12px;
             display: grid;
             grid-template-columns: auto 1fr auto;
@@ -644,7 +757,47 @@
 
         .footer-left {
             display: flex;
-            justify-content: flex-start;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .link {
+            color: var(--link);
+            text-decoration: underline;
+        }
+
+        /* Light / system / dark picker, above Report Issue */
+        .theme-picker {
+            display: inline-flex;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .theme-picker button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 28px;
+            border: 0;
+            background: var(--surface);
+            color: var(--gray-500);
+            cursor: pointer;
+        }
+
+        .theme-picker button + button {
+            border-left: 1px solid var(--gray-300);
+        }
+
+        .theme-picker button:hover {
+            background: var(--gray-100);
+        }
+
+        .theme-picker button.active {
+            background: var(--gray-500);
+            color: var(--surface);
         }
 
         .footer-center {
@@ -657,7 +810,7 @@
 
         .footer-version {
             font-size: 13px;
-            color: #1f2937;
+            color: var(--gray-800);
             font-weight: 500;
             line-height: 1.4;
         }
@@ -669,14 +822,14 @@
             border-radius: 4px;
             font-family: 'Courier New', monospace;
             font-size: 11px;
-            color: #6b7280;
+            color: var(--gray-500);
             margin-left: 4px;
         }
 
         .update-badge {
             display: inline-block;
             background: #fbbf24;
-            color: #1f2937;
+            color: var(--gray-800) !important;
             padding: 1px 7px;
             border-radius: 6px;
             font-size: 11px;
@@ -696,7 +849,7 @@
 
         .footer-author {
             font-size: 12px;
-            color: #6b7280;
+            color: var(--gray-500);
         }
 
         .footer-right {
@@ -712,9 +865,9 @@
         }
 
         .btn-issue {
-            background: #ffffff;
-            color: #374151;
-            border: 1px solid #d1d5db;
+            background: var(--surface);
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
             padding: 6px 12px;
             font-size: 12px;
             text-decoration: none;
@@ -725,8 +878,8 @@
         }
 
         .btn-issue:hover {
-            background: #f3f4f6;
-            border-color: #9ca3af;
+            background: var(--gray-100);
+            border-color: var(--gray-400);
         }
 
         .sponsor-container {
@@ -748,7 +901,7 @@
 
         .sponsor-text {
             font-size: 11px;
-            color: #6b7280;
+            color: var(--gray-500);
             text-align: center;
             line-height: 1.3;
             width: auto;
@@ -886,7 +1039,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(255, 255, 255, 0.96);
+            background: var(--overlay-strong);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -902,7 +1055,7 @@
         }
 
         .reconnect-spinner {
-            border: 5px solid #e0e7ff;
+            border: 5px solid var(--indigo-100);
             border-top: 5px solid #667eea;
             border-radius: 50%;
             width: 54px;
@@ -913,7 +1066,7 @@
 
         .reconnect-message {
             font-size: 18px;
-            color: #444;
+            color: var(--text-2);
             text-align: center;
             font-weight: 500;
         }
@@ -951,7 +1104,7 @@
 
                     <li>Add your network shares containing media in the <a
                             href="javascript:window.open(window.location.protocol+'//'+window.location.hostname.split(':')[0]+'/files/Home', '_blank')"
-                            style="color: #3b82f6; text-decoration: underline;">Umbrel Files app</a></li>
+                            class="link">Umbrel Files app</a></li>
                     <li>All shares below are accessible in Audiobookshelf at
                         <code>/media/network/&lt;host&gt;/&lt;share&gt;</code>
                     </li>
@@ -978,7 +1131,7 @@
                 <div class="reconnect-content">
                     <div class="reconnect-spinner"></div>
                     <div class="reconnect-message">Attempting to reconnect...<br><span
-                            style="font-size:13px;color:#888;">The backend is unavailable. This page will reload
+                            style="font-size:13px;color:var(--gray-500);">The backend is unavailable. This page will reload
                             automatically when it comes back online.</span></div>
                 </div>
             </div>
@@ -1005,6 +1158,26 @@
 
             <footer>
                 <div class="footer-left">
+                    <div class="theme-picker" role="group" aria-label="Colour theme">
+                        <button type="button" data-theme-value="light" title="Light" aria-label="Light theme"><svg
+                                viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none"
+                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                                <circle cx="8" cy="8" r="3" />
+                                <path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3 3l1.1 1.1M11.9 11.9 13 13M3 13l1.1-1.1M11.9 4.1 13 3" />
+                            </svg></button>
+                        <button type="button" data-theme-value="system" title="System (follows your device)"
+                            aria-label="System theme"><svg viewBox="0 0 16 16" width="16" height="16"
+                                aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="1.5" y="2.5" width="13" height="8.5" rx="1.2" />
+                                <path d="M5.5 14h5M8 11v3" />
+                            </svg></button>
+                        <button type="button" data-theme-value="dark" title="Dark" aria-label="Dark theme"><svg
+                                viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none"
+                                stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
+                                <path d="M13.5 9.8A5.8 5.8 0 0 1 6.2 2.5a5.8 5.8 0 1 0 7.3 7.3z" />
+                            </svg></button>
+                    </div>
                     <a id="report-issue" href="https://github.com/saltedlolly/umbrel-app-store/issues/new"
                         target="_blank" rel="noopener" class="btn-issue">🐛 Report Issue</a>
                 </div>
@@ -1877,6 +2050,28 @@
             document.getElementById('loading').style.display = 'none';
             document.getElementById('content').style.display = 'block';
         }
+
+        // Theme picker: light, dark, or system (follows the device). The
+        // choice is remembered in this browser.
+        const darkQuery = matchMedia('(prefers-color-scheme: dark)');
+        function savedTheme() {
+            try { return localStorage.getItem('theme') || 'system'; } catch (e) { return 'system'; }
+        }
+        function applyTheme(choice) {
+            const dark = choice === 'dark' || (choice === 'system' && darkQuery.matches);
+            document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+            document.querySelectorAll('[data-theme-value]').forEach(b => {
+                const on = b.dataset.themeValue === choice;
+                b.classList.toggle('active', on);
+                b.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+        }
+        document.querySelectorAll('[data-theme-value]').forEach(b => b.addEventListener('click', () => {
+            try { localStorage.setItem('theme', b.dataset.themeValue); } catch (e) { }
+            applyTheme(b.dataset.themeValue);
+        }));
+        darkQuery.addEventListener('change', () => { if (savedTheme() === 'system') applyTheme('system'); });
+        applyTheme(savedTheme());
 
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', initialize);
