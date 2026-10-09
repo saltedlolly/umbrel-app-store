@@ -169,23 +169,6 @@ The source code is in this folder on GitHub.
 
 This project follows the same licence as Audiobookshelf.
 
-## Donate
-
-<a href="https://ko-fi.com/saltedlolly">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="../assets/saltedlolly/donate-button-dark-bg.svg">
-  <img alt="Donate with Ko-fi" src="../assets/saltedlolly/donate-button-light-bg.svg" height="40">
-</picture>
-</a>
-<a href="https://github.com/sponsors/saltedlolly">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="../assets/saltedlolly/sponsor-button-dark-bg.svg">
-  <img alt="Sponsor on GitHub" src="../assets/saltedlolly/sponsor-button-light-bg.svg" height="40">
-</picture>
-</a>
-
-A lot of time and effort has gone into adding network share support, automatic imports and the network shares page to Audiobookshelf, testing it with large NAS libraries, and writing these instructions. More goes into keeping it up to date. If you find this app useful, please make a [donation](https://ko-fi.com/saltedlolly) (no account needed), or consider becoming a [monthly sponsor](https://github.com/sponsors/saltedlolly). Every donation, large or small, is much appreciated and helps keep this app and the rest of the [saltedlolly App Store](https://github.com/saltedlolly/umbrel-app-store) going.
-
 ## Support
 
 For problems with this edition (network shares, the network shares page, automatic imports), use **🐛 Report Issue** on the network shares page, or open an issue at [saltedlolly/umbrel-app-store](https://github.com/saltedlolly/umbrel-app-store/issues). Please remove private details such as your domain or IP addresses from anything you paste.
