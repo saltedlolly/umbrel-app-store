@@ -39,7 +39,7 @@ services:
   # Lightweight UI service for managing and monitoring required network shares selection
   # Accessible via app_proxy on port 23378 (or via Umbreldashboard icon)
   abs-network-shares-config-tool:
-    image: ghcr.io/saltedlolly/abs-network-shares-config-tool@sha256:dd063dcaf1ac1e8520ba9bda7f705dd715e116a2a6649fd8016cbbde6da44f9a
+    image: ghcr.io/saltedlolly/abs-network-shares-config-tool@sha256:4ee5bab86e4a4ba8991fa9c8c1c6b3f2a8b020de074586ee25784bf9a72a9c02
     container_name: saltedlolly-audiobookshelf_abs-network-shares-config-tool_1
     hostname: saltedlolly-audiobookshelf_abs-network-shares-config-tool_1
     init: true
@@ -66,7 +66,7 @@ services:
   # shares (its own folder watcher can't see changes made from other
   # computers). Switched on and set up from the network shares page.
   abs-share-watcher:
-    image: ghcr.io/saltedlolly/abs-share-watcher@sha256:90f4d72acd680931a4c295d948a20f901ce583cd2a5f80ddd661c07053fa166a
+    image: ghcr.io/saltedlolly/abs-share-watcher@sha256:b6ef0c2e039fb3b514d91b40d1560debcb089add890f9cd22e902d6f60733074
     container_name: saltedlolly-audiobookshelf_abs-share-watcher_1
     init: true
     restart: unless-stopped

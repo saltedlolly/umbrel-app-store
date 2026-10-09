@@ -3,7 +3,7 @@ id: saltedlolly-audiobookshelf
 name: ABS NAS Edition
 tagline: Audiobookshelf with NAS support
 category: media
-version: "2.37.1.6"
+version: "2.37.1.7"
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/icon.svg
 port: 23378
 description: >-
@@ -138,6 +138,10 @@ gallery:
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/gallery/3.jpg
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/gallery/4.jpg
 releaseNotes: >-
+  ## 2.37.1.7
+
+  - Fixes the config tool showing "Audiobookshelf is starting up" every few minutes after automatic imports are switched on. While Audiobookshelf starts, the config tool now shows how long it has been starting, how long it usually takes, and why large libraries on a network share take a while
+
   ## 2.37.1.6
 
   - New: automatic imports from network shares. Books you copy to your NAS from another computer now appear in Audiobookshelf automatically, scanning only the books that changed. Switch it on in the ABS Network Shares Config Tool (needs an Audiobookshelf API key). A light nightly check catches anything your NAS doesn't report. The config tool now follows your device's light or dark mode
