@@ -47,7 +47,7 @@ async function readConfig() {
   }
 }
 
-// Written to a temporary file and renamed into place, so the other two
+// Written to a temporary file and renamed into place, so the other
 // processes that read this file (config tool, manager, checker) never see
 // it half-written
 async function writeConfig(cfg) {
