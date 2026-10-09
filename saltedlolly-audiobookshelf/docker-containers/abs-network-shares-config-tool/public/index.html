@@ -7,6 +7,12 @@
     <title>Network Share Config Tool for Audiobookshelf</title>
     <link rel="icon" href="/abs-icon-purple.svg" type="image/svg+xml">
     <style>
+        /* The page is light only, so embedded widgets (the GitHub Sponsor
+           button) must not switch to their dark style */
+        :root {
+            color-scheme: light;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -662,6 +668,22 @@
             margin-left: 4px;
         }
 
+        .update-badge {
+            display: inline-block;
+            background: #fbbf24;
+            color: #1f2937;
+            padding: 1px 7px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 4px;
+            white-space: nowrap;
+        }
+
+        .update-badge[hidden] {
+            display: none;
+        }
+
         .footer-author {
             font-size: 12px;
             color: #6b7280;
@@ -762,6 +784,8 @@
             }
 
             footer {
+                margin: 30px -20px -20px -20px;
+                padding: 20px;
                 grid-template-columns: 1fr;
                 gap: 2px 2px;
                 text-align: center;
@@ -919,15 +943,16 @@
 
             <footer>
                 <div class="footer-left">
-                    <a href="https://github.com/saltedlolly/umbrel-app-store/issues" target="_blank"
-                        class="btn-issue">🐛 Report an Issue</a>
+                    <a id="report-issue" href="https://github.com/saltedlolly/umbrel-app-store/issues/new"
+                        target="_blank" rel="noopener" class="btn-issue">🐛 Report Issue</a>
                 </div>
                 <div class="footer-center">
                     <div class="footer-version">
-                        Audiobookshelf: NAS Edition<span class="version-badge" id="version-display">v0.0.0.0</span>
+                        Audiobookshelf: NAS Edition<span class="version-badge" id="version-display">v0.0.0.0</span><span
+                            class="update-badge" id="update-notice" hidden></span>
                     </div>
                     <div class="footer-author"><a href="https://github.com/advplyr/audiobookshelf"
-                            target="_blank">Audiobookshelf</a> by advplyr &nbsp;&nbsp;•&nbsp;&nbsp; <a
+                            target="_blank">Audiobookshelf</a> by advplyr &amp; community &nbsp;&nbsp;•&nbsp;&nbsp; <a
                             href="https://github.com/saltedlolly/umbrel-app-store" target="_blank">NAS Edition</a> by
                         saltedlolly</div>
                 </div>
@@ -1418,18 +1443,51 @@
             }).join('') + '</div>';
         }
 
-        // Load version information
+        // Report Issue opens a new GitHub issue with the app and version filled in
+        function setReportIssueLink(version) {
+            const body = [
+                `**App:** Audiobookshelf NAS Edition (saltedlolly App Store)`,
+                `**Version:** ${version}`,
+                '',
+                '> Before reporting, please make sure you are running the latest version: open the App Store on your Umbrel and install any update for ABS NAS Edition. The problem may already be fixed.',
+                '',
+                '**What happened?**',
+                '',
+                '',
+                '**What did you expect to happen?**',
+                '',
+                '',
+                '**Steps to reproduce**',
+                '',
+                '',
+                '**Your network shares** (type of NAS, SMB or NFS; please remove anything private, such as host names and IP addresses)',
+                ''
+            ].join('\n');
+            const params = new URLSearchParams({ title: '[Audiobookshelf NAS Edition] ', body });
+            document.getElementById('report-issue').href = `https://github.com/saltedlolly/umbrel-app-store/issues/new?${params}`;
+        }
+
+        // Version badge, and a notice when the app store has a newer version
+        // (the server checks the store every 10 minutes; the page asks it every 5)
         async function loadVersion() {
+            let v = { version: 'unknown' };
             try {
-                const response = await fetch('/version.json');
-                if (response.ok) {
-                    const versionData = await response.json();
-                    document.getElementById('version-display').textContent = `v${versionData.version}`;
-                }
+                const response = await fetch('/api/version');
+                if (response.ok) v = await response.json();
             } catch (error) {
                 console.warn('Could not load version information:', error);
             }
+            const shown = /^\d/.test(v.version) ? `v${v.version}` : v.version;
+            document.getElementById('version-display').textContent = shown;
+            setReportIssueLink(shown);
+            const notice = document.getElementById('update-notice');
+            notice.hidden = !v.updateAvailable;
+            if (v.updateAvailable) {
+                notice.textContent = `Update available: v${v.latestVersion}`;
+                notice.title = 'Install it from the App Store on your Umbrel (it can take a few minutes to appear there).';
+            }
         }
+        setInterval(loadVersion, 5 * 60 * 1000);
 
         // Update app status indicator
         function updateAppStatusDisplay(status) {

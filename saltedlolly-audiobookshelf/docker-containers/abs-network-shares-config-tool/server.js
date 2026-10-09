@@ -1,5 +1,6 @@
 const express = require('express');
 const fs = require('fs').promises;
+const https = require('https');
 const path = require('path');
 const { exec } = require('child_process');
 const { promisify } = require('util');
@@ -479,6 +480,57 @@ async function triggerCheckerScan() {
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
+});
+
+// Running version, and whether the app store has a newer one. The store's
+// manifest is fetched at most every 10 minutes, only when the page asks;
+// offline, the notice just stays hidden.
+const STORE_MANIFEST_URL = 'https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/umbrel-app.yml';
+const UPDATE_CHECK_MS = 10 * 60 * 1000;
+let storeVersion = { value: null, at: 0 };
+
+function fetchText(url) {
+    return new Promise((resolve) => {
+        const req = https.get(url, { timeout: 10000 }, (res) => {
+            if (res.statusCode !== 200) { res.resume(); return resolve(null); }
+            let data = '';
+            res.on('data', (c) => data += c);
+            res.on('end', () => resolve(data));
+        });
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
+    });
+}
+
+async function latestStoreVersion() {
+    if (Date.now() - storeVersion.at > UPDATE_CHECK_MS) {
+        storeVersion.at = Date.now();
+        const yml = await fetchText(STORE_MANIFEST_URL);
+        const m = yml && yml.match(/^version:\s*"?([^"\s]+)"?/m);
+        if (m) storeVersion.value = m[1];
+    }
+    return storeVersion.value;
+}
+
+// True if version a is newer than b ("2.37.1.2" style, any number of parts)
+function isNewer(a, b) {
+    const pa = String(a).replace(/^v/, '').split('.').map(Number);
+    const pb = String(b).replace(/^v/, '').split('.').map(Number);
+    if (pa.some(isNaN) || pb.some(isNaN)) return false;
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+        const x = pa[i] || 0, y = pb[i] || 0;
+        if (x !== y) return x > y;
+    }
+    return false;
+}
+
+app.get('/api/version', async (req, res) => {
+    let version = 'unknown';
+    try {
+        version = JSON.parse(await fs.readFile(path.join(__dirname, 'public', 'version.json'), 'utf8')).version;
+    } catch (e) { }
+    const latest = await latestStoreVersion();
+    res.json({ version, latestVersion: latest, updateAvailable: !!latest && isNewer(latest, version) });
 });
 
 // Get current configuration
