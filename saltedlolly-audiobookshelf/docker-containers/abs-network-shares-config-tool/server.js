@@ -545,6 +545,39 @@ app.get('/api/config', async (req, res) => {
     }
 });
 
+// When the Audiobookshelf container started (asked through the Docker socket
+// proxy, at most every 15 seconds), so the page can say how long it has been
+// starting
+let absStarted = { at: 0, value: null };
+function getAbsStartedAt() {
+    if (Date.now() - absStarted.at < 15000) return Promise.resolve(absStarted.value);
+    absStarted.at = Date.now();
+    return new Promise((resolve) => {
+        const req = http.request({
+            hostname: DOCKER_PROXY_HOST,
+            port: DOCKER_PROXY_PORT,
+            path: `/containers/${encodeURIComponent(AUDIOBOOKSHELF_CONTAINER)}/json`,
+            method: 'GET',
+            timeout: 3000,
+        }, (r) => {
+            let data = '';
+            r.on('data', (c) => data += c);
+            r.on('end', () => {
+                try {
+                    const started = JSON.parse(data).State?.StartedAt;
+                    absStarted.value = started && !started.startsWith('0001') ? started : null;
+                } catch {
+                    absStarted.value = null;
+                }
+                resolve(absStarted.value);
+            });
+        });
+        req.on('error', () => resolve(absStarted.value));
+        req.on('timeout', () => { req.destroy(); resolve(absStarted.value); });
+        req.end();
+    });
+}
+
 // Get combined status (app + shares)
 app.get('/api/status', async (req, res) => {
     try {
@@ -572,11 +605,13 @@ app.get('/api/status', async (req, res) => {
             overallStatus = 'starting';
             message = 'Audiobookshelf is starting up...';
         }
+        const startedAt = overallStatus === 'starting' ? await getAbsStartedAt() : null;
 
         res.json({
             app: {
                 ...appStatus,
                 overallStatus,
+                startedAt,
                 message,
             },
             shares: shares.map(share => ({

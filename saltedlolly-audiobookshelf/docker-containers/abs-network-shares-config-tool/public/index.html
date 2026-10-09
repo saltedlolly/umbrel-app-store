@@ -1473,6 +1473,14 @@
                     <span class="message-text">Audiobookshelf is starting up...</span>
                     <span class="banner-spinner" id="startup-spinner"></span>
                 </div>
+                <div id="startup-slow-note" class="message info" style="display:none;">
+                    With a large library on a network share, Audiobookshelf can take 10 to 20 minutes to start,
+                    because it checks every folder on the share before it's ready. This is normal, and it
+                    happens after every restart, including app updates.
+                    <a class="link" target="_blank" rel="noopener"
+                        href="https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-audiobookshelf/README.md#start-up-time-with-large-libraries-on-a-nas">Learn
+                        more</a>
+                </div>
                 <div id="shares-container"></div>
 
                 <div class="actions" id="actions-bar">
@@ -2135,6 +2143,7 @@
                 }
                 pill.title = 'Waiting for Audiobookshelf status...';
                 if (banner) banner.style.display = 'none';
+                document.getElementById('startup-slow-note').style.display = 'none';
                 if (bannerSpinner) bannerSpinner.style.display = 'none';
                 return;
             }
@@ -2180,9 +2189,15 @@
 
             // Startup banner logic
             if (banner) {
+                // After 2 minutes of starting, say how long, and why it can take a while
+                const startedMs = status.app.startedAt ? Date.parse(status.app.startedAt) : NaN;
+                const minutes = isStarting && !isNaN(startedMs) ? Math.floor((Date.now() - startedMs) / 60000) : 0;
+                document.getElementById('startup-slow-note').style.display = minutes >= 2 ? 'block' : 'none';
                 if (isStarting) {
                     banner.style.display = 'flex';
-                    if (bannerText) bannerText.textContent = 'Audiobookshelf is starting up...';
+                    if (bannerText) bannerText.textContent = minutes >= 2
+                        ? `Audiobookshelf is starting up... (${minutes} minutes so far)`
+                        : 'Audiobookshelf is starting up...';
                     if (bannerIcon) bannerIcon.textContent = '⏳';
                     if (bannerSpinner) {
                         bannerSpinner.style.display = 'inline-block';
