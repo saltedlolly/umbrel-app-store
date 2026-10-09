@@ -7,14 +7,10 @@
     <title>Network Share Config Tool for Audiobookshelf</title>
     <link rel="icon" href="/abs-icon-purple.svg" type="image/svg+xml">
     <script>
-        // Apply the saved theme (light / dark / system) before the page is
-        // drawn, so it doesn't flash white first. The picker is at the end.
-        (function () {
-            var t = 'system';
-            try { t = localStorage.getItem('theme') || 'system'; } catch (e) { }
-            var dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
-            document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-        })();
+        // Light or dark, following the device's setting (set before the page is drawn, so it
+        // doesn't flash white first); the script at the end keeps it in step when the device switches
+        document.documentElement.setAttribute('data-theme',
+            matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     </script>
     <style>
         /* Colours. Light values first; dark mode redefines them. The theme
@@ -767,38 +763,6 @@
             text-decoration: underline;
         }
 
-        /* Light / system / dark picker, above Report Issue */
-        .theme-picker {
-            display: inline-flex;
-            border: 1px solid var(--gray-300);
-            border-radius: 6px;
-            overflow: hidden;
-        }
-
-        .theme-picker button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 34px;
-            height: 28px;
-            border: 0;
-            background: var(--surface);
-            color: var(--gray-500);
-            cursor: pointer;
-        }
-
-        .theme-picker button + button {
-            border-left: 1px solid var(--gray-300);
-        }
-
-        .theme-picker button:hover {
-            background: var(--gray-100);
-        }
-
-        .theme-picker button.active {
-            background: var(--gray-500);
-            color: var(--surface);
-        }
 
         .footer-center {
             display: flex;
@@ -1418,26 +1382,6 @@
 
             <footer>
                 <div class="footer-left">
-                    <div class="theme-picker" role="group" aria-label="Colour theme">
-                        <button type="button" data-theme-value="light" title="Light" aria-label="Light theme"><svg
-                                viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none"
-                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-                                <circle cx="8" cy="8" r="3" />
-                                <path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3 3l1.1 1.1M11.9 11.9 13 13M3 13l1.1-1.1M11.9 4.1 13 3" />
-                            </svg></button>
-                        <button type="button" data-theme-value="system" title="System (follows your device)"
-                            aria-label="System theme"><svg viewBox="0 0 16 16" width="16" height="16"
-                                aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="1.5" y="2.5" width="13" height="8.5" rx="1.2" />
-                                <path d="M5.5 14h5M8 11v3" />
-                            </svg></button>
-                        <button type="button" data-theme-value="dark" title="Dark" aria-label="Dark theme"><svg
-                                viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none"
-                                stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
-                                <path d="M13.5 9.8A5.8 5.8 0 0 1 6.2 2.5a5.8 5.8 0 1 0 7.3 7.3z" />
-                            </svg></button>
-                    </div>
                     <a id="report-issue" href="https://github.com/saltedlolly/umbrel-app-store/issues/new"
                         target="_blank" rel="noopener" class="btn-issue">🐛 Report Issue</a>
                 </div>
@@ -2483,27 +2427,10 @@
         document.getElementById('watcher-key').addEventListener('keydown', e => { if (e.key === 'Enter') saveKey(); });
         setInterval(() => { if (!document.hidden) loadWatcher(); }, 10000);
 
-        // Theme picker: light, dark, or system (follows the device). The
-        // choice is remembered in this browser.
-        const darkQuery = matchMedia('(prefers-color-scheme: dark)');
-        function savedTheme() {
-            try { return localStorage.getItem('theme') || 'system'; } catch (e) { return 'system'; }
-        }
-        function applyTheme(choice) {
-            const dark = choice === 'dark' || (choice === 'system' && darkQuery.matches);
-            document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-            document.querySelectorAll('[data-theme-value]').forEach(b => {
-                const on = b.dataset.themeValue === choice;
-                b.classList.toggle('active', on);
-                b.setAttribute('aria-pressed', on ? 'true' : 'false');
-            });
-        }
-        document.querySelectorAll('[data-theme-value]').forEach(b => b.addEventListener('click', () => {
-            try { localStorage.setItem('theme', b.dataset.themeValue); } catch (e) { }
-            applyTheme(b.dataset.themeValue);
-        }));
-        darkQuery.addEventListener('change', () => { if (savedTheme() === 'system') applyTheme('system'); });
-        applyTheme(savedTheme());
+        // Follow the device when it switches between light and dark
+        matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+        });
 
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', initialize);
