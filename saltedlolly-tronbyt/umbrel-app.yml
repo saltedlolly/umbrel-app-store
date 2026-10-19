@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-tronbyt
 category: automation
 name: Tronbyt
-version: "v2.4.0.0"
+version: "v2.5.0"
 tagline: Self-hosted server for managing Tidbyt/Tronbyt smart displays without the cloud
 description: >-
   Tronbyt Server manages apps on Tidbyt/Tronbyt smart displays entirely on your own Umbrel, without depending on Tidbyt's cloud backend. It offers a web UI for browsing and configuring apps, generates firmware for flashing a Tidbyt into a Tronbyt, and keeps working even if Tidbyt's servers go offline.
@@ -17,37 +17,39 @@ description: >-
 
   - Supports Tidbyt Gen1/Gen2, Tronbyt S3/S3 Wide, MatrixPortal S3, and Raspberry Pi-driven LED matrix panels
 releaseNotes: >-
-  ## v2.4.0.0
+  ## v2.5.0
 
-  - Automated update: bump bundled tronbyt/server to v2.4.0
+  - Automated update: bump bundled tronbyt/server to v2.5.0
 
 
   --- tronbyt/server upstream release notes (auto-updated) ---
 
 
-  tronbyt/server v2.4.0
+  tronbyt/server v2.5.0
 
     What's Changed
-    * fix: resolve pushed apps by installationID in GET/PATCH installation endpoints by @cedub in https://github.com/tronbyt/server/pull/910
-    * build(deps): bump github.com/quic-go/quic-go from 0.61.0 to 0.62.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/908
-    * Support configurable OIDC scopes by @ivanovart in https://github.com/tronbyt/server/pull/911
-    * build(deps): bump golang.org/x/mod from 0.40.0 to 0.41.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/915
-    * build(deps): bump github.com/coreos/go-oidc/v3 from 3.20.0 to 3.21.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/913
-    * build(deps): bump github.com/mattn/go-sqlite3 from 1.14.50 to 1.14.52 by @dependabot[bot] in https://github.com/tronbyt/server/pull/916
-    * build(deps): bump golang.org/x/crypto from 0.55.0 to 0.56.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/914
-    * feat: support square 64x64 panels (Raspberry Pi and MatrixPortal S3) by @nsluke in https://github.com/tronbyt/server/pull/905
-    * feat: add Color Order to device settings by @ahaghgoo in https://github.com/tronbyt/server/pull/917
-    * chore(deps): update pixlet to v0.54.0 by @gabe565 in https://github.com/tronbyt/server/pull/920
-    * build(deps): bump github.com/go-webauthn/webauthn from 0.17.4 to 0.18.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/907
-    * fix: stop logging stored scrypt hash on format mismatch by @gabe565 in https://github.com/tronbyt/server/pull/921
-    * fix(ui): restore round color palette swatches by @gabe565 in https://github.com/tronbyt/server/pull/922
+    * feat: add Beep On Touch to device settings by @mattiacolombomc in https://github.com/tronbyt/server/pull/928
+    * fix: allow clearing a schema.Typeahead selection by @jvivona in https://github.com/tronbyt/server/pull/935
+    * feat: support a 128x64 panel on the MatrixPortal S3 by @nsluke in https://github.com/tronbyt/server/pull/938
+    * fix(ui): resolve a composite field's id to its input, not its wrapper by @joshbrewster42 in https://github.com/tronbyt/server/pull/941
+    * Serialize system app refreshes for App Viewer installation flow by @saltedlolly in https://github.com/tronbyt/server/pull/942
+    * feat: show install counts on system apps by @ayushsoni1001 in https://github.com/tronbyt/server/pull/943
+    * Add a web setting for automatic system app updates by @saltedlolly in https://github.com/tronbyt/server/pull/944
+    * feat: let app repositories track a non-default branch via #branch by @nweddle in https://github.com/tronbyt/server/pull/948
+    * fix: keep the existing clone when a re-clone fails by @nweddle in https://github.com/tronbyt/server/pull/949
+    * fix: validate names that are used as directory names by @jasonlshelton in https://github.com/tronbyt/server/pull/945
+    * feat: add opt-in community app stats managed by Niblet by @ayushsoni1001 in https://github.com/tronbyt/server/pull/950
+    * fix(ui): save text and color settings' defaults by @saltedlolly in https://github.com/tronbyt/server/pull/952
 
     New Contributors
-    * @cedub made their first contribution in https://github.com/tronbyt/server/pull/910
-    * @ivanovart made their first contribution in https://github.com/tronbyt/server/pull/911
-    * @ahaghgoo made their first contribution in https://github.com/tronbyt/server/pull/917
+    * @mattiacolombomc made their first contribution in https://github.com/tronbyt/server/pull/928
+    * @joshbrewster42 made their first contribution in https://github.com/tronbyt/server/pull/941
+    * @saltedlolly made their first contribution in https://github.com/tronbyt/server/pull/942
+    * @ayushsoni1001 made their first contribution in https://github.com/tronbyt/server/pull/943
+    * @nweddle made their first contribution in https://github.com/tronbyt/server/pull/948
+    * @jasonlshelton made their first contribution in https://github.com/tronbyt/server/pull/945
 
-    **Full Changelog**: https://github.com/tronbyt/server/compare/v2.3.7...v2.4.0
+    **Full Changelog**: https://github.com/tronbyt/server/compare/v2.4.0...v2.5.0
 
 
   See the full release history: https://github.com/tronbyt/server/releases

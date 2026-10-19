@@ -10,7 +10,7 @@ services:
       PROXY_AUTH_ADD: "false"
 
   server:
-    image: ghcr.io/tronbyt/server:2.4.0@sha256:7c896c9b3f61bc41d5c6504463eae1e3d76bd385aa2c2d3b9a30f7c854f9d0d5
+    image: ghcr.io/tronbyt/server:2.5.0@sha256:7b2e25fd27d49d5c7549d0bbba22fabc79dd051a32abdecbec66547d3488acd6
     container_name: saltedlolly-tronbyt_server_1
     hostname: saltedlolly-tronbyt_server_1
     init: true
