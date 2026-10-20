@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-netbootxyz
 category: networking
 name: netboot.xyz
-version: "0.7.6-nbxyz24"
+version: "0.7.6-nbxyz26"
 tagline: Network-boot a menu of OS installers and live images to any machine on your LAN
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -19,9 +19,9 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its menu configuration (but not any images you've placed in the Home folder).
 releaseNotes: >-
-  ## 0.7.6-nbxyz24
+  ## 0.7.6-nbxyz26
 
-  - Initial release
+  - Automated update: bump netboot.xyz to 0.7.6-nbxyz26
 
 developer: netboot.xyz
 website: https://netboot.xyz/
