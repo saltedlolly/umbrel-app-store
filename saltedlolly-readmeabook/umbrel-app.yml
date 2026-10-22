@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: saltedlolly-readmeabook
 category: media
 name: ReadMeABook
-version: "v1.2.3"
+version: "v1.2.6"
 tagline: Request and automatically download audiobooks
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -35,54 +35,53 @@ description: >-
 
   Icon artwork is sourced from https://github.com/selfhst/icons and used under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). It has been adapted with additional internal spacing for UmbrelOS. Application names and logos remain the property of their respective owners.
 releaseNotes: >-
-  ## v1.2.3
+  ## v1.2.6
 
-  - Automated update: bump ReadMeABook to v1.2.3
-
-  - Move the icon and gallery into the app package with attribution and improved dashboard spacing
+  - Automated update: bump ReadMeABook to v1.2.6
 
 
   --- kikootwo/ReadMeABook upstream release notes (auto-updated) ---
 
 
-  kikootwo/ReadMeABook v1.2.3
+  kikootwo/ReadMeABook v1.2.6
 
-    🎉  Release v1.2.3
+    🎉  Release v1.2.6
 
 
     **Fixes:**
-    - ✅ Hardcoded JWT fallback enables forged administrator tokens
-       - https://github.com/kikootwo/ReadMeABook/issues/297
-       - Installs running outside the official Docker image, including the Proxmox VE helper script, should update now (Proxmox: run `update` in the container). Users on those installs are signed out once.
-       - Docker installs were not affected.
-    - ✅ Search / Download stopping at 50
-       - https://github.com/kikootwo/ReadMeABook/issues/151
-       - Requests beyond the first 50 are now processed in rotating batches, and RSS matching covers every request awaiting search
-    - ✅ Search truncates to 100 results *before* dedup and ranking, silently dropping the best releases
-       - https://github.com/kikootwo/ReadMeABook/issues/262
-       - The full deduplicated result set is now ranked before the 100-result cap is applied
-    - ✅ Deleting a request removes a directory rebuilt from the current template, not the one it created
-       - https://github.com/kikootwo/ReadMeABook/issues/265
-       - Deletion now uses the path stored when the book was organized
-    - ✅ A rate-limited indexer grab marks the request permanently `failed` instead of trying the next release
-       - https://github.com/kikootwo/ReadMeABook/issues/267
-       - After a 429 or 5xx grab response, the next ranked release is tried automatically
+    - ✅ Details modal shows Audible's ~300-char blurb instead of the full summary
+       - https://github.com/kikootwo/ReadMeABook/issues/324
+       - https://github.com/kikootwo/ReadMeABook/pull/360
+       - Thanks https://github.com/sean0407 !
+       - book details now show the full Audnexus summary, keeping its paragraphs, line breaks and list bullets
+    - ✅ Goodreads shelf links checked more strictly
+       - https://github.com/kikootwo/ReadMeABook/pull/365
+       - shelf feeds are only fetched from goodreads.com over https. Older `http://` and bare `goodreads.com` links are fixed up automatically, so existing shelves keep syncing. Recommended update.
+    - ✅ saved passwords stored encrypted and kept with their server
+       - https://github.com/kikootwo/ReadMeABook/pull/366
+       - download client passwords are always stored encrypted. When you change the OIDC issuer, an Apprise or ntfy server address, or the BookDate provider or custom URL, RMAB asks you to re-enter that secret. Recommended update.
+    - ✅ bcrypt 6
+       - https://github.com/kikootwo/ReadMeABook/pull/368
+       - bcrypt now ships its own prebuilt binaries, which drops an old install-time downloader and the outdated packages it brought in (including tar 6). Existing passwords keep working.
 
       **Upgrade:**
       ```bash
-      docker pull ghcr.io/kikootwo/readmeabo
+      docker pull ghcr.io/kikootwo/readmeabook:latest
       docker compose down
       docker compose up -d
       ```
 
 
     What's Changed
-    * Fix search and download processing stopping at 50 by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/274
-    * Fix rate-limited grabs by trying the nwo inhttps://github.com/kikootwo/ReadMeABook/pull/275
-    * Fix request deletion to use stored media path by @kikootwo in
-    https://github.com/kikootwo/ReadMeABook/
-    * Rank search results before applying result cap by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/277
-    * Fix/jwt secret derivation by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/301
+    * chore(e2e): add an end-to-end test harness by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/364
+    * fix: only fetch Goodreads shelf feeds from Goodreads over https by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/365
+    * fix: store download client passwords encrypted and keep saved secrets with their server by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/366
+    * fix: show the full book summary from Audnexus, keeping its paragraphs by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/367
+    * chore(deps): update bcrypt to 6 by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/368
+    * chore: release v1.2.6 by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/369
+
+
+    **Full Changelog**: https://github.com/kikootwo/ReadMeABook/compare/v1.2.5...v1.2.6
 
 
   See the full release history: https://github.com/kikootwo/ReadMeABook/releases
