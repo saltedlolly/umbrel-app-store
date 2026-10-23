@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: saltedlolly-readmeabook
 category: media
 name: ReadMeABook
-version: "v1.2.6"
+version: "v1.2.10"
 tagline: Request and automatically download audiobooks
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -35,34 +35,40 @@ description: >-
 
   Icon artwork is sourced from https://github.com/selfhst/icons and used under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). It has been adapted with additional internal spacing for UmbrelOS. Application names and logos remain the property of their respective owners.
 releaseNotes: >-
-  ## v1.2.6
+  ## v1.2.10
 
-  - Automated update: bump ReadMeABook to v1.2.6
+  - Automated update: bump ReadMeABook to v1.2.10
 
 
   --- kikootwo/ReadMeABook upstream release notes (auto-updated) ---
 
 
-  kikootwo/ReadMeABook v1.2.6
+  kikootwo/ReadMeABook v1.2.10
 
-    🎉  Release v1.2.6
+    🎉  Release v1.2.10
 
+
+    > **If you use an external Redis:** `REDIS_URL` must be a valid URL, such as `redis://:password@redis:6379/0`. The updated Redis client (ioredis 5.11) rejects malformed URLs and out-of-range ports. The built-in Redis is unaffected.
+
+    **Features:**
+    - ✅ imported audiobooks carry the Audible description and genres as tags
+       - https://github.com/kikootwo/ReadMeABook/issues/208
+       - https://github.com/kikootwo/ReadMeABook/pull/419
+       - https://github.com/kikootwo/ReadMeABook/pull/397
+       - Thanks https://github.com/N0cky !
+       - with metadata tagging on, M4B files are also marked as an audiobook with gapless playback. Audiobookshelf shows the description and lists each genre separately.
 
     **Fixes:**
-    - ✅ Details modal shows Audible's ~300-char blurb instead of the full summary
-       - https://github.com/kikootwo/ReadMeABook/issues/324
-       - https://github.com/kikootwo/ReadMeABook/pull/360
-       - Thanks https://github.com/sean0407 !
-       - book details now show the full Audnexus summary, keeping its paragraphs, line breaks and list bullets
-    - ✅ Goodreads shelf links checked more strictly
-       - https://github.com/kikootwo/ReadMeABook/pull/365
-       - shelf feeds are only fetched from goodreads.com over https. Older `http://` and bare `goodreads.com` links are fixed up automatically, so existing shelves keep syncing. Recommended update.
-    - ✅ saved passwords stored encrypted and kept with their server
-       - https://github.com/kikootwo/ReadMeABook/pull/366
-       - download client passwords are always stored encrypted. When you change the OIDC issuer, an Apprise or ntfy server address, or the BookDate provider or custom URL, RMAB asks you to re-enter that secret. Recommended update.
-    - ✅ bcrypt 6
-       - https://github.com/kikootwo/ReadMeABook/pull/368
-       - bcrypt now ships its own prebuilt binaries, which drops an old install-time downloader and the outdated packages it brought in (including tar 6). Existing passwords keep working.
+    - ✅ torrents added to qBittorrent 5.2 or later are no longer reported as failed grabs
+       - https://github.com/kikootwo/ReadMeABook/issues/317
+       - https://github.com/kikootwo/ReadMeABook/pull/420
+       - https://github.com/kikootwo/ReadMeABook/pull/295
+       - Thanks https://github.com/ColeTown !
+       - hybrid (v1+v2) torrents and base32 magnets still are; that's tracked in https://github.com/kikootwo/ReadMeABook/issues/422
+    - ✅ SABnzbd downloads no longer fail with "Download path not available" when they reach 100% before post-processing has finished
+       - https://github.com/kikootwo/ReadMeABook/pull/421
+       - https://github.com/kikootwo/ReadMeABook/pull/306
+       - Thanks https://github.com/connor2k !
 
       **Upgrade:**
       ```bash
@@ -73,15 +79,14 @@ releaseNotes: >-
 
 
     What's Changed
-    * chore(e2e): add an end-to-end test harness by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/364
-    * fix: only fetch Goodreads shelf feeds from Goodreads over https by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/365
-    * fix: store download client passwords encrypted and keep saved secrets with their server by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/366
-    * fix: show the full book summary from Audnexus, keeping its paragraphs by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/367
-    * chore(deps): update bcrypt to 6 by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/368
-    * chore: release v1.2.6 by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/369
+    * chore(deps-dev): update dev tooling within current majors to clear 18 Dependabot alerts by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/418
+    * feat: write description, genre, media type and gapless tags (#208) by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/419
+    * chore(deps): stop Dependabot proposing vitest majors by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/417
+    * chore(deps-dev): bump jsdom from 27.4.0 to 29.1.1 by @dependabot[bot] in https://github.com/kikootwo/ReadMeABook/pull/414
+    * chore(deps-dev): bump @testing-library/jest-dom from 6.9.1 to 7.0.1 by @dependabot[bot] in https://github.com/kikootwo/ReadMeABook/pull/415
+    * chore(deps): bump ioredis from 5.8.2 to 5.11.1 in the npm-minor-patch group by @dependabot[bot] in https://github.com/kikootwo/ReadMeABook/pull/413
 
-
-    **Full Changelog**: https://github.com/kikootwo/ReadMeABook/compare/v1.2.5...v1.2.6
+    … (truncated) Full release notes: https://github.com/kikootwo/ReadMeABook/releases/tag/v1.2.10
 
 
   See the full release history: https://github.com/kikootwo/ReadMeABook/releases
