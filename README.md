@@ -55,8 +55,8 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
     <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-crowdsec/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="https://github.com/saltedlolly/umbrel-app-store#crowdsec">CrowdSec</a></td>
-      <td nowrap id="saltedlolly-crowdsec-version"><code>v1.8.1.23</code></td>
-      <td nowrap id="saltedlolly-crowdsec-date">2026-10-24</td>
+      <td nowrap id="saltedlolly-crowdsec-version"><code>v1.8.1.24</code></td>
+      <td nowrap id="saltedlolly-crowdsec-date">2026-10-25</td>
       <td>Crowd-sourced intrusion detection and IP banning for your self-hosted apps</td>
     </tr>
     <tr>
