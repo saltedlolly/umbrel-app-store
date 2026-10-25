@@ -34,8 +34,8 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
     <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-authentik/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="https://github.com/saltedlolly/umbrel-app-store#authentik">Authentik</a></td>
-      <td nowrap id="saltedlolly-authentik-version"><code>2026.8.4</code></td>
-      <td nowrap id="saltedlolly-authentik-date">2026-10-18</td>
+      <td nowrap id="saltedlolly-authentik-version"><code>2026.8.5</code></td>
+      <td nowrap id="saltedlolly-authentik-date">2026-10-25</td>
       <td>One login for your self-hosted apps, for you, your family and friends</td>
     </tr>
     <tr>
