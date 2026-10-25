@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-npm-plus
 category: networking
 name: NPMplus
-version: "2026-07-24-r1.24"
+version: "2026-10-22-r1"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
@@ -38,148 +38,28 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
-  ## 2026-07-24-r1.24
+  ## 2026-10-22-r1
 
-  - Authentik card: shows Authentik's public address (Open Authentik now goes there) and a clearer step-by-step guide, including what not to publish and how to share apps that use your Umbrel login
-
-  ## 2026-07-24-r1.23
-
-  - Authentik: the launcher's Authentik card now lists the sites protected by Authentik (warning if Authentik isn't responding) and has a step-by-step guide to protecting a site. README: up-to-date CrowdSec and Authentik sections
-
-  ## 2026-07-24-r1.22
-
-  - Authentik: NPMplus now detects the Authentik app and knows its address, so you can choose authentik under a proxy host's Auth Request without typing one. The launcher's Authentik card shows whether Authentik is installed, with links to open it and its setup guide. Fixed: saving Trusted Proxy settings no longer resets your CrowdSec choice
-
-  ## 2026-07-24-r1.21
-
-  - Launcher reaches CrowdSec via the Umbrel Docker network, ready for CrowdSec's ports to be closed to the local network
-
-  ## 2026-07-24-r1.20
-
-  - Launcher updated to Node 24 (security fixes); app store description updated for the automatic CrowdSec integration
-
-  ## 2026-07-24-r1.19
-
-  - Darker launcher background using deeper logo colours (magenta to plum)
-
-  ## 2026-07-24-r1.18
-
-  - Launcher uses the NPMplus logo colours (orange to purple) instead of blue-purple
-
-  ## 2026-07-24-r1.17
-
-  - Launcher footer now shows the correct version (was stuck on r1.3)
-
-  ## 2026-07-24-r1.16
-
-  - Send access logs to CrowdSec (v1.8.1.11+) so it can detect scanners, brute force and aggressive crawlers
-
-  ## 2026-07-24-r1.15
-
-  - Re-enable CrowdSec AppSec (WAF) when CrowdSec v1.8.1.10+ is installed. If AppSec is ever unavailable, requests are now let through instead of blocked
-
-  ## 2026-07-24-r1.14
-
-  - Launcher now shows the real CrowdSec status (Connected / Disabled / restart needed) and real ban counts instead of placeholder numbers
-
-  ## 2026-07-24-r1.13
-
-  - Disable CrowdSec AppSec temporarily (was causing all requests to be banned) + fix CrowdSec dashboard URL (5182 → 5190)
-
-  ## 2026-07-24-r1.12
-
-  - Fix healthcheck - remove wget-based healthcheck causing container restarts
-
-  ## 2026-07-24-r1.11
-
-  - Fix CrowdSec integration - add missing bouncer key export
-
-  ## 2026-07-24-r1.10
-
-  - Fix CrowdSec detection in launcher - add extra_hosts for host.docker.internal resolution
-  - Launcher can now properly detect companion apps
-  - Resolves "not detected" issue in launcher UI even when CrowdSec is running
-
-  ## 2026-07-24-r1.9
-
-  - Fix CrowdSec/Authentik integration - always use detected gateway IP
-  - Ignore stale environment variables from old npm-settings.env
-  - Resolves "host.docker.internal could not be resolved" errors
-  - Ensures NPMplus uses correct gateway IP even after config updates
-
-  ## 2026-07-24-r1.8
-
-  - Fix CrowdSec detection - use gateway IP instead of host.docker.internal
-  - Auto-detect Docker gateway IP dynamically for compatibility with all Docker setups
-  - Replace all host.docker.internal references with actual gateway IP
-  - Switch to wget for more reliable port detection
-  - Resolves "host not found" DNS errors on Umbrel and other Linux systems
-
-  ## 2026-07-24-r1.7
-
-  - Test Pattern A build system - verify all automation works
-
-  ## 2026-07-24-r1.6
-
-  - Hide integration checkboxes entirely when companion app not detected
-  - Cleaner UI - only shows controls when integration is available
-  - Better UX than grayed-out controls
-
-  ## 2026-07-24-r1.5
-
-  - Fix CrowdSec detection using bash /dev/tcp (most reliable method)
-  - Gray out integration checkboxes when companion app not detected
-  - Improves UX by making it clear when companion apps aren't available
-
-  ## 2026-07-24-r1.4
-
-  - Fix App Store button to not include port number in URL
-  - Fix CrowdSec detection using wget instead of nc command
-
-  ## 2026-07-24-r1.3
-
-  - Change "View App Store" button to link to app listing on local Umbrel device
-  - Button text changed to "View in App Store" for clarity
-
-  ## 2026-07-24-r1.2
-
-  - Fix CrowdSec detection (use TCP port check instead of HTTP /health endpoint)
-
-  ## 2026-07-24-r1.1
-
-  Companion Apps Integration Framework - Major feature release
-
-  - Zero-configuration auto-discovery of CrowdSec and Authentik companion apps
-  - Smart notifications when companion apps installed after NPMplus
-  - Web UI for managing integrations (enable/disable, view status)
-  - Auto-configures CrowdSec bouncer, LAPI, and AppSec connections
-  - Auto-configures Authentik SSO when available
-  - Three-state integration control (auto/enabled/disabled)
-  - Maintains full functionality when companion apps not installed
-  - Trusted proxy configuration (Cloudflare, custom IPs)
-  - Comprehensive logging and troubleshooting
-
-  **Breaking Change**: Version numbering now follows standard convention (vUPSTREAM.LOCAL)
-  Previous versions used date-based numbering (2026-09-25.XX) which has been discontinued.
+  - Automated update: bump bundled zoeyvid/npmplus to 2026-10-22-r1
 
 
   --- zoeyvid/npmplus upstream release notes (auto-updated) ---
 
 
-  zoeyvid/npmplus 2026-07-24-r1
+  zoeyvid/npmplus 2026-10-22-r1
 
     What Changed since the last release
-    * fix https://github.com/ZoeyVid/NPMplus/security/advisories/GHSA-c8f8-6gxh-hf2g
+    * this is the same as 2026-10-21-r1, but with an updated dependency of nodejs to fix a CVE of them
 
     Image tags:
-    * `docker.io/zoeyvid/npmplus:2026-07-24-r1` (fixed to this release)
-    * `ghcr.io/zoeyvid/npmplus:2026-07-24-r1` (fixed to this release)
+    * `docker.io/zoeyvid/npmplus:2026-10-22-r1` (fixed to this release)
+    * `ghcr.io/zoeyvid/npmplus:2026-10-22-r1` (fixed to this release)
     * `docker.io/zoeyvid/npmplus:latest` (latest stable)
     * `ghcr.io/zoeyvid/npmplus:latest` (latest stable)
     * `docker.io/zoeyvid/npmplus:beta` (latest beta/stable)
     * `ghcr.io/zoeyvid/npmplus:beta` (latest beta/stable)
 
-    **Full Changelog**: https://github.com/ZoeyVid/NPMplus/compare/2026-07-23-r1...2026-07-24-r1
+    **Full Changelog**: https://github.com/ZoeyVid/NPMplus/compare/2026-10-21-r1...2026-10-22-r1
 
 
   See the full release history: https://github.com/zoeyvid/npmplus/releases
