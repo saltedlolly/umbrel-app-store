@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+#
+# Pre-start hook for NPMplus (runs on the Umbrel as root, before the app's
+# containers start)
+#
+# Removes the app's old app_proxy container if umbrelOS no longer uses it.
+# Newer umbrelOS versions run the app proxy inside umbreld and drop the
+# app_proxy service from the app's compose file, but a container made by an
+# older version is never removed (stop and update only remove services still
+# in the file). It keeps publishing the app's port, so umbreld can't listen
+# on 127.0.0.1:<port> and logs "Failed to listen on loopback port" every
+# minute. The container is only removed when a compose file it was made
+# from no longer exists, so an umbrelOS that still uses app_proxy keeps it.
+#
+set -uo pipefail
+
+container="${APP_ID}_app_proxy_1"
+
+config_files=$(docker inspect "$container" \
+  --format '{{index .Config.Labels "com.docker.compose.project.config_files"}}' 2>/dev/null) || exit 0
+
+stale=false
+IFS=',' read -ra files <<< "$config_files"
+for f in "${files[@]}"; do
+  [[ -n "$f" && ! -e "$f" ]] && stale=true
+done
+
+if [[ "$stale" == "true" ]]; then
+  echo "Removing old ${container} (no longer used by umbrelOS)"
+  docker rm --force "$container" >/dev/null 2>&1 \
+    || echo "Warning: could not remove ${container}" >&2
+fi
+
+exit 0
