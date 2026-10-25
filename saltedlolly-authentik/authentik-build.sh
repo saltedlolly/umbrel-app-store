@@ -166,7 +166,11 @@ PY
 }
 
 image_digest() {
-  docker buildx imagetools inspect "$1" 2>/dev/null | awk '/^Digest:/ {print $2; exit}'
+  # Capture first, then parse: piping into an early-exiting awk under
+  # pipefail can SIGPIPE docker and kill the script (failed run 2026-10-24)
+  local out
+  out="$(docker buildx imagetools inspect "$1" 2>/dev/null || true)"
+  awk '/^Digest:/ {print $2; exit}' <<< "$out"
 }
 
 # Rewrite every ghcr.io/goauthentik/server:<ver>@sha256:... pin (server + worker)

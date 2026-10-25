@@ -96,15 +96,29 @@ extract_upstream_version() {
   grep -o "$UPSTREAM_IMAGE:[0-9-]*-r[0-9]*" "$APP_ROOT/npmplus/Dockerfile" | cut -d':' -f2 | head -1
 }
 
-# Update wrapper Dockerfile with new upstream version
+# Update wrapper Dockerfile with new upstream version.
+# The FROM line pins tag AND digest (Docker uses the digest and ignores the
+# tag), so both must change or the build silently reuses the old base image.
 update_upstream_version() {
   local new_version="$1"
-  echo "Updating wrapper Dockerfile to use $UPSTREAM_IMAGE:$new_version..."
-  if $is_macos; then
-    sed -i '' "s|$UPSTREAM_IMAGE:[0-9-]*-r[0-9]*|$UPSTREAM_IMAGE:$new_version|" "$APP_ROOT/npmplus/Dockerfile"
-  else
-    sed -i "s|$UPSTREAM_IMAGE:[0-9-]*-r[0-9]*|$UPSTREAM_IMAGE:$new_version|" "$APP_ROOT/npmplus/Dockerfile"
+  echo "Fetching digest for $UPSTREAM_IMAGE:$new_version..."
+  local inspect digest
+  # Capture first, then parse: piping into an early-exiting awk under
+  # pipefail can SIGPIPE docker and kill the script
+  inspect="$(docker buildx imagetools inspect "$UPSTREAM_IMAGE:$new_version" 2>/dev/null || true)"
+  digest="$(awk '/^Digest:/ {print $2; exit}' <<< "$inspect")"
+  if [[ ! "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+    fail "Could not fetch digest for $UPSTREAM_IMAGE:$new_version"
   fi
+  echo "Updating wrapper Dockerfile to use $UPSTREAM_IMAGE:$new_version@$digest..."
+  local pattern="$UPSTREAM_IMAGE:[0-9-]*-r[0-9]*@sha256:[a-f0-9]*"
+  if $is_macos; then
+    sed -i '' "s|$pattern|$UPSTREAM_IMAGE:$new_version@$digest|" "$APP_ROOT/npmplus/Dockerfile"
+  else
+    sed -i "s|$pattern|$UPSTREAM_IMAGE:$new_version@$digest|" "$APP_ROOT/npmplus/Dockerfile"
+  fi
+  grep -q "$UPSTREAM_IMAGE:$new_version@$digest" "$APP_ROOT/npmplus/Dockerfile" \
+    || fail "Failed to update the FROM line in npmplus/Dockerfile"
   echo "✓ Updated Dockerfile to $UPSTREAM_IMAGE:$new_version"
 }
 
@@ -609,6 +623,14 @@ fi
 # Ensure buildx is ready
 ensure_buildx
 echo ""
+
+# Point the wrapper at the upstream release this version ships (a .N patch
+# keeps its base). Done after the git sync check, which needs a clean tree.
+TARGET_UPSTREAM="${TARGET_VERSION%.*}"
+if [[ "$TARGET_UPSTREAM" != "$UPSTREAM_VERSION" ]]; then
+  update_upstream_version "$TARGET_UPSTREAM"
+  echo ""
+fi
 
 # Build images
 build_launcher "$TARGET_VERSION"

@@ -147,7 +147,10 @@ jobs:
         run: |
           set -euo pipefail
           docker buildx build --platform linux/amd64 \
-            -t smoketest/npmplus-launcher:test -f launcher/Dockerfile --load .
+            -t smoketest/npmplus-launcher:test --load launcher
+          # The launcher runs as `node`; a folder Docker creates is root-owned
+          mkdir -p /tmp/launcher-smoke-config
+          chmod 777 /tmp/launcher-smoke-config
           docker run -d --name launcher-smoke -p 8080:8080 \
             -e CONFIG_DIR=/data/config \
             -v /tmp/launcher-smoke-config:/data/config \
@@ -165,9 +168,13 @@ jobs:
         working-directory: ${{ env.APP_DIR }}
         run: |
           set -euo pipefail
+          # Test the new upstream base: npmplus-build.sh only rewrites the
+          # FROM line later (its git sync check needs a clean tree), so build
+          # from a temporary copy of the Dockerfile
+          sed "s|^FROM .*|FROM docker.io/zoeyvid/npmplus:${TARGET_VERSION}|" \
+            npmplus/Dockerfile > "$RUNNER_TEMP/Dockerfile.smoke"
           docker buildx build --platform linux/amd64 \
-            --build-arg UPSTREAM_VERSION="${TARGET_VERSION}" \
-            -t smoketest/npmplus-wrapper:test -f npmplus/Dockerfile --load .
+            -t smoketest/npmplus-wrapper:test -f "$RUNNER_TEMP/Dockerfile.smoke" --load npmplus
           mkdir -p /tmp/npmplus-smoke-data
           docker run -d --name npmplus-smoke \
             -e PUID=1000 -e PGID=1000 \
