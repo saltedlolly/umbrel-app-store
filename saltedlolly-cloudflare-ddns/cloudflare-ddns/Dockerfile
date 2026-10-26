@@ -1,5 +1,5 @@
 # Pulled from the upstream author's own GHCR copy (identical to Docker Hub)
-FROM ghcr.io/favonia/cloudflare-ddns:1.17.1 AS favonia
+FROM ghcr.io/favonia/cloudflare-ddns:1.18.0 AS favonia
 
 # Use an Alpine base with a shell for the wrapper script, and copy the favonia
 # ddns binary into it using a multi-stage build. Alpine provides busybox and

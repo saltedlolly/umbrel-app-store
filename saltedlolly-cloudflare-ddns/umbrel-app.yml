@@ -4,7 +4,7 @@ name: Cloudflare DDNS
 tagline: Dynamic DNS client for Cloudflare to keep your domain updated with your changing IP address.
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/icon.png
 category: networking
-version: "v1.17.1.22"
+version: "v1.18.0"
 port: 4100
 description: >-
   Keeps your Cloudflare DNS records pointing at your home's current public IP address, so a domain such as home.example.com keeps working when your internet provider changes your IP. Powered by favonia/cloudflare-ddns.
@@ -39,112 +39,30 @@ support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery:
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/gallery/1.png
 releaseNotes: >-
-  ## v1.17.1.22
+  ## v1.18.0
 
-  - Neater footer: the text sits on two lines with the version beside it, the sponsor message is centred next to the Sponsor button, and the footer stacks neatly on tablets and phones
-
-  ## v1.17.1.21
-
-  - The page and the Sponsor button now follow the chosen light or dark theme everywhere; the footer shows a new version within about 15 minutes of its release
-
-  ## v1.17.1.20
-
-  - Settings are now kept in the app's data folder, so Umbrel's backups include them and uninstalling removes them. Updating moves your existing settings across automatically
-
-  ## v1.17.1.19
-
-  - The footer now shows a new version within about an hour of its release (it checked only every 6 hours)
-
-  ## v1.17.1.18
-
-  - Tidier footer: the app name links to its help page, Report Issue is centred, and the help link has moved to the top of Edit Config and Edit Notifiers
-
-  ## v1.17.1.17
-
-  - The app is now called Cloudflare DDNS on the Umbrel dashboard (the longer name was cut off)
-
-  ## v1.17.1.16
-
-  - Light and dark themes, with a light/system/dark picker at the top right; the footer shows when an update is available, and has Report Issue, Help and Sponsor buttons; a new help page (README) linked from the app; the browser tab shows the app's logo in light and dark
-
-  ## v1.17.1.15
-
-  - Settings page rebuilt to be lighter: far fewer requests, nothing reads the whole log any more, the Cloudflare check is shared and cached, refreshing pauses while the tab is hidden, and Live Logs only sends new lines; the page keeps its layout when the internet is down; a banner shows if the page loses its connection; better labels for screen readers
-
-  ## v1.17.1.14
-
-  - Changing a setting no longer switches a disabled service back on; Enable now works after an invalid-token error; saving settings only sends what changed and can no longer overwrite another change; the settings file is written safely and is readable by root only; background refreshes no longer pile up on a slow connection
-
-  ## v1.17.1.13
-
-  - Save errors now show inside the settings form; a failed notifier ping shows a warning instead of switching the notifier off; domain status works for domains such as example.co.uk; a notifier error can no longer be mistaken for an invalid Cloudflare token; asks before saving a main domain such as example.com and before turning Proxied off; the API token is hidden; the domain table says why a domain is stuck
-
-  ## v1.17.1.12
-
-  - New installs start with IPv6 off; the IPv6 help explains when to turn it on (no public IPv4 address of your own, or a service published directly) and links to Cloudflare Origin Rules; a warning shows when IPv6 and Proxied are both on; help text corrected: while IPv4 or IPv6 is off, the app removes those records for your domains
-
-  ## v1.17.1.11
-
-  - The page now loads with switches already showing their saved state; Cloudflare Last Updated shows when a record really changed (kept across restarts and upgrades), or Already up to date; turning IPv4 or IPv6 support off now removes the records this app created, so no stale IPv6 record is left pointing at umbrelOS
-
-  ## v1.17.1.10
-
-  - Shoutrrr URLs (discord://, ntfy:// and so on) can now be saved, and several work at once; notifier URLs containing & (such as Uptime Kuma push URLs with ?status=up&msg=OK&ping=) now work; the settings page no longer restarts itself after saving; the updater runs without root privileges; base image updated to Alpine 3.24
-
-  ## v1.17.1.9
-
-  - Fix switches and buttons that sometimes needed a second click; mobile-friendly layout; live logs show the last 500 lines
-
-  ## v1.17.1.8
-
-  - Settings UI updated to Node 24 (security fixes; Node 18 is end of life)
-
-  ## v1.17.1.7
-
-  - Add helpful log message when notifier requests fail due to umbrel.local hostname resolution issues. When connection failures are detected and any notifier URL uses 'umbrel.local', the log now suggests switching to 'localhost' for better reliability. Applies to all notifiers (Uptime Kuma, Healthchecks, Shoutrrr).
-
-  ## v1.17.1.6
-
-  - Fix critical bug where GET /api/config endpoint truncated notifier URLs at the second '=' character (e.g. Uptime Kuma push URLs with query strings like ?status=up&msg=OK&ping= were silently cut to just ?status). This is a second instance of the same bug fixed in v1.17.1.4 - that fix only covered the readEnv() function but missed the GET endpoint.
-
-  ## v1.17.1.5
-
-  - Add clear error messages for HTTPS certificate validation failures with local URLs (localhost/umbrel.local). UI now warns when saving HTTPS localhost URLs; logs show helpful guidance to switch to HTTP for self-signed certificates.
-
-  ## v1.17.1.4
-
-  - Fix a real bug where any config value containing more than one '=' character (e.g. an Uptime Kuma push URL's own query string, ?status=up&msg=OK&ping=) got silently truncated right after the second '=' every time the config was read back - readEnv() split each line on every '=' instead of just the first one. Values with multiple '=' now round-trip intact.
-
-  ## v1.17.1.3
-
-  - Fix a real race condition where saving notifier settings could silently wipe out a just-configured Uptime Kuma/Healthchecks/Shoutrrr URL: the config-save endpoint now does a true partial merge (a field the client doesn't send keeps its existing value) instead of requiring every save to resend a complete snapshot. Also stop logging "NEW TOKEN CONFIGURED" on saves that don't actually change the token, and add blank-line separators around each child process restart in the log for readability.
-
-  ## v1.17.1.2
-
-  - Fix "Cloudflare Last Updated" ticking upward every few seconds: the update-detection logic re-scanned a sliding window of recent log lines on every 3-second poll, re-stamping the same already-counted event as "just now" for as long as it stayed in that window. Now scans only lines added since the last check, and treats the first successful confirmation after startup as the update time (matching startup time when records already matched), updating thereafter only on a genuine record change.
-
-  ## v1.17.1.1
-
-  - Set a DNS record comment ("Updated by Cloudflare DDNS for Umbrel") on managed A/AAAA records, so it's clear in the Cloudflare dashboard which app manages them
-
-  ## v1.17.1
-
-  - Update to favonia/cloudflare-ddns v1.17.1; fix the staleness warning going stale forever after the first check, and IPv6 status detection breaking against a favonia/cloudflare-ddns wording change
+  - Automated update: bump bundled favonia/cloudflare-ddns to v1.18.0
 
 
   --- favonia/cloudflare-ddns upstream release notes (auto-updated) ---
 
 
-  favonia/cloudflare-ddns v1.17.1
+  favonia/cloudflare-ddns v1.18.0
 
-    This release improves Cloudflare trace IP detection, adds a GitHub Container Registry mirror, and makes configuration errors easier to diagnose.
+    **Update promptly to this version (1.18.0) for HTTPS security fixes.** This release also fixes failure reporting for one-shot work and shutdown cleanup, along with one-shot WAF list deletion.
 
-    Improvements
+    Security
 
-    - **More resilient IP detection.** The built-in `cloudflare.trace` provider now tries multiple [Cloudflare endpoints](README.markdown#ip-detection) and uses the first validated response, allowing detection to succeed when an endpoint is slow or unavailable. This also removes `cloudflare.trace:<url>`, an unofficial workaround for [past temporary Cloudflare server outages](https://github.com/favonia/cloudflare-ddns/issues/985). ([#1262](https://github.com/favonia/cloudflare-ddns/pull/1262), [#1263](https://github.com/favonia/cloudflare-ddns/pull/1263))
-    - **GHCR mirror.** Docker images are also available at `ghcr.io/favonia/cloudflare-ddns`, with the same tags as Docker Hub and cosign verification for release images. ([#1264](https://github.com/favonia/cloudflare-ddns/pull/1264))
-    - **Clearer domain validation.** Domain names with empty interior labels are now rejected with correction guidance. Names accepted after removing leading or extra trailing dots now produce warnings showing the effective spelling. ([#1268](https://github.com/favonia/cloudflare-ddns/pull/1268))
-    - **Hints for incomplete IPv6 host IDs.** Startup diagnostics now suggest a valid IPv6 spelling for invalid `hostid6` values missing leading colons. ([#1282](https://github.com/favonia/cloudflare-ddns/pull/1282))
+    [Compromised eMudhra certificate authority keys](https://blog.mozilla.org/security/2026/10/20/protecting-firefox-users-following-the-compromise-of-emudhra-intermediate-certificates/) allow attackers to forge HTTPS certificates for websites they do not control. An attacker who can intercept or redirect the updater’s HTTPS connections could use these certificates to impersonate an IP detection service or the Cloudflare API. The default configuration is affected.
+
+    Docker images are built with Go 1.27.3, which rejects certificate chains containing the compromised keys ([CVE-2026-111943 and the Go security announcement](https://groups.google.com/g/golang-announce/c/66pojueaQek)). The images also include the [security fixes in Go 1.27.2](https://go.dev/doc/devel/release#go1.27.0).
+
+    To upgrade, pull the updated image and recreate your container. If you build from source, rebuild with Go 1.27.3 or a later patched version.
+
+    Improvements and Fixes
+
+    - **Exit status reports failed work.** Failed or interrupted one-shot work (`UPDATE_CRON=@once`) and failed shutdown cleanup (`DELETE_ON_STOP=true`) now return 1 instead of 0. Update failures during a scheduled run do not affect its exit status on normal shutdown. See [Exit Status](README.markdown#exit-status) for details. ([#1290](https://github.com/favonia/cloudflare-ddns/pull/1290))
+    - **One-shot cleanup can now delete WAF lists.** Previously, runs with `UPDATE_CRON=@once` and `DELETE_ON_STOP=true` cleared managed WAF items but did not attempt to delete the lists themselves. ([#1289](https://github.com/favonia/cloudflare-ddns/pull/1289), [#1290](https://github.com/favonia/cloudflare-ddns/pull/1290))
 
 
   See the full release history: https://github.com/favonia/cloudflare-ddns/releases
