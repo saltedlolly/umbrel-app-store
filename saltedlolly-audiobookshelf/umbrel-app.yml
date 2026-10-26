@@ -3,7 +3,7 @@ id: saltedlolly-audiobookshelf
 name: ABS NAS Edition
 tagline: Audiobookshelf with NAS support
 category: media
-version: "2.37.1.8"
+version: "2.37.2"
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/icon.svg
 port: 23378
 description: >-
@@ -138,64 +138,41 @@ gallery:
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/gallery/3.jpg
   - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-audiobookshelf/gallery/4.jpg
 releaseNotes: >-
-  ## 2.37.1.8
+  ## 2.37.2
 
-  - More reliable with a NAS: a NAS that is briefly slow to answer no longer makes the app restart Audiobookshelf, saved network share settings can no longer be lost, and the config tool page does much less work. While Audiobookshelf starts, the config tool shows roughly how long is left. It also lists libraries that have scheduled full scans, with advice, and its footer has a Donate button. README rewritten as user documentation
-
-  ## 2.37.1.7
-
-  - Fixes the config tool showing "Audiobookshelf is starting up" every few minutes after automatic imports are switched on. While Audiobookshelf starts, the config tool now shows how long it has been starting, how long it usually takes, and why large libraries on a network share take a while
-
-  ## 2.37.1.6
-
-  - New: automatic imports from network shares. Books you copy to your NAS from another computer now appear in Audiobookshelf automatically, scanning only the books that changed. Switch it on in the ABS Network Shares Config Tool (needs an Audiobookshelf API key). A light nightly check catches anything your NAS doesn't report. The config tool now follows your device's light or dark mode
-
-  ## 2.37.1.5
-
-  - More security hardening; settings are saved more safely; Audiobookshelf's log lines keep appearing in the app logs
-
-  ## 2.37.1.4
-
-  - Audiobookshelf can now start without internet access; tidier start and stop scripts; the network shares page image is smaller and no longer has access to Docker
-
-  ## 2.37.1.3
-
-  - Fixes the version shown on the network shares page and a false Update available notice; the notice is easier to read in dark mode
-
-  ## 2.37.1.2
-
-  - Security fix
-
-  ## 2.37.1.1
-
-  - Network shares page: light and dark themes with a picker in the footer, an Update available notice, a Report Issue button that fills in the app and version, and a tidier footer on phones and tablets
-
-  ## 2.37.1
-
-  - Automated update: bump bundled advplyr/audiobookshelf to v2.37.1
+  - Automated update: bump bundled advplyr/audiobookshelf to v2.37.2
 
 
   --- Audiobookshelf upstream release notes (auto-updated) ---
 
 
-  Audiobookshelf v2.37.1
+  Audiobookshelf v2.37.2
 
     Important: New authentication system was added in [v2.26.0](https://github.com/advplyr/audiobookshelf/releases/tag/v2.26.0). See https://github.com/advplyr/audiobookshelf/discussions/4460 for details.
 
     Fixed
 
-    - Debian install EACCES error #5613
-    - Clean up abandoned OIDC mobile login sessions #5604 by @SharonZhu0122 in #5606
+    - File copy and move fails with EPERM on some systems (e.g. TrueNAS) #5637 by @nichwall in #5668
+    - RSS feed cover images not updating after cover change #5306 by @SharonZhu0122 in #5418
+    - Audible search when API returns null products #5176 by @boqiaok in #5430
+    - Upload crash when multipart form repeats file fields by @rtainaan in #5437
+    - Debian package ships `audiobookshelf.service` with executable bit causing systemd warnings on install/upgrade #5629
 
     Updated
 
-    - OIDC callback cookie expiration extended to 10 minutes & redirect to login when expired #5614
-    - More strings translated
-      - Estonian by @lupusaesticus
-      - Lithuanian by @Haya25
-      - Portuguese (Brazil) by @AgenteGabrielofc
+    - `ROUTER_BASE_PATH` env variable normalized (leading slash, no trailing slash)
+    - Docker image rebuilt with Node.js 24.22.1 (October 2026 security release)
 
-    **Full Changelog**: https://github.com/advplyr/audiobookshelf/compare/v2.37.0...v2.37.1
+    Internal
+
+    - Server init rejects creating a second root user
+    - Dev container updated to Node.js 24
+
+    New Contributors
+    * @rtainaan made their first contribution in https://github.com/advplyr/audiobookshelf/pull/5437
+    * @boqiaok made their first contribution in https://github.com/advplyr/audiobookshelf/pull/5430
+
+    **Full Changelog**: https://github.com/advplyr/audiobookshelf/compare/v2.37.1...v2.37.2
 
 
   See the full release history: https://github.com/advplyr/audiobookshelf/releases
