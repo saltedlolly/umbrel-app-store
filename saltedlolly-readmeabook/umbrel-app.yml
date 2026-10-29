@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: saltedlolly-readmeabook
 category: media
 name: ReadMeABook
-version: "v1.2.10"
+version: "v1.2.11"
 tagline: Request and automatically download audiobooks
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -35,58 +35,58 @@ description: >-
 
   Icon artwork is sourced from https://github.com/selfhst/icons and used under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). It has been adapted with additional internal spacing for UmbrelOS. Application names and logos remain the property of their respective owners.
 releaseNotes: >-
-  ## v1.2.10
+  ## v1.2.11
 
-  - Automated update: bump ReadMeABook to v1.2.10
+  - Automated update: bump ReadMeABook to v1.2.11
 
 
   --- kikootwo/ReadMeABook upstream release notes (auto-updated) ---
 
 
-  kikootwo/ReadMeABook v1.2.10
+  kikootwo/ReadMeABook v1.2.11
 
-    🎉  Release v1.2.10
+    🎉  Release v1.2.11
 
-
-    > **If you use an external Redis:** `REDIS_URL` must be a valid URL, such as `redis://:password@redis:6379/0`. The updated Redis client (ioredis 5.11) rejects malformed URLs and out-of-range ports. The built-in Redis is unaffected.
 
     **Features:**
-    - ✅ imported audiobooks carry the Audible description and genres as tags
+    - ✅ organized audiobooks also get the publisher, subtitle and language tags
        - https://github.com/kikootwo/ReadMeABook/issues/208
-       - https://github.com/kikootwo/ReadMeABook/pull/419
-       - https://github.com/kikootwo/ReadMeABook/pull/397
+       - https://github.com/kikootwo/ReadMeABook/pull/440
+       - https://github.com/kikootwo/ReadMeABook/pull/426
        - Thanks https://github.com/N0cky !
-       - with metadata tagging on, M4B files are also marked as an audiobook with gapless playback. Audiobookshelf shows the description and lists each genre separately.
+       - with metadata tagging on, from Audible (M4B, MP3 and FLAC). The language is written as its name ("English"), replacing an existing "eng".
 
     **Fixes:**
-    - ✅ torrents added to qBittorrent 5.2 or later are no longer reported as failed grabs
-       - https://github.com/kikootwo/ReadMeABook/issues/317
-       - https://github.com/kikootwo/ReadMeABook/pull/420
-       - https://github.com/kikootwo/ReadMeABook/pull/295
+    - ✅ Manual and Bulk Import bring in every disc of a book stored in Disc/CD folders, as one book
+       - https://github.com/kikootwo/ReadMeABook/issues/434
+       - https://github.com/kikootwo/ReadMeABook/pull/443
+       - importing a book from its own library folder now stops with nothing changed, and the request shows as failed
+    - ✅ multi-disc books keep disc-then-track order when merged, copied and renamed
+       - https://github.com/kikootwo/ReadMeABook/issues/331
+       - https://github.com/kikootwo/ReadMeABook/pull/443
+       - https://github.com/kikootwo/ReadMeABook/pull/294
        - Thanks https://github.com/ColeTown !
-       - hybrid (v1+v2) torrents and base32 magnets still are; that's tracked in https://github.com/kikootwo/ReadMeABook/issues/422
-    - ✅ SABnzbd downloads no longer fail with "Download path not available" when they reach 100% before post-processing has finished
-       - https://github.com/kikootwo/ReadMeABook/pull/421
-       - https://github.com/kikootwo/ReadMeABook/pull/306
-       - Thanks https://github.com/connor2k !
+       - with metadata tagging on, each file also gets its disc and track number, so players such as Audiobookshelf play it in order
+    - ✅ updated zod (request validation) to version 4, which includes the fix for advisory GHSA-mrhx-c7xc-m3w5
+       - https://github.com/kikootwo/ReadMeABook/pull/444
+       - validation errors return only each issue's code, field, message and limits, and some codes and messages changed (for example, `invalid_enum_value` is now `invalid_value`). An API token's expiry date must include seconds, as the web UI already sends. Text length limits count characters as written (an emoji counts once), and a cover image URL with surrounding whitespace is stored trimmed.
+    - ✅ seeded-torrent cleanup and request delete no longer remove a torrent that was already in your download client
+       - https://github.com/kikootwo/ReadMeABook/issues/423
+       - https://github.com/kikootwo/ReadMeABook/pull/441
+       - the post-import category is only applied to RMAB's own torrents. Torrents grabbed before this release are kept unless the client's added time shows RMAB added them.
+       - downloads still in progress when you upgrade won't get the post-import category. After switching to a new client of the same type, RMAB won't clean torrents it grabbed before.
+    - ✅ the Cleanup Seeded Torrents job checks every finished download, not just the first 100
+       - https://github.com/kikootwo/ReadMeABook/issues/258
+       - https://github.com/kikootwo/ReadMeABook/pull/441
+       - https://github.com/kikootwo/ReadMeABook/pull/321
+       - Thanks https://github.com/ZillaGit104 !
+       - it stops early if the download client doesn't answer, and stops re-checking torrents that are already gone
+    - ✅ Transmission: a tracker warning no longer fails the download
+       - https://github.com/kikootwo/ReadMeABook/issues/286
+       - https://github.com/kikootwo/ReadMeABook/pull/436
+       - https://github.com/kikootwo/ReadMeABook/pull/321
 
-      **Upgrade:**
-      ```bash
-      docker pull ghcr.io/kikootwo/readmeabook:latest
-      docker compose down
-      docker compose up -d
-      ```
-
-
-    What's Changed
-    * chore(deps-dev): update dev tooling within current majors to clear 18 Dependabot alerts by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/418
-    * feat: write description, genre, media type and gapless tags (#208) by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/419
-    * chore(deps): stop Dependabot proposing vitest majors by @kikootwo in https://github.com/kikootwo/ReadMeABook/pull/417
-    * chore(deps-dev): bump jsdom from 27.4.0 to 29.1.1 by @dependabot[bot] in https://github.com/kikootwo/ReadMeABook/pull/414
-    * chore(deps-dev): bump @testing-library/jest-dom from 6.9.1 to 7.0.1 by @dependabot[bot] in https://github.com/kikootwo/ReadMeABook/pull/415
-    * chore(deps): bump ioredis from 5.8.2 to 5.11.1 in the npm-minor-patch group by @dependabot[bot] in https://github.com/kikootwo/ReadMeABook/pull/413
-
-    … (truncated) Full release notes: https://github.com/kikootwo/ReadMeABook/releases/tag/v1.2.10
+    … (truncated) Full release notes: https://github.com/kikootwo/ReadMeABook/releases/tag/v1.2.11
 
 
   See the full release history: https://github.com/kikootwo/ReadMeABook/releases

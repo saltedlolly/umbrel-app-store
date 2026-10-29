@@ -90,8 +90,8 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
     <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-readmeabook/icon.svg" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="https://github.com/saltedlolly/umbrel-app-store#readmeabook">ReadMeABook</a></td>
-      <td nowrap id="saltedlolly-readmeabook-version"><code>v1.2.10</code></td>
-      <td nowrap id="saltedlolly-readmeabook-date">2026-10-23</td>
+      <td nowrap id="saltedlolly-readmeabook-version"><code>v1.2.11</code></td>
+      <td nowrap id="saltedlolly-readmeabook-date">2026-10-29</td>
       <td>Request audiobooks and automatically find, download, organize, and add them to your library</td>
     </tr>
     <tr>
