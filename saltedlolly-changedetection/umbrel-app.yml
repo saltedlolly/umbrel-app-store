@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-changedetection
 category: automation
 name: changedetection.io
-version: "0.60.9"
+version: "0.60.10"
 tagline: Monitor any website for changes and get notified
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -23,48 +23,58 @@ description: >-
 
   All watches, settings, and page-snapshot history are stored under this app's persistent data directory and survive restarts and updates. Uninstalling this app deletes them - back up first if you want to keep your watch list.
 releaseNotes: >-
-  ## 0.60.9
+  ## 0.60.10
 
-  - Update changedetection.io to upstream release 0.60.9.
+  - Update changedetection.io to upstream release 0.60.10.
 
 
   --- dgtlmoon/changedetection.io upstream release notes (auto-updated) ---
 
 
-  dgtlmoon/changedetection.io 0.60.9
+  dgtlmoon/changedetection.io 0.60.10
 
     What's Changed
-    * i18n: Add ja translations for new UI (part 2) by @skkzsh in https://github.com/dgtlmoon/changedetection.io/pull/4491
-    * Restock & Price detection - Fix decimal-comma prices ("39,99") being read as 3999 by @jaime-king in https://github.com/dgtlmoon/changedetection.io/pull/4494
-    * Update pytest requirement from ~=9.0 to ~=9.1 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4504
-    * feat(jinja2): add unixtime filter to format Unix timestamps in notifications (#3641) by @contentforge-press in https://github.com/dgtlmoon/changedetection.io/pull/4503
-    * UI - Language selector should be available on the login page (#4490) by @a-ahmed in https://github.com/dgtlmoon/changedetection.io/pull/4501
-    * Update pre-commit requirement from >=4.2.0 to >=4.6.2 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4512
-    * Bump werkzeug from 3.1.6 to 3.1.9 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4514
-    * Update lxml requirement from !=5.2.0,!=5.2.1,<7,>=4.8.0 to !=5.2.0,!=5.2.1,>=6.1.3,<7 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4505
-    * Bump cryptography from 44.0.0 to 50.0.2 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4513
-    * Update python-engineio requirement from <5,>=4.13.1 to >=4.14.0,<5 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4516
-    * Update jsonschema requirement from <5.0.0,>=4.24.0 to >=4.26.0,<5.0.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4517
-    * Update greenlet requirement from >=3.0.3 to >=3.5.6 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4519
-    * Bump apprise from 1.13.1 to 2.0.1 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4518
-    * Update selenium requirement from ~=4.49.0 to ~=4.50.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4520
-    * Update ruff requirement from >=0.11.2 to >=0.16.10 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4521
-    * Update pyppeteerstealth requirement from >=0.0.4 to >=0.0.5 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4522
-    * Update beautifulsoup4 requirement from <=4.14.3,>=4.0.0 to <=4.15.0,>=4.15.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4523
-    * Update orjson requirement from ~=3.11 to ~=3.12 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4524
-    * Update jsonpath-ng requirement from ~=1.8.0 to ~=1.9.1 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4527
-    * Bump elementpath from 5.1.1 to 5.1.4 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4526
-    * Update pydantic requirement from <3.0,>=2.0 to >=2.13.5,<3.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4528
-    * ci: keep release metadata out of inline shell and lock down the container publish path by @Totara-thib in https://github.com/dgtlmoon/changedetection.io/pull/4510
-    * Update pytest-mock requirement from ~=3.15 to ~=3.16 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4532
+    * Update orjson requirement from ~=3.12 to ~=3.13 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4542
+    * LLM restock: fix locale-formatted string prices (1.299,95 read as 1.29995) by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4544
+    * Puppeteer fetcher - PDF improvements, Handle PDF fetching by Puppeteer directly, cleanup supports by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4547
+    * Test - Puppeteer/Playwright PDF - Checksum the original document not the browser's PDF viewer HTML, browser PDF test by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4548
+    * PDF - Keep the original PDF of the newest two versions by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4549
+    * update spanish translations by @abrugues in https://github.com/dgtlmoon/changedetection.io/pull/4546
+    * Update pydantic requirement from <3.0,>=2.13.5 to >=2.14.0,<3.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4543
+    * Proxy auth fixes and extra tests for Puppeteer content fetcher by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4552
+    * Update validators requirement from ~=0.35 to ~=0.36 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4558
+    * Update pre-commit requirement from >=4.6.2 to >=4.7.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4557
+    * UI - Fixing notification settings still trying to access main settings form that caused a crash on save  by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4561
+    * Update flask-socketio requirement from <6,>=5.6.1 to >=5.7.0,<6 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4540
+    * UI - Follow the device's light/dark setting by default by @cookieguru in https://github.com/dgtlmoon/changedetection.io/pull/4507
+    * Watch history index - Replace per-snapshot realpath()/exists() with a single directory listing, speeds up loading times by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4562
+    * docker-compose - SCREENSHOT_MAX_HEIGHT default is 20000, not 16000 by @pcbeingused333 in https://github.com/dgtlmoon/changedetection.io/pull/4568
+    * Restock: let a plugin do LLM price/stock extraction without litellm (HTML + text hook, reusable helpers) by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4545
+    * Update chardet requirement from >=7.6.0 to >=7.7.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4582
+    * Bump pypa/gh-action-pypi-publish from 1.14.2 to 1.14.3 in the all group by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4583
+    * Update pluggy requirement from ~=1.6 to ~=1.7 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4581
+    * Update selenium requirement from ~=4.50.0 to ~=4.51.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4580
+    * Notifications - Fix |regex_replace doing nothing when rendered outside the main thread by @Enesuygurs in https://github.com/dgtlmoon/changedetection.io/pull/4577
+    * feat(api): expand SystemInfo endpoint with queue metrics, config flags, and tag_count by @Subere in https://github.com/dgtlmoon/changedetection.io/pull/4574
+    * Log puremagic "Could not identify file" at debug instead of warning by @jtannahill in https://github.com/dgtlmoon/changedetection.io/pull/4533
+    * Fix IndexError on empty/whitespace-only JSON content by @Yi-111-a in https://github.com/dgtlmoon/changedetection.io/pull/4534
+    * Decode percent-encoded proxy credentials for the browser fetchers, and keep them out of the log by @alkaz-nodemaven in https://github.com/dgtlmoon/changedetection.io/pull/4502
+    * Judge favicon expiry on the icon the watch actually has, not whatever glob lists first by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4434
+    * Bump cryptography from 44.0.0 to 50.0.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4284
+    * Notifications - |regex_replace ReDoS timeout now works in any thread (use 'regex' package timeout=) by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4585
+    * Fix Jinja2 false-positive when URL contains `{%` by @skkzsh in https://github.com/dgtlmoon/changedetection.io/pull/4208
+    * Favicon - Clear the saved favicon when the watch URL changes by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4586
+    * Tests - Fix test_itemprop_percent_threshold for WTForms 3.3 (FloatField is now type="number") by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4588
+    * API - Reject broken Jinja2 templates in url, link_to_open, body and headers (shared with the edit form) by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4587
+    * Improvements to plugin architecture by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4589
+    * Update litellm requirement from >=1.40.0 to >=1.106.2 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4595
+    * LLM Config - Dont import LiteLLM until a real config is used (saves memory) by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4596
+    * Update ruff requirement from >=0.16.10 to >=0.17.1 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4594
+    * Update inscriptis requirement from <2.7.6,>=2.7 to >=2.7.5,<2.7.6 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4593
+    * Update regex requirement from >=2022.1.18 to >=2026.9.29 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4592
+    * Update pytest-mock requirement from ~=3.16 to ~=3.17 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4599
 
-    New Contributors
-    * @jaime-king made their first contribution in https://github.com/dgtlmoon/changedetection.io/pull/4494
-    * @contentforge-press made their first contribution in https://github.com/dgtlmoon/changedetection.io/pull/4503
-    * @a-ahmed made their first contribution in https://github.com/dgtlmoon/changedetection.io/pull/4501
-    * @Totara-thib made their first contribution in https://github.com/dgtlmoon/changedetection.io/pull/4510
-
-    **Full Changelog**: https://github.com/dgtlmoon/changedetection.io/compare/0.60.8...0.60.9
+    … (truncated) Full release notes: https://github.com/dgtlmoon/changedetection.io/releases/tag/0.60.10
 
 
   See the full release history: https://github.com/dgtlmoon/changedetection.io/releases
