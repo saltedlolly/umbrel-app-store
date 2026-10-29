@@ -36,6 +36,7 @@ jobs:
         with:
           sparse-checkout: |
             saltedlolly-cloudflare-ddns/cloudflare-ddns/Dockerfile
+            .github/scripts/upstream-image-ready.sh
           sparse-checkout-cone-mode: false
 
       - name: Find newest favonia release that has cleared the 2-day buffer
@@ -92,6 +93,8 @@ jobs:
           if [[ -z "$eligible" || "$eligible" == "$current" ]]; then
             echo "has_update=false" >> "$GITHUB_OUTPUT"
             echo "::notice::No update to publish. pinned=$current eligible=${eligible:-none}"
+          elif ! bash .github/scripts/upstream-image-ready.sh "ghcr.io/favonia/cloudflare-ddns:${eligible}"; then
+            echo "has_update=false" >> "$GITHUB_OUTPUT"
           else
             echo "has_update=true" >> "$GITHUB_OUTPUT"
             echo "::notice::Publishing update. pinned=$current -> eligible=$eligible"

@@ -54,6 +54,9 @@ jobs:
           fi
           has_update=false
           [[ -n "$eligible" && "$eligible" != "$current" ]] && has_update=true
+          if [[ "$has_update" == "true" ]] && ! bash ../.github/scripts/upstream-image-ready.sh "ghcr.io/goauthentik/server:$eligible"; then
+            has_update=false
+          fi
           echo "current_version=$current" >> "$GITHUB_OUTPUT"
           echo "eligible_version=$eligible" >> "$GITHUB_OUTPUT"
           echo "has_update=$has_update" >> "$GITHUB_OUTPUT"

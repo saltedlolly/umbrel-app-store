@@ -34,13 +34,14 @@ jobs:
       contents: read
     outputs:
       has_update: ${{ steps.compare.outputs.has_update }}
-      eligible_crowdsec_version: ${{ steps.latest.outputs.eligible_crowdsec_version }}
-      eligible_webui_version: ${{ steps.latest.outputs.eligible_webui_version }}
+      eligible_crowdsec_version: ${{ steps.compare.outputs.eligible_crowdsec_version }}
+      eligible_webui_version: ${{ steps.compare.outputs.eligible_webui_version }}
     steps:
       - uses: actions/checkout@v7
         with:
           sparse-checkout: |
             saltedlolly-crowdsec/docker-compose.yml
+            .github/scripts/upstream-image-ready.sh
           sparse-checkout-cone-mode: false
 
       - name: Find newest eligible releases (2-day buffer) for both upstreams
@@ -115,6 +116,18 @@ jobs:
           current_crowdsec="${{ steps.current.outputs.current_crowdsec_version }}"
           current_webui="${{ steps.current.outputs.current_webui_version }}"
 
+          # An upstream whose image isn't published yet stays on its pinned
+          # version (crowdsec-build.sh then leaves it alone), so the other
+          # upstream can still be released.
+          if [[ -n "$eligible_crowdsec" && "$eligible_crowdsec" != "$current_crowdsec" ]] \
+            && ! bash .github/scripts/upstream-image-ready.sh "docker.io/crowdsecurity/crowdsec:v$eligible_crowdsec"; then
+            eligible_crowdsec="$current_crowdsec"
+          fi
+          if [[ -n "$eligible_webui" && "$eligible_webui" != "$current_webui" ]] \
+            && ! bash .github/scripts/upstream-image-ready.sh "ghcr.io/theduffman85/crowdsec-web-ui:$eligible_webui"; then
+            eligible_webui="$current_webui"
+          fi
+
           has_update=false
           if [[ -n "$eligible_crowdsec" && "$eligible_crowdsec" != "$current_crowdsec" ]]; then
             has_update=true
@@ -124,6 +137,8 @@ jobs:
           fi
 
           echo "has_update=$has_update" >> "$GITHUB_OUTPUT"
+          echo "eligible_crowdsec_version=$eligible_crowdsec" >> "$GITHUB_OUTPUT"
+          echo "eligible_webui_version=$eligible_webui" >> "$GITHUB_OUTPUT"
           echo "::notice::crowdsec pinned=$current_crowdsec eligible=${eligible_crowdsec:-none} | web-ui pinned=$current_webui eligible=${eligible_webui:-none} | has_update=$has_update"
 
   release:

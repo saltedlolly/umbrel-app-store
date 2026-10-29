@@ -36,6 +36,7 @@ jobs:
         with:
           sparse-checkout: |
             saltedlolly-audiobookshelf/docker-containers/abs-manager/abs-server-image.txt
+            .github/scripts/upstream-image-ready.sh
           sparse-checkout-cone-mode: false
 
       - name: Find newest advplyr/audiobookshelf release that has cleared the 2-day buffer
@@ -96,6 +97,8 @@ jobs:
           if [[ -z "$eligible" || "$eligible" == "$current" ]]; then
             echo "has_update=false" >> "$GITHUB_OUTPUT"
             echo "::notice::No update to publish. pinned=$current eligible=${eligible:-none}"
+          elif ! bash .github/scripts/upstream-image-ready.sh "ghcr.io/advplyr/audiobookshelf:${eligible}"; then
+            echo "has_update=false" >> "$GITHUB_OUTPUT"
           else
             echo "has_update=true" >> "$GITHUB_OUTPUT"
             echo "::notice::Publishing update. pinned=$current -> eligible=$eligible"

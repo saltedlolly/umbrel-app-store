@@ -36,6 +36,7 @@ jobs:
         with:
           sparse-checkout: |
             saltedlolly-readmeabook/docker-compose.yml
+            .github/scripts/upstream-image-ready.sh
           sparse-checkout-cone-mode: false
 
       - name: Find newest stable release that has cleared the 2-day buffer
@@ -107,6 +108,8 @@ jobs:
           if [[ "$eligible" == "$current" || "$newest" != "$eligible" ]]; then
             echo "has_update=false" >> "$GITHUB_OUTPUT"
             echo "::notice::No update to publish. pinned=$current eligible=$eligible"
+          elif ! bash .github/scripts/upstream-image-ready.sh "ghcr.io/kikootwo/readmeabook:${eligible#v}"; then
+            echo "has_update=false" >> "$GITHUB_OUTPUT"
           else
             echo "has_update=true" >> "$GITHUB_OUTPUT"
             echo "::notice::Publishing update. pinned=$current -> eligible=$eligible"

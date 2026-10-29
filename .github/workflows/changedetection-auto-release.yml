@@ -34,8 +34,8 @@ jobs:
       contents: read
     outputs:
       has_update: ${{ steps.compare.outputs.has_update }}
-      eligible_cdio_version: ${{ steps.latest_cdio.outputs.eligible_version }}
-      eligible_spb_version: ${{ steps.latest_spb.outputs.eligible_version }}
+      eligible_cdio_version: ${{ steps.compare.outputs.eligible_cdio_version }}
+      eligible_spb_version: ${{ steps.compare.outputs.eligible_spb_version }}
       cdio_changed: ${{ steps.compare.outputs.cdio_changed }}
       spb_changed: ${{ steps.compare.outputs.spb_changed }}
     steps:
@@ -43,6 +43,7 @@ jobs:
         with:
           sparse-checkout: |
             saltedlolly-changedetection/docker-compose.yml
+            .github/scripts/upstream-image-ready.sh
           sparse-checkout-cone-mode: false
 
       - name: Find newest changedetection.io release that has cleared the 2-day buffer
@@ -150,6 +151,23 @@ jobs:
           spb_changed=false
           is_newer "$current_cdio" "$eligible_cdio" && cdio_changed=true
           is_newer "$current_spb" "$eligible_spb" && spb_changed=true
+
+          # An image that isn't published yet stays on its pinned version
+          # (changedetection-build.sh then leaves it alone), so the other
+          # one can still be released.
+          if [[ "$cdio_changed" == "true" ]] \
+            && ! bash .github/scripts/upstream-image-ready.sh "ghcr.io/dgtlmoon/changedetection.io:$eligible_cdio"; then
+            cdio_changed=false
+            eligible_cdio="$current_cdio"
+          fi
+          if [[ "$spb_changed" == "true" ]] \
+            && ! bash .github/scripts/upstream-image-ready.sh "docker.io/dgtlmoon/sockpuppetbrowser:$eligible_spb"; then
+            spb_changed=false
+            eligible_spb="$current_spb"
+          fi
+
+          echo "eligible_cdio_version=$eligible_cdio" >> "$GITHUB_OUTPUT"
+          echo "eligible_spb_version=$eligible_spb" >> "$GITHUB_OUTPUT"
 
           echo "cdio_changed=$cdio_changed" >> "$GITHUB_OUTPUT"
           echo "spb_changed=$spb_changed" >> "$GITHUB_OUTPUT"
