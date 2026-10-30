@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: saltedlolly-readmeabook
 category: media
 name: ReadMeABook
-version: "v1.2.11"
+version: "v1.2.12"
 tagline: Request and automatically download audiobooks
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -35,58 +35,58 @@ description: >-
 
   Icon artwork is sourced from https://github.com/selfhst/icons and used under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). It has been adapted with additional internal spacing for UmbrelOS. Application names and logos remain the property of their respective owners.
 releaseNotes: >-
-  ## v1.2.11
+  ## v1.2.12
 
-  - Automated update: bump ReadMeABook to v1.2.11
+  - Automated update: bump ReadMeABook to v1.2.12
 
 
   --- kikootwo/ReadMeABook upstream release notes (auto-updated) ---
 
 
-  kikootwo/ReadMeABook v1.2.11
+  kikootwo/ReadMeABook v1.2.12
 
-    🎉  Release v1.2.11
+    🎉  Release v1.2.12
 
+
+    > **If you might roll back to v1.2.11:** this release adds two database columns. Before downgrading, turn off "Check Watched Lists" in Admin > Jobs and remove or switch any "New releases only" watches, or the older build requests their whole backlog.
 
     **Features:**
-    - ✅ organized audiobooks also get the publisher, subtitle and language tags
-       - https://github.com/kikootwo/ReadMeABook/issues/208
-       - https://github.com/kikootwo/ReadMeABook/pull/440
-       - https://github.com/kikootwo/ReadMeABook/pull/426
-       - Thanks https://github.com/N0cky !
-       - with metadata tagging on, from Audible (M4B, MP3 and FLAC). The language is written as its name ("English"), replacing an existing "eng".
+    - ✅ watch an author or series for new releases only
+       - https://github.com/kikootwo/ReadMeABook/issues/302
+       - https://github.com/kikootwo/ReadMeABook/pull/451
+       - watching now asks: Entire catalog (the default, as before) or New releases only, which requests books released from today on (preorders count) and skips undated books. Each watch can be changed later from the Profile cards.
+       - adding one watch now checks only that author or series, not every watch
+    - ✅ the automatic ebook fetch skips a book whose folder already holds an ebook
+       - https://github.com/kikootwo/ReadMeABook/issues/313
+       - https://github.com/kikootwo/ReadMeABook/pull/496
+       - covers the auto-grab after an audiobook import and the nightly missing-ebooks job. A lone PDF booklet, or a folder that another book also uses, does not count. Manual Fetch Ebook, Interactive Search and Manual Import are unchanged.
+       - this is one part of #313; importing ebook files already on your system is still open there
 
     **Fixes:**
-    - ✅ Manual and Bulk Import bring in every disc of a book stored in Disc/CD folders, as one book
-       - https://github.com/kikootwo/ReadMeABook/issues/434
-       - https://github.com/kikootwo/ReadMeABook/pull/443
-       - importing a book from its own library folder now stops with nothing changed, and the request shows as failed
-    - ✅ multi-disc books keep disc-then-track order when merged, copied and renamed
-       - https://github.com/kikootwo/ReadMeABook/issues/331
-       - https://github.com/kikootwo/ReadMeABook/pull/443
-       - https://github.com/kikootwo/ReadMeABook/pull/294
-       - Thanks https://github.com/ColeTown !
-       - with metadata tagging on, each file also gets its disc and track number, so players such as Audiobookshelf play it in order
-    - ✅ updated zod (request validation) to version 4, which includes the fix for advisory GHSA-mrhx-c7xc-m3w5
-       - https://github.com/kikootwo/ReadMeABook/pull/444
-       - validation errors return only each issue's code, field, message and limits, and some codes and messages changed (for example, `invalid_enum_value` is now `invalid_value`). An API token's expiry date must include seconds, as the web UI already sends. Text length limits count characters as written (an emoji counts once), and a cover image URL with surrounding whitespace is stored trimmed.
-    - ✅ seeded-torrent cleanup and request delete no longer remove a torrent that was already in your download client
-       - https://github.com/kikootwo/ReadMeABook/issues/423
-       - https://github.com/kikootwo/ReadMeABook/pull/441
-       - the post-import category is only applied to RMAB's own torrents. Torrents grabbed before this release are kept unless the client's added time shows RMAB added them.
-       - downloads still in progress when you upgrade won't get the post-import category. After switching to a new client of the same type, RMAB won't clean torrents it grabbed before.
-    - ✅ the Cleanup Seeded Torrents job checks every finished download, not just the first 100
-       - https://github.com/kikootwo/ReadMeABook/issues/258
-       - https://github.com/kikootwo/ReadMeABook/pull/441
-       - https://github.com/kikootwo/ReadMeABook/pull/321
-       - Thanks https://github.com/ZillaGit104 !
-       - it stops early if the download client doesn't answer, and stops re-checking torrents that are already gone
-    - ✅ Transmission: a tracker warning no longer fails the download
-       - https://github.com/kikootwo/ReadMeABook/issues/286
-       - https://github.com/kikootwo/ReadMeABook/pull/436
-       - https://github.com/kikootwo/ReadMeABook/pull/321
+    - ✅ automatic search stops grabbing the wrong book
+       - https://github.com/kikootwo/ReadMeABook/issues/223
+       - https://github.com/kikootwo/ReadMeABook/pull/459
+       - stricter title and author matching: numbers in the title must match, author names match as whole words, and one-word titles are checked more strictly. Subtitles after a colon and author initials match better. Interactive search still lists every result.
+    - ✅ automatic search skips a release numbered as another book of the same series
+       - https://github.com/kikootwo/ReadMeABook/issues/330
+       - https://github.com/kikootwo/ReadMeABook/pull/482
+       - https://github.com/kikootwo/ReadMeABook/pull/307
+       - Thanks https://github.com/connor2k !
+       - uses the book's series position from Audible, unless the release names the book by its own title. Interactive search still lists everything.
+    - ✅ automatic search skips releases far too small for the book's runtime
+       - https://github.com/kikootwo/ReadMeABook/pull/479
+       - https://github.com/kikootwo/ReadMeABook/pull/311
+       - Thanks https://github.com/H0tChicken !
+       - such as one chapter file of a multi-file Usenet post. Interactive search still lists these.
+    - ✅ search and ranking handle titles with apostrophes
+       - https://github.com/kikootwo/ReadMeABook/issues/316
+       - https://github.com/kikootwo/ReadMeABook/pull/469
+       - https://github.com/kikootwo/ReadMeABook/pull/304
+       - Thanks https://github.com/connor2k !
+       - Thanks https://github.com/Eyji !
+       - Thanks https://github.com/thehaven !
 
-    … (truncated) Full release notes: https://github.com/kikootwo/ReadMeABook/releases/tag/v1.2.11
+    … (truncated) Full release notes: https://github.com/kikootwo/ReadMeABook/releases/tag/v1.2.12
 
 
   See the full release history: https://github.com/kikootwo/ReadMeABook/releases
