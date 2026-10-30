@@ -6,7 +6,7 @@ services:
       APP_PORT: 3000
 
   crowdsec:
-    image: docker.io/crowdsecurity/crowdsec:v1.8.1@sha256:0f2523fa61ef507f15d953045cface490cc880670c62f2755ced17524107f71a
+    image: docker.io/crowdsecurity/crowdsec:v1.8.2@sha256:65b74942f7e7ed5c60fde4ac15fc4ba715904c398c8b16dd451f4907d90347d4
     container_name: saltedlolly-crowdsec_crowdsec_1
     hostname: saltedlolly-crowdsec_crowdsec_1
     init: true
@@ -48,7 +48,7 @@ services:
       start_period: 20s
 
   crowdsec-web-ui:
-    image: ghcr.io/theduffman85/crowdsec-web-ui:2026.10.10@sha256:f57568d27b2c7798155a638b9cb76302777a9dcf43d8026f344c17767589d694
+    image: ghcr.io/theduffman85/crowdsec-web-ui:2026.10.11@sha256:20333d6bc218f274a4cdaabc2e79716d7e203c0a23446c75f6aa6ccfc59a1431
     container_name: saltedlolly-crowdsec_crowdsec-web-ui_1
     hostname: saltedlolly-crowdsec_crowdsec-web-ui_1
     init: true

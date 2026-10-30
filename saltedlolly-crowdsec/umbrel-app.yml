@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-crowdsec
 category: networking
 name: CrowdSec
-version: "v1.8.1.24"
+version: "v1.8.2"
 tagline: Crowd-sourced intrusion detection and IP banning for your self-hosted apps
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -32,137 +32,58 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data, including your ban history and dashboard account. Back it up before uninstalling.
 releaseNotes: >-
-  ## v1.8.1.24
+  ## v1.8.2
 
-  - Automated update: crowdsec 1.8.1, crowdsec-web-ui 2026.10.10
-
-  ## v1.8.1.23
-
-  - Automated update: crowdsec 1.8.1, crowdsec-web-ui 2026.10.9
-
-  ## v1.8.1.22
-
-  - Automated update: crowdsec 1.8.1, crowdsec-web-ui 2026.10.8
-
-  ## v1.8.1.21
-
-  - Automated update: crowdsec 1.8.1, crowdsec-web-ui 2026.10.7
-
-  ## v1.8.1.20
-
-  - Automated update: crowdsec 1.8.1, crowdsec-web-ui 2026.10.6
-
-  ## v1.8.1.19
-
-  - Automated update: crowdsec 1.8.1, crowdsec-web-ui 2026.10.5
-
-  ## v1.8.1.18
-
-  - Automated update: crowdsec 1.8.1, crowdsec-web-ui 2026.10.4
-
-  ## v1.8.1.17
-
-  - Automated update: crowdsec 1.8.1, crowdsec-web-ui 2026.10.3
-
-  ## v1.8.1.16
-
-  - Automated update: crowdsec 1.8.1, crowdsec-web-ui 2026.10.2
-
-  ## v1.8.1.15
-
-  - Automated update: crowdsec 1.8.1, crowdsec-web-ui 2026.10.1
-
-  ## v1.8.1.14
-
-  - LAPI and AppSec are no longer reachable from your local network, only from other apps on the Umbrel (requires NPMplus 2026-07-24-r1.21 or later)
-
-  ## v1.8.1.13
-
-  - README: how to stop CrowdSec falsely banning your own apps (with an Audiobookshelf example), linked from the description
-
-  ## v1.8.1.12
-
-  - App store description updated to explain the automatic NPMplus integration
-
-  ## v1.8.1.11
-
-  - Analyse NPMplus access logs (sent over syslog) to detect scanners, brute force and aggressive crawlers; removes the old log mount, which never worked
-
-  ## v1.8.1.10
-
-  - Enable AppSec (Web Application Firewall) on port 7422: blocks known CVE exploits and common attack probes for NPMplus
-
-  ## v1.8.1.9
-
-  - Fix crash-loop for anyone who installed v1.8.1.7 (removes the invalid AppSec config on start) + fix web UI always showing unhealthy
-
-  ## v1.8.1.8
-
-  - Disable AppSec auto-enable (caused crash-loop)
-
-  ## v1.8.1.7
-
-  - Enable AppSec (Web Application Firewall) automatically
-  - Adds 200+ CVE virtual patches for vulnerability protection
-  - AppSec listener on port 7422 for NPMplus WAF integration
-  - Zero configuration - enabled on first start
-
-  ## v1.8.1.6
-
-  - Automated update: crowdsec 1.8.1, crowdsec-web-ui 2026.9.1
-
-  ## v1.8.1.5
-
-  - Fix NPMplus bouncer key - use shared entropy derivation
-
-  ## v1.8.1.4
-
-  - Fix NPMplus integration - bind ports to all interfaces (0.0.0.0)
-  - Allows Docker containers to access LAPI/AppSec via gateway IP
-  - Required for NPMplus container to connect to CrowdSec
-  - Still secure: LAPI requires authentication via bouncer key
-
-  ## v1.8.1.3
-
-  - Add NPMplus integration support
-  - Expose LAPI (port 8080) and AppSec (port 7422) on localhost for NPMplus
-  - Auto-mount NPMplus logs for analysis (read-only)
-  - Add NPMplus log acquisition configuration
-
-  ## v1.8.1.2
-
-  - Mark app as under construction while bouncer/enforcement chain is verified
-
-  ## v1.8.1.1
-
-  - Initial release
+  - Automated update: crowdsec 1.8.2, crowdsec-web-ui 2026.10.11
 
 
   --- crowdsecurity/crowdsec upstream release notes (auto-updated) ---
 
 
-  crowdsecurity/crowdsec v1.8.1
+  crowdsecurity/crowdsec v1.8.2
 
-    This release fixes a false positive in the bot detection feature for Brave Browser with shields enabled.
+    # Version 1.8.2
 
-    Changes
+    * Brings [custom JS fingerprinting capabilities](https://docs.crowdsec.net/docs/next/appsec/bot_detection/custom_js/) to the bot detection feature, allowing both users and us to distribute detection rules directly via the hub.
+    * Brings [rate limiting feature](https://docs.crowdsec.net/docs/next/appsec/rate_limiting/) to the WAF.
+    * Brings performance improvements to the Security Engine, optimizing both memory copy behaviors and relying on static analysis to avoid processing unnecessary regular expressions.
+    * Brings performance improvements to the WAF, optimizing out-of-band rules processing.
+    * Brings performance improvements to the Bot Detection, optimizing memory usage.
+
+    New Features & Major improvements
+
+    * [WAF] Add RateLimiting feature (#4721) @blotus
+    * [bot-detection] Add custom JS fingerprinting capabilities (#4657) @buixor
+    * [bot-detection] Add cscli bot subcommand (#4666) @blotus
+    * [WAF] Improve out-of-band rules performances (#4722) @blotus
+    * [Security Engine] Run postoverflows in a separate goroutine to avoid blocking on slow enrichments (#4672) @blotus
+    * [bot-detection] Improve memory usage (#4674) @blotus
+    * [Security Engine] Various performance improvements to regular expression processing (#4736) (#4731) (#4729) @blotus @buixor
 
     Improvements
 
-    * add HasValidChallengeCookie() helper (#4648) @blotus
+    * Add `cs_features` metric (#4770) @blotus
+    * bot detection: add an option to set SameSite=None + Partitioned flag on cookie (#4764) @blotus
+    * exprhelpers: add GetDecisionsSinceCountByScenario (#4756) @tommy-ng0
+    * lapi: optionally limit concurrent decision stream requests (#4747) @tommy-ng0
+    * exprhelpers: LookupHost goes through the DNS cache (#4741) @twiesing
+    * metrics: add CAPI last pull timestamp and error counter (#4749) @NazarkinRoman
+    * prometheus: add kind label to cs_alerts (#4742) @blotus
+    * lapi: make decisions stream page size configurable (#4733) @tommy-ng0
+    * Fix ValidateChallengeResponse (#4737) @buixor
+    * bot-detection: add new FlagSubmission() helper (#4727) @blotus
+    * appsec: add an optional category to the request score (#4715) @buixor
+    * apiserver: reload the TLS server certificate when its files change (#4709) @ohartwig
+    * fix image link (#4702) @buixor
+    * waf: add SkipProcessing() helper (#4667) @blotus
+    * [bot-detection] drop the URI from the cookie (#4656) @buixor
 
     Bug Fixes
 
-    *  lapi: return an empty slice instead of null when querying alerts (#4653) @blotus
-    * challenge: tolerate strings instead of struct in FP payload (#4655) @blotus
+    * acquisition/file: don't send half-written lines, or skip the lines after them (#4678) @n1koo, @blotus, @claude
+    * fix(cscli): display human-readable timestamps in local time (#4759) @sep2
 
-    Geolite2 notice
-
-    This product includes GeoLite2 data created by MaxMind, available from <a href="https://www.maxmind.com">https://www.maxmind.com</a>.
-
-    Installation
-
-    Take a look at the [installation instructions](https://doc.crowdsec.net/docs/getting_started/install_crowdsec).
+    … (truncated) Full release notes: https://github.com/crowdsecurity/crowdsec/releases/tag/v1.8.2
 
 
   See the full release history: https://github.com/crowdsecurity/crowdsec/releases
