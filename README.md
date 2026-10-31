@@ -69,8 +69,8 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
     <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-netbootxyz/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="https://github.com/saltedlolly/umbrel-app-store#netbootxyz">netboot.xyz</a></td>
-      <td nowrap id="saltedlolly-netbootxyz-version"><code>0.7.6-nbxyz26</code></td>
-      <td nowrap id="saltedlolly-netbootxyz-date">2026-10-20</td>
+      <td nowrap id="saltedlolly-netbootxyz-version"><code>0.7.6-nbxyz27</code></td>
+      <td nowrap id="saltedlolly-netbootxyz-date">2026-10-31</td>
       <td>Network-boot a menu of OS installers and live images to any machine on your LAN</td>
     </tr>
     <tr>
