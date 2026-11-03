@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-kubo
 category: files
 name: Kubo IPFS
-version: "v0.43.1.8"
+version: "v0.43.1.9"
 tagline: Run a full IPFS node with the official WebUI for peers, pins, and files
 description: >-
   Kubo is the reference implementation of IPFS (InterPlanetary File System) - a peer-to-peer network for storing and sharing content-addressed data. This app runs a full Kubo node with its official web interface for managing peers, pinning and browsing content, and monitoring bandwidth and repository usage.
@@ -19,6 +19,10 @@ description: >-
 
   The peer-to-peer (swarm) port is published normally so this node can find and be found by other IPFS peers. The public Gateway (port 8395) is also exposed, so anyone who reaches it can fetch content through this node - a deliberate tradeoff for being able to actually use IPFS links, not an oversight.
 releaseNotes: >-
+  ## v0.43.1.9
+
+  - Kubo IPFS is out of testing: the under construction notice is removed. The README now documents the Gateway on port 8395.
+
   ## v0.43.1.8
 
   - The app is now called Kubo IPFS on the Umbrel dashboard
