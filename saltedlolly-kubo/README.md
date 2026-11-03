@@ -16,10 +16,11 @@ This package was built from scratch rather than derived from any existing commun
 | --- | ---: | --- |
 | WebUI + RPC API | `5001` | Umbrel SSO only (`app_proxy`) |
 | Swarm (P2P) | `4001` (tcp+udp) | Published directly |
+| Gateway | `8395` (container `8080`) | Published directly, plain HTTP, open to anyone who can reach it |
 
 The API port is **never published to the host at all** - `app_proxy` reaches it over the internal Docker network. Upstream's own docs call this port "admin-level access to your IPFS node" and recommend binding it to localhost only; not publishing it at all is stricter than that, with Umbrel SSO as the auth gate.
 
-The Gateway (`8080`, serves IPFS content over plain HTTP to anyone who can reach it) and swarm-over-websockets (`8081`) are **not exposed** in this initial release - the Gateway in particular would let anyone who reaches it pull arbitrary content through this node's bandwidth, which shouldn't be on by default.
+The Gateway serves IPFS content over plain HTTP at `http://umbrel.local:8395/ipfs/<CID>`. It is published on host port `8395` rather than `8080` to avoid clashing with other apps. It has no login: anyone who can reach that port can fetch content through this node's bandwidth. On a home network that means only your own devices, unless you forward the port on your router (don't, unless you mean to run a public gateway). Swarm-over-websockets (`8081`) is not exposed.
 
 ## Persistence
 

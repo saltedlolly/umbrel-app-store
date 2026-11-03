@@ -5,9 +5,6 @@ name: Kubo IPFS
 version: "v0.43.1.8"
 tagline: Run a full IPFS node with the official WebUI for peers, pins, and files
 description: >-
-  ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
-
-
   Kubo is the reference implementation of IPFS (InterPlanetary File System) - a peer-to-peer network for storing and sharing content-addressed data. This app runs a full Kubo node with its official web interface for managing peers, pinning and browsing content, and monitoring bandwidth and repository usage.
 
 

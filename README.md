@@ -244,6 +244,7 @@ A self-hosted [Kubo](https://github.com/ipfs/kubo) node - the reference implemen
 |---------------| ------------ | --------------------------------------------------------- | ------------- |
 | WebUI + API   | `5001`       | [https://umbrel.local:5001](https://umbrel.local:5001/)    | ✅            |
 | Swarm (P2P)   | `4001`       | —                                                          |               |
+| Gateway       | `8395`       | [http://umbrel.local:8395](http://umbrel.local:8395/ipfs/) |               |
 
 ---
 
