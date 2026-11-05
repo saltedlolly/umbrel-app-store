@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: saltedlolly-readmeabook
 category: media
 name: ReadMeABook
-version: "v1.2.12"
+version: "v1.2.13"
 tagline: Request and automatically download audiobooks
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -35,58 +35,58 @@ description: >-
 
   Icon artwork is sourced from https://github.com/selfhst/icons and used under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). It has been adapted with additional internal spacing for UmbrelOS. Application names and logos remain the property of their respective owners.
 releaseNotes: >-
-  ## v1.2.12
+  ## v1.2.13
 
-  - Automated update: bump ReadMeABook to v1.2.12
+  - Automated update: bump ReadMeABook to v1.2.13
 
 
   --- kikootwo/ReadMeABook upstream release notes (auto-updated) ---
 
 
-  kikootwo/ReadMeABook v1.2.12
+  kikootwo/ReadMeABook v1.2.13
 
-    🎉  Release v1.2.12
+    🎉  Release v1.2.13
 
 
-    > **If you might roll back to v1.2.11:** this release adds two database columns. Before downgrading, turn off "Check Watched Lists" in Admin > Jobs and remove or switch any "New releases only" watches, or the older build requests their whole backlog.
+    > **If you use "Auto-tag audio files with metadata" (on by default):** M4B files with an embedded cover imported since v1.2.4 may have broken chapters. This release fixes tagging for new imports but doesn't repair books already in your library. To check a file, `ffprobe -v error -select_streams d -show_entries stream=nb_frames -of csv=p=0 book.m4b` should print the book's chapter count. To repair one, delete the book's audio file from the library, then import the original again with Manual Import, or request the book again once RMAB shows it as removed.
+
+    > **Cancelling a request now removes its download.** A partly downloaded torrent is removed from your client right away, even on an indexer with a seed time, so a strict private tracker may count it. A finished download stays to seed until its seed time is met. Scripts that called `DELETE /api/requests/:id` should cancel with `POST /api/requests/:id/cancel`; the old route is gone.
 
     **Features:**
-    - ✅ watch an author or series for new releases only
-       - https://github.com/kikootwo/ReadMeABook/issues/302
-       - https://github.com/kikootwo/ReadMeABook/pull/451
-       - watching now asks: Entire catalog (the default, as before) or New releases only, which requests books released from today on (preorders count) and skips undated books. Each watch can be changed later from the Profile cards.
-       - adding one watch now checks only that author or series, not every watch
-    - ✅ the automatic ebook fetch skips a book whose folder already holds an ebook
-       - https://github.com/kikootwo/ReadMeABook/issues/313
-       - https://github.com/kikootwo/ReadMeABook/pull/496
-       - covers the auto-grab after an audiobook import and the nightly missing-ebooks job. A lone PDF booklet, or a folder that another book also uses, does not count. Manual Fetch Ebook, Interactive Search and Manual Import are unchanged.
-       - this is one part of #313; importing ebook files already on your system is still open there
-
-    **Fixes:**
-    - ✅ automatic search stops grabbing the wrong book
-       - https://github.com/kikootwo/ReadMeABook/issues/223
-       - https://github.com/kikootwo/ReadMeABook/pull/459
-       - stricter title and author matching: numbers in the title must match, author names match as whole words, and one-word titles are checked more strictly. Subtitles after a colon and author initials match better. Interactive search still lists every result.
-    - ✅ automatic search skips a release numbered as another book of the same series
-       - https://github.com/kikootwo/ReadMeABook/issues/330
-       - https://github.com/kikootwo/ReadMeABook/pull/482
-       - https://github.com/kikootwo/ReadMeABook/pull/307
-       - Thanks https://github.com/connor2k !
-       - uses the book's series position from Audible, unless the release names the book by its own title. Interactive search still lists everything.
-    - ✅ automatic search skips releases far too small for the book's runtime
-       - https://github.com/kikootwo/ReadMeABook/pull/479
-       - https://github.com/kikootwo/ReadMeABook/pull/311
-       - Thanks https://github.com/H0tChicken !
-       - such as one chapter file of a multi-file Usenet post. Interactive search still lists these.
-    - ✅ search and ranking handle titles with apostrophes
-       - https://github.com/kikootwo/ReadMeABook/issues/316
-       - https://github.com/kikootwo/ReadMeABook/pull/469
-       - https://github.com/kikootwo/ReadMeABook/pull/304
-       - Thanks https://github.com/connor2k !
+    - ✅ Audible sub-categories such as Horror can be picked for a home section
+       - https://github.com/kikootwo/ReadMeABook/issues/309
+       - https://github.com/kikootwo/ReadMeABook/pull/499
+       - the home page's Customize picker lists each category's sub-categories (such as Horror under Literature & Fiction) under their parent, with a filter. Categories already on your home page stay in the list, marked "Added".
+       - the nightly refresh updates at most 30 categories per run, oldest first, so with more than 30 each one is refreshed every few nights
+    - ✅ an admin setting hides other-language Audible editions from search, series and home rows
+       - https://github.com/kikootwo/ReadMeABook/issues/259
+       - https://github.com/kikootwo/ReadMeABook/pull/527
        - Thanks https://github.com/Eyji !
-       - Thanks https://github.com/thehaven !
+       - under the Audible region in Admin Settings > Library, off by default. It also applies to watched series, BookDate and shelf sync; books with no language listed are kept.
+    - ✅ Apprise can send each request's notifications to the user who made it
+       - https://github.com/kikootwo/ReadMeABook/issues/174
+       - https://github.com/kikootwo/ReadMeABook/pull/547
+       - in Config Key mode, put `{user}` in the Tag field (such as `user-{user}`) and list each user's URLs, such as a `mailto://` address, under their tag in your Apprise config. Names become lowercase with `-` for spaces and punctuation, so Jane Doe is `user-jane-doe`, and names that come out the same share a tag.
+       - events are chosen per backend: a second Apprise backend with the same Config Key and only Request Approved and Request Available tells each user about their own requests. A Tag without `{user}` is sent as before.
+    - ✅ cancelling a request stops its download and removes what it fetched
+       - https://github.com/kikootwo/ReadMeABook/issues/228
+       - https://github.com/kikootwo/ReadMeABook/pull/554
+       - Thanks https://github.com/ZillaGit104 !
+       - a partial torrent or usenet download is removed unless another request still uses it; a finished download stays to seed, and the seeding cleanup removes it once its seed time is met (see the note at the top)
+       - API tokens can cancel a request with `POST /api/requests/:id/cancel`
+    - ✅ `{primaryAuthor}` path template variable for the first author
+       - https://github.com/kikootwo/ReadMeABook/pull/501
+       - Thanks https://github.com/Westuss !
+       - the first entry of the author list (split on `,` `;` `&`), so co-written and translated books share their first author's folder. `{author}` and existing templates are unchanged.
+    - ✅ `{seriesPart:00}` and wider formats pad the series part in path templates
+       - https://github.com/kikootwo/ReadMeABook/issues/250
+       - https://github.com/kikootwo/ReadMeABook/pull/502
+       - `{seriesPart:00}`, `:000` and `:0000` pad a numeric part or a range (`1` becomes `01`, `1-3` becomes `01-03`) in folder and rename templates
+    - ✅ admin Request Management can be filtered to audiobook or ebook requests
+       - https://github.com/kikootwo/ReadMeABook/pull/537
+       - Thanks https://github.com/NichCodes !
 
-    … (truncated) Full release notes: https://github.com/kikootwo/ReadMeABook/releases/tag/v1.2.12
+    … (truncated) Full release notes: https://github.com/kikootwo/ReadMeABook/releases/tag/v1.2.13
 
 
   See the full release history: https://github.com/kikootwo/ReadMeABook/releases

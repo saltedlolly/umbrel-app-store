@@ -11,7 +11,7 @@ services:
       PROXY_AUTH_ADD: "false"
 
   server:
-    image: ghcr.io/kikootwo/readmeabook:1.2.12@sha256:8e8eb2212f445ad2c720de7c7806dbf9ec6b2946d377aefba4326b0dd6bd2e2a
+    image: ghcr.io/kikootwo/readmeabook:1.2.13@sha256:b789e19d8cb888e572094c1b790cf4f57c2249a4a7fd1fab8f55633c79f196cd
     # Persist PostgreSQL's parent directory so its required empty data child
     # can be created at first boot without colliding with Git's placeholder.
     entrypoint: ["/bin/sh", "-c", "mkdir -p /var/lib/postgresql/data /downloads/audiobooks && chown 1000:1000 /downloads/audiobooks && exec /entrypoint.sh \"$$@\"", "--"]
