@@ -55,7 +55,7 @@ test("several accounts sync through shared relay connections", async t => {
   };
 
   await t.test("an existing single-account store keeps syncing", () => {
-    assert.deepEqual(manager.getConnectionStatus().identifiers, [{ identifier: aliceNpub, firstEventReceived: false }]);
+    assert.deepEqual(manager.getConnectionStatus().identifiers, [{ identifier: aliceNpub, pubkey: alicePub, firstEventReceived: false }]);
     assert.ok(Object.keys(manager.relays).length > 0);
     const socket = open(Object.keys(manager.relays)[0]);
     assert.deepEqual(socket.sent.at(-1), ["REQ", "backup", { authors: [alicePub] }]);
@@ -82,8 +82,8 @@ test("several accounts sync through shared relay connections", async t => {
     relay.options.onMessage(["EVENT", "backup", signed(bob, 1, "from bob")]);
     assert.equal(sent().length, count + 1);
     assert.deepEqual(manager.getConnectionStatus().identifiers, [
-      { identifier: aliceNpub, firstEventReceived: false },
-      { identifier: bobNpub, firstEventReceived: true },
+      { identifier: aliceNpub, pubkey: alicePub, firstEventReceived: false },
+      { identifier: bobNpub, pubkey: bobPub, firstEventReceived: true },
     ]);
     relay.options.onMessage(["EVENT", "backup", signed(alice, 1, "from alice")]);
     relay.options.onMessage(["EVENT", "backup", signed(generatePrivateKey(), 1, "stranger")]);
@@ -114,7 +114,7 @@ test("several accounts sync through shared relay connections", async t => {
     const count = sent().length;
     aliceRelay.options.onMessage(["EVENT", "backup", signed(bob, 1, "late bob event")]);
     assert.equal(sent().length, count);
-    assert.deepEqual(manager.getConnectionStatus().identifiers, [{ identifier: aliceNpub, firstEventReceived: true }]);
+    assert.deepEqual(manager.getConnectionStatus().identifiers, [{ identifier: aliceNpub, pubkey: alicePub, firstEventReceived: true }]);
   });
 
   await t.test("removing the last account stops syncing and clears the store", async () => {

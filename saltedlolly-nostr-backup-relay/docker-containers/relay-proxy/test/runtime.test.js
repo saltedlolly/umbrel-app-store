@@ -134,6 +134,6 @@ test("identifier storage and relay synchronization work on the supported Node ru
     await waitFor(() => published.some(received => received.id === event.id));
     assert.deepEqual(published[0], event);
     assert.equal(manager.getConnectionStatus().firstEventReceived, true);
-    assert.deepEqual(manager.getConnectionStatus().identifiers, [{ identifier: "test", firstEventReceived: true }]);
+    assert.deepEqual(manager.getConnectionStatus().identifiers, [{ identifier: "test", pubkey, firstEventReceived: true }]);
   });
 });

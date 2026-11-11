@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function CopyText({ value }) {
+export default function CopyText({ value, display }) {
   const [isCopied, setIsCopied] = useState(false);
 
   async function copyText() {
@@ -24,9 +24,14 @@ export default function CopyText({ value }) {
   return (
     <div className="flex items-end border-dashed border-b border-slate-900 dark:border-slate-500">
       <span className="text-slate-900 dark:text-slate-100 font-mono text-sm">
-        {value}
+        {display || value}
       </span>
-      <button onClick={copyText}>
+      <button
+        type="button"
+        onClick={copyText}
+        title="Copy"
+        aria-label={`Copy ${value}`}
+      >
         {isCopied ? (
           <svg
             className="ml-2 mb-[0.3rem] fill-slate-900 dark:fill-slate-100 w-3"

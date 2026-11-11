@@ -1,12 +1,15 @@
 import { motion, LayoutGroup } from "framer-motion";
 
 import moment from "moment";
+import { actionDetail, parseJson, shortNpub } from "../nostr";
 
 export default function LatestActions({
   loading,
   events,
   eventsToRenderLimit,
   supportedEventKinds,
+  nameFor = shortNpub,
+  emptyMessage = "Your Nostr activity will show up here after you have connected your client.",
 }) {
   let eventsToRender = [];
   // Filter, sort and slice the events array to get the eventsToRender array
@@ -57,8 +60,17 @@ export default function LatestActions({
     return (
       <ul className="overflow-y-auto overflow-x-hidden max-h-[28.8rem] pt-2 !scrollbar-thin !scrollbar-w-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10 mx-[0.15rem]">
         <LayoutGroup>
-          {eventsToRender.map(({ id, kind, created_at, content }, index) => {
+          {eventsToRender.map((event, index) => {
+            const { id, kind, created_at, content } = event;
             const eventKind = supportedEventKinds[kind];
+            const shownContent = eventKind.showContent
+              ? eventKind.contentKey
+                ? parseJson(content)?.[eventKind.contentKey]
+                : content
+              : "";
+            const detail = eventKind.showContent
+              ? ""
+              : actionDetail(event, nameFor);
 
             return (
               <motion.li
@@ -90,14 +102,24 @@ export default function LatestActions({
                       {getFormattedDate(created_at)}
                     </span>
                   </div>
-                  {eventKind.showContent ? (
+                  {typeof shownContent === "string" && shownContent ? (
                     <div className="bg-slate-50 dark:bg-white/5 p-2 rounded shadow-sm ring-1 ring-slate-900/5 dark:ring-slate-700">
-                      <p className="text-slate-700 dark:text-slate-300 text-sm text-ellipsis overflow-hidden">
-                        {eventKind.contentKey
-                          ? JSON.parse(content)[eventKind.contentKey]
-                          : content}
+                      <p className="text-slate-700 dark:text-slate-300 text-sm text-ellipsis overflow-hidden break-words">
+                        {shownContent}
                       </p>
                     </div>
+                  ) : null}
+                  {detail ? (
+                    <p
+                      className="-mt-1 mb-1 text-slate-500 dark:text-slate-400 text-xs break-words overflow-hidden"
+                      style={{
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                      }}
+                    >
+                      {detail}
+                    </p>
                   ) : null}
                 </div>
                 <span
@@ -117,8 +139,7 @@ export default function LatestActions({
 
   return (
     <p className="px-10 py-5 text-slate-700 dark:text-slate-300 leading-relaxed mb-3">
-      Your Nostr activity will show up here after you have connected your
-      client.
+      {emptyMessage}
     </p>
   );
 }

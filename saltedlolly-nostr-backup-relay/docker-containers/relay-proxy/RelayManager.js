@@ -222,6 +222,8 @@ export default class RelayManager {
     const relayStates = Object.values(this.relays).map(relay => ({ url: relay.url, readyState: relay.status }));
     const identifiers = this.savedIdentifiers.map(identifier => ({
       identifier,
+      // null until the account's NIP-05 lookup has succeeded
+      pubkey: this.accounts[identifier]?.pubkey ?? null,
       firstEventReceived: this.accounts[identifier]?.firstEventReceived ?? false,
     }));
     return { identifiers, status: this.status, firstEventReceived: this.firstEventReceived, relayStates };

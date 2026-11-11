@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import axios from "axios";
 import { subscribeToRelay } from "./subscribeToRelay";
 import { usePopper } from "react-popper";
 
@@ -12,6 +13,8 @@ import ConnectClient from "./components/ConnectClient";
 import TotalBackups from "./components/TotalBackups";
 import LatestActions from "./components/LatestActions";
 import PublicRelaysModal from "./components/PublicRelaysModal";
+import AccountHeading from "./components/AccountHeading";
+import { accountLabel, latestProfiles, npubEncode, shortNpub } from "./nostr";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -19,6 +22,7 @@ import {
   PORT,
   WEB_SOCKET_RELAY_URL, // Websocket URL of the private relay
   HTTP_RELAY_URL, // http URL of the private relay
+  RELAY_PROXY_URL,
 } from "./constants/constants";
 
 // Event kinds that we want to render in the UI
@@ -127,8 +131,59 @@ const supportedEventKinds = {
   },
 };
 
-// Total events we want to render in the activity list
+// Total events we want to render in each activity list
 const eventsToRenderLimit = 300;
+// Events fetched for the whole relay, and again for each synced account, so one
+// busy account (or client) can't push the others out of the dashboard
+const eventsPerSubscription = 3000;
+
+// The dashboard keeps the fields it shows: the kind, author, time, content and tags
+function toStoredEvent(event) {
+  if (
+    !event ||
+    typeof event.id !== "string" ||
+    typeof event.pubkey !== "string" ||
+    !Number.isInteger(event.created_at) ||
+    !Number.isInteger(event.kind) ||
+    typeof event.content !== "string"
+  )
+    return null;
+  const { id, pubkey, kind, created_at, content } = event;
+  const tags = Array.isArray(event.tags) ? event.tags : [];
+  return { id, pubkey, kind, created_at, content, tags };
+}
+
+function sameAccounts(a, b) {
+  return (
+    a !== null &&
+    a.length === b.length &&
+    a.every(
+      (account, index) =>
+        account.identifier === b[index].identifier &&
+        account.pubkey === b[index].pubkey,
+    )
+  );
+}
+
+function HelpIcon() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      width="20"
+      height="20"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="10" cy="10" r="8" />
+      <path d="M7.6 7.7a2.5 2.5 0 0 1 4.8.9c0 1.6-2.4 2.2-2.4 3.6" />
+      <circle cx="10" cy="14.6" r="0.4" fill="currentColor" />
+    </svg>
+  );
+}
 
 export default function App() {
   // State to store events from websocket
@@ -139,6 +194,10 @@ export default function App() {
   const [hasFetchedAllEvents, setHasFetchedAllEvents] = useState(false);
   // State to store the relay info as per NIP-11: https://github.com/nostr-protocol/nips/blob/master/11.md
   const [relayInformationDocument, setRelayInformationDocument] = useState({});
+  // The accounts being synced: [{ identifier, pubkey }], or null until loaded
+  const [accounts, setAccounts] = useState(null);
+  // Whether the Get started panel was opened with the help button
+  const [showHelp, setShowHelp] = useState(false);
   // State to track the public relays modal
   const [showModal, setShowModal] = useState(false);
   const [isPreventModalClose, setIsPreventModalClose] = useState(false);
@@ -164,16 +223,50 @@ export default function App() {
     },
   );
   const updatePopper = useRef(update);
+  const socketRef = useRef(null);
+  // Incoming events are collected here and added to the state a few times a
+  // second, rather than re-sorting the whole list for every event
+  const pendingEvents = useRef(new Map());
+  const flushTimer = useRef(null);
+
+  const pubkeys = (accounts || [])
+    .map((account) => account.pubkey)
+    .filter(Boolean);
+  const pubkeysKey = pubkeys.join(",");
 
   useEffect(() => {
     const controller = new AbortController();
     const subscriptionID = "dashboard";
+
+    function flush() {
+      flushTimer.current = null;
+      const incoming = [...pendingEvents.current.values()];
+      pendingEvents.current.clear();
+      if (!incoming.length) return;
+      setEvents((previous) => {
+        const known = new Set(previous.map((event) => event.id));
+        const added = incoming.filter((event) => !known.has(event.id));
+        if (!added.length) return previous;
+        return [...added, ...previous].sort(
+          (a, b) => b.created_at - a.created_at,
+        );
+      });
+    }
+
     const disconnect = subscribeToRelay(WEB_SOCKET_RELAY_URL, {
       onOpen: (socket) => {
+        socketRef.current = socket;
         setIsConnected(true);
         setHasFetchedAllEvents(false);
+        pendingEvents.current.clear();
         setEvents([]);
-        socket.send(JSON.stringify(["REQ", subscriptionID, { limit: 3000 }]));
+        socket.send(
+          JSON.stringify([
+            "REQ",
+            subscriptionID,
+            { limit: eventsPerSubscription },
+          ]),
+        );
         fetch(HTTP_RELAY_URL, {
           headers: { Accept: "application/nostr+json" },
           signal: controller.signal,
@@ -187,36 +280,80 @@ export default function App() {
           });
       },
       onMessage: (data) => {
-        if (data[1] !== subscriptionID) return;
+        if (data[1] !== subscriptionID && data[1] !== "accounts") return;
         if (data[0] === "EOSE") {
-          setHasFetchedAllEvents(true);
+          if (data[1] === subscriptionID) {
+            flush();
+            setHasFetchedAllEvents(true);
+          }
         } else if (data[0] === "EVENT") {
-          const event = data[2];
-          if (
-            !event ||
-            typeof event.id !== "string" ||
-            !Number.isInteger(event.created_at) ||
-            !Number.isInteger(event.kind) ||
-            typeof event.content !== "string"
-          )
-            return;
-          const { id, kind, created_at, content } = event;
-          setEvents((previous) =>
-            previous.some((item) => item.id === id)
-              ? previous
-              : [{ id, kind, created_at, content }, ...previous]
-                  .sort((a, b) => b.created_at - a.created_at)
-                  .slice(0, 3000),
-          );
+          const event = toStoredEvent(data[2]);
+          if (!event) return;
+          pendingEvents.current.set(event.id, event);
+          if (!flushTimer.current) flushTimer.current = setTimeout(flush, 250);
         }
       },
-      onClose: () => setIsConnected(false),
+      onClose: () => {
+        socketRef.current = null;
+        setIsConnected(false);
+      },
     });
     return () => {
       controller.abort();
+      clearTimeout(flushTimer.current);
       disconnect();
     };
   }, []);
+
+  // Keep the list of synced accounts up to date (they can be added or removed
+  // in the Sync from public relays panel)
+  useEffect(() => {
+    let stopped = false;
+    async function loadAccounts() {
+      try {
+        const { data } = await axios.get(`${RELAY_PROXY_URL}/connectionStatus`);
+        if (stopped || !Array.isArray(data?.identifiers)) return;
+        const loaded = data.identifiers.map(({ identifier, pubkey }) => ({
+          identifier,
+          pubkey: pubkey || null,
+        }));
+        setAccounts((previous) =>
+          sameAccounts(previous, loaded) ? previous : loaded,
+        );
+      } catch {
+        // The relay proxy may be starting; try again on the next poll
+      }
+    }
+    loadAccounts();
+    const timer = setInterval(loadAccounts, 5000);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+    };
+  }, []);
+
+  // Fetch each account's own recent events and every account's profile. Sending
+  // REQ again with the same id replaces the previous filters (NIP-01).
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!isConnected || !socket) return;
+    const keys = pubkeysKey ? pubkeysKey.split(",") : [];
+    if (keys.length === 0) {
+      socket.send(JSON.stringify(["CLOSE", "accounts"]));
+      return;
+    }
+    socket.send(
+      JSON.stringify([
+        "REQ",
+        "accounts",
+        { kinds: [0], authors: keys },
+        ...keys.map((pubkey) => ({
+          authors: [pubkey],
+          limit: eventsPerSubscription,
+        })),
+      ]),
+    );
+  }, [isConnected, pubkeysKey]);
 
   // Update popper offset for the public relays modal when the window is resized
   useEffect(() => {
@@ -231,6 +368,52 @@ export default function App() {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+
+  const profiles = useMemo(() => latestProfiles(events), [events]);
+  const hasAccounts = pubkeys.length > 0;
+  const showGetStarted = accounts !== null && (!hasAccounts || showHelp);
+
+  // One column per synced account, then everything else saved to the relay
+  // (for example by a client connected straight to it)
+  const columns = useMemo(() => {
+    if (!hasAccounts) return [];
+    const synced = new Set(pubkeys);
+    const list = (accounts || [])
+      .filter((account) => account.pubkey)
+      .map((account) => {
+        const profile = profiles[account.pubkey];
+        return {
+          key: account.pubkey,
+          label: accountLabel(account, profile),
+          picture: profile?.picture || "",
+          npub: npubEncode(account.pubkey),
+          events: events.filter((event) => event.pubkey === account.pubkey),
+        };
+      });
+    const others = events.filter((event) => !synced.has(event.pubkey));
+    if (others.length)
+      list.push({
+        key: "other",
+        label: "Others",
+        other: true,
+        events: others,
+      });
+    return list;
+  }, [accounts, events, profiles, hasAccounts, pubkeysKey]);
+
+  // A name for someone else's pubkey: a synced account's name, or a short npub
+  const nameFor = (pubkey) => {
+    const account = (accounts || []).find((item) => item.pubkey === pubkey);
+    if (account) return accountLabel(account, profiles[pubkey]);
+    return profiles[pubkey]?.name || shortNpub(pubkey);
+  };
+
+  const headerButtonClass = (active) =>
+    `self-center p-3 m-1 rounded-md bg-white ring-1 ring-gray-900/5 dark:ring-white/10 hover:bg-[#CEC8F4] dark:hover:bg-[#264D96] ${
+      active
+        ? "bg-[#CEC8F4] dark:bg-[#264D96] ring-violet-400 dark:ring-white/30"
+        : "dark:bg-slate-900"
+    }`;
 
   return (
     <Layout>
@@ -248,16 +431,28 @@ export default function App() {
         <Header isConnected={isConnected}>
           <div className="flex">
             <button
+              type="button"
+              title="Get started"
+              aria-label="Get started"
+              aria-pressed={showGetStarted}
+              disabled={accounts !== null && !hasAccounts}
+              onClick={() => setShowHelp((previous) => !previous)}
+              className={`${headerButtonClass(
+                showGetStarted,
+              )} text-slate-700 dark:text-slate-200 disabled:cursor-default`}
+            >
+              <HelpIcon />
+            </button>
+            <button
+              type="button"
+              title="Sync from public relays"
+              aria-label="Sync from public relays"
               ref={setReferenceElement}
               onClick={(event) => {
                 event.stopPropagation();
                 setShowModal((prevState) => !prevState); // toggles the current state of showModal
               }}
-              className={`self-center p-3 m-1 rounded-md bg-white ring-1 ring-gray-900/5 dark:ring-white/10 hover:bg-[#CEC8F4] dark:hover:bg-[#264D96] ${
-                showModal
-                  ? "bg-[#CEC8F4] dark:bg-[#264D96] ring-violet-400 dark:ring-white/30"
-                  : "dark:bg-slate-900"
-              }`}
+              className={headerButtonClass(showModal)}
             >
               <div className="w-5 h-5 bg-relays-modal-icon-light-mode dark:bg-relays-modal-icon-dark-mode bg-no-repeat bg-center"></div>
             </button>
@@ -271,37 +466,87 @@ export default function App() {
         </Header>
 
         <main className="mb-10">
-          <div className="grid grid-cols-1 md:grid-cols-5 xl:grid-cols-3 gap-6 sm:gap-8">
-            <Card
-              className="order-last xl:order-first md:col-span-5 xl:col-span-1"
-              heading="Get started"
-            >
-              <ConnectClient relayPort={PORT} />
-            </Card>
+          {hasAccounts ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8">
+              <Card
+                className="lg:col-span-2 xl:col-span-2 min-w-0"
+                heading="Total actions"
+              >
+                <TotalBackups
+                  loading={!hasFetchedAllEvents}
+                  events={events}
+                  columns={columns}
+                  supportedEventKinds={supportedEventKinds}
+                />
+              </Card>
 
-            <Card
-              className="col-1 md:col-span-2 xl:col-span-1"
-              heading="Total actions"
-            >
-              <TotalBackups
-                loading={!hasFetchedAllEvents}
-                events={events}
-                supportedEventKinds={supportedEventKinds}
-              />
-            </Card>
+              {showGetStarted && (
+                <Card
+                  className="lg:col-span-2 xl:col-span-1"
+                  heading="Get started"
+                >
+                  <ConnectClient relayPort={PORT} />
+                </Card>
+              )}
 
-            <Card
-              className="col-1 md:col-span-3 xl:col-span-1"
-              heading="Latest actions"
-            >
-              <LatestActions
-                loading={!hasFetchedAllEvents}
-                events={events}
-                eventsToRenderLimit={eventsToRenderLimit}
-                supportedEventKinds={supportedEventKinds}
-              />
-            </Card>
-          </div>
+              {columns.map((column) => (
+                <Card
+                  key={column.key}
+                  className="min-w-0"
+                  heading={<AccountHeading column={column} />}
+                >
+                  <LatestActions
+                    loading={!hasFetchedAllEvents}
+                    events={column.events}
+                    eventsToRenderLimit={eventsToRenderLimit}
+                    supportedEventKinds={supportedEventKinds}
+                    nameFor={nameFor}
+                    emptyMessage={
+                      column.other
+                        ? "Nothing else has been saved to your relay yet."
+                        : "This account's activity will show up here once it has been backed up."
+                    }
+                  />
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-5 xl:grid-cols-3 gap-6 sm:gap-8">
+              {showGetStarted && (
+                <Card
+                  className="order-last xl:order-first md:col-span-5 xl:col-span-1"
+                  heading="Get started"
+                >
+                  <ConnectClient relayPort={PORT} />
+                </Card>
+              )}
+
+              <Card
+                className="col-1 md:col-span-2 xl:col-span-1"
+                heading="Total actions"
+              >
+                <TotalBackups
+                  loading={!hasFetchedAllEvents}
+                  events={events}
+                  columns={[]}
+                  supportedEventKinds={supportedEventKinds}
+                />
+              </Card>
+
+              <Card
+                className="col-1 md:col-span-3 xl:col-span-1"
+                heading="Latest actions"
+              >
+                <LatestActions
+                  loading={!hasFetchedAllEvents}
+                  events={events}
+                  eventsToRenderLimit={eventsToRenderLimit}
+                  supportedEventKinds={supportedEventKinds}
+                  nameFor={nameFor}
+                />
+              </Card>
+            </div>
+          )}
         </main>
 
         {showModal && (

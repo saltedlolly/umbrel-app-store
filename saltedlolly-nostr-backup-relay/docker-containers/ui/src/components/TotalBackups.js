@@ -6,18 +6,28 @@ import {
   LayoutGroup,
 } from "framer-motion";
 import { useEffect } from "react";
+import Avatar from "./Avatar";
 
-export default function TotalBackups({ loading, events, supportedEventKinds }) {
+// columns: [{ key, label, picture, other, events }], one per synced account plus
+// "Other". With none, this is the original single list.
+export default function TotalBackups({
+  loading,
+  events,
+  columns = [],
+  supportedEventKinds,
+}) {
   let eventsBreakdown = [];
   // Construce the breakdown of event kinds and their total occurences in
   // in the events array and sort from highest total to lowest. Unsupported
   // event kinds are added in the "other" kind
   // We run this after loading to not cause unnecessary compute while the
   // relay is sending the initial batch of events
+  const kindOf = (event) =>
+    event.kind in supportedEventKinds ? event.kind : "other";
   if (!loading) {
     const counts = {};
     events.forEach((event) => {
-      const kind = event.kind in supportedEventKinds ? event.kind : "other";
+      const kind = kindOf(event);
       if (!counts[kind]) {
         counts[kind] = { kind: kind, total: 0 };
       }
@@ -82,6 +92,108 @@ export default function TotalBackups({ loading, events, supportedEventKinds }) {
             );
           })}
         </ul>
+      </div>
+    );
+  }
+
+  if (columns.length) {
+    const columnCounts = columns.map((column) => {
+      const counts = {};
+      column.events.forEach((event) => {
+        const kind = kindOf(event);
+        counts[kind] = (counts[kind] || 0) + 1;
+      });
+      return counts;
+    });
+    // The first column is the overall breakdown; one narrow column per account
+    const gridTemplateColumns = `minmax(11rem, 1.6fr) repeat(${columns.length}, minmax(5.5rem, 1fr))`;
+    const minWidth = `${11 + columns.length * 6.5}rem`;
+    return (
+      <div className="overflow-x-auto !scrollbar-thin !scrollbar-h-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10">
+        <div style={{ minWidth }}>
+          <div
+            className="grid gap-x-4 items-end px-10 md:px-6 lg:px-10 mt-2"
+            style={{ gridTemplateColumns }}
+          >
+            <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+              <motion.span className="text-8xl md:text-7xl lg:text-8xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500">
+                {totalEvents > 999 ? "999+" : totalEventsAnimatedCountRounded}
+              </motion.span>
+            </p>
+            {columns.map((column) => (
+              <div
+                key={column.key}
+                className="flex flex-col items-center pb-3 min-w-0"
+                title={column.label}
+              >
+                <Avatar
+                  picture={column.picture}
+                  label={column.label}
+                  other={column.other}
+                  size="w-10 h-10"
+                />
+                <span className="mt-2 text-3xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500">
+                  {column.events.length > 999 ? "999+" : column.events.length}
+                </span>
+                <span className="mt-1 w-full truncate text-center text-xs text-slate-500 dark:text-slate-400">
+                  {column.label}
+                </span>
+              </div>
+            ))}
+          </div>
+          {totalEvents ? (
+            <hr className="opacity-90 mx-10 px-6 mt-3 mb-1 dark:opacity-10" />
+          ) : null}
+          <ul className="overflow-y-auto max-h-[19.2rem] pt-5 px-10 md:px-6 lg:px-10 !scrollbar-thin !scrollbar-w-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10 mx-[0.15rem]">
+            <LayoutGroup>
+              {eventsBreakdown.map(({ kind, total }) => (
+                <motion.li
+                  initial={{ scale: 0.2, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  layout
+                  key={kind}
+                  className="grid gap-x-4 items-center pb-5"
+                  style={{ gridTemplateColumns }}
+                >
+                  <div className="flex min-w-0">
+                    <span className="flex flex-none items-center justify-center w-7 h-7 text-sm rounded-md bg-white shadow-sm ring-1 ring-slate-900/5 dark:bg-slate-700 dark:ring-0 dark:shadow-none dark:highlight-white/5">
+                      {supportedEventKinds[kind]["icon"]}
+                    </span>
+                    <div className="ml-2 w-full min-w-0 flex flex-col justify-between">
+                      <div className="flex justify-between gap-2">
+                        <span className="text-slate-700 dark:text-slate-300 text-sm truncate">
+                          {`${supportedEventKinds[kind]["name"]}${
+                            total > 1 ? "s" : ""
+                          }`}
+                        </span>
+                        <span className="text-slate-700 dark:text-slate-300 text-sm">
+                          {total}
+                        </span>
+                      </div>
+                      <motion.div
+                        animate={{ width: `${(total * 100) / totalEvents}%` }}
+                        className="h-1 rounded-full bg-gradient-to-r from-pink-500 to-violet-500"
+                      ></motion.div>
+                    </div>
+                  </div>
+                  {columnCounts.map((counts, index) => (
+                    <span
+                      key={columns[index].key}
+                      className={`text-center text-sm ${
+                        counts[kind]
+                          ? "text-slate-700 dark:text-slate-300"
+                          : "text-slate-300 dark:text-slate-600"
+                      }`}
+                    >
+                      {counts[kind] || 0}
+                    </span>
+                  ))}
+                </motion.li>
+              ))}
+            </LayoutGroup>
+          </ul>
+        </div>
       </div>
     );
   }
