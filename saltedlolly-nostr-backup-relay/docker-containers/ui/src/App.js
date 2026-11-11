@@ -579,7 +579,7 @@ export default function App() {
               <Card
                 className={`lg:col-span-2 ${
                   columns.length > 5 ? "xl:col-span-3" : "xl:col-span-2"
-                } min-w-0`}
+                } min-w-0 flex flex-col lg:min-h-[34.7rem]`}
               >
                 <TotalBackups
                   loading={!hasFetchedAllEvents}

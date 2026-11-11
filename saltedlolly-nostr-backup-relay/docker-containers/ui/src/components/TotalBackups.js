@@ -115,12 +115,12 @@ export default function TotalBackups({
       });
       return counts;
     });
-    const gridTemplateColumns = `minmax(9.5rem, 1.3fr) repeat(${columns.length}, minmax(4.75rem, 1fr))`;
-    const minWidth = `${9.5 + columns.length * 5.75}rem`;
+    const gridTemplateColumns = `minmax(11.5rem, 2fr) repeat(${columns.length}, minmax(4.75rem, 1fr))`;
+    const minWidth = `${11.5 + columns.length * 5.75}rem`;
     const big = columns.length <= 4 ? "text-5xl" : "text-4xl";
     return (
-      <div className="relative overflow-x-auto !scrollbar-thin !scrollbar-h-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10">
-        <div style={{ minWidth }}>
+      <div className="relative flex-1 min-h-0 flex flex-col overflow-x-auto !scrollbar-thin !scrollbar-h-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10">
+        <div style={{ minWidth }} className="flex-1 min-h-0 flex flex-col">
           <div
             className="grid gap-x-3 items-end px-10 md:px-6 lg:px-10"
             style={{ gridTemplateColumns }}
@@ -142,7 +142,7 @@ export default function TotalBackups({
                   size="w-11 h-11"
                 />
                 <span
-                  className={`mt-2 ${big} leading-none font-semibold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500`}
+                  className={`mt-4 ${big} leading-none font-semibold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500`}
                 >
                   {formatCount(column.events.length)}
                 </span>
@@ -152,7 +152,10 @@ export default function TotalBackups({
           {totalEvents ? (
             <hr className="opacity-90 mx-10 px-6 mt-5 mb-1 dark:opacity-10" />
           ) : null}
-          <ul className="overflow-y-auto max-h-[19.2rem] pt-5 px-10 md:px-6 lg:px-10 !scrollbar-thin !scrollbar-w-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10 mx-[0.15rem]">
+          {/* Side by side (lg and up) the list fills the panel, which is as
+              tall as its neighbours, and only scrolls when it has to; its own
+              height (h-0) doesn't make the panel taller */}
+          <ul className="overflow-y-auto max-h-[19.2rem] lg:max-h-[none] lg:h-0 lg:flex-1 pt-4 pb-3 px-10 md:px-6 lg:px-10 !scrollbar-thin !scrollbar-w-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10 mx-[0.15rem]">
             <LayoutGroup>
               {eventsBreakdown.map(({ kind }) => (
                 <motion.li
@@ -161,21 +164,21 @@ export default function TotalBackups({
                   exit={{ scale: 0, opacity: 0 }}
                   layout
                   key={kind}
-                  className="grid gap-x-3 items-center pb-4"
+                  className="grid gap-x-3 items-center py-2"
                   style={{ gridTemplateColumns }}
                 >
                   <div className="flex items-center min-w-0">
-                    <span className="flex flex-none items-center justify-center w-7 h-7 text-sm rounded-md bg-white shadow-sm ring-1 ring-slate-900/5 dark:bg-slate-700 dark:ring-0 dark:shadow-none dark:highlight-white/5">
+                    <span className="flex flex-none items-center justify-center w-8 h-8 text-base rounded-md bg-white shadow-sm ring-1 ring-slate-900/5 dark:bg-slate-700 dark:ring-0 dark:shadow-none dark:highlight-white/5">
                       {supportedEventKinds[kind]["icon"]}
                     </span>
-                    <span className="ml-2 text-slate-700 dark:text-slate-300 text-sm truncate">
+                    <span className="ml-3 text-slate-700 dark:text-slate-300 text-[0.95rem] truncate">
                       {`${supportedEventKinds[kind]["name"]}s`}
                     </span>
                   </div>
                   {columnCounts.map((counts, index) => (
                     <span
                       key={columns[index].key}
-                      className={`text-center text-sm ${
+                      className={`text-center text-[0.95rem] tabular-nums ${
                         counts[kind]
                           ? "text-slate-700 dark:text-slate-300"
                           : "text-slate-300 dark:text-slate-600"
