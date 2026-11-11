@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-tronbyt
 category: automation
 name: Tronbyt
-version: "v2.5.2"
+version: "v2.6.0"
 tagline: Self-hosted server for managing Tidbyt/Tronbyt smart displays without the cloud
 description: >-
   Tronbyt Server manages apps on Tidbyt/Tronbyt smart displays entirely on your own Umbrel, without depending on Tidbyt's cloud backend. It offers a web UI for browsing and configuring apps, generates firmware for flashing a Tidbyt into a Tronbyt, and keeps working even if Tidbyt's servers go offline.
@@ -17,17 +17,48 @@ description: >-
 
   - Supports Tidbyt Gen1/Gen2, Tronbyt S3/S3 Wide, MatrixPortal S3, and Raspberry Pi-driven LED matrix panels
 releaseNotes: >-
-  ## v2.5.2
+  ## v2.6.0
 
-  - Automated update: bump bundled tronbyt/server to v2.5.2
+  - Automated update: bump bundled tronbyt/server to v2.6.0
 
 
   --- tronbyt/server upstream release notes (auto-updated) ---
 
 
-  tronbyt/server v2.5.2
+  tronbyt/server v2.6.0
 
-    **Full Changelog**: https://github.com/tronbyt/server/compare/v2.5.1...v2.5.2
+    What's Changed
+    * Dockerfile golang update by @tavdog in https://github.com/tronbyt/server/pull/962
+    * Add admin toggle to disable Niblet Cloud without clearing the URL. by @tavdog in https://github.com/tronbyt/server/pull/963
+    * build(deps): bump github.com/quic-go/quic-go from 0.63.0 to 0.64.1 by @dependabot[bot] in https://github.com/tronbyt/server/pull/964
+    * feat: add notification sounds, Pixlet schema support, and programmatic triggers by @brombomb in https://github.com/tronbyt/server/pull/936
+    * Link update banner to README upgrading section by @tavdog in https://github.com/tronbyt/server/pull/967
+    * fix: treat an empty device timezone as unset everywhere by @febrile42 in https://github.com/tronbyt/server/pull/971
+    * Improve Niblet community stats opt-in UX by @tavdog in https://github.com/tronbyt/server/pull/968
+    * feat: sunrise and sunset schedules, and an independent dim end, for night and dim mode by @febrile42 in https://github.com/tronbyt/server/pull/970
+    * feat(chunker): standalone multi-chunk animation engine with WebSocket and HTTP streaming by @brombomb in https://github.com/tronbyt/server/pull/972
+    * Show today's sunrise/sunset on device edit page by @tavdog in https://github.com/tronbyt/server/pull/975
+    * Test render interval zero (render every rotation) by @tavdog in https://github.com/tronbyt/server/pull/976
+    * Improve firmware page OTA vs USB flash UX and onboarding flow. by @tavdog in https://github.com/tronbyt/server/pull/977
+    * build(deps): bump docker/login-action from 4.6.0 to 4.7.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/978
+    * feat(providers): pluggable external app provider interface and Screeny Studio adapter by @brombomb in https://github.com/tronbyt/server/pull/973
+    * add author to app edit screen. by @tavdog in https://github.com/tronbyt/server/pull/982
+    * feat(providers): add AWTRIX Light / AWTRIX 3 external app provider by @brombomb in https://github.com/tronbyt/server/pull/981
+    * build(deps): bump github.com/nicksnyder/go-i18n/v2 from 2.6.1 to 2.7.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/983
+    * build(deps): bump github.com/caarlos0/env/v11 from 11.4.1 to 11.4.2 by @dependabot[bot] in https://github.com/tronbyt/server/pull/984
+    * build(deps): bump github.com/quic-go/quic-go from 0.64.1 to 0.65.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/985
+    * docs: fix mermaid syntax error in SCREENY_SETUP.md by @brombomb in https://github.com/tronbyt/server/pull/986
+    * fix ota double updates by @tavdog in https://github.com/tronbyt/server/pull/989
+    * change cancel button behaviour by @tavdog in https://github.com/tronbyt/server/pull/990
+    * fix(ui): include server URL in app config API curl examples by @tavdog in https://github.com/tronbyt/server/pull/991
+    * Add apps.tronbyt.com info links and drop mark-broken dev UI. by @tavdog in https://github.com/tronbyt/server/pull/992
+    * fix(ws): drain stale ACKs before writing image to prevent premature sound playback by @brombomb in https://github.com/tronbyt/server/pull/993
+    * Add Waveshare S3 Wide device type for 128x64 boards. by @tavdog in https://github.com/tronbyt/server/pull/994
+
+    New Contributors
+    * @febrile42 made their first contribution in https://github.com/tronbyt/server/pull/971
+
+    **Full Changelog**: https://github.com/tronbyt/server/compare/v2.5.1...v2.6.0
 
 
   See the full release history: https://github.com/tronbyt/server/releases
