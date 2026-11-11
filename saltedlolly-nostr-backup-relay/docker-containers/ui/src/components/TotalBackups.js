@@ -115,17 +115,30 @@ export default function TotalBackups({
       });
       return counts;
     });
-    const gridTemplateColumns = `minmax(11.5rem, 2fr) repeat(${columns.length}, minmax(4.75rem, 1fr))`;
-    const minWidth = `${11.5 + columns.length * 5.75}rem`;
-    const big = columns.length <= 4 ? "text-5xl" : "text-4xl";
+    // Column sizes shrink on narrower screens (set as CSS variables by the
+    // classes on the outer element), so the table fits the panel without
+    // scrolling sideways unless there are too many accounts
+    const gridTemplateColumns = `minmax(var(--label-min), 2fr) repeat(${columns.length}, minmax(var(--column-min), 1fr))`;
+    const minWidth = `calc(var(--label-min) + ${columns.length} * (var(--column-min) + var(--column-gap)) + 2 * var(--side))`;
+    const big =
+      columns.length <= 4
+        ? "text-3xl sm:text-4xl lg:text-5xl"
+        : "text-2xl sm:text-4xl";
+    const side = "px-[var(--side)]";
     return (
-      <div className="relative flex-1 min-h-0 flex flex-col overflow-x-auto !scrollbar-thin !scrollbar-h-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10">
+      <div
+        className={`relative flex-1 min-h-0 flex flex-col overflow-x-auto
+          [--label-min:5rem] [--column-min:2rem] [--column-gap:0.375rem] [--side:1rem]
+          sm:[--label-min:8.5rem] sm:[--column-min:3.5rem] sm:[--column-gap:0.75rem] sm:[--side:2rem]
+          lg:[--label-min:11.5rem] lg:[--column-min:4.75rem] lg:[--side:2.5rem]
+          !scrollbar-thin !scrollbar-h-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10`}
+      >
         <div style={{ minWidth }} className="flex-1 min-h-0 flex flex-col">
           <div
-            className="grid gap-x-3 items-end px-10 md:px-6 lg:px-10"
+            className={`grid gap-x-[var(--column-gap)] items-end ${side}`}
             style={{ gridTemplateColumns }}
           >
-            <h2 className="pb-0.5 text-slate-700 dark:text-slate-50 text-xl font-semibold">
+            <h2 className="pb-0.5 text-slate-700 dark:text-slate-50 text-base sm:text-xl font-semibold leading-tight">
               Total actions
             </h2>
             {columns.map((column) => (
@@ -139,10 +152,10 @@ export default function TotalBackups({
                   label={column.label}
                   other={column.other}
                   title={column.other ? "Other accounts" : column.label}
-                  size="w-11 h-11"
+                  size="w-8 h-8 sm:w-11 sm:h-11"
                 />
                 <span
-                  className={`mt-4 ${big} leading-none font-semibold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500`}
+                  className={`mt-2.5 sm:mt-4 ${big} leading-none font-semibold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500`}
                 >
                   {formatCount(column.events.length)}
                 </span>
@@ -150,12 +163,15 @@ export default function TotalBackups({
             ))}
           </div>
           {totalEvents ? (
-            <hr className="opacity-90 mx-10 px-6 mt-5 mb-1 dark:opacity-10" />
+            <hr className="opacity-90 mx-[var(--side)] mt-4 sm:mt-5 mb-1 dark:opacity-10" />
           ) : null}
           {/* Side by side (lg and up) the list fills the panel, which is as
               tall as its neighbours, and only scrolls when it has to; its own
-              height (h-0) doesn't make the panel taller */}
-          <ul className="overflow-y-auto max-h-[19.2rem] lg:max-h-[none] lg:h-0 lg:flex-1 pt-4 pb-3 px-10 md:px-6 lg:px-10 !scrollbar-thin !scrollbar-w-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10 mx-[0.15rem]">
+              height (h-0) doesn't make the panel taller. Narrower, the panel
+              is as tall as the list. */}
+          <ul
+            className={`lg:overflow-y-auto lg:h-0 lg:flex-1 pt-3 sm:pt-4 pb-3 ${side} !scrollbar-thin !scrollbar-w-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10`}
+          >
             <LayoutGroup>
               {eventsBreakdown.map(({ kind }) => (
                 <motion.li
@@ -164,21 +180,21 @@ export default function TotalBackups({
                   exit={{ scale: 0, opacity: 0 }}
                   layout
                   key={kind}
-                  className="grid gap-x-3 items-center py-2"
+                  className="grid gap-x-[var(--column-gap)] items-center py-1.5 sm:py-2"
                   style={{ gridTemplateColumns }}
                 >
                   <div className="flex items-center min-w-0">
-                    <span className="flex flex-none items-center justify-center w-8 h-8 text-base rounded-md bg-white shadow-sm ring-1 ring-slate-900/5 dark:bg-slate-700 dark:ring-0 dark:shadow-none dark:highlight-white/5">
+                    <span className="flex flex-none items-center justify-center w-6 h-6 text-xs sm:w-8 sm:h-8 sm:text-base rounded-md bg-white shadow-sm ring-1 ring-slate-900/5 dark:bg-slate-700 dark:ring-0 dark:shadow-none dark:highlight-white/5">
                       {supportedEventKinds[kind]["icon"]}
                     </span>
-                    <span className="ml-3 text-slate-700 dark:text-slate-300 text-[0.95rem] truncate">
+                    <span className="ml-2 sm:ml-3 min-w-0 text-slate-700 dark:text-slate-300 text-xs sm:text-sm lg:text-[0.95rem] leading-tight break-words">
                       {`${supportedEventKinds[kind]["name"]}s`}
                     </span>
                   </div>
                   {columnCounts.map((counts, index) => (
                     <span
                       key={columns[index].key}
-                      className={`text-center text-[0.95rem] tabular-nums ${
+                      className={`text-center text-xs sm:text-sm lg:text-[0.95rem] tabular-nums ${
                         counts[kind]
                           ? "text-slate-700 dark:text-slate-300"
                           : "text-slate-300 dark:text-slate-600"
