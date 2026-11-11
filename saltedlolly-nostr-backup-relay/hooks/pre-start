@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Runs on the host as root before the containers start (umbrelOS ignores the
+# exit code, so every step logs what it did).
+
+DATA_DIR="${APP_DATA_DIR}/data"
+RELAY_PROXY_DATA_DIR="${DATA_DIR}/relay-proxy"
+RELAY_DB_DIR="${DATA_DIR}/relay/db"
+
+log() { echo "[saltedlolly-nostr-backup-relay pre-start] $*"; }
+
+# Same as the official app: the relay proxy needs its data folder
+if [[ ! -d "${RELAY_PROXY_DATA_DIR}" ]]; then
+  mkdir -p "${RELAY_PROXY_DATA_DIR}"
+  chown 1000:1000 "${RELAY_PROXY_DATA_DIR}"
+fi
+
+# One-time copy of the official Nostr Relay app's backup and saved account,
+# so switching apps keeps everything already backed up. It only runs before
+# this app's relay has created its own database, and never again after the
+# marker file is written. The official app's files are only read.
+MARKER="${DATA_DIR}/.copied-from-official-nostr-relay"
+OFFICIAL_DATA_DIR="${UMBREL_ROOT:-$(dirname "$(dirname "${APP_DATA_DIR}")")}/app-data/nostr-relay/data"
+OFFICIAL_DB="${OFFICIAL_DATA_DIR}/relay/db/nostr.db"
+OFFICIAL_STORE="${OFFICIAL_DATA_DIR}/relay-proxy/store.json"
+
+copy_official_data() {
+  if [[ -e "${MARKER}" ]]; then
+    return
+  fi
+  if [[ -e "${RELAY_DB_DIR}/nostr.db" ]]; then
+    log "This app already has a relay database, so nothing is copied from the official Nostr Relay app."
+    date -u +"%Y-%m-%dT%H:%M:%SZ skipped: this app already had a database" > "${MARKER}"
+    return
+  fi
+  if [[ ! -f "${OFFICIAL_DB}" ]]; then
+    log "The official Nostr Relay app is not installed (no ${OFFICIAL_DB}), so this app starts with an empty relay."
+    date -u +"%Y-%m-%dT%H:%M:%SZ skipped: official Nostr Relay app not installed" > "${MARKER}"
+    return
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    log "python3 is not available on this device, so the official Nostr Relay app's backup could not be copied. This app starts with an empty relay; see the README for copying it by hand."
+    return
+  fi
+
+  mkdir -p "${RELAY_DB_DIR}"
+  chown 1000:1000 "${RELAY_DB_DIR}"
+
+  # The official relay may be running and writing to its database (SQLite in
+  # WAL mode), so copying the files could give a damaged copy. SQLite's online
+  # backup takes a consistent snapshot instead. It runs as uid 1000 (the
+  # relay's own user), so any -wal/-shm files SQLite creates next to the
+  # official database keep the owner the official app needs.
+  log "Copying the backup from the official Nostr Relay app (${OFFICIAL_DB})..."
+  if python3 - "${OFFICIAL_DB}" "${RELAY_DB_DIR}" <<'PY'
+import os
+import sqlite3
+import sys
+from urllib.parse import quote
+
+source_path, target_dir = sys.argv[1], sys.argv[2]
+if os.getuid() == 0:
+    os.setgid(1000)
+    os.setuid(1000)
+
+partial = os.path.join(target_dir, "nostr.db.copying")
+target = os.path.join(target_dir, "nostr.db")
+if os.path.exists(partial):
+    os.remove(partial)
+
+source = sqlite3.connect(f"file:{quote(source_path)}?mode=ro", uri=True, timeout=60)
+copy = sqlite3.connect(partial)
+try:
+    source.backup(copy)
+    copy.execute("PRAGMA journal_mode=WAL")
+    result = copy.execute("PRAGMA integrity_check").fetchone()[0]
+    if result != "ok":
+        raise SystemExit(f"integrity check of the copy failed: {result}")
+    try:
+        events = copy.execute("SELECT count(*) FROM event").fetchone()[0]
+    except sqlite3.Error:
+        events = "all"
+finally:
+    copy.close()
+    source.close()
+
+for suffix in ("-wal", "-shm"):
+    if os.path.exists(partial + suffix):
+        os.remove(partial + suffix)
+os.rename(partial, target)
+print(f"copied {events} events")
+PY
+  then
+    log "Database copied."
+  else
+    log "Copying the database failed. This app starts with an empty relay and will fill it from public relays; the official app's files are unchanged. See the README for copying it by hand."
+    rm -f "${RELAY_DB_DIR}/nostr.db.copying" "${RELAY_DB_DIR}/nostr.db.copying-wal" "${RELAY_DB_DIR}/nostr.db.copying-shm"
+    return
+  fi
+
+  # The saved account (NIP-05 or npub). This app reads the official app's
+  # single-account format and adds more accounts to it later.
+  if [[ -f "${OFFICIAL_STORE}" && ! -e "${RELAY_PROXY_DATA_DIR}/store.json" ]]; then
+    cp "${OFFICIAL_STORE}" "${RELAY_PROXY_DATA_DIR}/store.json"
+    chown 1000:1000 "${RELAY_PROXY_DATA_DIR}/store.json"
+    log "Saved account copied."
+  fi
+
+  date -u +"%Y-%m-%dT%H:%M:%SZ copied from ${OFFICIAL_DATA_DIR}" > "${MARKER}"
+}
+
+copy_official_data

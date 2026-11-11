@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>Nostr Backup Relay</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#23264a"/>
+      <stop offset="1" stop-color="#14162e"/>
+    </linearGradient>
+    <linearGradient id="db" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff5fa8"/>
+      <stop offset="1" stop-color="#8a3ffc"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" fill="url(#bg)"/>
+  <!-- Relay signal -->
+  <g fill="none" stroke="#ff9f1c" stroke-width="12" stroke-linecap="round">
+    <path d="M168 62a44 44 0 0 1 32 32"/>
+    <path d="M166 30a76 76 0 0 1 64 64"/>
+  </g>
+  <circle cx="168" cy="94" r="10" fill="#ff9f1c"/>
+  <!-- Backup database: three stacked layers -->
+  <g fill="url(#db)">
+    <path d="M40 92c0-13 26-22 58-22s58 9 58 22v22c0 13-26 22-58 22s-58-9-58-22z"/>
+    <path d="M40 136c13 9 34 14 58 14s45-5 58-14v24c0 13-26 22-58 22s-58-9-58-22z"/>
+    <path d="M40 182c13 9 34 14 58 14s45-5 58-14v24c0 13-26 22-58 22s-58-9-58-22z"/>
+  </g>
+  <ellipse cx="98" cy="92" rx="58" ry="22" fill="#ffffff" fill-opacity="0.22"/>
+  <!-- Several accounts -->
+  <g fill="#ffffff">
+    <circle cx="80" cy="161" r="7"/>
+    <circle cx="98" cy="161" r="7"/>
+    <circle cx="116" cy="161" r="7"/>
+  </g>
+</svg>

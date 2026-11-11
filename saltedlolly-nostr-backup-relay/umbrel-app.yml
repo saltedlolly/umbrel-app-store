@@ -1,0 +1,61 @@
+# based-on-official-nostr-relay: 1.2.1-patch.1
+# The official Nostr Relay version this app's code is built from (getumbrel/umbrel-apps,
+# nostr-relay/umbrel-app.yml). Maintained by nostr-backup-relay-build.sh --based-on and read by
+# .github/workflows/nostr-backup-relay-upstream-check.yml.
+manifestVersion: 1
+id: saltedlolly-nostr-backup-relay
+category: social
+name: Nostr Backup Relay
+version: "v1.2.1.1"
+tagline: Back up the Nostr activity of all your accounts to your own private relay
+description: >-
+  UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
+
+
+  Nostr Backup Relay is a private Nostr relay that backs up everything you post, from as many Nostr accounts as you like. It is a fork of Umbrel's official Nostr Relay app, built from Umbrel's v1.2.1 code, with one addition: "Sync from public relays" accepts several NIP-05 or npub addresses instead of one, so a personal account and a project account can both be backed up. It is not made or supported by Umbrel.
+
+
+  Step 1. Connect your Nostr clients (for example Damus, Amethyst or Primal) to your private relay, so new activity is saved as you post it. Use the Relay URL shown at the top of the app's page.
+
+
+  Step 2. Open the app, click the globe icon and add each account's NIP-05 or npub address. Past and future activity of every account is copied from its public relays in the background, even when your clients aren't connected to your private relay.
+
+
+  If the official Nostr Relay app is installed, this app copies its backup and saved account the first time it starts, so nothing already backed up is lost. You can keep both apps installed while you check everything is there, then uninstall the official one.
+
+
+  Powered by nostr-rs-relay, the same relay engine and version as the official app. Umbrel's code is used under the PolyForm Noncommercial License 1.0.0. Setup help and details: https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-nostr-backup-relay/README.md
+releaseNotes: >-
+  ## v1.2.1.1
+
+  - First release: Umbrel's Nostr Relay v1.2.1 with support for backing up more than one account, and a one-time copy of the official app's backup on first start.
+
+
+  --- Umbrel Nostr Relay upstream release notes (auto-updated) ---
+
+
+  Umbrel Nostr Relay 1.2.1-patch.1
+
+    This update includes important security improvements. We recommend updating as soon as possible.
+
+    If you're updating from before v1.2.1, the first startup may take longer while your database is upgraded automatically. Newly received events with expiration timestamps are removed after they expire.
+
+
+  See the full release history: https://github.com/getumbrel/umbrel-apps/commits/master/nostr-relay
+
+developer: saltedlolly
+website: https://github.com/getumbrel/umbrel-nostr-relay
+dependencies: []
+repo: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-nostr-backup-relay
+support: https://github.com/saltedlolly/umbrel-app-store/issues
+
+port: 4849
+gallery: []
+path: ""
+
+defaultUsername: ""
+defaultPassword: ""
+
+icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-nostr-backup-relay/icon.svg
+submitter: saltedlolly
+submission: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-nostr-backup-relay

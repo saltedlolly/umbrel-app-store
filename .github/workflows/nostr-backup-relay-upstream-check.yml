@@ -1,0 +1,99 @@
+name: Nostr Backup Relay - Check the official Nostr Relay app
+
+# Nostr Backup Relay is built from Umbrel's official Nostr Relay app, whose
+# current source isn't published on GitHub. A new official version therefore
+# can't be released automatically: its changes have to be taken from the
+# published images and merged by hand. This workflow only notices the change
+# and opens an issue; it never edits or releases anything.
+#
+# It compares the version in getumbrel/umbrel-apps nostr-relay/umbrel-app.yml
+# with the "# based-on-official-nostr-relay:" line in
+# saltedlolly-nostr-backup-relay/umbrel-app.yml, which
+# nostr-backup-relay-build.sh --based-on updates after a merge.
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # every day 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: compare the versions and log the result only (no issue)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nostr-backup-relay-upstream-check
+  cancel-in-progress: false
+
+jobs:
+  check-official-app:
+    name: Compare with the official Nostr Relay app
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            saltedlolly-nostr-backup-relay/umbrel-app.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Read both versions
+        id: versions
+        run: |
+          set -euo pipefail
+          based_on="$(sed -n -E 's/^# based-on-official-nostr-relay:[[:space:]]*([^[:space:]]+).*/\1/p' saltedlolly-nostr-backup-relay/umbrel-app.yml)"
+          [[ -n "$based_on" ]] || { echo "::error::No based-on line in saltedlolly-nostr-backup-relay/umbrel-app.yml"; exit 1; }
+          manifest="$(curl -sfL https://raw.githubusercontent.com/getumbrel/umbrel-apps/master/nostr-relay/umbrel-app.yml)"
+          official="$(sed -n -E 's/^version:[[:space:]]*"?([^"[:space:]]+)"?.*/\1/p' <<<"$manifest")"
+          [[ -n "$official" ]] || { echo "::error::Could not read the official Nostr Relay version"; exit 1; }
+          echo "Based on: $based_on"
+          echo "Official: $official"
+          echo "based_on=$based_on" >> "$GITHUB_OUTPUT"
+          echo "official=$official" >> "$GITHUB_OUTPUT"
+
+      - name: Open an issue if the official app has changed
+        if: steps.versions.outputs.official != steps.versions.outputs.based_on
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASED_ON: ${{ steps.versions.outputs.based_on }}
+          OFFICIAL: ${{ steps.versions.outputs.official }}
+          DRY_RUN: ${{ inputs.dry_run || false }}
+        run: |
+          set -euo pipefail
+          title="Nostr Backup Relay: official Nostr Relay ${OFFICIAL} needs merging"
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"${title}\" in:title" --json title --jq ".[] | select(.title == \"${title}\") | .title")"
+          if [[ -n "$existing" ]]; then
+            echo "An open issue already exists: $title"
+            exit 0
+          fi
+          body_file="$(mktemp)"
+          cat > "$body_file" <<EOF
+          Umbrel's official Nostr Relay app is now at **${OFFICIAL}**. Nostr Backup Relay is built from **${BASED_ON}**.
+
+          Umbrel doesn't publish this source on GitHub, so the changes have to be merged by hand:
+
+          1. See what changed in the app package: https://github.com/getumbrel/umbrel-apps/commits/master/nostr-relay
+          2. If the images changed, pull them and compare their source with \`saltedlolly-nostr-backup-relay/docker-containers/\` (the relay proxy image contains its source; the UI image has source maps).
+          3. Merge the changes, keeping the multiple-account support, and run the tests.
+          4. Release with \`./nostr-backup-relay-build.sh --based-on ${OFFICIAL} --publish --notes "..."\`.
+
+          If nothing needs merging (for example a change that doesn't affect this app), record it with a release, or update the \`# based-on-official-nostr-relay:\` line in \`saltedlolly-nostr-backup-relay/umbrel-app.yml\`, so this check stops reporting it.
+
+          Opened by the daily [nostr-backup-relay-upstream-check](https://github.com/${GITHUB_REPOSITORY}/actions/workflows/nostr-backup-relay-upstream-check.yml) workflow.
+          EOF
+          if [[ "$DRY_RUN" == "true" ]]; then
+            echo "Dry run: would open an issue titled: $title"
+            cat "$body_file"
+            exit 0
+          fi
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$body_file"
+
+      - name: Up to date
+        if: steps.versions.outputs.official == steps.versions.outputs.based_on
+        run: echo "Nostr Backup Relay is based on the current official version (${{ steps.versions.outputs.official }})."

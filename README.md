@@ -81,6 +81,13 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
       <td>A fair-launch, SHA-256 proof-of-work blockchain built for 200-year longevity</td>
     </tr>
     <tr>
+      <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-nostr-backup-relay/icon.svg" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
+      <td><a href="https://github.com/saltedlolly/umbrel-app-store#nostr-backup-relay">Nostr Backup Relay</a></td>
+      <td nowrap id="saltedlolly-nostr-backup-relay-version"><code>v1.2.1.1</code></td>
+      <td nowrap id="saltedlolly-nostr-backup-relay-date">2026-11-11</td>
+      <td>Back up the Nostr activity of all your accounts to your own private relay</td>
+    </tr>
+    <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-npm-plus/icon.svg" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="https://github.com/saltedlolly/umbrel-app-store#npmplus">NPMplus</a></td>
       <td nowrap id="saltedlolly-npm-plus-version"><code>2026-10-22-r1.1</code></td>
@@ -272,6 +279,19 @@ There is no Lightning Network support for Nito, and none is possible - Bitcoin's
 |---------------| ------------ | --------------------------------------------------------- | ------------- |
 | Dashboard     | `3000`       | [https://umbrel.local:3000](https://umbrel.local:3000/)    | ✅            |
 | Swarm (P2P)   | `8820`       | —                                                          |               |
+
+---
+
+### Nostr Backup Relay<img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-nostr-backup-relay/icon.svg" align="right" hspace="20px" vspace="0 20px" width="150px" style="border-radius: 10%;" />
+
+Under construction: still being tested, please don't rely on it yet.
+
+A private [Nostr](https://nostr.com/) relay that backs up everything you post, from as many Nostr accounts as you like. It is a fork of Umbrel's official [Nostr Relay](https://apps.umbrel.com/app/nostr-relay) app, built from Umbrel's v1.2.1 code, where "Sync from public relays" accepts several NIP-05 or npub addresses instead of one. If the official app is installed, its backup and saved account are copied across the first time this app starts. It is not made or supported by Umbrel. Umbrel's code is used under the [PolyForm Noncommercial License 1.0.0](https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-nostr-backup-relay/LICENSE.md); see the [app's own README](https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-nostr-backup-relay/README.md) for details.
+
+| Name                        | Port         | Local Address                                            | Umbrel SSO    |
+|-----------------------------| ------------ | --------------------------------------------------------- | ------------- |
+| Dashboard                   | `4849`       | [https://umbrel.local:4849](https://umbrel.local:4849/)    |               |
+| Relay URL for Nostr clients | `4849`       | `ws://umbrel.local:4849`                                   |               |
 
 ---
 

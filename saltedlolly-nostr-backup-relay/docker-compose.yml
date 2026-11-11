@@ -1,0 +1,44 @@
+services:
+  app_proxy:
+    environment:
+      # The format here is: <app-id>_<docker-service-name>_1
+      APP_HOST: saltedlolly-nostr-backup-relay_web_1
+      APP_PORT: 3000
+      # Nostr clients connect to the relay through this port without an Umbrel login
+      PROXY_AUTH_ADD: "false"
+
+  # Web page and relay endpoint: Caddy serves the dashboard and passes Nostr
+  # websocket and NIP-11 requests to the relay. Source: docker-containers/ui
+  web:
+    image: ghcr.io/saltedlolly/nostr-backup-relay-ui:PENDING@sha256:PENDING
+    user: "1000:1000"
+    restart: on-failure
+    environment:
+      GODEBUG: "multipathtcp=0"
+      RELAY_HOST: "saltedlolly-nostr-backup-relay_relay_1"
+      RELAY_PORT: "8080"
+      RELAY_PROXY_HOST: "saltedlolly-nostr-backup-relay_relay-proxy_1"
+      RELAY_PROXY_PORT: "80"
+
+  # nostr-rs-relay, the same image as Umbrel's official Nostr Relay app v1.2.1
+  relay:
+    image: ghcr.io/getumbrel/nostr-rs-relay:0.10.0-v1.2.1@sha256:cf30a5a753fa20263525cd6021e53875acfe002a81017d3ada7e4afb71969fd5
+    user: "1000:1000"
+    restart: on-failure
+    volumes:
+      - ${APP_DATA_DIR}/data/relay/config.toml:/app/config.toml
+      - ${APP_DATA_DIR}/data/relay/db:/app/db
+
+  # Syncs each saved account's activity from public relays into the relay.
+  # Source: docker-containers/relay-proxy
+  relay-proxy:
+    image: ghcr.io/saltedlolly/nostr-backup-relay-proxy:PENDING@sha256:PENDING
+    user: "1000:1000"
+    restart: on-failure
+    environment:
+      RELAY_HOST: "saltedlolly-nostr-backup-relay_relay_1"
+      RELAY_PORT: "8080"
+    volumes:
+      - ${APP_DATA_DIR}/data/relay-proxy:/app/data
+    depends_on:
+      - relay

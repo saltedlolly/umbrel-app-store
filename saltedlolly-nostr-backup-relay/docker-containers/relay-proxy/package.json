@@ -1,0 +1,19 @@
+{
+  "name": "relay-proxy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "type": "module",
+  "dependencies": {
+    "express": "^4.22.3",
+    "express-async-handler": "^1.2.0",
+    "fs-extra": "^11.1.1",
+    "moment": "^2.30.1",
+    "nostr-tools": "^1.12.0",
+    "ws": "^8.22.0"
+  }
+}
