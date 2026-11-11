@@ -76,6 +76,8 @@ Umbrel doesn't publish the source of the official app's current version on GitHu
 - **Umbrel's Nostr Relay** ([getumbrel/umbrel-nostr-relay](https://github.com/getumbrel/umbrel-nostr-relay), and the published v1.2.1 images): the dashboard, the sync service and their tests. Umbrel's code is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE.md), and so is this fork of it. It may be used, changed and shared for noncommercial purposes only.
 - **[nostr-rs-relay](https://github.com/scsibug/nostr-rs-relay)** (MIT): the relay engine, used unchanged through Umbrel's image.
 - The multiple-account sync and the official app data copy are by [saltedlolly](https://saltedlolly.com).
+- **Nostr logo** ([mbarulli/nostr-logo](https://github.com/mbarulli/nostr-logo), CC0): the mark in the app icon.
+- **Nostrich icon** by SovrynMatt, with the small-size version by designsats ([SovrynMatt/Nostr-Website-Button-Design](https://github.com/SovrynMatt/Nostr-Website-Button-Design), shared free to use): the placeholder avatar for accounts without a profile picture.
 
 ## Release tooling
 
