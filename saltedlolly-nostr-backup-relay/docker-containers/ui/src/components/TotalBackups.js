@@ -122,10 +122,12 @@ export default function TotalBackups({
       <div className="relative overflow-x-auto !scrollbar-thin !scrollbar-h-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10">
         <div style={{ minWidth }}>
           <div
-            className="grid gap-x-3 items-end px-10 md:px-6 lg:px-10 pt-5"
+            className="grid gap-x-3 items-end px-10 md:px-6 lg:px-10"
             style={{ gridTemplateColumns }}
           >
-            <span />
+            <h2 className="pb-0.5 text-slate-700 dark:text-slate-50 text-xl font-semibold">
+              Total actions
+            </h2>
             {columns.map((column) => (
               <div
                 key={column.key}

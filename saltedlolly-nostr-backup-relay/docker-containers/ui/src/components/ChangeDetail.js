@@ -3,7 +3,7 @@ import { useState } from "react";
 // An image from a profile (avatar or banner), or a dashed box when there's none
 function ChangedImage({ src, banner }) {
   const [failed, setFailed] = useState(false);
-  const shape = banner ? "w-20 h-7 rounded" : "w-8 h-8 rounded-full";
+  const shape = banner ? "w-28 h-10 rounded" : "w-8 h-8 rounded-full";
   if (!src || failed) {
     return (
       <span
@@ -59,8 +59,16 @@ export default function ChangeDetail({ kind, changes }) {
   return (
     <div className={`-mt-1 mb-1 space-y-1.5 ${muted}`}>
       {images.map(({ key, label, from, to }) => (
-        <div key={key} className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="w-12 flex-none">{label}</span>
+        <div
+          key={key}
+          className={`flex flex-wrap items-center gap-x-2 gap-y-1 ${
+            key === "banner" ? "pt-0.5" : ""
+          }`}
+        >
+          {/* Banners are wide, so their label goes above them */}
+          <span className={key === "banner" ? "w-full" : "w-12 flex-none"}>
+            {label}
+          </span>
           <ChangedImage src={from} banner={key === "banner"} />
           <Arrow />
           <ChangedImage src={to} banner={key === "banner"} />

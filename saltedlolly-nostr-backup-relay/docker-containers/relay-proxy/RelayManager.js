@@ -127,22 +127,25 @@ export default class RelayManager {
   }
 
   subscribeToLocalMetadata() {
+    // Some relays (nostr-rs-relay, which this app uses, among them) ignore a REQ
+    // that reuses an open subscription id instead of replacing its filter, so
+    // the old subscription is closed first
+    this.localRelay.send(["CLOSE", "relay-metadata"]);
     if (this.pubkeys.length > 0) {
       // Profiles too, so the history also has updates made by clients connected straight to this relay
       this.localRelay.send(["REQ", "relay-metadata", { authors: this.pubkeys, kinds: [0, 3, 10002] }]);
-    } else {
-      this.localRelay.send(["CLOSE", "relay-metadata"]);
     }
   }
 
-  // Called when accounts are added or removed. Sending REQ again with the same subscription id
-  // replaces the filter (NIP-01), so open connections start sending the new list of accounts.
+  // Called when accounts are added or removed. Each open connection's "backup" subscription is
+  // closed and opened again with the new list of accounts: NIP-01 says a REQ with the same id
+  // replaces the filter, but some relays (nostr-rs-relay among them) ignore it instead.
   // Relays that are still connecting use the current list when they open.
   updateSubscriptions() {
     this.subscribeToLocalMetadata();
     for (const socket of Object.values(this.relays)) {
+      socket.send(["CLOSE", "backup"]);
       if (this.pubkeys.length > 0) socket.send(["REQ", "backup", this.backupFilter()]);
-      else socket.send(["CLOSE", "backup"]);
     }
   }
 

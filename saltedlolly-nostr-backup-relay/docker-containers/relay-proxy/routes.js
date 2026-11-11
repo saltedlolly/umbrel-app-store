@@ -1,8 +1,12 @@
 import express from "express";
 import asyncHandler from "express-async-handler";
 
-import { getLatestEvents, getLatestKind1 } from "./widgets.js";
+import { getLatestEvents, getLatestKind1, reloadWidgets } from "./widgets.js";
 import { createVersionChecker } from "./version.js";
+import { createPreviewer } from "./preview.js";
+import { deleteEventsNotBy } from "./relay-db.js";
+
+const getPreview = createPreviewer();
 
 const getVersion = createVersionChecker();
 
@@ -23,6 +27,40 @@ router.get("/connectionStatus", asyncHandler(async (request, response) => {
 router.get("/history", asyncHandler(async (request, response) => {
   const relayManager = request.app.get("relayManager");
   response.json(relayManager.history.versions(relayManager.pubkeys));
+}));
+
+// Share card for a link in a post: { preview: { url, title, description, image, siteName } or null }
+router.get("/preview", asyncHandler(async (request, response) => {
+  let preview;
+  try {
+    preview = await getPreview(String(request.query.url || ""));
+  } catch (error) {
+    return response.status(400).json({ error: error.message });
+  }
+  response.set("Cache-Control", "private, max-age=3600").json({ preview });
+}));
+
+// Deletes everything saved by accounts that aren't synced ("Others"), or only
+// one such account's events with { author }
+router.post("/delete-others", asyncHandler(async (request, response) => {
+  const relayManager = request.app.get("relayManager");
+  const status = relayManager.getConnectionStatus();
+  if (status.identifiers.length === 0) {
+    return response.status(409).json({ error: "No accounts are synced, so there is nothing that counts as other accounts." });
+  }
+  if (status.identifiers.some(account => !account.pubkey)) {
+    return response.status(409).json({
+      error: "An account is still being looked up. Try again when every account has loaded, so its backup isn't deleted.",
+    });
+  }
+  try {
+    const deleted = deleteEventsNotBy(relayManager.pubkeys, { author: request.body?.author });
+    // The Umbrel widgets keep their own copy of the newest events
+    if (deleted) reloadWidgets();
+    response.json({ deleted });
+  } catch (error) {
+    response.status(400).json({ error: error.message });
+  }
 }));
 
 // Running version, and the latest version in the saltedlolly App Store (for the update notice)

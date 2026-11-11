@@ -15,6 +15,7 @@ import LatestActions from "./components/LatestActions";
 import PublicRelaysModal from "./components/PublicRelaysModal";
 import AccountHeading from "./components/AccountHeading";
 import AccountOverlay from "./components/AccountOverlay";
+import Dialog from "./components/Dialog";
 import {
   accountLabel,
   latestProfiles,
@@ -22,7 +23,7 @@ import {
   setAccountColors,
   shortNpub,
 } from "./nostr";
-import { ToastContainer } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import {
@@ -207,6 +208,8 @@ export default function App() {
   const [showHelp, setShowHelp] = useState(false);
   // The column (account pubkey, or "other") shown in the full-screen overlay
   const [overlayKey, setOverlayKey] = useState(null);
+  // The Others deletion: null, "confirm" or "deleting"
+  const [deleteState, setDeleteState] = useState(null);
   // Bumped when a new profile or relay list arrives, to fetch the history again
   const [historyNonce, setHistoryNonce] = useState(0);
   // State to track the public relays modal
@@ -359,10 +362,10 @@ export default function App() {
     const socket = socketRef.current;
     if (!isConnected || !socket) return;
     const keys = pubkeysKey ? pubkeysKey.split(",") : [];
-    if (keys.length === 0) {
-      socket.send(JSON.stringify(["CLOSE", "accounts"]));
-      return;
-    }
+    // The relay ignores a REQ that reuses an open subscription id, so the
+    // previous one is closed first
+    socket.send(JSON.stringify(["CLOSE", "accounts"]));
+    if (keys.length === 0) return;
     socket.send(
       JSON.stringify([
         "REQ",
@@ -443,7 +446,10 @@ export default function App() {
   }, [events]);
   const previousOf = (event) => previousVersions[event.id] || null;
   const hasAccounts = pubkeys.length > 0;
-  const showGetStarted = accounts !== null && (!hasAccounts || showHelp);
+  // With no accounts, Get started is a panel on the page; once there are
+  // accounts, the help button opens it in a small overlay
+  const showGetStarted = accounts !== null && !hasAccounts;
+  const closeHelp = useCallback(() => setShowHelp(false), []);
 
   // One column per synced account, then everything else saved to the relay
   // (for example by a client connected straight to it)
@@ -481,6 +487,33 @@ export default function App() {
   };
 
   const overlayColumn = columns.find((column) => column.key === overlayKey);
+  const othersColumn = columns.find((column) => column.other);
+  const closeDelete = useCallback(
+    () => setDeleteState((state) => (state === "deleting" ? state : null)),
+    [],
+  );
+
+  async function deleteOthers() {
+    setDeleteState("deleting");
+    try {
+      const { data } = await axios.post(`${RELAY_PROXY_URL}/delete-others`);
+      const synced = new Set(pubkeys);
+      setEvents((previous) =>
+        previous.filter((event) => synced.has(event.pubkey)),
+      );
+      setOverlayKey((key) => (key === "other" ? null : key));
+      toast.success(
+        `Deleted ${data.deleted.toLocaleString()} actions from other accounts`,
+      );
+    } catch (error) {
+      toast.error(
+        error.response?.data?.error ||
+          "Could not delete the other accounts' actions",
+      );
+    } finally {
+      setDeleteState(null);
+    }
+  }
   const closeOverlay = useCallback(() => setOverlayKey(null), []);
 
   const headerButtonClass = (active) =>
@@ -509,11 +542,11 @@ export default function App() {
               type="button"
               title="Get started"
               aria-label="Get started"
-              aria-pressed={showGetStarted}
-              disabled={accounts !== null && !hasAccounts}
-              onClick={() => setShowHelp((previous) => !previous)}
+              aria-pressed={showGetStarted || showHelp}
+              disabled={!hasAccounts}
+              onClick={() => setShowHelp(true)}
               className={`${headerButtonClass(
-                showGetStarted,
+                showGetStarted || showHelp,
               )} text-slate-700 dark:text-slate-200 disabled:cursor-default`}
             >
               <HelpIcon />
@@ -547,7 +580,6 @@ export default function App() {
                 className={`lg:col-span-2 ${
                   columns.length > 5 ? "xl:col-span-3" : "xl:col-span-2"
                 } min-w-0`}
-                heading="Total actions"
               >
                 <TotalBackups
                   loading={!hasFetchedAllEvents}
@@ -557,15 +589,6 @@ export default function App() {
                 />
               </Card>
 
-              {showGetStarted && (
-                <Card
-                  className="lg:col-span-2 xl:col-span-1"
-                  heading="Get started"
-                >
-                  <ConnectClient relayPort={PORT} />
-                </Card>
-              )}
-
               {columns.map((column) => (
                 <Card
                   key={column.key}
@@ -574,6 +597,11 @@ export default function App() {
                     <AccountHeading
                       column={column}
                       onMore={() => setOverlayKey(column.key)}
+                      onDelete={
+                        column.other
+                          ? () => setDeleteState("confirm")
+                          : undefined
+                      }
                     />
                   }
                 >
@@ -652,6 +680,56 @@ export default function App() {
               })}
             />
           </div>
+        )}
+
+        {showHelp && hasAccounts && (
+          <Dialog title="Get started" onClose={closeHelp}>
+            <ConnectClient relayPort={PORT} />
+          </Dialog>
+        )}
+
+        {deleteState && othersColumn && (
+          <Dialog
+            title="Delete other accounts' actions?"
+            onClose={closeDelete}
+            footer={
+              <>
+                <button
+                  type="button"
+                  onClick={closeDelete}
+                  disabled={deleteState === "deleting"}
+                  className="rounded-md px-4 py-2 text-sm text-slate-700 dark:text-slate-200 ring-1 ring-slate-900/10 dark:ring-white/10 hover:bg-slate-100 dark:hover:bg-white/10"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={deleteOthers}
+                  disabled={deleteState === "deleting"}
+                  className="rounded-md px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-60"
+                >
+                  {deleteState === "deleting" ? "Deleting..." : "Delete"}
+                </button>
+              </>
+            }
+          >
+            <div className="px-6 sm:px-10 py-5 space-y-3 text-sm text-slate-700 dark:text-slate-300">
+              <p>
+                This deletes everything on your relay that wasn&apos;t posted by
+                one of your synced accounts: about{" "}
+                {othersColumn.events.length.toLocaleString()} actions
+                {othersColumn.events.length >= eventsPerSubscription
+                  ? " or more"
+                  : ""}
+                .
+              </p>
+              <p>
+                It can&apos;t be undone. If you post from an account that
+                isn&apos;t synced, add it in Sync from public relays first to
+                keep its backup.
+              </p>
+            </div>
+          </Dialog>
         )}
 
         {overlayColumn && (

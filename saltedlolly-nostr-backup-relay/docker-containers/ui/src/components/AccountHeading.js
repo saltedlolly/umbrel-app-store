@@ -4,7 +4,7 @@ import { shortNpub } from "../nostr";
 
 // "(avatar) @olly.st" with the account's npub beneath it, and a More button
 // that opens all of the account's actions
-export default function AccountHeading({ column, onMore }) {
+export default function AccountHeading({ column, onMore, onDelete }) {
   return (
     <span className="flex items-center gap-3 min-w-0">
       <Avatar
@@ -28,6 +28,29 @@ export default function AccountHeading({ column, onMore }) {
           </span>
         ) : null}
       </span>
+      {onDelete ? (
+        <button
+          type="button"
+          onClick={onDelete}
+          title="Delete everything saved by these accounts"
+          aria-label="Delete everything saved by other accounts"
+          className="flex-none self-start inline-flex items-center rounded-md p-1.5 text-red-600 dark:text-red-400 bg-white dark:bg-slate-800 ring-1 ring-slate-900/10 dark:ring-white/10 hover:bg-red-50 dark:hover:bg-red-500/15"
+        >
+          <svg
+            viewBox="0 0 16 16"
+            width="14"
+            height="14"
+            aria-hidden="true"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5h6.6L12 4M6.8 6.5v4.5M9.2 6.5v4.5" />
+          </svg>
+        </button>
+      ) : null}
       {onMore ? (
         <button
           type="button"

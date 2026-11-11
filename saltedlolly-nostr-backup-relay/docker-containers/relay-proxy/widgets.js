@@ -208,3 +208,12 @@ export const widgetSocket = new ReconnectingSocket(LOCAL_RELAY_URL, {
     insertSortedEvent({ id, kind, created_at, content });
   },
 });
+
+// Loads the widget events again, after events were deleted from the relay
+export function reloadWidgets() {
+  events.length = 0;
+  // Some relays (nostr-rs-relay among them) ignore a REQ that reuses an open
+  // subscription id, so close it first
+  widgetSocket.send(["CLOSE", "widgets"]);
+  widgetSocket.send(["REQ", "widgets", { limit: 1000 }]);
+}

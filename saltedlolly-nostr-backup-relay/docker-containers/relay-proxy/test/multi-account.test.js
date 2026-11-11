@@ -65,7 +65,9 @@ test("several accounts sync through shared relay connections", async t => {
     await manager.addIdentifier(` ${bobNpub} `);
     assert.deepEqual(JSON.parse(await readFile("data/store.json", "utf8")), { identifiers: [aliceNpub, bobNpub] });
     const socket = Object.values(manager.relays)[0];
-    assert.deepEqual(socket.sent.at(-1), ["REQ", "backup", { authors: [alicePub, bobPub] }]);
+    // Closed first: nostr-rs-relay ignores a REQ that reuses an open subscription id
+    assert.deepEqual(socket.sent.slice(-2), [["CLOSE", "backup"], ["REQ", "backup", { authors: [alicePub, bobPub] }]]);
+    assert.deepEqual(sent().at(-2), ["CLOSE", "relay-metadata"]);
     assert.deepEqual(sent().at(-1), ["REQ", "relay-metadata", { authors: [alicePub, bobPub], kinds: [0, 3, 10002] }]);
   });
 

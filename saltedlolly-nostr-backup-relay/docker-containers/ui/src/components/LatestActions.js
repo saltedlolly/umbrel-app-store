@@ -9,6 +9,26 @@ import {
   shortNpub,
 } from "../nostr";
 import ChangeDetail from "./ChangeDetail";
+import PostContent from "./PostContent";
+
+// The post inside a repost (kind 6 or 16): its author and text, when included
+function repostedPost(event) {
+  const inner = parseJson(event.content);
+  const valid = (value) =>
+    typeof value === "string" && /^[0-9a-f]{64}$/.test(value) ? value : "";
+  const author =
+    valid(inner?.pubkey) ||
+    valid(
+      (event.tags || [])
+        .filter((tag) => tag[0] === "p")
+        .map((tag) => tag[1])[0],
+    );
+  const text =
+    typeof inner?.content === "string" && inner.kind === 1
+      ? inner.content.trim()
+      : "";
+  return { author, text };
+}
 
 export default function LatestActions({
   loading,
@@ -87,9 +107,12 @@ export default function LatestActions({
                 ? parseJson(content)?.[eventKind.contentKey]
                 : content
               : "";
-            const detail = eventKind.showContent
-              ? ""
-              : actionDetail(event, nameFor);
+            const isRepost = kind === 6 || kind === 16;
+            const reposted = isRepost ? repostedPost(event) : null;
+            const detail =
+              eventKind.showContent || isRepost
+                ? ""
+                : actionDetail(event, nameFor);
             const previous =
               kind === 0 || kind === 10002 ? previousOf(event) : null;
             const changes =
@@ -129,9 +152,25 @@ export default function LatestActions({
                   </div>
                   {typeof shownContent === "string" && shownContent ? (
                     <div className="bg-slate-50 dark:bg-white/5 p-2 rounded shadow-sm ring-1 ring-slate-900/5 dark:ring-slate-700">
-                      <p className="text-slate-700 dark:text-slate-300 text-sm text-ellipsis overflow-hidden break-words">
-                        {shownContent}
+                      {eventKind.contentKey ? (
+                        <p className="text-slate-700 dark:text-slate-300 text-sm break-words">
+                          {shownContent}
+                        </p>
+                      ) : (
+                        <PostContent text={shownContent} />
+                      )}
+                    </div>
+                  ) : null}
+                  {isRepost ? (
+                    <div className="-mt-0.5 mb-1 rounded-md border-l-[3px] border-violet-400 dark:border-violet-400/70 bg-violet-50/80 dark:bg-violet-500/10 px-2.5 py-2">
+                      <p className="text-xs text-violet-700 dark:text-violet-300 mb-1">
+                        {reposted.author
+                          ? `Reposted from ${nameFor(reposted.author)}`
+                          : "Reposted a post"}
                       </p>
+                      {reposted.text ? (
+                        <PostContent text={reposted.text} small />
+                      ) : null}
                     </div>
                   ) : null}
                   {changes ? (
