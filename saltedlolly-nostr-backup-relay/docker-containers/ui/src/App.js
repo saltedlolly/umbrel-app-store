@@ -592,7 +592,10 @@ export default function App() {
               {columns.map((column) => (
                 <Card
                   key={column.key}
-                  className="min-w-0"
+                  // The same height as a full panel when side by side, even
+                  // with only a few actions (alone on a row, it wouldn't be
+                  // stretched to match its neighbours)
+                  className="min-w-0 lg:min-h-[34.7rem]"
                   heading={
                     <AccountHeading
                       column={column}
