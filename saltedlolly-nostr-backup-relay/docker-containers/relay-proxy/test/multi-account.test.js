@@ -66,7 +66,7 @@ test("several accounts sync through shared relay connections", async t => {
     assert.deepEqual(JSON.parse(await readFile("data/store.json", "utf8")), { identifiers: [aliceNpub, bobNpub] });
     const socket = Object.values(manager.relays)[0];
     assert.deepEqual(socket.sent.at(-1), ["REQ", "backup", { authors: [alicePub, bobPub] }]);
-    assert.deepEqual(sent().at(-1), ["REQ", "relay-metadata", { authors: [alicePub, bobPub], kinds: [3, 10002] }]);
+    assert.deepEqual(sent().at(-1), ["REQ", "relay-metadata", { authors: [alicePub, bobPub], kinds: [0, 3, 10002] }]);
   });
 
   await t.test("duplicates and invalid addresses are rejected", async () => {
@@ -99,6 +99,9 @@ test("several accounts sync through shared relay connections", async t => {
     assert.deepEqual(manager.desiredRelays().sort(), ["wss://alice.test/", "wss://bob.test/", "wss://shared.test/"]);
     manager.removeOutdatedRelays();
     assert.deepEqual(Object.keys(manager.relays).sort(), ["wss://alice.test/", "wss://bob.test/", "wss://shared.test/"]);
+    // Relay lists are kept in the history, each account separately
+    assert.deepEqual(manager.history.versions([alicePub])[alicePub].map(event => event.kind), [10002]);
+    assert.equal(manager.history.versions([bobPub])[bobPub].length, 1);
     const shared = open("wss://shared.test/");
     assert.deepEqual(shared.sent.at(-1), ["REQ", "backup", { authors: [alicePub, bobPub] }]);
   });
@@ -108,6 +111,7 @@ test("several accounts sync through shared relay connections", async t => {
     const aliceRelay = open("wss://alice.test/");
     await manager.removeIdentifier(bobNpub);
     assert.deepEqual(JSON.parse(await readFile("data/store.json", "utf8")), { identifiers: [aliceNpub] });
+    assert.deepEqual(manager.history.versions([bobPub]), {});
     assert.ok(bobOnly.closed);
     assert.deepEqual(Object.keys(manager.relays), ["wss://alice.test/"]);
     assert.deepEqual(aliceRelay.sent.at(-1), ["REQ", "backup", { authors: [alicePub] }]);

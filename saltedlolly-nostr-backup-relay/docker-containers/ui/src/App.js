@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import axios from "axios";
 import { subscribeToRelay } from "./subscribeToRelay";
 import { usePopper } from "react-popper";
@@ -14,7 +14,14 @@ import TotalBackups from "./components/TotalBackups";
 import LatestActions from "./components/LatestActions";
 import PublicRelaysModal from "./components/PublicRelaysModal";
 import AccountHeading from "./components/AccountHeading";
-import { accountLabel, latestProfiles, npubEncode, shortNpub } from "./nostr";
+import AccountOverlay from "./components/AccountOverlay";
+import {
+  accountLabel,
+  latestProfiles,
+  npubEncode,
+  setAccountColors,
+  shortNpub,
+} from "./nostr";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -198,6 +205,10 @@ export default function App() {
   const [accounts, setAccounts] = useState(null);
   // Whether the Get started panel was opened with the help button
   const [showHelp, setShowHelp] = useState(false);
+  // The column (account pubkey, or "other") shown in the full-screen overlay
+  const [overlayKey, setOverlayKey] = useState(null);
+  // Bumped when a new profile or relay list arrives, to fetch the history again
+  const [historyNonce, setHistoryNonce] = useState(0);
   // State to track the public relays modal
   const [showModal, setShowModal] = useState(false);
   const [isPreventModalClose, setIsPreventModalClose] = useState(false);
@@ -228,11 +239,14 @@ export default function App() {
   // second, rather than re-sorting the whole list for every event
   const pendingEvents = useRef(new Map());
   const flushTimer = useRef(null);
+  const loadedRef = useRef(false);
 
   const pubkeys = (accounts || [])
     .map((account) => account.pubkey)
     .filter(Boolean);
   const pubkeysKey = pubkeys.join(",");
+  // Before anything renders an avatar, so every face uses the same colours
+  setAccountColors(pubkeys);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -243,6 +257,11 @@ export default function App() {
       const incoming = [...pendingEvents.current.values()];
       pendingEvents.current.clear();
       if (!incoming.length) return;
+      if (
+        loadedRef.current &&
+        incoming.some((event) => event.kind === 0 || event.kind === 10002)
+      )
+        setHistoryNonce((previous) => previous + 1);
       setEvents((previous) => {
         const known = new Set(previous.map((event) => event.id));
         const added = incoming.filter((event) => !known.has(event.id));
@@ -258,6 +277,7 @@ export default function App() {
         socketRef.current = socket;
         setIsConnected(true);
         setHasFetchedAllEvents(false);
+        loadedRef.current = false;
         pendingEvents.current.clear();
         setEvents([]);
         socket.send(
@@ -284,6 +304,7 @@ export default function App() {
         if (data[0] === "EOSE") {
           if (data[1] === subscriptionID) {
             flush();
+            loadedRef.current = true;
             setHasFetchedAllEvents(true);
           }
         } else if (data[0] === "EVENT") {
@@ -355,6 +376,39 @@ export default function App() {
     );
   }, [isConnected, pubkeysKey]);
 
+  // Earlier versions of each account's profile and relay list, kept by the
+  // relay proxy (the relay itself keeps only the newest), so updates can show
+  // what changed. They're added to the events like any other action.
+  useEffect(() => {
+    if (!isConnected || !pubkeysKey) return;
+    let stopped = false;
+    const timer = setTimeout(async () => {
+      try {
+        const { data } = await axios.get(`${RELAY_PROXY_URL}/history`);
+        if (stopped || !data || typeof data !== "object") return;
+        const versions = Object.values(data)
+          .flat()
+          .map(toStoredEvent)
+          .filter(Boolean);
+        if (!versions.length) return;
+        setEvents((previous) => {
+          const known = new Set(previous.map((event) => event.id));
+          const added = versions.filter((event) => !known.has(event.id));
+          if (!added.length) return previous;
+          return [...added, ...previous].sort(
+            (a, b) => b.created_at - a.created_at,
+          );
+        });
+      } catch {
+        // Older relay proxy, or not reachable yet: updates show without changes
+      }
+    }, 1500);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }, [isConnected, pubkeysKey, historyNonce]);
+
   // Update popper offset for the public relays modal when the window is resized
   useEffect(() => {
     const handleResize = () => {
@@ -370,6 +424,24 @@ export default function App() {
   }, []);
 
   const profiles = useMemo(() => latestProfiles(events), [events]);
+
+  // For each profile or relay list update, the version before it
+  const previousVersions = useMemo(() => {
+    const groups = {};
+    for (const event of events) {
+      if (event.kind !== 0 && event.kind !== 10002) continue;
+      (groups[`${event.pubkey}:${event.kind}`] ??= []).push(event);
+    }
+    const previous = {};
+    for (const group of Object.values(groups)) {
+      group.sort((a, b) => a.created_at - b.created_at);
+      group.forEach((event, index) => {
+        if (index > 0) previous[event.id] = group[index - 1];
+      });
+    }
+    return previous;
+  }, [events]);
+  const previousOf = (event) => previousVersions[event.id] || null;
   const hasAccounts = pubkeys.length > 0;
   const showGetStarted = accounts !== null && (!hasAccounts || showHelp);
 
@@ -407,6 +479,9 @@ export default function App() {
     if (account) return accountLabel(account, profiles[pubkey]);
     return profiles[pubkey]?.name || shortNpub(pubkey);
   };
+
+  const overlayColumn = columns.find((column) => column.key === overlayKey);
+  const closeOverlay = useCallback(() => setOverlayKey(null), []);
 
   const headerButtonClass = (active) =>
     `self-center p-3 m-1 rounded-md bg-white ring-1 ring-gray-900/5 dark:ring-white/10 hover:bg-[#CEC8F4] dark:hover:bg-[#264D96] ${
@@ -469,7 +544,9 @@ export default function App() {
           {hasAccounts ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8">
               <Card
-                className="lg:col-span-2 xl:col-span-2 min-w-0"
+                className={`lg:col-span-2 ${
+                  columns.length > 5 ? "xl:col-span-3" : "xl:col-span-2"
+                } min-w-0`}
                 heading="Total actions"
               >
                 <TotalBackups
@@ -493,7 +570,12 @@ export default function App() {
                 <Card
                   key={column.key}
                   className="min-w-0"
-                  heading={<AccountHeading column={column} />}
+                  heading={
+                    <AccountHeading
+                      column={column}
+                      onMore={() => setOverlayKey(column.key)}
+                    />
+                  }
                 >
                   <LatestActions
                     loading={!hasFetchedAllEvents}
@@ -501,6 +583,7 @@ export default function App() {
                     eventsToRenderLimit={eventsToRenderLimit}
                     supportedEventKinds={supportedEventKinds}
                     nameFor={nameFor}
+                    previousOf={previousOf}
                     emptyMessage={
                       column.other
                         ? "Nothing else has been saved to your relay yet."
@@ -543,6 +626,7 @@ export default function App() {
                   eventsToRenderLimit={eventsToRenderLimit}
                   supportedEventKinds={supportedEventKinds}
                   nameFor={nameFor}
+                  previousOf={previousOf}
                 />
               </Card>
             </div>
@@ -562,8 +646,23 @@ export default function App() {
               }}
               isPreventModalClose={isPreventModalClose}
               setIsPreventModalClose={setIsPreventModalClose}
+              accountInfo={(pubkey) => ({
+                picture: profiles[pubkey]?.picture || "",
+                name: profiles[pubkey]?.name || "",
+              })}
             />
           </div>
+        )}
+
+        {overlayColumn && (
+          <AccountOverlay
+            column={overlayColumn}
+            supportedEventKinds={supportedEventKinds}
+            nameFor={nameFor}
+            previousOf={previousOf}
+            fetchLimit={eventsPerSubscription}
+            onClose={closeOverlay}
+          />
         )}
       </div>
       <Footer relayVersion={relayInformationDocument.version} />

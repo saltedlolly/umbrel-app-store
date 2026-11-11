@@ -211,3 +211,110 @@ export function actionDetail(event, nameFor) {
       return "";
   }
 }
+
+// Colours for the placeholder faces: distinct from each other, and dark enough
+// for the white face to show in light and dark mode
+const FACE_COLORS = [
+  "#e11d48",
+  "#ea580c",
+  "#ca8a04",
+  "#16a34a",
+  "#0d9488",
+  "#0284c7",
+  "#4f46e5",
+  "#9333ea",
+  "#db2777",
+  "#65a30d",
+];
+let accountColors = {};
+
+function hashOf(value = "") {
+  // FNV-1a
+  let hash = 2166136261;
+  for (const character of value) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return hash;
+}
+
+// Gives each synced account its own colour, in the order they were added: each
+// takes the colour its pubkey prefers, or the next free one, so adding an
+// account never changes the colours of the accounts already there.
+export function setAccountColors(pubkeys) {
+  const used = new Set();
+  const colors = {};
+  for (const pubkey of pubkeys) {
+    let index = hashOf(pubkey) % FACE_COLORS.length;
+    for (let n = 0; n < FACE_COLORS.length && used.has(index); n++)
+      index = (index + 1) % FACE_COLORS.length;
+    used.add(index);
+    colors[pubkey] = FACE_COLORS[index];
+  }
+  accountColors = colors;
+}
+
+// The colour of an account's placeholder face, the same everywhere on the dashboard
+export function colorFor(pubkey = "") {
+  return (
+    accountColors[pubkey] || FACE_COLORS[hashOf(pubkey) % FACE_COLORS.length]
+  );
+}
+
+// What changed between two versions of a profile (kind 0). Returns null when
+// there is no earlier version to compare with.
+export function profileChanges(event, previous) {
+  if (!previous) return null;
+  const now = parseJson(event.content) || {};
+  const before = parseJson(previous.content) || {};
+  const text = (data, ...keys) => {
+    for (const key of keys) {
+      if (typeof data[key] === "string" && data[key].trim())
+        return data[key].trim();
+    }
+    return "";
+  };
+  const image = (data, key) => {
+    const value = text(data, key);
+    return /^https:\/\//i.test(value) ? value : "";
+  };
+  const changes = { images: [], texts: [], others: [] };
+  for (const [key, label] of [
+    ["picture", "Avatar"],
+    ["banner", "Banner"],
+  ]) {
+    const [from, to] = [image(before, key), image(now, key)];
+    if (from !== to) changes.images.push({ key, label, from, to });
+  }
+  for (const [keys, label] of [
+    [["display_name", "displayName", "name"], "Name"],
+    [["nip05"], "NIP-05"],
+  ]) {
+    const [from, to] = [text(before, ...keys), text(now, ...keys)];
+    if (from !== to) changes.texts.push({ label, from, to });
+  }
+  for (const [keys, label] of [
+    [["about"], "bio"],
+    [["website"], "website"],
+    [["lud16", "lud06"], "lightning address"],
+  ]) {
+    if (text(before, ...keys) !== text(now, ...keys))
+      changes.others.push(label);
+  }
+  return changes;
+}
+
+function writeRelays(event) {
+  return [...new Set(tagValues(event, "r").map(hostOf).filter(Boolean))];
+}
+
+// Relays added to and removed from a relay list (kind 10002), or null when
+// there is no earlier version to compare with
+export function relayChanges(event, previous) {
+  if (!previous || event.kind !== 10002) return null;
+  const [now, before] = [writeRelays(event), writeRelays(previous)];
+  return {
+    added: now.filter((relay) => !before.includes(relay)),
+    removed: before.filter((relay) => !now.includes(relay)),
+  };
+}

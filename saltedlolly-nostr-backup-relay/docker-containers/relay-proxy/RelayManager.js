@@ -1,5 +1,6 @@
 import { getEventHash, validateEvent, verifySignature } from "nostr-tools";
 import ReconnectingSocket from "./ReconnectingSocket.js";
+import History from "./history.js";
 import {
   readIdentifiersFromFile,
   writeIdentifiersToFile,
@@ -29,8 +30,13 @@ const DISCOVERY_RETRY_MS = 30000;
 // filter lists every account's pubkey; each account brings its own relays (NIP-05 or default relays,
 // then its NIP-65 or Kind 3 relay list).
 export default class RelayManager {
-  constructor({ createSocket = (url, options) => new ReconnectingSocket(url, options) } = {}) {
+  constructor({
+    createSocket = (url, options) => new ReconnectingSocket(url, options),
+    history = new History(),
+  } = {}) {
     this.createSocket = createSocket;
+    // Every version of each account's profile and relay list (see history.js)
+    this.history = history;
     this.generation = 0;
     this.discoveryTimers = {};
     this.resetState();
@@ -122,7 +128,8 @@ export default class RelayManager {
 
   subscribeToLocalMetadata() {
     if (this.pubkeys.length > 0) {
-      this.localRelay.send(["REQ", "relay-metadata", { authors: this.pubkeys, kinds: [3, 10002] }]);
+      // Profiles too, so the history also has updates made by clients connected straight to this relay
+      this.localRelay.send(["REQ", "relay-metadata", { authors: this.pubkeys, kinds: [0, 3, 10002] }]);
     } else {
       this.localRelay.send(["CLOSE", "relay-metadata"]);
     }
@@ -159,6 +166,7 @@ export default class RelayManager {
       account = this.accountForPubkey(event?.pubkey);
       if (!account || !validateEvent(event) || event.id !== getEventHash(event) || !verifySignature(event)) return;
     } catch { return; }
+    this.history.record(event);
     this.updateRelayList(account, event);
     if (local) return;
     this.status = DISCOVERY_STATUS.IDLE;
@@ -256,6 +264,7 @@ export default class RelayManager {
     await writeIdentifiersToFile(remaining);
 
     if (remaining.length === 0) {
+      this.history.clear();
       ++this.generation;
       for (const url of Object.keys(this.relays)) this.closeRelay(url);
       this.localRelay.send(["CLOSE", "relay-metadata"]);
@@ -265,6 +274,7 @@ export default class RelayManager {
 
     clearTimeout(this.discoveryTimers[identifier]);
     delete this.discoveryTimers[identifier];
+    this.history.forget(this.accounts[identifier]?.pubkey);
     delete this.accounts[identifier];
     this.savedIdentifiers = remaining;
     this.firstEventReceived = Object.values(this.accounts).some(account => account.firstEventReceived);
@@ -275,6 +285,7 @@ export default class RelayManager {
 
   close() {
     ++this.generation;
+    this.history.close();
     for (const timer of Object.values(this.discoveryTimers)) clearTimeout(timer);
     clearInterval(this.cleanUpRelaysInterval);
     for (const url of Object.keys(this.relays)) this.closeRelay(url);

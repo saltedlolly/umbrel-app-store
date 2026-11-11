@@ -1,7 +1,14 @@
 import { motion, LayoutGroup } from "framer-motion";
 
 import moment from "moment";
-import { actionDetail, parseJson, shortNpub } from "../nostr";
+import {
+  actionDetail,
+  parseJson,
+  profileChanges,
+  relayChanges,
+  shortNpub,
+} from "../nostr";
+import ChangeDetail from "./ChangeDetail";
 
 export default function LatestActions({
   loading,
@@ -9,6 +16,10 @@ export default function LatestActions({
   eventsToRenderLimit,
   supportedEventKinds,
   nameFor = shortNpub,
+  // The version before a profile or relay list update, if the history has one
+  previousOf = () => null,
+  // In the account overlay the list fills the overlay instead of scrolling itself
+  fullHeight = false,
   emptyMessage = "Your Nostr activity will show up here after you have connected your client.",
 }) {
   let eventsToRender = [];
@@ -28,7 +39,11 @@ export default function LatestActions({
 
   if (loading) {
     return (
-      <ul className="overflow-y-auto overflow-x-hidden max-h-[28.8rem] pt-2 !scrollbar-thin !scrollbar-w-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10 mx-[0.15rem]">
+      <ul
+        className={`${
+          fullHeight ? "" : "overflow-y-auto max-h-[28.8rem]"
+        } overflow-x-hidden pt-2 !scrollbar-thin !scrollbar-w-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10 mx-[0.15rem]`}
+      >
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((item, index) => {
           return (
             <li key={item} className="relative px-10 py-3">
@@ -58,7 +73,11 @@ export default function LatestActions({
 
   if (eventsToRender.length) {
     return (
-      <ul className="overflow-y-auto overflow-x-hidden max-h-[28.8rem] pt-2 !scrollbar-thin !scrollbar-w-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10 mx-[0.15rem]">
+      <ul
+        className={`${
+          fullHeight ? "" : "overflow-y-auto max-h-[28.8rem]"
+        } overflow-x-hidden pt-2 !scrollbar-thin !scrollbar-w-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10 mx-[0.15rem]`}
+      >
         <LayoutGroup>
           {eventsToRender.map((event, index) => {
             const { id, kind, created_at, content } = event;
@@ -71,6 +90,12 @@ export default function LatestActions({
             const detail = eventKind.showContent
               ? ""
               : actionDetail(event, nameFor);
+            const previous =
+              kind === 0 || kind === 10002 ? previousOf(event) : null;
+            const changes =
+              kind === 0
+                ? profileChanges(event, previous)
+                : relayChanges(event, previous);
 
             return (
               <motion.li
@@ -109,7 +134,9 @@ export default function LatestActions({
                       </p>
                     </div>
                   ) : null}
-                  {detail ? (
+                  {changes ? (
+                    <ChangeDetail kind={kind} changes={changes} />
+                  ) : detail ? (
                     <p
                       className="-mt-1 mb-1 text-slate-500 dark:text-slate-400 text-xs break-words overflow-hidden"
                       style={{

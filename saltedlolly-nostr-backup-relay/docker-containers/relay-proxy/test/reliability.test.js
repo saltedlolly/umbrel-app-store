@@ -171,7 +171,7 @@ test("relay discovery handles legacy lists, NIP-65, invalid events and local rec
       socket.options.onOpen(socket);
       assert.deepEqual(socket.sent[0], ["REQ", "backup", { authors: [pubkey] }]);
     }
-    assert.deepEqual(manager.localRelay.sent.at(-1), ["REQ", "relay-metadata", { authors: [pubkey], kinds: [3, 10002] }]);
+    assert.deepEqual(manager.localRelay.sent.at(-1), ["REQ", "relay-metadata", { authors: [pubkey], kinds: [0, 3, 10002] }]);
   });
   await t.test("removing an identifier stops old callbacks and connections", async () => {
     const old = Object.values(manager.relays);

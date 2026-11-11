@@ -8,6 +8,14 @@ import {
 import { useEffect } from "react";
 import Avatar from "./Avatar";
 
+// 1234 -> "1.2k"
+function formatCount(count) {
+  if (count < 1000) return String(count);
+  return `${(count / 1000)
+    .toFixed(count < 10000 ? 1 : 0)
+    .replace(/\.0$/, "")}k`;
+}
+
 // columns: [{ key, label, picture, other, events }], one per synced account plus
 // "Other". With none, this is the original single list.
 export default function TotalBackups({
@@ -97,6 +105,8 @@ export default function TotalBackups({
   }
 
   if (columns.length) {
+    // Counts per kind for each column; the rows are ordered by the total
+    // across all columns, so the most common actions come first
     const columnCounts = columns.map((column) => {
       const counts = {};
       column.events.forEach((event) => {
@@ -105,77 +115,60 @@ export default function TotalBackups({
       });
       return counts;
     });
-    // The first column is the overall breakdown; one narrow column per account
-    const gridTemplateColumns = `minmax(11rem, 1.6fr) repeat(${columns.length}, minmax(5.5rem, 1fr))`;
-    const minWidth = `${11 + columns.length * 6.5}rem`;
+    const gridTemplateColumns = `minmax(9.5rem, 1.3fr) repeat(${columns.length}, minmax(4.75rem, 1fr))`;
+    const minWidth = `${9.5 + columns.length * 5.75}rem`;
+    const big = columns.length <= 4 ? "text-5xl" : "text-4xl";
     return (
-      <div className="overflow-x-auto !scrollbar-thin !scrollbar-h-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10">
+      <div className="relative overflow-x-auto !scrollbar-thin !scrollbar-h-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10">
         <div style={{ minWidth }}>
           <div
-            className="grid gap-x-4 items-end px-10 md:px-6 lg:px-10 mt-2"
+            className="grid gap-x-3 items-end px-10 md:px-6 lg:px-10 pt-5"
             style={{ gridTemplateColumns }}
           >
-            <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-              <motion.span className="text-8xl md:text-7xl lg:text-8xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500">
-                {totalEvents > 999 ? "999+" : totalEventsAnimatedCountRounded}
-              </motion.span>
-            </p>
+            <span />
             {columns.map((column) => (
               <div
                 key={column.key}
-                className="flex flex-col items-center pb-3 min-w-0"
-                title={column.label}
+                className="flex flex-col items-center min-w-0"
               >
                 <Avatar
+                  pubkey={column.key}
                   picture={column.picture}
                   label={column.label}
                   other={column.other}
-                  size="w-10 h-10"
+                  title={column.other ? "Other accounts" : column.label}
+                  size="w-11 h-11"
                 />
-                <span className="mt-2 text-3xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500">
-                  {column.events.length > 999 ? "999+" : column.events.length}
-                </span>
-                <span className="mt-1 w-full truncate text-center text-xs text-slate-500 dark:text-slate-400">
-                  {column.label}
+                <span
+                  className={`mt-2 ${big} leading-none font-semibold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500`}
+                >
+                  {formatCount(column.events.length)}
                 </span>
               </div>
             ))}
           </div>
           {totalEvents ? (
-            <hr className="opacity-90 mx-10 px-6 mt-3 mb-1 dark:opacity-10" />
+            <hr className="opacity-90 mx-10 px-6 mt-5 mb-1 dark:opacity-10" />
           ) : null}
           <ul className="overflow-y-auto max-h-[19.2rem] pt-5 px-10 md:px-6 lg:px-10 !scrollbar-thin !scrollbar-w-1 !scrollbar-thumb-rounded-full !scrollbar-track-transparent !scrollbar-thumb-black/10 dark:!scrollbar-thumb-white/10 mx-[0.15rem]">
             <LayoutGroup>
-              {eventsBreakdown.map(({ kind, total }) => (
+              {eventsBreakdown.map(({ kind }) => (
                 <motion.li
                   initial={{ scale: 0.2, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0, opacity: 0 }}
                   layout
                   key={kind}
-                  className="grid gap-x-4 items-center pb-5"
+                  className="grid gap-x-3 items-center pb-4"
                   style={{ gridTemplateColumns }}
                 >
-                  <div className="flex min-w-0">
+                  <div className="flex items-center min-w-0">
                     <span className="flex flex-none items-center justify-center w-7 h-7 text-sm rounded-md bg-white shadow-sm ring-1 ring-slate-900/5 dark:bg-slate-700 dark:ring-0 dark:shadow-none dark:highlight-white/5">
                       {supportedEventKinds[kind]["icon"]}
                     </span>
-                    <div className="ml-2 w-full min-w-0 flex flex-col justify-between">
-                      <div className="flex justify-between gap-2">
-                        <span className="text-slate-700 dark:text-slate-300 text-sm truncate">
-                          {`${supportedEventKinds[kind]["name"]}${
-                            total > 1 ? "s" : ""
-                          }`}
-                        </span>
-                        <span className="text-slate-700 dark:text-slate-300 text-sm">
-                          {total}
-                        </span>
-                      </div>
-                      <motion.div
-                        animate={{ width: `${(total * 100) / totalEvents}%` }}
-                        className="h-1 rounded-full bg-gradient-to-r from-pink-500 to-violet-500"
-                      ></motion.div>
-                    </div>
+                    <span className="ml-2 text-slate-700 dark:text-slate-300 text-sm truncate">
+                      {`${supportedEventKinds[kind]["name"]}s`}
+                    </span>
                   </div>
                   {columnCounts.map((counts, index) => (
                     <span

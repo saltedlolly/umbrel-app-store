@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import Avatar from "./Avatar";
+import { shortNpub } from "../nostr";
 import { motion, AnimatePresence } from "framer-motion";
 
 import AddIdentifierButton from "./AddIdentifierButton";
@@ -18,6 +20,8 @@ export default function PublicRelaysModal({
   onClose,
   isPreventModalClose,
   setIsPreventModalClose,
+  // pubkey -> { picture, label }, from the profiles on the dashboard
+  accountInfo = () => ({}),
 }) {
   const [publicRelays, setPublicRelays] = useState(null);
   const fetchIntervalRef = useRef();
@@ -247,10 +251,26 @@ export default function PublicRelaysModal({
       {identifiers.map((account) => (
         <div key={account.identifier} className="flex gap-2 px-7 mb-2">
           <div
-            className="text-slate-700 dark:text-white border dark:border-white dark:border-opacity-10 rounded-md w-full px-3 py-2 bg-white dark:bg-opacity-5 text-sm truncate"
+            className="flex items-center gap-2 min-w-0 text-slate-700 dark:text-white border dark:border-white dark:border-opacity-10 rounded-md w-full px-2 py-1.5 bg-white dark:bg-opacity-5 text-sm"
             title={account.identifier}
           >
-            {account.identifier}
+            <Avatar
+              pubkey={account.pubkey}
+              picture={
+                account.pubkey ? accountInfo(account.pubkey).picture : ""
+              }
+              label={account.identifier}
+              size="w-6 h-6"
+            />
+            <span className="truncate">
+              {account.identifier.startsWith("npub1") &&
+              account.pubkey &&
+              accountInfo(account.pubkey).name
+                ? `${accountInfo(account.pubkey).name} (${shortNpub(
+                    account.identifier,
+                  )})`
+                : account.identifier}
+            </span>
           </div>
           <RemoveIdentiferButton
             onClick={(e) => handleRemoveClick(e, account.identifier)}

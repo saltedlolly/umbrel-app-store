@@ -19,6 +19,12 @@ router.get("/connectionStatus", asyncHandler(async (request, response) => {
   response.send(status);
 }));
 
+// Every saved version of each synced account's profile and relay list, oldest first
+router.get("/history", asyncHandler(async (request, response) => {
+  const relayManager = request.app.get("relayManager");
+  response.json(relayManager.history.versions(relayManager.pubkeys));
+}));
+
 // Running version, and the latest version in the saltedlolly App Store (for the update notice)
 router.get("/version", asyncHandler(async (request, response) => {
   response.json(await getVersion());
