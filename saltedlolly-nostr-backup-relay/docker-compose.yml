@@ -10,7 +10,7 @@ services:
   # Web page and relay endpoint: Caddy serves the dashboard and passes Nostr
   # websocket and NIP-11 requests to the relay. Source: docker-containers/ui
   web:
-    image: ghcr.io/saltedlolly/nostr-backup-relay-ui:v1.2.1.1@sha256:8b6a3cc029736c963281cf6b2591cd0b6c0ade9358e6eb83d0606d56aea37a4f
+    image: ghcr.io/saltedlolly/nostr-backup-relay-ui:v1.2.1.2@sha256:5eeec8ba974264692eb4e242e07e00fdf73389e09c33fbd91d290b38519e099b
     user: "1000:1000"
     restart: on-failure
     environment:
@@ -32,7 +32,7 @@ services:
   # Syncs each saved account's activity from public relays into the relay.
   # Source: docker-containers/relay-proxy
   relay-proxy:
-    image: ghcr.io/saltedlolly/nostr-backup-relay-proxy:v1.2.1.1@sha256:4e03682a8e58343c983dbc8be7c630a1395bd996310572a02ed0e6145a16b7d9
+    image: ghcr.io/saltedlolly/nostr-backup-relay-proxy:v1.2.1.2@sha256:dc393f8248bf416b8e81db0b49f356566ff5b9b0d9c3efee8a57913e00c1cabc
     user: "1000:1000"
     restart: on-failure
     environment:

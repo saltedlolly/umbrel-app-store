@@ -83,8 +83,8 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
     <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-nostr-backup-relay/icon.svg" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="https://github.com/saltedlolly/umbrel-app-store#nostr-backup-relay">Nostr Backup Relay</a></td>
-      <td nowrap id="saltedlolly-nostr-backup-relay-version"><code>v1.2.1.1</code></td>
-      <td nowrap id="saltedlolly-nostr-backup-relay-date">2026-11-11</td>
+      <td nowrap id="saltedlolly-nostr-backup-relay-version"><code>v1.2.1.2</code></td>
+      <td nowrap id="saltedlolly-nostr-backup-relay-date">2026-11-12</td>
       <td>Back up the Nostr activity of all your accounts to your own private relay</td>
     </tr>
     <tr>
