@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 
 import { RELAY_PROXY_URL } from "../constants/constants";
+import ZapDialog from "./ZapDialog";
 
 const APP_NAME = "Nostr Backup Relay";
 const APP_URL =
@@ -55,6 +56,8 @@ const link = "underline-offset-2 hover:underline";
 
 export default function Footer({ relayVersion }) {
   const { version, latestVersion, updateAvailable } = useVersion();
+  const [showZap, setShowZap] = useState(false);
+  const closeZap = useCallback(() => setShowZap(false), []);
 
   return (
     <footer className="mt-10 min-[1200px]:mt-0 min-[1200px]:fixed min-[1200px]:bottom-0 min-[1200px]:inset-x-0 min-[1200px]:z-10 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900 px-4 py-2 text-sm text-slate-500 dark:text-slate-400">
@@ -123,7 +126,21 @@ export default function Footer({ relayVersion }) {
             🐛 Report Issue
           </a>
         </div>
-        <div className="min-[1200px]:justify-self-end">
+        {/* Tips in sats only: Donate buttons are on hold, and Umbrel's
+            licence for this app's code is noncommercial (user, 2026-11-12) */}
+        <div className="min-[1200px]:justify-self-end flex items-center gap-3">
+          <div className="text-center leading-tight text-xs">
+            Please support
+            <br />
+            open source development
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowZap(true)}
+            className="whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium text-white bg-[#2d333b] hover:bg-black dark:text-slate-900 dark:bg-[#e6e9ee] dark:hover:bg-white"
+          >
+            ⚡ Zap
+          </button>
           <a
             href="https://saltedlolly.com"
             target="_blank"
@@ -141,6 +158,7 @@ export default function Footer({ relayVersion }) {
           </a>
         </div>
       </div>
+      {showZap && <ZapDialog onClose={closeZap} />}
     </footer>
   );
 }
