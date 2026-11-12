@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-changedetection
 category: automation
 name: changedetection.io
-version: "0.70.2"
+version: "0.70.3"
 tagline: Monitor any website for changes and get notified
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -23,36 +23,39 @@ description: >-
 
   All watches, settings, and page-snapshot history are stored under this app's persistent data directory and survive restarts and updates. Uninstalling this app deletes them - back up first if you want to keep your watch list.
 releaseNotes: >-
-  ## 0.70.2
+  ## 0.70.3
 
-  - Update changedetection.io to upstream release 0.70.2.
+  - Update changedetection.io to upstream release 0.70.3.
 
 
   --- dgtlmoon/changedetection.io upstream release notes (auto-updated) ---
 
 
-  dgtlmoon/changedetection.io 0.70.2
+  dgtlmoon/changedetection.io 0.70.3
 
     What's Changed
-    * MCP - "MCP Note" sub-tab, set what assistants are told when they connect by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4670
-    * MCP - More monitor settings, test notifications, word diffs, and permission rows for notifications and browser steps by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4669
-    * MCP OAuth - Claude Code can sign in: loopback redirect URIs match on any port (RFC 8252 7.3) by @kris-anderson in https://github.com/dgtlmoon/changedetection.io/pull/4673
-    * Clear history - don't fail when a save renames its .tmp file away mid-clear by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4674
-    * MCP - "Public MCP address" setting, separate from the notification Base URL by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4676
-    * gitignore: local AI configs to avoid credential leaks by @skkzsh in https://github.com/dgtlmoon/changedetection.io/pull/4677
-    * Fix two races behind flaky tests: favicon cache, and a new monitor queued twice by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4681
-    * CI - Third-party licence list: regenerate weekly and on release, drift is only a warning on PRs by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4684
-    * MCP - Clearer tool descriptions (list_tags, list_notifications, notification_services, restock_status, limit/offset) by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4678
-    * MCP plugins - their own permission rows, a tool 'area', and open_world by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4679
-    * MCP - "Allow read-only access without sign-in" setting, for public demos by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4680
-    * AI settings - saving no longer switches off checkboxes the page didn't show by @kris-anderson in https://github.com/dgtlmoon/changedetection.io/pull/4683
-    * AI settings - API key field could not be typed in by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4687
-    * API - Watch list and search show each watch's paused and notification_muted by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4686
+    * Update pytest requirement from ~=9.1 to ~=9.2 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4692
+    * Update python-engineio requirement from <5,>=4.14.0 to >=4.15.1,<5 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4693
+    * Update flask-socketio requirement from <6,>=5.7.0 to >=5.7.2,<6 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4689
+    * Update pydantic requirement from <3.0,>=2.14.1 to >=2.14.2,<3.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4690
+    * Update ruff requirement from >=0.17.2 to >=0.17.3 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4691
+    * Update jsonpath-ng requirement from ~=1.14.0 to ~=1.16.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4703
+    * Update python-socketio requirement from <6,>=5.17.0 to >=5.18.1,<6 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4701
+    * Update selenium requirement from ~=4.51.0 to ~=4.52.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4702
+    * MCP OAuth - ChatGPT can sign in: private_key_jwt client authentication (RFC 7523) by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4707
+    * LLM - Don't log a misleading "refused" warning for local LLM endpoints by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4708
+    * Update authlib requirement from <2.0,>=1.9.4 to >=1.9.5,<2.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4706
+    * Update pydantic requirement from <3.0,>=2.14.2 to >=2.14.3,<3.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4704
+    * Update ruff requirement from >=0.17.3 to >=0.17.4 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4710
+    * Mark a restock watch as viewed when its watch list chart is opened by @atipapp in https://github.com/dgtlmoon/changedetection.io/pull/4698
+    * Plugins - one core watch_last_viewed_updated hook for every "watch was viewed" path by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4711
+    * Plugin hooks for changing the request and per-watch plugin settings by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4712
+    * Apprise notifications 2.2.0 - Update requirements.txt by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4713
 
     New Contributors
-    * @kris-anderson made their first contribution in https://github.com/dgtlmoon/changedetection.io/pull/4673
+    * @atipapp made their first contribution in https://github.com/dgtlmoon/changedetection.io/pull/4698
 
-    **Full Changelog**: https://github.com/dgtlmoon/changedetection.io/compare/0.70.1...0.70.2
+    **Full Changelog**: https://github.com/dgtlmoon/changedetection.io/compare/0.70.2...0.70.3
 
 
   See the full release history: https://github.com/dgtlmoon/changedetection.io/releases
