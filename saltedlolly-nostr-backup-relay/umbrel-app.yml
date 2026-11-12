@@ -9,9 +9,6 @@ name: Nostr Backup Relay
 version: "v1.2.1.3"
 tagline: Back up the Nostr activity of all your accounts to your own private relay
 description: >-
-  UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
-
-
   Nostr Backup Relay is a private Nostr relay that backs up everything you post, from as many Nostr accounts as you like. It is a fork of Umbrel's official Nostr Relay app, built from Umbrel's v1.2.1 code, with one addition: "Sync from public relays" accepts several NIP-05 or npub addresses instead of one, so a personal account and a project account can both be backed up. It is not made or supported by Umbrel.
 
 

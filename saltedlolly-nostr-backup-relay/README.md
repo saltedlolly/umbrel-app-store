@@ -6,8 +6,6 @@
 </a>
 Nostr Backup Relay for Umbrel</h1>
 
-> **Under construction:** this app is still being tested. Please don't rely on it yet.
-
 A private [Nostr](https://nostr.com/) relay on your Umbrel that backs up everything you post, from as many Nostr accounts as you like.
 
 It is a fork of Umbrel's official [Nostr Relay](https://apps.umbrel.com/app/nostr-relay) app, built from Umbrel's v1.2.1 code, with one addition: "Sync from public relays" accepts several NIP-05 or npub addresses instead of one. If you run a personal account and an account for a project, both are backed up. It is not made or supported by Umbrel, so please report problems [here](https://github.com/saltedlolly/umbrel-app-store/issues), not to Umbrel.
