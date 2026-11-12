@@ -40,10 +40,7 @@ export default function ZapDialog({ onClose }) {
   return (
     <Dialog title="Zap saltedlolly" onClose={onClose}>
       <div className="px-6 sm:px-10 py-5 grid gap-4 justify-items-center text-center text-sm text-slate-700 dark:text-slate-300">
-        <p>
-          Nostr Backup Relay is free. If you find it useful, you can send
-          saltedlolly a tip in sats over Lightning. Tips are always optional.
-        </p>
+        <p>The app is free. If you want to say thanks, zaps are appreciated.</p>
         <QrCode text={`lightning:${ZAP_ADDRESS}`} />
         <div className="flex items-center gap-2">
           <span className="text-slate-500 dark:text-slate-400">
