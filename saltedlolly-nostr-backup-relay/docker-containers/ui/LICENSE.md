@@ -1,4 +1,4 @@
-> This repository is licensed under the PolyForm Noncommercial License 1.0.0. Please refer to our [License FAQ](https://github.com/getumbrel/umbrel/wiki/License-FAQ) if you have any questions or reach out to us directly at help@umbrel.com.
+> This app is licensed under the PolyForm Noncommercial License 1.0.0, because it is built from Umbrel's Nostr Relay app, which Umbrel licenses this way. For questions about the licence, see Umbrel's [License FAQ](https://github.com/getumbrel/umbrel/wiki/License-FAQ).
 
 # PolyForm Noncommercial License 1.0.0
 
