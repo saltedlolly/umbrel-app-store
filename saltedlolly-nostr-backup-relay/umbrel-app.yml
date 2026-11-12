@@ -9,7 +9,10 @@ name: Nostr Backup Relay
 version: "v1.2.1.3"
 tagline: Back up the Nostr activity of all your accounts to your own private relay
 description: >-
-  Nostr Backup Relay is a private Nostr relay that backs up everything you post, from as many Nostr accounts as you like. It is a fork of Umbrel's official Nostr Relay app, built from Umbrel's v1.2.1 code, with one addition: "Sync from public relays" accepts several NIP-05 or npub addresses instead of one, so a personal account and a project account can both be backed up. It is not made or supported by Umbrel.
+  Nostr Backup Relay is a private Nostr relay on your Umbrel that backs up everything you post, from as many Nostr accounts as you like. Back up your personal account and a project account side by side. It started from Umbrel's official Nostr Relay app and adds a lot to it. It is not made or supported by Umbrel.
+
+
+  The dashboard shows your activity account by account: totals for each account, its latest posts, reposts and reactions, and the full list behind More. When an account changes its profile picture, banner or name, you see the old and the new side by side, and relay changes show which relays were added or removed. Links in posts can be clicked and show a preview of the page.
 
 
   Step 1. Connect your Nostr clients (for example Damus, Amethyst or Primal) to your private relay, so new activity is saved as you post it. Use the Relay URL shown at the top of the app's page.

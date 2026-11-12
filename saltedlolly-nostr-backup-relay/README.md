@@ -8,19 +8,30 @@ Nostr Backup Relay for Umbrel</h1>
 
 A private [Nostr](https://nostr.com/) relay on your Umbrel that backs up everything you post, from as many Nostr accounts as you like.
 
-It is a fork of Umbrel's official [Nostr Relay](https://apps.umbrel.com/app/nostr-relay) app, built from Umbrel's v1.2.1 code, with one addition: "Sync from public relays" accepts several NIP-05 or npub addresses instead of one. If you run a personal account and an account for a project, both are backed up. It is not made or supported by Umbrel, so please report problems [here](https://github.com/saltedlolly/umbrel-app-store/issues), not to Umbrel.
+Back up your personal account and a project account side by side, and see each one's activity on its own. It started from Umbrel's official [Nostr Relay](https://apps.umbrel.com/app/nostr-relay) app (v1.2.1) and adds a lot to it. It is not made or supported by Umbrel, so please report problems [here](https://github.com/saltedlolly/umbrel-app-store/issues), not to Umbrel.
 
 ## What's different from the official app
 
 | | Official Nostr Relay | Nostr Backup Relay |
 | --- | --- | --- |
 | Accounts synced from public relays | One | As many as you like |
+| Dashboard | One combined list | A panel for each account, totals per account, and the full list behind More |
+| Profile and relay changes | Listed | Old and new side by side; relays added and removed |
+| Links in posts | Plain text | Clickable, with a preview of the page or image |
+| Reposts | Listed | Their own card, showing whose post it was |
+| Activity from accounts you don't back up | Kept | Kept, and can be deleted |
 | Relay engine | nostr-rs-relay 0.10.0 | The same image |
-| Reconnection, NIP-65 relay lists, signature checks | Yes (v1.2.1) | Yes, unchanged |
 | Port | `4848` | `4849` |
 | Copies the official app's backup | | Once, on first start |
 
 Each public relay gets one connection, subscribed to every account. Each account still brings its own relays: those in its NIP-05 file (or a list of popular relays for an npub), then the ones in its own relay list (NIP-65, or the older Kind 3 contact list).
+
+## Good to know
+
+- **Link previews:** to show a link's preview, your Umbrel fetches that page, as any Nostr app does. It only ever fetches public web addresses, never your home network.
+- **Profile and relay changes:** the relay itself only keeps the newest profile and relay list, so the app keeps its own history of them. Before-and-after views start from v1.2.1.2.
+- **Deleting other accounts' activity:** the delete button on the "Other accounts" panel removes everything saved by accounts you don't back up. It can't be undone. If you post from an account you don't back up, add it first.
+- **Tips:** the app is free. If you want to say thanks, the Zap button at the bottom of the page sends a tip in sats.
 
 ## Setting it up
 
