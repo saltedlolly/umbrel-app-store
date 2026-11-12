@@ -70,7 +70,10 @@ repo: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-no
 support: https://github.com/saltedlolly/umbrel-app-store/issues
 
 port: 4849
-gallery: []
+gallery:
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-nostr-backup-relay/gallery/1.jpg
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-nostr-backup-relay/gallery/2.jpg
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-nostr-backup-relay/gallery/3.jpg
 path: ""
 
 defaultUsername: ""
