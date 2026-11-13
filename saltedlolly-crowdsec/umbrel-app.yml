@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-crowdsec
 category: networking
 name: CrowdSec
-version: "v1.8.2.9"
+version: "v1.8.2.10"
 tagline: Crowd-sourced intrusion detection and IP banning for your self-hosted apps
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -35,6 +35,10 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data, including your ban history and dashboard account. Back it up before uninstalling.
 releaseNotes: >-
+  ## v1.8.2.10
+
+  - You no longer need to sign in to Umbrel as well as to the dashboard: the dashboard's own login is all you need.
+
   ## v1.8.2.9
 
   - Automated update: crowdsec 1.8.2, crowdsec-web-ui 2026.11.8
