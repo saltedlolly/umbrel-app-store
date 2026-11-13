@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: saltedlolly-readmeabook
 category: media
 name: ReadMeABook
-version: "v1.2.13"
+version: "v1.3.0"
 tagline: Request and automatically download audiobooks
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -35,58 +35,58 @@ description: >-
 
   Icon artwork is sourced from https://github.com/selfhst/icons and used under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). It has been adapted with additional internal spacing for UmbrelOS. Application names and logos remain the property of their respective owners.
 releaseNotes: >-
-  ## v1.2.13
+  ## v1.3.0
 
-  - Automated update: bump ReadMeABook to v1.2.13
+  - Automated update: bump ReadMeABook to v1.3.0
 
 
   --- kikootwo/ReadMeABook upstream release notes (auto-updated) ---
 
 
-  kikootwo/ReadMeABook v1.2.13
+  kikootwo/ReadMeABook v1.3.0
 
-    🎉  Release v1.2.13
+    🎉  Release v1.3.0
 
 
-    > **If you use "Auto-tag audio files with metadata" (on by default):** M4B files with an embedded cover imported since v1.2.4 may have broken chapters. This release fixes tagging for new imports but doesn't repair books already in your library. To check a file, `ffprobe -v error -select_streams d -show_entries stream=nb_frames -of csv=p=0 book.m4b` should print the book's chapter count. To repair one, delete the book's audio file from the library, then import the original again with Manual Import, or request the book again once RMAB shows it as removed.
-
-    > **Cancelling a request now removes its download.** A partly downloaded torrent is removed from your client right away, even on an indexer with a seed time, so a strict private tracker may count it. A finished download stays to seed until its seed time is met. Scripts that called `DELETE /api/requests/:id` should cancel with `POST /api/requests/:id/cancel`; the old route is gone.
+    > **Before you update:**
+    >
+    > - **Sign in once after updating.** The new sign-in limits remember browsers that have signed in with the password since the update, and such a browser can still sign in while its account is at its limit.
+    > - **Behind a reverse proxy,** make sure it passes the client address (`X-Forwarded-For`), or all visitors share one address limit.
+    > - **Scripts that call the sign-in endpoints** must send `Content-Type: application/json`.
+    > - **Scripts that read job payloads or stored download links** from the request detail, request list or recent-requests responses will no longer find them.
+    > - **Nothing changes for file placement or metadata until you pick a new option,** and the Explicit mark is off until you turn it on.
 
     **Features:**
-    - ✅ Audible sub-categories such as Horror can be picked for a home section
-       - https://github.com/kikootwo/ReadMeABook/issues/309
-       - https://github.com/kikootwo/ReadMeABook/pull/499
-       - the home page's Customize picker lists each category's sub-categories (such as Horror under Literature & Fiction) under their parent, with a filter. Categories already on your home page stay in the list, marked "Added".
-       - the nightly refresh updates at most 30 categories per run, oldest first, so with more than 30 each one is refreshed every few nights
-    - ✅ an admin setting hides other-language Audible editions from search, series and home rows
-       - https://github.com/kikootwo/ReadMeABook/issues/259
-       - https://github.com/kikootwo/ReadMeABook/pull/527
-       - Thanks https://github.com/Eyji !
-       - under the Audible region in Admin Settings > Library, off by default. It also applies to watched series, BookDate and shelf sync; books with no language listed are kept.
-    - ✅ Apprise can send each request's notifications to the user who made it
-       - https://github.com/kikootwo/ReadMeABook/issues/174
-       - https://github.com/kikootwo/ReadMeABook/pull/547
-       - in Config Key mode, put `{user}` in the Tag field (such as `user-{user}`) and list each user's URLs, such as a `mailto://` address, under their tag in your Apprise config. Names become lowercase with `-` for spaces and punctuation, so Jane Doe is `user-jane-doe`, and names that come out the same share a tag.
-       - events are chosen per backend: a second Apprise backend with the same Config Key and only Request Approved and Request Available tells each user about their own requests. A Tag without `{user}` is sent as before.
-    - ✅ cancelling a request stops its download and removes what it fetched
-       - https://github.com/kikootwo/ReadMeABook/issues/228
-       - https://github.com/kikootwo/ReadMeABook/pull/554
-       - Thanks https://github.com/ZillaGit104 !
-       - a partial torrent or usenet download is removed unless another request still uses it; a finished download stays to seed, and the seeding cleanup removes it once its seed time is met (see the note at the top)
-       - API tokens can cancel a request with `POST /api/requests/:id/cancel`
-    - ✅ `{primaryAuthor}` path template variable for the first author
-       - https://github.com/kikootwo/ReadMeABook/pull/501
-       - Thanks https://github.com/Westuss !
-       - the first entry of the author list (split on `,` `;` `&`), so co-written and translated books share their first author's folder. `{author}` and existing templates are unchanged.
-    - ✅ `{seriesPart:00}` and wider formats pad the series part in path templates
-       - https://github.com/kikootwo/ReadMeABook/issues/250
-       - https://github.com/kikootwo/ReadMeABook/pull/502
-       - `{seriesPart:00}`, `:000` and `:0000` pad a numeric part or a range (`1` becomes `01`, `1-3` becomes `01-03`) in folder and rename templates
-    - ✅ admin Request Management can be filtered to audiobook or ebook requests
-       - https://github.com/kikootwo/ReadMeABook/pull/537
-       - Thanks https://github.com/NichCodes !
+    - ✅ a Library page for everything in your library and everything requested
+       - https://github.com/kikootwo/ReadMeABook/issues/177
+       - https://github.com/kikootwo/ReadMeABook/pull/572
+       - https://github.com/kikootwo/ReadMeABook/pull/578
+       - linked from the header for every signed-in user: every book in your Plex or Audiobookshelf library and every audiobook requested through RMAB, each book once, as a cover grid with search, filters for status, source and requester, sort and group by author. Books on the way update live.
+       - click a book for its details. Admins and the requester also see the error, the download size, the request history and the actions; everyone else sees the book and who asked for it.
+    - ✅ hard links and metadata.opf for Audiobookshelf imports
+       - https://github.com/kikootwo/ReadMeABook/issues/68
+       - https://github.com/kikootwo/ReadMeABook/pull/597
+       - in Audiobookshelf mode, Settings > Paths has a new Library files section. File placement: Copy (as before), Hard link (copy if not possible) or Hard link only (don't import if not possible). Metadata: Tags in the audio files (as before), OPF file (metadata.opf) or None. A hard link puts the book in your library without a second copy on disk, so the download keeps seeding from the same file. Ebooks still copy, and Plex mode is unchanged.
+       - with hard links the audio files are never changed: choose OPF file or None, and turn chapter merge off. When a book can't be linked, "Hard link (copy if not possible)" copies it and the Paths page shows the last book that was copied instead; "Hard link only" imports nothing and the request says why.
+       - one mount: hard links only work when the downloads folder and the media folder are on the same filesystem and reach RMAB through one mount, such as one `/data` volume holding both `/data/downloads` and `/data/media`. Two separate volumes, even on the same disk, can't be linked; neither can separate ZFS datasets, btrfs subvolumes or Unraid pools.
+       - caution: don't use Audiobookshelf's Embed Metadata on linked books. It writes into the shared file, so it changes the download too.
+       - in every mode, deleting a request now also removes a `metadata.opf` left alone in the book folder, as it already did for `cover.jpg`
+    - ✅ an admin adds a magnet link or a .torrent file to a request
+       - https://github.com/kikootwo/ReadMeABook/pull/596
+       - https://github.com/kikootwo/ReadMeABook/pull/290
+       - Thanks https://github.com/zpersichetti !
+       - Add Torrent in the admin request menu, on audiobook requests that are pending, awaiting search, awaiting release or failed, with qBittorrent, Transmission and Deluge. The download, import and notifications then run as usual.
+       - once it finishes, a torrent added this way seeds until you remove it in your client; cancelling the request while it is still downloading removes it. Admin sessions only: API tokens can't use it.
+    - ✅ select several requests in the admin table and approve, deny, cancel or delete them together
+       - https://github.com/kikootwo/ReadMeABook/issues/212
+       - https://github.com/kikootwo/ReadMeABook/pull/589
+       - a checkbox on each row and one in the header for the whole page. Each button shows how many selected requests it applies to, with a Stop button while it runs and a result that lists what was skipped and why.
+       - bulk delete never touches a book that is in your library or being imported. A deleted request comes back if a watched author or series, or a synced shelf, still lists it: remove that first, or cancel instead.
+    - ✅ choose the download client category
+       - https://github.com/kikootwo/ReadMeABook/issues/46
+       - https://github.com/kikootwo/ReadMeABook/pull/587
 
-    … (truncated) Full release notes: https://github.com/kikootwo/ReadMeABook/releases/tag/v1.2.13
+    … (truncated) Full release notes: https://github.com/kikootwo/ReadMeABook/releases/tag/v1.3.0
 
 
   See the full release history: https://github.com/kikootwo/ReadMeABook/releases
