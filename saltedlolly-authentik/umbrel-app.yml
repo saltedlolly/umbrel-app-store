@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-authentik
 category: networking
 name: Authentik
-version: "2026.8.5"
+version: "2026.8.5.1"
 tagline: One login for your self-hosted apps, for you and everyone you share them with
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested. Please don't use it yet. Check back soon.
@@ -39,6 +39,10 @@ description: >-
 
   ⚠️ Uninstalling this app deletes all its data, including your users and settings. Back it up before uninstalling.
 releaseNotes: >-
+  ## 2026.8.5.1
+
+  - Authentik no longer asks for your Umbrel login first: its own sign-in is all you need.
+
   ## 2026.8.5
 
   - Automated update: Authentik 2026.8.5
