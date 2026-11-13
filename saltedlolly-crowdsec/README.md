@@ -18,6 +18,8 @@ Crowd-sourced intrusion detection and automatic IP banning, powered by [CrowdSec
 
 Open the app and create your dashboard admin account on first visit - there's no default username/password, you set it yourself the first time you load the page.
 
+The dashboard uses its own login instead of your Umbrel login, so until that account exists, anyone who can reach your Umbrel could create it. Open the app and set it up straight after installing.
+
 ## Protecting NPMplus (or other apps)
 
 CrowdSec doesn't protect anything by itself - something needs to actually enforce its decisions. That's a "bouncer," and [saltedlolly-npm-plus](../saltedlolly-npm-plus) already has one built in.

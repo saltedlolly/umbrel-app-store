@@ -30,6 +30,9 @@ description: >-
   Some apps' own mobile clients can look like bots to CrowdSec (for example Audiobookshelf apps syncing a library) and get banned by mistake. The README explains how to lift a ban and add a whitelist to stop it happening again: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-crowdsec#stopping-false-bans-of-your-own-apps-whitelists
 
 
+  The dashboard has its own login, not your Umbrel login. Open it straight after installing and create your account, as the first person to open it sets it up.
+
+
   ⚠️ Uninstalling this app deletes its persistent app data, including your ban history and dashboard account. Back it up before uninstalling.
 releaseNotes: >-
   ## v1.8.2.9

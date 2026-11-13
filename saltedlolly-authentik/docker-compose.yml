@@ -4,6 +4,11 @@ services:
       # The format here is: <app-id>_<docker-service-name>_1
       APP_HOST: saltedlolly-authentik_server_1
       APP_PORT: 9000
+      # Authentik has its own login (with MFA and passkeys), and its login page
+      # is already public on your auth domain, so Umbrel's login would only
+      # add a second sign-in. It also gets in the way of reverse proxies and
+      # breaks the admin pages when Umbrel's session runs out.
+      PROXY_AUTH_ADD: "false"
 
   server:
     image: ghcr.io/goauthentik/server:2026.8.5@sha256:602227a86455d6772e3d16b7d852713c4f864f40df5df894abd1285bb53979a5
