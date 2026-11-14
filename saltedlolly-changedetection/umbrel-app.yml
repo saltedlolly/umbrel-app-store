@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-changedetection
 category: automation
 name: changedetection.io
-version: "0.70.3"
+version: "0.70.3.1"
 tagline: Monitor any website for changes and get notified
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -23,6 +23,10 @@ description: >-
 
   All watches, settings, and page-snapshot history are stored under this app's persistent data directory and survive restarts and updates. Uninstalling this app deletes them - back up first if you want to keep your watch list.
 releaseNotes: >-
+  ## 0.70.3.1
+
+  - Update bundled sockpuppetbrowser sidecar to 0.0.4.
+
   ## 0.70.3
 
   - Update changedetection.io to upstream release 0.70.3.
