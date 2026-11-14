@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-npm-plus
 category: networking
 name: NPMplus
-version: "2026-10-22-r1.1"
+version: "2026-10-22-r1.2"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
@@ -38,6 +38,10 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
+  ## 2026-10-22-r1.2
+
+  - NPMplus now connects to CrowdSec and Authentik even when they start after it, for example after a reboot, or when you install CrowdSec later. Before, CrowdSec protection could stay off until NPMplus was restarted.
+
   ## 2026-10-22-r1.1
 
   - Removes an old app_proxy container left behind by earlier umbrelOS versions. It held the app's port, so umbrelOS logged a "Failed to listen on loopback port 5180" error every minute

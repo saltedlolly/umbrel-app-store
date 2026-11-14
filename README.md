@@ -90,8 +90,8 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
     <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-npm-plus/icon.svg" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="https://github.com/saltedlolly/umbrel-app-store#npmplus">NPMplus</a></td>
-      <td nowrap id="saltedlolly-npm-plus-version"><code>2026-10-22-r1.1</code></td>
-      <td nowrap id="saltedlolly-npm-plus-date">2026-10-25</td>
+      <td nowrap id="saltedlolly-npm-plus-version"><code>2026-10-22-r1.2</code></td>
+      <td nowrap id="saltedlolly-npm-plus-date">2026-11-14</td>
       <td>A feature-rich reverse proxy with HTTP/3, CrowdSec support, and advanced access control</td>
     </tr>
     <tr>
