@@ -104,8 +104,8 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
     <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-tronbyt/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="https://github.com/saltedlolly/umbrel-app-store#tronbyt">Tronbyt</a></td>
-      <td nowrap id="saltedlolly-tronbyt-version"><code>v2.6.0</code></td>
-      <td nowrap id="saltedlolly-tronbyt-date">2026-11-11</td>
+      <td nowrap id="saltedlolly-tronbyt-version"><code>v2.6.1</code></td>
+      <td nowrap id="saltedlolly-tronbyt-date">2026-11-14</td>
       <td>Self-hosted server for managing Tidbyt/Tronbyt smart displays without the cloud</td>
     </tr>
   </tbody>

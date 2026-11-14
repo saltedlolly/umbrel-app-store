@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-tronbyt
 category: automation
 name: Tronbyt
-version: "v2.6.0"
+version: "v2.6.1"
 tagline: Self-hosted server for managing Tidbyt/Tronbyt smart displays without the cloud
 description: >-
   Tronbyt Server manages apps on Tidbyt/Tronbyt smart displays entirely on your own Umbrel, without depending on Tidbyt's cloud backend. It offers a web UI for browsing and configuring apps, generates firmware for flashing a Tidbyt into a Tronbyt, and keeps working even if Tidbyt's servers go offline.
@@ -17,48 +17,40 @@ description: >-
 
   - Supports Tidbyt Gen1/Gen2, Tronbyt S3/S3 Wide, MatrixPortal S3, and Raspberry Pi-driven LED matrix panels
 releaseNotes: >-
-  ## v2.6.0
+  ## v2.6.1
 
-  - Automated update: bump bundled tronbyt/server to v2.6.0
+  - Automated update: bump bundled tronbyt/server to v2.6.1
 
 
   --- tronbyt/server upstream release notes (auto-updated) ---
 
 
-  tronbyt/server v2.6.0
+  tronbyt/server v2.6.1
 
     What's Changed
-    * Dockerfile golang update by @tavdog in https://github.com/tronbyt/server/pull/962
-    * Add admin toggle to disable Niblet Cloud without clearing the URL. by @tavdog in https://github.com/tronbyt/server/pull/963
-    * build(deps): bump github.com/quic-go/quic-go from 0.63.0 to 0.64.1 by @dependabot[bot] in https://github.com/tronbyt/server/pull/964
-    * feat: add notification sounds, Pixlet schema support, and programmatic triggers by @brombomb in https://github.com/tronbyt/server/pull/936
-    * Link update banner to README upgrading section by @tavdog in https://github.com/tronbyt/server/pull/967
-    * fix: treat an empty device timezone as unset everywhere by @febrile42 in https://github.com/tronbyt/server/pull/971
-    * Improve Niblet community stats opt-in UX by @tavdog in https://github.com/tronbyt/server/pull/968
-    * feat: sunrise and sunset schedules, and an independent dim end, for night and dim mode by @febrile42 in https://github.com/tronbyt/server/pull/970
-    * feat(chunker): standalone multi-chunk animation engine with WebSocket and HTTP streaming by @brombomb in https://github.com/tronbyt/server/pull/972
-    * Show today's sunrise/sunset on device edit page by @tavdog in https://github.com/tronbyt/server/pull/975
-    * Test render interval zero (render every rotation) by @tavdog in https://github.com/tronbyt/server/pull/976
-    * Improve firmware page OTA vs USB flash UX and onboarding flow. by @tavdog in https://github.com/tronbyt/server/pull/977
-    * build(deps): bump docker/login-action from 4.6.0 to 4.7.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/978
-    * feat(providers): pluggable external app provider interface and Screeny Studio adapter by @brombomb in https://github.com/tronbyt/server/pull/973
-    * add author to app edit screen. by @tavdog in https://github.com/tronbyt/server/pull/982
-    * feat(providers): add AWTRIX Light / AWTRIX 3 external app provider by @brombomb in https://github.com/tronbyt/server/pull/981
-    * build(deps): bump github.com/nicksnyder/go-i18n/v2 from 2.6.1 to 2.7.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/983
-    * build(deps): bump github.com/caarlos0/env/v11 from 11.4.1 to 11.4.2 by @dependabot[bot] in https://github.com/tronbyt/server/pull/984
-    * build(deps): bump github.com/quic-go/quic-go from 0.64.1 to 0.65.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/985
-    * docs: fix mermaid syntax error in SCREENY_SETUP.md by @brombomb in https://github.com/tronbyt/server/pull/986
-    * fix ota double updates by @tavdog in https://github.com/tronbyt/server/pull/989
-    * change cancel button behaviour by @tavdog in https://github.com/tronbyt/server/pull/990
-    * fix(ui): include server URL in app config API curl examples by @tavdog in https://github.com/tronbyt/server/pull/991
-    * Add apps.tronbyt.com info links and drop mark-broken dev UI. by @tavdog in https://github.com/tronbyt/server/pull/992
-    * fix(ws): drain stale ACKs before writing image to prevent premature sound playback by @brombomb in https://github.com/tronbyt/server/pull/993
-    * Add Waveshare S3 Wide device type for 128x64 boards. by @tavdog in https://github.com/tronbyt/server/pull/994
+    * feat(screeny): randomize seed per render and expose seed conf by @brombomb in https://github.com/tronbyt/server/pull/996
+    * Check for firmware updates every 12 hours, skip unchanged app store refreshes, and show firmware updates on device cards by @saltedlolly in https://github.com/tronbyt/server/pull/998
+    * Add optional sync for draft alpha firmware by @tavdog in https://github.com/tronbyt/server/pull/1001
+    * Send OTA firmware updates from an address the device can use, keeping https where possible by @saltedlolly in https://github.com/tronbyt/server/pull/1004
+    * Retry failed firmware downloads on the next check by @saltedlolly in https://github.com/tronbyt/server/pull/1002
+    * build(deps): bump docker/login-action from 4.7.0 to 4.8.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/1005
+    * build(deps): bump github.com/spf13/pflag from 1.0.10 to 1.1.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/1006
+    * build(deps): bump github.com/mattn/go-sqlite3 from 1.14.52 to 1.14.53 by @dependabot[bot] in https://github.com/tronbyt/server/pull/1007
+    * build(deps): bump golang.org/x/oauth2 from 0.37.0 to 0.38.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/1008
+    * build(deps): bump golang.org/x/text from 0.43.0 to 0.44.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/1010
+    * build(deps): bump golang.org/x/mod from 0.42.0 to 0.43.0 by @dependabot[bot] in https://github.com/tronbyt/server/pull/1009
+    * add app debug output page in system settings. by @tavdog in https://github.com/tronbyt/server/pull/1012
+    * feat: add BLOCK_CUSTOM_APPS to disable app uploads and custom repos by @gabe565 in https://github.com/tronbyt/server/pull/1013
+    * Update pixlet v0.55.1 by @gabe565 in https://github.com/tronbyt/server/pull/1014
+    * feat: let admins bypass BLOCK_CUSTOM_APPS by @gabe565 in https://github.com/tronbyt/server/pull/1015
+    * fix: set Secure on session cookie when serving TLS directly by @gabe565 in https://github.com/tronbyt/server/pull/1018
+    * fix: scope GET /v0/devices to the device when using a device API key by @gabe565 in https://github.com/tronbyt/server/pull/1017
+    * fix(server): access device images through os.Root by @gabe565 in https://github.com/tronbyt/server/pull/1016
+    * test(server): wait for startup preheat in test servers by @gabe565 in https://github.com/tronbyt/server/pull/1019
+    * fix(ui): push config edits to the device again by @gabe565 in https://github.com/tronbyt/server/pull/1020
 
-    New Contributors
-    * @febrile42 made their first contribution in https://github.com/tronbyt/server/pull/971
 
-    **Full Changelog**: https://github.com/tronbyt/server/compare/v2.5.1...v2.6.0
+    **Full Changelog**: https://github.com/tronbyt/server/compare/v2.6.0...v2.6.1
 
 
   See the full release history: https://github.com/tronbyt/server/releases
