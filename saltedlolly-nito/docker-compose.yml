@@ -56,7 +56,7 @@ services:
   # derived from getumbrel/umbrel-bitcoin's code (PolyForm Noncommercial
   # licensed); inspired by its general approach but sharing none of it.
   dashboard:
-    image: ghcr.io/saltedlolly/nito-dashboard:818df03@sha256:4b6115938dfbc3cdbb76b0a71c76faa6c8bb27d2275762f2801c64343d1d1ec9
+    image: ghcr.io/saltedlolly/nito-dashboard:1d5add1@sha256:79d7dbf81a968d1fcc04c2898e71311aa07bfc296d0780e6f3821ce702439881
     container_name: saltedlolly-nito_dashboard_1
     hostname: saltedlolly-nito_dashboard_1
     init: true
@@ -69,7 +69,7 @@ services:
       - NITO_RPC_USER=${APP_SALTEDLOLLY_NITO_RPC_USER}
       - NITO_RPC_PASSWORD=${APP_SALTEDLOLLY_NITO_RPC_PASSWORD}
       # Shown in the dashboard's footer; set by nito-build.sh on each release
-      - APP_VERSION=v3.0.1.4
+      - APP_VERSION=v3.0.1.5
     # node:24-slim has neither wget nor curl installed - use Node's own
     # built-in http client instead (caught by actually running this
     # healthcheck, not by inspection: it silently never became healthy).

@@ -76,8 +76,8 @@ A list of the currently available Apps is below. Give the repo a ⭐ to be kept 
     <tr>
       <td width="36px"><img src="https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-nito/icon.png" width="36px" style="border-radius: 10%; vertical-align:middle;" /></td>
       <td><a href="https://github.com/saltedlolly/umbrel-app-store#nito">Nito</a></td>
-      <td nowrap id="saltedlolly-nito-version"><code>v3.0.1.4</code></td>
-      <td nowrap id="saltedlolly-nito-date">2026-09-23</td>
+      <td nowrap id="saltedlolly-nito-version"><code>v3.0.1.5</code></td>
+      <td nowrap id="saltedlolly-nito-date">2026-11-14</td>
       <td>A fair-launch, SHA-256 proof-of-work blockchain built for 200-year longevity</td>
     </tr>
     <tr>
