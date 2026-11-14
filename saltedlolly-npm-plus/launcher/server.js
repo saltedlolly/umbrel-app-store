@@ -314,10 +314,10 @@ app.get('/api/integrations/status', async (req, res) => {
         // Check if Authentik is available
         const authentikDetected = await checkServiceAvailable(GATEWAY, AUTHENTIK_PORT, '/-/health/live/', 2000);
 
-        // Determine effective enabled state
-        const crowdsecEnabled = config.CROWDSEC_ENABLED === 'auto'
-            ? crowdsecDetected
-            : config.CROWDSEC_ENABLED === 'true';
+        // The "Enable CrowdSec Protection" box shows the saved setting, not
+        // whether CrowdSec answers right now: a stopped CrowdSec used to untick
+        // it, and saving then turned CrowdSec off for good
+        const crowdsecEnabled = config.CROWDSEC_ENABLED !== 'false';
 
         const crowdsecStatus = readCrowdSecStatus();
         const crowdsecConfiguredMode = config.CROWDSEC_ENABLED || 'auto';
@@ -369,7 +369,9 @@ app.post('/api/integrations', (req, res) => {
 
         // Update CrowdSec settings if provided
         if (crowdsec !== undefined) {
-            config.CROWDSEC_ENABLED = crowdsec.enabled ? 'true' : 'false';
+            // Ticked means auto (connect whenever CrowdSec is running, with
+            // NPMplus's background re-check), not 'true'
+            config.CROWDSEC_ENABLED = crowdsec.enabled ? 'auto' : 'false';
         }
 
         writeConfig(config);
