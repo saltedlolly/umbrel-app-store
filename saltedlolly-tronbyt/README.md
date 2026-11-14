@@ -52,6 +52,7 @@ This app checks daily for new `tronbyt/server` releases and auto-publishes an up
 - **Tronbyt Server**: [tronbyt/server](https://github.com/tronbyt/server)
 - **Umbrel**: [getumbrel/umbrel](https://github.com/getumbrel/umbrel)
 - **Umbrel packaging**: Olly Stedall (saltedlolly)
+- **Store images**: the app screens are previews from Tronbyt's app catalogue ([tronbyt/apps](https://github.com/tronbyt/apps), Apache 2.0), drawn as LED panels
 
 ## Support
 

@@ -62,7 +62,10 @@ repo: https://github.com/tronbyt/server
 support: https://github.com/saltedlolly/umbrel-app-store/issues
 
 port: 19191
-gallery: []
+gallery:
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-tronbyt/gallery/1.jpg
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-tronbyt/gallery/2.jpg
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-tronbyt/gallery/3.jpg
 path: ""
 
 defaultUsername: ""
