@@ -502,7 +502,7 @@
             // Set notification content based on app
             if (appId === 'crowdsec') {
                 title.textContent = 'CrowdSec Security Engine Detected!';
-                text.textContent = 'CrowdSec is now available and can protect your proxy hosts from attacks. Restart NPMplus to enable security protection.';
+                text.textContent = 'CrowdSec is now available. NPMplus connects to it automatically within about 5 minutes, and the card below shows Connected once it has.';
             }
 
             // Show the banner with animation
@@ -568,7 +568,7 @@
         const CROWDSEC_STATES = {
             'connected':      { icon: '✓', cls: 'status-detected',     text: 'Connected' },
             'available':      { icon: '✓', cls: 'status-detected',     text: 'Detected and available' },
-            'restart-needed': { icon: '!', cls: 'status-warning',      text: 'Detected – restart NPMplus to connect' },
+            'restart-needed': { icon: '!', cls: 'status-warning',      text: 'Detected – connecting (if this stays, restart NPMplus)' },
             'disabled':       { icon: '○', cls: 'status-not-detected', text: 'Disabled by user' },
             'unreachable':    { icon: '✕', cls: 'status-error',        text: 'Enabled, but CrowdSec is not responding' },
             'not-detected':   { icon: '○', cls: 'status-not-detected', text: 'Not detected' }

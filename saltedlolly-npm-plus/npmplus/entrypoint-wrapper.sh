@@ -25,10 +25,25 @@ echo "[Network] Docker host gateway: $DOCKER_HOST_IP"
 echo ""
 echo "[Auto-Discovery] Detecting companion apps..."
 
-# Check CrowdSec LAPI (port 8080)
-# Use wget to check if LAPI is responding
-if wget -q --spider --timeout=2 "http://${DOCKER_HOST_IP}:8080/health" 2>/dev/null || \
-   wget -q --spider --timeout=2 "http://${DOCKER_HOST_IP}:8080" 2>/dev/null; then
+# Companion apps are found by their ports on the Docker host. The background
+# re-check near the end reuses these.
+crowdsec_up() {
+    wget -q --spider --timeout=2 "http://${DOCKER_HOST_IP}:8080/health" 2>/dev/null || \
+        wget -q --spider --timeout=2 "http://${DOCKER_HOST_IP}:8080" 2>/dev/null
+}
+
+# The Authentik app publishes its server on the gateway at :9810 (umbreld
+# itself owns host port 9000)
+authentik_up() {
+    wget -q --spider --timeout=2 "http://${DOCKER_HOST_IP}:9810/-/health/live/" 2>/dev/null
+}
+
+# CrowdSec's AppSec (WAF) listener. Older CrowdSec app versions don't run it.
+appsec_up() {
+    nc -z -w 2 "$DOCKER_HOST_IP" 7422 2>/dev/null
+}
+
+if crowdsec_up; then
     CROWDSEC_DETECTED=true
     echo "[Auto-Discovery] ✓ CrowdSec detected (LAPI responding on ${DOCKER_HOST_IP}:8080)"
 else
@@ -36,9 +51,7 @@ else
     echo "[Auto-Discovery] ○ CrowdSec not detected"
 fi
 
-# Check Authentik (the Authentik app publishes its server on the gateway at
-# :9810; umbreld itself owns host port 9000)
-if wget -q --spider --timeout=2 "http://${DOCKER_HOST_IP}:9810/-/health/live/" 2>/dev/null; then
+if authentik_up; then
     AUTHENTIK_DETECTED=true
     echo "[Auto-Discovery] ✓ Authentik detected (responding on ${DOCKER_HOST_IP}:9810)"
 else
@@ -113,87 +126,94 @@ case "${CROWDSEC_ENABLED:-auto}" in
         ;;
 esac
 
-# Write CrowdSec configuration
-if [ -f "$CROWDSEC_CONF" ]; then
-    if [ "$CROWDSEC_EFFECTIVE" = "true" ]; then
-        echo "[CrowdSec] Enabling bouncer integration"
+STATUS_DIR="/data/integration-status"
+CROWDSEC_SYSLOG_CONF="/usr/local/nginx/conf/conf.d/crowdsec-syslog.conf"
+LOG_PREFIX=""
 
-        # Always use detected gateway IP (ignore any env vars with old host.docker.internal)
-        CROWDSEC_LAPI_URL="http://${DOCKER_HOST_IP}:8080"
+# Write the bouncer settings for CROWDSEC_EFFECTIVE. Runs now, and again from
+# the background re-check if CrowdSec turns up later.
+configure_crowdsec() {
+    if [ -f "$CROWDSEC_CONF" ]; then
+        if [ "$CROWDSEC_EFFECTIVE" = "true" ]; then
+            echo "${LOG_PREFIX}[CrowdSec] Enabling bouncer integration"
 
-        # Only use AppSec (WAF) if CrowdSec's listener is actually up - older
-        # CrowdSec app versions don't run it
-        if nc -z -w 2 "$DOCKER_HOST_IP" 7422 2>/dev/null; then
-            CROWDSEC_APPSEC_ENABLED=true
-            CROWDSEC_APPSEC_URL="http://${DOCKER_HOST_IP}:7422"
+            # Always use detected gateway IP (ignore any env vars with old host.docker.internal)
+            CROWDSEC_LAPI_URL="http://${DOCKER_HOST_IP}:8080"
+
+            # Only use AppSec (WAF) if CrowdSec's listener is actually up
+            if appsec_up; then
+                CROWDSEC_APPSEC_ENABLED=true
+                CROWDSEC_APPSEC_URL="http://${DOCKER_HOST_IP}:7422"
+            else
+                CROWDSEC_APPSEC_ENABLED=false
+                CROWDSEC_APPSEC_URL=""
+            fi
+
+            # Write the config
+            sed -i 's/^ENABLED=.*/ENABLED=true/' "$CROWDSEC_CONF"
+            sed -i "s|^API_URL=.*|API_URL=${CROWDSEC_LAPI_URL}|" "$CROWDSEC_CONF"
+            sed -i "s|^API_KEY=.*|API_KEY=${APP_SALTEDLOLLY_CROWDSEC_NPMPLUS_BOUNCER_KEY}|" "$CROWDSEC_CONF"
+            sed -i "s|^APPSEC_URL=.*|APPSEC_URL=${CROWDSEC_APPSEC_URL}|" "$CROWDSEC_CONF"
+            # If AppSec is unreachable or errors, let the request through rather
+            # than blocking it. NPMplus ships `deny`, which banned every visitor
+            # while AppSec wasn't running (r1.12).
+            sed -i "s|^APPSEC_FAILURE_ACTION=.*|APPSEC_FAILURE_ACTION=passthrough|" "$CROWDSEC_CONF"
+
+            echo "${LOG_PREFIX}[CrowdSec] ✓ Bouncer enabled"
+            echo "${LOG_PREFIX}[CrowdSec]   LAPI: ${CROWDSEC_LAPI_URL}"
+            if [ "$CROWDSEC_APPSEC_ENABLED" = "true" ]; then
+                echo "${LOG_PREFIX}[CrowdSec]   AppSec: ${CROWDSEC_APPSEC_URL} (on failure: passthrough)"
+            else
+                echo "${LOG_PREFIX}[CrowdSec]   AppSec: disabled (not listening on ${DOCKER_HOST_IP}:7422)"
+            fi
         else
-            CROWDSEC_APPSEC_ENABLED=false
-            CROWDSEC_APPSEC_URL=""
-        fi
-
-        # Write the config
-        sed -i 's/^ENABLED=.*/ENABLED=true/' "$CROWDSEC_CONF"
-        sed -i "s|^API_URL=.*|API_URL=${CROWDSEC_LAPI_URL}|" "$CROWDSEC_CONF"
-        sed -i "s|^API_KEY=.*|API_KEY=${APP_SALTEDLOLLY_CROWDSEC_NPMPLUS_BOUNCER_KEY}|" "$CROWDSEC_CONF"
-        sed -i "s|^APPSEC_URL=.*|APPSEC_URL=${CROWDSEC_APPSEC_URL}|" "$CROWDSEC_CONF"
-        # If AppSec is unreachable or errors, let the request through rather
-        # than blocking it. NPMplus ships `deny`, which banned every visitor
-        # while AppSec wasn't running (r1.12).
-        sed -i "s|^APPSEC_FAILURE_ACTION=.*|APPSEC_FAILURE_ACTION=passthrough|" "$CROWDSEC_CONF"
-
-        echo "[CrowdSec] ✓ Bouncer enabled"
-        echo "[CrowdSec]   LAPI: ${CROWDSEC_LAPI_URL}"
-        if [ "$CROWDSEC_APPSEC_ENABLED" = "true" ]; then
-            echo "[CrowdSec]   AppSec: ${CROWDSEC_APPSEC_URL} (on failure: passthrough)"
-        else
-            echo "[CrowdSec]   AppSec: disabled (not listening on ${DOCKER_HOST_IP}:7422)"
+            echo "${LOG_PREFIX}[CrowdSec] Disabling bouncer integration"
+            sed -i 's/^ENABLED=.*/ENABLED=false/' "$CROWDSEC_CONF"
+            echo "${LOG_PREFIX}[CrowdSec] ○ Bouncer disabled"
         fi
     else
-        echo "[CrowdSec] Disabling bouncer integration"
-        sed -i 's/^ENABLED=.*/ENABLED=false/' "$CROWDSEC_CONF"
-        echo "[CrowdSec] ○ Bouncer disabled"
+        echo "${LOG_PREFIX}[CrowdSec] ⚠ Warning: crowdsec.conf not found at $CROWDSEC_CONF"
     fi
-else
-    echo "[CrowdSec] ⚠ Warning: crowdsec.conf not found at $CROWDSEC_CONF"
-fi
 
-# Forward access logs to CrowdSec over syslog so it can detect patterns
-# across requests (scanners, brute force). nginx includes conf.d/*.conf in
-# its http block and no proxy host sets its own access_log, so this applies
-# to every host alongside the normal log file. Uses the same `alog` format
-# as access.log; CrowdSec's ZoeyVid/npmplus-logs parser matches the
-# `npmplus` tag. UDP to a port nobody listens on is simply dropped, so this
-# is harmless with CrowdSec versions that don't receive logs.
-# This file lives in the container, not /data, so it's rebuilt every start.
-CROWDSEC_SYSLOG_CONF="/usr/local/nginx/conf/conf.d/crowdsec-syslog.conf"
-if [ -f "$CROWDSEC_CONF" ] && [ "$CROWDSEC_EFFECTIVE" = "true" ]; then
-    echo "access_log syslog:server=${DOCKER_HOST_IP}:4242,tag=npmplus alog;" > "$CROWDSEC_SYSLOG_CONF"
-    CROWDSEC_LOG_SHARING=true
-    echo "[CrowdSec]   Logs: syslog to ${DOCKER_HOST_IP}:4242"
-else
-    rm -f "$CROWDSEC_SYSLOG_CONF"
-    CROWDSEC_LOG_SHARING=false
-fi
+    # Forward access logs to CrowdSec over syslog so it can detect patterns
+    # across requests (scanners, brute force). nginx includes conf.d/*.conf in
+    # its http block and no proxy host sets its own access_log, so this applies
+    # to every host alongside the normal log file. Uses the same `alog` format
+    # as access.log; CrowdSec's ZoeyVid/npmplus-logs parser matches the
+    # `npmplus` tag. UDP to a port nobody listens on is simply dropped, so this
+    # is harmless with CrowdSec versions that don't receive logs.
+    # This file lives in the container, not /data, so it's rebuilt every start.
+    if [ -f "$CROWDSEC_CONF" ] && [ "$CROWDSEC_EFFECTIVE" = "true" ]; then
+        echo "access_log syslog:server=${DOCKER_HOST_IP}:4242,tag=npmplus alog;" > "$CROWDSEC_SYSLOG_CONF"
+        CROWDSEC_LOG_SHARING=true
+        echo "${LOG_PREFIX}[CrowdSec]   Logs: syslog to ${DOCKER_HOST_IP}:4242"
+    else
+        rm -f "$CROWDSEC_SYSLOG_CONF"
+        CROWDSEC_LOG_SHARING=false
+    fi
 
-# Publish the bouncer state for the launcher, which can't see crowdsec.conf.
-# No secrets here - the launcher mounts this directory read-only.
-STATUS_DIR="/data/integration-status"
-mkdir -p "$STATUS_DIR"
-if [ -f "$CROWDSEC_CONF" ] && [ "$CROWDSEC_EFFECTIVE" = "true" ]; then
-    CROWDSEC_BOUNCER_ENABLED=true
-else
-    CROWDSEC_BOUNCER_ENABLED=false
-fi
-cat > "$STATUS_DIR/crowdsec.env.tmp" <<EOF
+    # Publish the bouncer state for the launcher, which can't see crowdsec.conf.
+    # No secrets here - the launcher mounts this directory read-only.
+    mkdir -p "$STATUS_DIR"
+    if [ -f "$CROWDSEC_CONF" ] && [ "$CROWDSEC_EFFECTIVE" = "true" ]; then
+        CROWDSEC_BOUNCER_ENABLED=true
+    else
+        CROWDSEC_BOUNCER_ENABLED=false
+    fi
+    cat > "$STATUS_DIR/crowdsec.env.tmp" <<EOF
 BOUNCER_ENABLED=${CROWDSEC_BOUNCER_ENABLED}
 MODE=${CROWDSEC_ENABLED:-auto}
-DETECTED_AT_START=${CROWDSEC_DETECTED}
+DETECTED_AT_START=${CROWDSEC_DETECTED_AT_START}
 LAPI_URL=${CROWDSEC_LAPI_URL:-}
 APPSEC_ENABLED=${CROWDSEC_APPSEC_ENABLED:-false}
 LOG_SHARING=${CROWDSEC_LOG_SHARING}
 UPDATED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 EOF
-mv "$STATUS_DIR/crowdsec.env.tmp" "$STATUS_DIR/crowdsec.env"
+    mv "$STATUS_DIR/crowdsec.env.tmp" "$STATUS_DIR/crowdsec.env"
+}
+
+CROWDSEC_DETECTED_AT_START=$CROWDSEC_DETECTED
+configure_crowdsec
 
 # ============================================================
 # Configure Authentik (forward auth)
@@ -211,13 +231,19 @@ AUTH_REQUEST_AUTHENTIK_UPSTREAM="http://${DOCKER_HOST_IP}:9810"
 export AUTH_REQUEST_AUTHENTIK_UPSTREAM
 echo "[Authentik] Forward auth upstream: ${AUTH_REQUEST_AUTHENTIK_UPSTREAM} (detected=${AUTHENTIK_DETECTED})"
 
-# For the launcher's Authentik card (no secrets)
-cat > "$STATUS_DIR/authentik.env.tmp" <<EOF
-DETECTED_AT_START=${AUTHENTIK_DETECTED}
+# For the launcher's Authentik card (no secrets). The background re-check
+# rewrites it if Authentik turns up later.
+AUTHENTIK_DETECTED_AT_START=$AUTHENTIK_DETECTED
+write_authentik_status() {
+    cat > "$STATUS_DIR/authentik.env.tmp" <<EOF
+DETECTED=${AUTHENTIK_DETECTED}
+DETECTED_AT_START=${AUTHENTIK_DETECTED_AT_START}
 UPSTREAM=${AUTH_REQUEST_AUTHENTIK_UPSTREAM}
 UPDATED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 EOF
-mv "$STATUS_DIR/authentik.env.tmp" "$STATUS_DIR/authentik.env"
+    mv "$STATUS_DIR/authentik.env.tmp" "$STATUS_DIR/authentik.env"
+}
+write_authentik_status
 
 # ============================================================
 # Enable log rotation (required for CrowdSec log parsing)
@@ -237,11 +263,114 @@ echo "Trusted Proxy: ${PROXY_MODE:-none}"
 echo "  TRUST_CLOUDFLARE: ${TRUST_CLOUDFLARE}"
 echo "  TRUST_IP: ${TRUST_IP}"
 echo ""
-echo "CrowdSec Protection: $([ "$CROWDSEC_EFFECTIVE" = "true" ] && echo "ENABLED" || echo "DISABLED")"
+echo "CrowdSec Protection: $([ "$CROWDSEC_BOUNCER_ENABLED" = "true" ] && echo "ENABLED" || echo "DISABLED")"
 echo "Authentik: $([ "$AUTHENTIK_DETECTED" = "true" ] && echo "detected" || echo "not detected") (forward auth upstream ${AUTH_REQUEST_AUTHENTIK_UPSTREAM})"
 echo "Log Rotation: ENABLED"
 echo "========================================"
 echo ""
+
+# ============================================================
+# Keep looking for companion apps that weren't up yet
+# ============================================================
+# After a reboot or umbrelOS update every app starts at once, and NPMplus is
+# often ready before CrowdSec or Authentik. The single check above used to
+# leave CrowdSec protection off until NPMplus was next restarted. So keep
+# checking in the background: every 30 seconds for the first 10 minutes,
+# then every 5 minutes, which also picks up CrowdSec if it's installed after
+# NPMplus. Sites keep working meanwhile.
+#
+# When CrowdSec answers, turn the bouncer on the way NPMplus's start.sh does
+# at startup (copy its nginx block into conf.d), then reload nginx. The
+# reload runs as the npmplus user: nginx runs as npmplus, and without
+# CAP_KILL root here can't signal another user's process.
+
+NGINX_CONF_D="/usr/local/nginx/conf/conf.d"
+
+enable_crowdsec_nginx() {
+    if [ ! -s "$NGINX_CONF_D/crowdsec.conf" ] && [ -s "$NGINX_CONF_D/crowdsec.conf.disabled" ]; then
+        cp -a "$NGINX_CONF_D/crowdsec.conf.disabled" "$NGINX_CONF_D/crowdsec.conf"
+    fi
+    # sed -i above ran as root and replaced the files; give them back
+    chown npmplus:npmplus "$CROWDSEC_CONF" "$NGINX_CONF_D/crowdsec.conf" "$CROWDSEC_SYSLOG_CONF" 2>/dev/null || true
+}
+
+reload_nginx() {
+    output=$(su-exec npmplus nginx -s reload 2>&1)
+    result=$?
+    [ -n "$output" ] && echo "$output" | sed 's/^/[Re-check] nginx: /'
+    return $result
+}
+
+watch_companions() {
+    LOG_PREFIX="[Re-check] "
+    checks=0
+    reload_pending=false
+    while :; do
+        if [ "$checks" -lt 20 ]; then sleep 30; else sleep 300; fi
+        checks=$((checks + 1))
+
+        # crowdsec.conf is created by NPMplus's start.sh, so on a first install
+        # it only exists after the wrapper has run
+        if [ "$WATCH_CROWDSEC" = "true" ] && [ -f "$CROWDSEC_CONF" ] && crowdsec_up; then
+            echo "[Re-check] ✓ CrowdSec is now responding on ${DOCKER_HOST_IP}:8080"
+            CROWDSEC_DETECTED=true
+            CROWDSEC_EFFECTIVE=true
+            configure_crowdsec
+            enable_crowdsec_nginx
+            WATCH_CROWDSEC=false
+            reload_pending=true
+        elif [ "$CROWDSEC_BOUNCER_ENABLED" = "true" ] && [ "$CROWDSEC_APPSEC_ENABLED" != "true" ] && appsec_up; then
+            # CrowdSec's API came up before its WAF listener. configure_crowdsec
+            # checks the port again; only reload if AppSec really got turned on.
+            echo "[Re-check] ✓ CrowdSec AppSec is now listening on ${DOCKER_HOST_IP}:7422"
+            configure_crowdsec
+            enable_crowdsec_nginx
+            if [ "$CROWDSEC_APPSEC_ENABLED" = "true" ]; then
+                reload_pending=true
+            fi
+        fi
+
+        if [ "$WATCH_AUTHENTIK" = "true" ] && authentik_up; then
+            echo "[Re-check] ✓ Authentik is now responding on ${DOCKER_HOST_IP}:9810"
+            AUTHENTIK_DETECTED=true
+            write_authentik_status
+            WATCH_AUTHENTIK=false
+        fi
+
+        if [ "$reload_pending" = "true" ]; then
+            if reload_nginx; then
+                echo "[Re-check] ✓ nginx reloaded with the new CrowdSec settings"
+                reload_pending=false
+            else
+                echo "[Re-check] ⚠ nginx reload failed, trying again at the next check"
+            fi
+        fi
+
+        if [ "$WATCH_CROWDSEC" != "true" ] && [ "$WATCH_AUTHENTIK" != "true" ] && \
+           [ "$reload_pending" != "true" ] && \
+           { [ "$CROWDSEC_BOUNCER_ENABLED" != "true" ] || [ "$CROWDSEC_APPSEC_ENABLED" = "true" ]; }; then
+            echo "[Re-check] All companion apps found, no more checks needed"
+            return 0
+        fi
+    done
+}
+
+# CrowdSec turned off in the launcher stays off
+WATCH_CROWDSEC=false
+if [ "$CROWDSEC_BOUNCER_ENABLED" != "true" ] && [ "${CROWDSEC_ENABLED:-auto}" != "false" ]; then
+    WATCH_CROWDSEC=true
+fi
+WATCH_AUTHENTIK=false
+if [ "$AUTHENTIK_DETECTED" != "true" ]; then
+    WATCH_AUTHENTIK=true
+fi
+
+if [ "$WATCH_CROWDSEC" = "true" ] || [ "$WATCH_AUTHENTIK" = "true" ] || \
+   { [ "$CROWDSEC_BOUNCER_ENABLED" = "true" ] && [ "$CROWDSEC_APPSEC_ENABLED" != "true" ]; }; then
+    echo "[Re-check] Will keep checking for companion apps in the background"
+    # A failed check must not end the loop
+    ( set +e; watch_companions ) &
+fi
 
 # ============================================================
 # Start NPMplus

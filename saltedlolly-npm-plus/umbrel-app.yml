@@ -11,7 +11,7 @@ description: >-
   NPMplus makes it easy to publish services through a friendly web interface, with automatic TLS certificates, HTTP/3 support, access lists, stream forwarding, and advanced Nginx configuration.
 
 
-  Security with CrowdSec: install the CrowdSec app from this app store and NPMplus connects to it automatically (restart NPMplus if you install CrowdSec afterwards). It then blocks IPs from CrowdSec's community blocklist, filters requests through CrowdSec's web application firewall to stop known exploits and attack probes, and sends its access logs to CrowdSec so repeat offenders such as scanners and brute-force attempts get banned. If CrowdSec is ever unavailable, your sites keep working.
+  Security with CrowdSec: install the CrowdSec app from this app store and NPMplus connects to it automatically within a few minutes, even if you install CrowdSec later. It then blocks IPs from CrowdSec's community blocklist, filters requests through CrowdSec's web application firewall to stop known exploits and attack probes, and sends its access logs to CrowdSec so repeat offenders such as scanners and brute-force attempts get banned. If CrowdSec is ever unavailable, your sites keep working.
 
 
   The NPMplus home screen shows your CrowdSec connection status and active ban counts, and lets you turn the integration off. It also has a setting for sites behind Cloudflare's proxy, so NPMplus sees each visitor's real IP address instead of Cloudflare's.

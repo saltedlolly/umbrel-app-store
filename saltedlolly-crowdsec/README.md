@@ -24,7 +24,7 @@ The dashboard uses its own login instead of your Umbrel login, so until that acc
 
 CrowdSec doesn't protect anything by itself - something needs to actually enforce its decisions. That's a "bouncer," and [saltedlolly-npm-plus](../saltedlolly-npm-plus) already has one built in.
 
-Install both apps and they're wired together automatically, in either order (restart NPMplus if you install CrowdSec second). NPMplus finds CrowdSec at startup and sets up three things with no configuration:
+Install both apps and they're wired together automatically, in either order. NPMplus looks for CrowdSec when it starts, and keeps looking in the background if CrowdSec isn't running yet (for example after a reboot, or if you install CrowdSec second), so they connect within a few minutes. It sets up three things with no configuration:
 
 - **Blocklist bouncer** – NPMplus checks every visitor's IP against CrowdSec's decisions (your own bans plus the community blocklist). Both apps derive the same bouncer key, and this app registers the `npmplus` bouncer with it on every start.
 - **AppSec (WAF)** – NPMplus sends each request to CrowdSec's AppSec listener on port 7422, which blocks known CVE exploits and common attack probes. If AppSec is ever unavailable, requests are let through rather than blocked.

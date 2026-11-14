@@ -98,7 +98,7 @@ installations.
 
 ## CrowdSec integration (optional)
 
-NPMplus has a built-in CrowdSec bouncer. Install the [CrowdSec app](../saltedlolly-crowdsec) from this store and the two connect automatically the next time NPMplus starts; nothing to configure. Every site published through NPMplus is then protected:
+NPMplus has a built-in CrowdSec bouncer. Install the [CrowdSec app](../saltedlolly-crowdsec) from this store and the two connect automatically; nothing to configure. NPMplus looks for CrowdSec when it starts and keeps checking in the background (every 30 seconds for 10 minutes, then every 5 minutes), so it also connects when CrowdSec starts after it, for example after a reboot. Every site published through NPMplus is then protected:
 
 - **Blocklist:** known attackers (CrowdSec's community list plus anything your CrowdSec bans) are blocked.
 - **Web application firewall (AppSec):** common attacks and exploit probes are refused. It can be switched off for a single proxy host (**Disable Crowdsec Appsec**).

@@ -34,8 +34,22 @@ NPMplus Startup:
 ├─ Configure integrations:
 │  ├─ CrowdSec: Update /data/crowdsec/crowdsec.conf with API keys
 │  └─ Authentik: set AUTH_REQUEST_AUTHENTIK_UPSTREAM (always), write integration-status/authentik.env
+├─ If anything wasn't found, start a background re-check
 └─ Start NPMplus with configured integrations
+
+Background re-check (every 30s for 10 minutes, then every 5 minutes):
+├─ CrowdSec answers (auto mode, crowdsec.conf exists): write the bouncer
+│  config, copy NPMplus's nginx CrowdSec block into conf.d, reload nginx
+│  as the npmplus user
+├─ AppSec (:7422) starts listening after the LAPI: add it, reload nginx
+├─ Authentik answers: rewrite integration-status/authentik.env
+└─ Stop once everything is found
 ```
+
+After a reboot every app starts at once and NPMplus is often up first; the
+single check at startup used to leave CrowdSec off until NPMplus was next
+restarted. The re-check also covers a first install, where NPMplus creates
+`crowdsec.conf` only after the wrapper has run.
 
 ### Configuration States
 

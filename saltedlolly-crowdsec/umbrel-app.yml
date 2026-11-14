@@ -14,7 +14,7 @@ description: >-
   This app runs the CrowdSec engine plus a local web dashboard (crowdsec-web-ui) for browsing alerts, managing bans, and viewing metrics - no command line required.
 
 
-  CrowdSec decides who to block, but something facing your traffic has to do the blocking. Install the NPMplus app from this app store and the two connect automatically, with no setup (restart NPMplus if you install it first). NPMplus then:
+  CrowdSec decides who to block, but something facing your traffic has to do the blocking. Install the NPMplus app from this app store and the two connect automatically within a few minutes, in either order, with no setup. NPMplus then:
 
 
   - Blocks IPs on CrowdSec's community blocklist and any IPs CrowdSec bans itself.
