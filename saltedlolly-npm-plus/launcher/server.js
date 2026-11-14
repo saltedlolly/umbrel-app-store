@@ -303,6 +303,144 @@ CONFIG_VERSION=${config.CONFIG_VERSION || '2'}
     }
 }
 
+// ============================================================
+// Setup guide: are the router's port forwards working?
+// ============================================================
+// The npmplus wrapper logs "<time> <port> <protocol>" for every visit from a
+// public address to port-check.log. A visit on a port proves its forward
+// works: port 80 is TCP 80, HTTP/3.0 on 443 is UDP 443, anything else on 443
+// is TCP 443. NPMplus keeps only about 4 days of logs, so the last visit on
+// each port is also saved here, for the "no visits for a while" warning.
+const LOG_DIR = process.env.LOG_DIR || '/data/logs';
+const PORT_CHECK_LOG = 'port-check.log';
+const SETUP_STATE_FILE = path.join(CONFIG_DIR, 'setup-guide.json');
+const SETUP_CACHE_MS = 60 * 1000;
+// A forward counts as working if it had a visit this recently
+const PORT_RECENT_MS = 7 * 24 * 60 * 60 * 1000;
+// Warn when no visits at all have arrived for this long
+const QUIET_MS = 3 * 24 * 60 * 60 * 1000;
+const PORT_KEYS = ['tcp80', 'tcp443', 'udp443'];
+
+function readSetupState() {
+    try {
+        const state = JSON.parse(fs.readFileSync(SETUP_STATE_FILE, 'utf8'));
+        return { hidden: !!state.hidden, lastSeen: state.lastSeen || {} };
+    } catch {
+        return { hidden: false, lastSeen: {} };
+    }
+}
+
+function writeSetupState(state) {
+    ensureConfigDir();
+    const tmp = `${SETUP_STATE_FILE}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(state, null, 2));
+    fs.renameSync(tmp, SETUP_STATE_FILE);
+}
+
+// The newest visit on each port in the current and rotated logs, or null
+// if there's no log (older wrapper, or NPMplus not restarted since update)
+function scanPortCheckLogs() {
+    const lastSeen = {};
+    let found = false;
+    for (const name of [PORT_CHECK_LOG, `${PORT_CHECK_LOG}.1`, `${PORT_CHECK_LOG}.2`, `${PORT_CHECK_LOG}.3`]) {
+        let text;
+        try {
+            text = fs.readFileSync(path.join(LOG_DIR, name), 'utf8');
+        } catch {
+            continue;
+        }
+        found = true;
+        for (const line of text.split('\n')) {
+            const [msec, port, protocol] = line.split(' ');
+            const time = Math.round(parseFloat(msec) * 1000);
+            if (!time) continue;
+            const key = port === '80' ? 'tcp80'
+                : port === '443' ? (protocol === 'HTTP/3.0' ? 'udp443' : 'tcp443')
+                : null;
+            if (key && time > (lastSeen[key] || 0)) lastSeen[key] = time;
+        }
+    }
+    return found ? lastSeen : null;
+}
+
+function countProxyHosts() {
+    try {
+        return fs.readdirSync(PROXY_HOST_DIR).filter(name => /^\d+\.conf$/.test(name)).length;
+    } catch {
+        return null;
+    }
+}
+
+let setupCache = { at: 0, value: null };
+
+function getSetupStatus() {
+    if (setupCache.value && Date.now() - setupCache.at < SETUP_CACHE_MS) return setupCache.value;
+
+    const state = readSetupState();
+    const scanned = scanPortCheckLogs();
+    if (scanned) {
+        let changed = false;
+        for (const key of PORT_KEYS) {
+            if ((scanned[key] || 0) > (state.lastSeen[key] || 0)) {
+                state.lastSeen[key] = scanned[key];
+                changed = true;
+            }
+        }
+        if (changed) {
+            try {
+                writeSetupState(state);
+            } catch (error) {
+                console.error(`[setup] Could not save setup-guide.json: ${error.message}`);
+            }
+        }
+    }
+
+    const now = Date.now();
+    const proxyHosts = countProxyHosts();
+    const ports = {};
+    for (const key of PORT_KEYS) {
+        const lastSeen = state.lastSeen[key] || null;
+        ports[key] = { lastSeen, working: !!lastSeen && now - lastSeen < PORT_RECENT_MS };
+    }
+    const newest = Math.max(0, ...PORT_KEYS.map(key => state.lastSeen[key] || 0));
+
+    const value = {
+        // false until NPMplus has been restarted with a wrapper that writes the log
+        logAvailable: !!scanned || newest > 0,
+        proxyHosts,
+        ports,
+        hidden: state.hidden,
+        complete: proxyHosts > 0 && PORT_KEYS.every(key => ports[key].working),
+        // Visits used to arrive but have stopped: router reset, new IP, ...
+        quietSince: proxyHosts > 0 && newest > 0 && now - newest > QUIET_MS ? newest : null
+    };
+    setupCache = { at: now, value };
+    return value;
+}
+
+app.get('/api/setup-status', (req, res) => {
+    try {
+        res.json(getSetupStatus());
+    } catch (error) {
+        console.error('Error checking setup status:', error);
+        res.status(500).json({ error: 'Failed to check setup status' });
+    }
+});
+
+// Hide or show the setup guide (saved here, so it applies on every device)
+app.post('/api/setup-guide', (req, res) => {
+    try {
+        const state = readSetupState();
+        state.hidden = !!(req.body && req.body.hidden);
+        writeSetupState(state);
+        setupCache = { at: 0, value: null };
+        res.json({ success: true, hidden: state.hidden });
+    } catch (error) {
+        console.error('Error saving setup guide setting:', error);
+        res.status(500).json({ error: 'Failed to save setup guide setting' });
+    }
+});
+
 // API: Get integrations status
 app.get('/api/integrations/status', async (req, res) => {
     try {

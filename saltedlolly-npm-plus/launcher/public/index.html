@@ -24,17 +24,79 @@
                 </div>
                 <button class="notification-dismiss" onclick="dismissNotification()">×</button>
             </div>
-            <div class="notification-instructions">
-                <p><strong>How to restart NPMplus:</strong></p>
-                <ol>
-                    <li>Go to your <strong>Umbrel dashboard</strong></li>
-                    <li>Click on the <strong>NPMplus app tile</strong></li>
-                    <li>Click the <strong>⋮</strong> (three dots) menu in the top right</li>
-                    <li>Select <strong>"Restart"</strong></li>
-                    <li>Return here to see the integration enabled</li>
-                </ol>
-            </div>
         </div>
+
+        <!-- Quick Setup Guide: collapses to a bar once visits from the
+             internet arrive on every forwarded port, or when hidden -->
+        <section class="card setup-card" id="setupCard">
+            <div class="setup-bar" id="setupBar" style="display: none;">
+                <span class="setup-bar-text" id="setupBarText"></span>
+                <button type="button" class="link-button" id="setupShow">Show setup guide</button>
+            </div>
+            <div id="setupGuide">
+                <h2>🚀 Quick Setup Guide</h2>
+                <div class="warning-box" id="setupWarning" style="display: none;"></div>
+
+                <ol class="setup-steps">
+                    <li>
+                        <strong>Point your domain to your public IP</strong>
+                        <p>Create DNS records (A/AAAA) pointing to your router's public IP address.</p>
+                    </li>
+
+                    <li>
+                        <strong>Forward ports on your router</strong>
+                        <table class="port-table">
+                            <tr>
+                                <th>Protocol</th>
+                                <th>External Port</th>
+                                <th>Internal Port</th>
+                                <th>Purpose</th>
+                            </tr>
+                            <tr>
+                                <td>TCP</td>
+                                <td>80</td>
+                                <td>50080</td>
+                                <td>HTTP (redirect to HTTPS)</td>
+                            </tr>
+                            <tr class="port-status-row" id="portStatusRow-tcp80" style="display: none;">
+                                <td colspan="4"><span class="port-status" id="portStatus-tcp80"></span></td>
+                            </tr>
+                            <tr>
+                                <td>TCP</td>
+                                <td>443</td>
+                                <td>50443</td>
+                                <td>HTTPS</td>
+                            </tr>
+                            <tr class="port-status-row" id="portStatusRow-tcp443" style="display: none;">
+                                <td colspan="4"><span class="port-status" id="portStatus-tcp443"></span></td>
+                            </tr>
+                            <tr>
+                                <td>UDP</td>
+                                <td>443</td>
+                                <td>50443</td>
+                                <td>HTTP/3</td>
+                            </tr>
+                            <tr class="port-status-row" id="portStatusRow-udp443" style="display: none;">
+                                <td colspan="4"><span class="port-status" id="portStatus-udp443"></span></td>
+                            </tr>
+                        </table>
+                        <p class="help-text port-note" id="portNote" style="display: none;">
+                            Each port is ticked once a visit from the internet arrives on it. Visits from your own network don't count.
+                        </p>
+                    </li>
+
+                    <li>
+                        <strong>Create proxy hosts in NPMplus</strong>
+                        <p>Open the NPMplus admin interface and configure your proxy hosts with SSL certificates.</p>
+                        <p class="step-status" id="proxyHostStatus"></p>
+                    </li>
+                </ol>
+
+                <div class="setup-actions">
+                    <button type="button" class="link-button" id="setupHide">Hide setup guide</button>
+                </div>
+            </div>
+        </section>
 
         <!-- NPMplus Admin Interface -->
         <section class="card compact">
@@ -178,7 +240,7 @@
 
                         <div class="integration-install" id="crowdsecInstall" style="display: none;">
                             <p class="help-text">
-                                Install the CrowdSec app from the Umbrel App Store to enable security protection.
+                                CrowdSec isn't responding. If it's installed, NPMplus connects to it automatically once it's running again. If not, install the CrowdSec app from the Umbrel App Store to protect your sites.
                             </p>
                             <button type="button" class="secondary-button" onclick="openAppStorePage('saltedlolly-crowdsec')">
                                 View in App Store
@@ -333,52 +395,6 @@
             <div id="integrationsStatusMessage" class="status-message" style="display: none;"></div>
         </section>
 
-        <!-- Quick Setup Guide -->
-        <section class="card">
-            <h2>🚀 Quick Setup Guide</h2>
-
-            <ol class="setup-steps">
-                <li>
-                    <strong>Point your domain to your public IP</strong>
-                    <p>Create DNS records (A/AAAA) pointing to your router's public IP address.</p>
-                </li>
-
-                <li>
-                    <strong>Forward ports on your router</strong>
-                    <table class="port-table">
-                        <tr>
-                            <th>Protocol</th>
-                            <th>External Port</th>
-                            <th>Internal Port</th>
-                            <th>Purpose</th>
-                        </tr>
-                        <tr>
-                            <td>TCP</td>
-                            <td>80</td>
-                            <td>50080</td>
-                            <td>HTTP (redirect to HTTPS)</td>
-                        </tr>
-                        <tr>
-                            <td>TCP</td>
-                            <td>443</td>
-                            <td>50443</td>
-                            <td>HTTPS</td>
-                        </tr>
-                        <tr>
-                            <td>UDP</td>
-                            <td>443</td>
-                            <td>50443</td>
-                            <td>HTTP/3</td>
-                        </tr>
-                    </table>
-                </li>
-
-                <li>
-                    <strong>Create proxy hosts in NPMplus</strong>
-                    <p>Open the NPMplus admin interface and configure your proxy hosts with SSL certificates.</p>
-                </li>
-            </ol>
-        </section>
 
         <footer>
             <div class="footer-left">
@@ -412,6 +428,11 @@
         window.addEventListener('DOMContentLoaded', async () => {
             loadVersion();
 
+            // Setup guide first: it's at the top of the page
+            setupGuideButtons();
+            loadSetupStatus();
+            setInterval(loadSetupStatus, 60000);
+
             // Load current configuration
             await loadConfig();
 
@@ -427,6 +448,122 @@
             // Poll for integration metrics every 30 seconds
             setInterval(loadIntegrationsStatus, 30000);
         });
+
+        // ============================================================
+        // Quick Setup Guide
+        // ============================================================
+        let setupStatus = null;
+        // The bar's "Show setup guide" opens it until the page is reloaded
+        let setupOpenedByUser = false;
+
+        const PORT_LABELS = { tcp80: 'TCP 80', tcp443: 'TCP 443', udp443: 'UDP 443 (HTTP/3)' };
+
+        function timeAgo(time) {
+            const minutes = Math.round((Date.now() - time) / 60000);
+            if (minutes < 1) return 'just now';
+            if (minutes < 60) return `${minutes} min ago`;
+            const hours = Math.round(minutes / 60);
+            if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+            const days = Math.round(hours / 24);
+            return `${days} day${days === 1 ? '' : 's'} ago`;
+        }
+
+        function setStatusLine(elem, icon, cls, text) {
+            elem.innerHTML = `<span class="status-icon ${cls}">${icon}</span> `;
+            elem.appendChild(document.createTextNode(text));
+        }
+
+        async function loadSetupStatus() {
+            try {
+                const response = await fetch('/api/setup-status');
+                if (!response.ok) return;
+                setupStatus = await response.json();
+                renderSetup();
+            } catch (error) {
+                console.error('Error loading setup status:', error);
+            }
+        }
+
+        function renderSetup() {
+            const s = setupStatus;
+            if (!s) return;
+
+            // Port rows
+            for (const key of Object.keys(PORT_LABELS)) {
+                const elem = document.getElementById(`portStatus-${key}`);
+                const row = document.getElementById(`portStatusRow-${key}`);
+                const port = s.ports[key];
+                row.style.display = s.logAvailable ? '' : 'none';
+                if (!s.logAvailable) continue;
+                if (port.working && !s.quietSince) {
+                    setStatusLine(elem, '✓', 'status-detected', `Working · last visit ${timeAgo(port.lastSeen)}`);
+                } else if (port.lastSeen && s.quietSince) {
+                    // Matches the warning above: visits have stopped everywhere
+                    setStatusLine(elem, '!', 'status-warning', `Last visit ${timeAgo(port.lastSeen)}`);
+                } else if (port.lastSeen) {
+                    setStatusLine(elem, '!', 'status-warning', `No visits since ${new Date(port.lastSeen).toLocaleDateString([], { dateStyle: 'medium' })}`);
+                } else {
+                    setStatusLine(elem, '○', 'status-not-detected', 'No visits from the internet yet');
+                }
+            }
+            document.getElementById('portNote').style.display = s.logAvailable ? 'block' : 'none';
+            document.querySelector('.port-table').classList.toggle('with-status', !!s.logAvailable);
+
+            // Proxy hosts
+            const hostsElem = document.getElementById('proxyHostStatus');
+            if (s.proxyHosts > 0) {
+                setStatusLine(hostsElem, '✓', 'status-detected', `${s.proxyHosts} proxy host${s.proxyHosts === 1 ? '' : 's'} set up`);
+            } else if (s.proxyHosts === 0) {
+                setStatusLine(hostsElem, '○', 'status-not-detected', 'No proxy hosts yet');
+            } else {
+                hostsElem.textContent = '';
+            }
+
+            // Visits used to arrive and have stopped
+            const warning = document.getElementById('setupWarning');
+            const quietText = s.quietSince
+                ? `No visits from the internet since ${new Date(s.quietSince).toLocaleDateString([], { dateStyle: 'medium' })}. If your sites should be getting visitors, check that your domain still points to your public IP and that the port forwards on your router are still there.`
+                : '';
+            warning.textContent = quietText;
+            warning.style.display = quietText ? 'block' : 'none';
+
+            // Bar or full guide
+            const collapsed = !setupOpenedByUser && (s.complete || s.hidden || !!s.quietSince);
+            document.getElementById('setupCard').classList.toggle('collapsed', collapsed);
+            document.getElementById('setupBar').style.display = collapsed ? 'flex' : 'none';
+            document.getElementById('setupGuide').style.display = collapsed ? 'none' : 'block';
+
+            const barText = document.getElementById('setupBarText');
+            if (s.quietSince) {
+                setStatusLine(barText, '!', 'status-warning',
+                    `No visits from the internet since ${new Date(s.quietSince).toLocaleDateString([], { dateStyle: 'medium' })}: check your port forwarding`);
+            } else if (s.complete) {
+                setStatusLine(barText, '✓', 'status-detected', 'Set up: your sites are getting visits from the internet on every forwarded port');
+            } else {
+                setStatusLine(barText, '🚀', '', 'Quick Setup Guide');
+            }
+        }
+
+        function setupGuideButtons() {
+            document.getElementById('setupShow').addEventListener('click', () => {
+                setupOpenedByUser = true;
+                renderSetup();
+            });
+            document.getElementById('setupHide').addEventListener('click', async () => {
+                setupOpenedByUser = false;
+                try {
+                    await fetch('/api/setup-guide', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ hidden: true })
+                    });
+                } catch (error) {
+                    console.error('Error saving setup guide setting:', error);
+                }
+                if (setupStatus) setupStatus.hidden = true;
+                renderSetup();
+            });
+        }
 
         // Setup listeners for proxy mode radio buttons
         function setupProxyModeListeners() {
@@ -571,7 +708,7 @@
             'restart-needed': { icon: '!', cls: 'status-warning',      text: 'Detected – connecting (if this stays, restart NPMplus)' },
             'disabled':       { icon: '○', cls: 'status-not-detected', text: 'Disabled by user' },
             'unreachable':    { icon: '✕', cls: 'status-error',        text: 'Enabled, but CrowdSec is not responding' },
-            'not-detected':   { icon: '○', cls: 'status-not-detected', text: 'Not detected' }
+            'not-detected':   { icon: '○', cls: 'status-not-detected', text: 'Not running' }
         };
 
         function updateCrowdSecStatus(status, statusElem, bodyElem, controlsElem, metricsElem, installElem, enabledCheckbox) {

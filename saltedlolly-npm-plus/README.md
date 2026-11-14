@@ -27,6 +27,8 @@ This package runs NPMplus directly under Umbrel's Docker engine. It does not use
 
 For public access, forward router TCP port 80 to Umbrel TCP port 50080, and router TCP/UDP port 443 to Umbrel TCP/UDP port 50443.
 
+The launcher's Quick Setup Guide ticks off each forward once a visit from the internet arrives on it (visits from your own network don't count), and shrinks to a thin bar once all three work and you have a proxy host. To do this, NPMplus writes `nginx/logs/port-check.log` with only the time, port and protocol of each visit from a public address: no addresses or URLs. If visits stop for 3 days, the bar warns you to check your port forwarding. If you use Cloudflare Tunnel or Tailscale instead of forwarding ports, hide the guide with **Hide setup guide**.
+
 ## First login
 
 - Username: `admin@umbrel.local`

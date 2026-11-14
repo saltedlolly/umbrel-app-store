@@ -246,6 +246,35 @@ EOF
 write_authentik_status
 
 # ============================================================
+# Port forwarding check for the launcher
+# ============================================================
+# The launcher's setup guide ticks off each router port forward once real
+# visits from the internet arrive on it. The main access log can't show
+# that: its host field comes from the Host header, not the port the visitor
+# connected to. So log just the time, port and protocol of each visit from
+# a public address (no addresses or URLs). HTTP/3.0 means UDP 443 works.
+# NPMplus's logrotate handles /data/nginx/logs/*.log, this file included.
+# nginx includes conf.d/*.conf in its http block and no proxy host sets its
+# own access_log, so this applies to every host. Rebuilt every start.
+cat > /usr/local/nginx/conf/conf.d/umbrel-port-check.conf <<'EOF'
+# Written by the NPMplus for Umbrel wrapper on every start
+map $remote_addr $umbrel_internet_visit {
+    default 1;
+    "~^(127|10)\." 0;
+    "~^192\.168\." 0;
+    "~^172\.(1[6-9]|2[0-9]|3[01])\." 0;
+    "~^169\.254\." 0;
+    "~^100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\." 0;
+    "~^(::1$|f[cd]|fe[89ab])" 0;
+    "~^unix:" 0;
+}
+log_format umbrel_port_check '$msec $server_port $server_protocol';
+access_log /data/nginx/logs/port-check.log umbrel_port_check if=$umbrel_internet_visit;
+EOF
+echo ""
+echo "[Port check] Logging the port and protocol of visits from the internet for the launcher"
+
+# ============================================================
 # Enable log rotation (required for CrowdSec log parsing)
 # ============================================================
 export LOGROTATE=true

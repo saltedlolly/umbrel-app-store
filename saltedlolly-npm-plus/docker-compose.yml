@@ -25,6 +25,9 @@ services:
       # NPMplus's generated proxy host configs, to count the sites that use
       # Authentik (read-only; NPMplus chowns its data folder on every start)
       - ${APP_SALTEDLOLLY_NPM_PLUS_DATA_DIR}/nginx/proxy_host:/data/proxy_host:ro
+      # NPMplus's logs, for the setup guide's port forwarding check (it reads
+      # port-check.log, written by the npmplus wrapper; read-only)
+      - ${APP_SALTEDLOLLY_NPM_PLUS_DATA_DIR}/nginx/logs:/data/logs:ro
 
   npmplus:
     image: ghcr.io/saltedlolly/npmplus-wrapper@sha256:08e54b76334d4885af09c776e7ec129687d2059ee0424964d34a4e0853bfa0c3
