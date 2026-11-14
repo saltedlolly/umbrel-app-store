@@ -142,6 +142,23 @@ compose_path.write_text(compose)
 PY
 }
 
+# The dashboard shows the app's version from APP_VERSION (never hardcoded in
+# the image, which is built before the version is known)
+update_compose_app_version() {
+  local new_version="$1"
+  python3 - "$COMPOSE_FILE" "$new_version" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+compose_path = Path(sys.argv[1])
+compose, count = re.subn(r'(- APP_VERSION=)\S+', lambda m: m.group(1) + sys.argv[2], compose_path.read_text(), count=1)
+if count != 1:
+    raise SystemExit("Could not update APP_VERSION in docker-compose.yml")
+compose_path.write_text(compose)
+PY
+}
+
 update_manifest_version_and_notes() {
   local new_version="$1" notes="$2"
   python3 - "$MANIFEST_FILE" "$new_version" "$notes" <<'PY'
@@ -550,6 +567,7 @@ fi
 
 if [[ "$NITO_CHANGED" == "true" ]]; then export NOTES_MODE=reset; else export NOTES_MODE=prepend; fi
 update_manifest_version_and_notes "$TARGET_MANIFEST_VERSION" "$RELEASE_NOTES"
+update_compose_app_version "$TARGET_MANIFEST_VERSION"
 update_release_notes "$TARGET_NITO_TAG"
 update_readme_version "$TARGET_MANIFEST_VERSION"
 

@@ -8,7 +8,7 @@ description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
 
 
-  Nito is a decentralized, SHA-256 proof-of-work blockchain built around fairness and longevity: no premine, no ICO, no VC allocation - just open, permissionless mining from block one. This app runs a full Nito node with the standard nito-cli/JSON-RPC interface, alongside a dashboard showing block height, sync progress, peers, and mempool activity.
+  Nito is a decentralized, SHA-256 proof-of-work blockchain built around fairness and longevity: no premine, no ICO, no VC allocation - just open, permissionless mining from block one. This app runs a full Nito node with the standard nito-cli/JSON-RPC interface, alongside a dashboard that shows new blocks as they're found, sync progress, charts of recent blocks, and a map of the countries your peers are in.
 
 
   - Faster, more responsive than Bitcoin - 1-minute blocks with real-time, per-block damped difficulty adjustment, rather than Bitcoin's ~2-week retarget window
@@ -22,6 +22,9 @@ description: >-
   - Taproot and Schnorr signatures (BIP 340-342) have been active since genesis
 
   - Protocol changes go through a public Nito Improvement Proposal (NIP) process, with miner signaling required for activation
+
+
+  Help the network: forward port 8820 (TCP) on your router to your Umbrel, so other nodes can connect to yours. The dashboard reminds you if nobody has connected in, and the README explains how: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-nito#help-the-network-open-port-8820
 
 
   All node data (chain state) is stored under this app's persistent data directory and survives restarts and updates. Uninstalling this app deletes it - back up first if you want to keep it.

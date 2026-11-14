@@ -1,105 +1,48 @@
-import { useEffect, useState } from "react";
-import { api, type StatsWidget, type SyncWidget, type UptimeWidget } from "./api.js";
+import { api } from "./api.js";
+import { usePoll } from "./hooks.js";
+import { useTheme } from "./theme.js";
+import { Header } from "./components/Header.js";
+import { StatCards } from "./components/StatCards.js";
+import { ChainStrip } from "./components/ChainStrip.js";
+import { SyncRing } from "./components/SyncRing.js";
+import { PortNotice } from "./components/PortNotice.js";
+import { BlockCharts } from "./components/BlockCharts.js";
+import { PeerMap } from "./components/PeerMap.js";
+import { Footer } from "./components/Footer.js";
 import "./app.css";
 
-function formatBytes(bytes: number): string {
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  let value = bytes;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit++;
-  }
-  return `${value.toFixed(1)} ${units[unit]}`;
-}
-
-function formatUptime(seconds: number): string {
-  const days = Math.floor(seconds / 86400);
-  const hours = Math.floor((seconds % 86400) / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
-}
-
 export function App() {
-  const [sync, setSync] = useState<SyncWidget | null>(null);
-  const [stats, setStats] = useState<StatsWidget | null>(null);
-  const [uptime, setUptime] = useState<UptimeWidget | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [theme, setTheme] = useTheme();
+  const status = usePoll(api.status, 5000);
+  const blocks = usePoll(api.blocks, 5000);
+  const mempool = usePoll(api.mempool, 30_000);
+  const peers = usePoll(api.peers, 30_000);
+  const version = usePoll(api.version, 5 * 60_000);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function poll() {
-      try {
-        const [syncData, statsData, uptimeData] = await Promise.all([
-          api.sync(),
-          api.stats(),
-          api.uptime(),
-        ]);
-        if (cancelled) return;
-        setSync(syncData);
-        setStats(statsData);
-        setUptime(uptimeData);
-        setError(null);
-      } catch (err) {
-        if (!cancelled) setError((err as Error).message);
-      }
-    }
-
-    poll();
-    const interval = setInterval(poll, 10_000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, []);
-
+  const s = status.data;
   return (
-    <main>
-      <h1>Nito Node</h1>
+    <>
+      <main>
+        <Header network={s?.network ?? null} theme={theme} onTheme={setTheme} />
 
-      {error && <p className="error">Unable to reach the node: {error}</p>}
+        {status.error && (
+          <p className="error" role="alert">
+            Can't reach your Nito node right now. It may still be starting: this page keeps trying.
+          </p>
+        )}
 
-      <div className="cards">
-        <div className="card">
-          <h2>Block Height</h2>
-          <p className="big">{sync?.blocks ?? "—"}</p>
-          {sync?.syncing && (
-            <p className="detail">
-              Syncing — {sync.progressPercent}% ({sync.blocks} / {sync.headers} headers)
-            </p>
-          )}
+        <PortNotice status={s} peers={peers.data} />
+
+        {s?.syncing ? <SyncRing status={s} /> : <ChainStrip blocks={blocks.data ?? []} />}
+
+        <StatCards status={s} />
+
+        <div className="panels">
+          <BlockCharts blocks={blocks.data ?? []} mempool={mempool.data} />
+          <PeerMap peers={peers.data} />
         </div>
-
-        <div className="card">
-          <h2>Peers</h2>
-          <p className="big">{stats?.peerCount ?? "—"}</p>
-        </div>
-
-        <div className="card">
-          <h2>Mempool</h2>
-          <p className="big">{stats?.mempoolTransactions ?? "—"}</p>
-          {stats && <p className="detail">{formatBytes(stats.mempoolBytes)}</p>}
-        </div>
-
-        <div className="card">
-          <h2>Chain Size</h2>
-          <p className="big">{stats ? formatBytes(stats.chainSizeBytes) : "—"}</p>
-        </div>
-
-        <div className="card">
-          <h2>Uptime</h2>
-          <p className="big">{uptime ? formatUptime(uptime.seconds) : "—"}</p>
-        </div>
-
-        <div className="card">
-          <h2>Version</h2>
-          <p className="detail">{stats?.subversion ?? "—"}</p>
-          <p className="detail">{stats?.chain ?? "—"}</p>
-        </div>
-      </div>
-    </main>
+      </main>
+      <Footer version={version.data} />
+    </>
   );
 }

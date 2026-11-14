@@ -1,0 +1,24 @@
+{
+    "schema": 1,
+    "title": "Support saltedlolly",
+    "name": "Olly Stedall",
+    "bio": [
+        "Hi, I'm Olly, also known as saltedlolly. I build free, open source software that makes it easier to run your own server at home, including DigiNode Tools and the saltedlolly App Store for Umbrel.",
+        "It's all built in my spare time. If this app has saved you time or effort, a donation of any size is hugely appreciated and helps keep these projects going."
+    ],
+    "methods": [
+        {
+            "label": "Donate with Ko-fi",
+            "note": "One-off donation by card or PayPal. No account needed.",
+            "url": "https://ko-fi.com/saltedlolly",
+            "primary": true
+        },
+        {
+            "label": "Sponsor on GitHub",
+            "note": "One-off or monthly. Needs a GitHub account.",
+            "url": "https://github.com/sponsors/saltedlolly"
+        }
+    ],
+    "thanks": "Thank you for your support!",
+    "website": "https://saltedlolly.com"
+}

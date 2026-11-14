@@ -54,10 +54,21 @@ jobs:
             ghcr.io/saltedlolly/nito-dashboard:${{ steps.sha.outputs.short }}
             ghcr.io/saltedlolly/nito-dashboard:latest
 
+      # User-facing release notes come from a "Release-Notes:" trailer on the
+      # commit that triggered the build (one line, written for the person
+      # updating), falling back to a generic line
+      - name: Release notes
+        id: notes
+        run: |
+          notes="$(git log -1 --format='%(trailers:key=Release-Notes,valueonly,unfold)' HEAD | sed '/^$/d' | head -1)"
+          echo "notes=${notes:-Update the dashboard}" >> "$GITHUB_OUTPUT"
+
       - name: Pin the new dashboard image and publish
         working-directory: saltedlolly-nito
+        env:
+          RELEASE_NOTES: ${{ steps.notes.outputs.notes }}
         run: |
           ./nito-build.sh --publish \
             --dashboard-tag "${{ steps.sha.outputs.short }}" \
             --dashboard-digest "${{ steps.build.outputs.digest }}" \
-            --notes "Update the dashboard"
+            --notes "$RELEASE_NOTES"

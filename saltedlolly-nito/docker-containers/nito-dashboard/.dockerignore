@@ -1,2 +1,5 @@
 node_modules
 npm-debug.log
+frontend/dist
+backend/dist
+backend/public

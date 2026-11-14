@@ -6,7 +6,7 @@
 </a>
 Nito for Umbrel</h1>
 
-A self-hosted [Nito](https://nito.network/) node - a fair-launch, SHA-256 proof-of-work blockchain with a 200-year emission schedule, built as a direct Bitcoin Core fork. Includes an original dashboard showing block height, sync progress, peers, and mempool activity.
+A self-hosted [Nito](https://nito.network/) node - a fair-launch, SHA-256 proof-of-work blockchain with a 200-year emission schedule, built as a direct Bitcoin Core fork. Includes an original dashboard: new blocks sliding in as they're found, sync progress, charts of recent blocks and the mempool, and a map of the countries your peers are in.
 
 This package was built from scratch, compiling the node from source rather than trusting upstream's unattested pre-built binaries - see [Background](#background) below for why, and for what was found reviewing the project's history along the way.
 
@@ -17,12 +17,29 @@ Two containers, deliberately split:
 - **`nito`** ([Nito-Tools/docker-nito](https://github.com/Nito-Tools/docker-nito)) - the compiled node itself (`nitod`/`nito-cli`, built from [NitoNetwork/Nito-core](https://github.com/NitoNetwork/Nito-core)'s source, no wallet/GUI/dashboard). This image is generically useful to anyone wanting to run Nito via Docker, not just Umbrel users.
 - **`dashboard`** (`docker-containers/nito-dashboard/` in this repo) - an original Node/TypeScript + React dashboard, connecting to the `nito` container's RPC over the internal Docker network. Umbrel-specific, so it lives with the Umbrel packaging rather than the generic node image.
 
+## The dashboard
+
+- **Latest blocks:** the newest blocks as a chain, with each new one sliding in when it's found (about once a minute), and a timer since the last one. While the node is catching up, a progress ring shows how far it has got and roughly how long is left.
+- **At a glance:** block height, peers (in and out), mempool, chain size, uptime, node version and network (mainnet, testnet, regtest or signet).
+- **Charts:** time between the last 60 blocks against the 1 minute target, transactions per block, and the mempool over the last 2 hours (kept in memory, so it starts again when the app restarts).
+- **Peer map:** the countries your peers are in. The lookup uses [DB-IP](https://db-ip.com)'s free country database, built into the image and used offline: peer addresses are never sent anywhere. Peers on Tor, I2P or private addresses are counted as "not located".
+- Light and dark themes, with a picker at the top right.
+
+## Help the network: open port 8820
+
+Your node connects out to other nodes on its own, but other nodes can only connect **in** to it if port `8820` (TCP) is forwarded to your Umbrel on your router. Nodes that accept incoming connections make the Nito network stronger. The dashboard tells you when nobody has connected in after 30 minutes, and shows a tick once someone has.
+
+1. Give your Umbrel a fixed local address on your router (often called a *DHCP reservation*), so the rule keeps pointing at it.
+2. In your router's settings, find *Port forwarding* and forward TCP port `8820` to that address, port `8820`.
+
+Every router is different; search for your router's model and "port forwarding" for exact steps. Only do this if you're comfortable with your Umbrel accepting connections from the internet on this port: only the Nito node listens on it.
+
 ## Ports
 
 | Purpose | Port | Exposure |
 | --- | ---: | --- |
-| Dashboard | `3000` | Umbrel SSO only (`app_proxy`) |
-| Swarm (P2P) | `8820` (tcp+udp) | Published directly |
+| Dashboard | `3000` | `app_proxy`, without Umbrel's login (`PROXY_AUTH_ADD: "false"`): the page only shows information, with no controls and no peer addresses |
+| Swarm (P2P) | `8820` (tcp+udp) | Published directly (forward TCP `8820` on your router to accept incoming peers) |
 
 The RPC port (`8825`) is never published to the host - only the `dashboard` container can reach it, over the internal Docker network, scoped to this Umbrel's own app subnet (`NITO_RPC_ALLOW_IP=${NETWORK_IP}/16`, Umbrel's documented mechanism for exactly this) and gated by generated credentials either way.
 
@@ -44,29 +61,26 @@ Given upstream's own release binaries have no independent build attestation (no 
 
 ## Release tooling
 
-`nito-build.sh` tracks two independent things: the latest `Nito-Tools/docker-nito` tag (built by that repo's own CI - this script just pins it), and this app's own `docker-containers/nito-dashboard`, built and pushed locally with hash-based change detection (skips rebuilding when nothing changed), matching the pattern `saltedlolly-audiobookshelf/abs-build.sh` uses for its own components.
+`nito-build.sh` pins two images, building neither: `Nito-Tools/docker-nito` (built by that repo's own CI) and this app's dashboard, `ghcr.io/saltedlolly/nito-dashboard`. The dashboard is built by this repo's `nito-dashboard-build.yml` workflow whenever `docker-containers/nito-dashboard/` changes on `master`; the workflow then runs `nito-build.sh --publish` with the new image's tag and digest. The release notes come from a `Release-Notes:` trailer on the commit that triggered the build.
 
 ```bash
-# Read-only check for both
+# Read-only check for a newer docker-nito
 ./nito-build.sh --check
 
-# Prepare updates locally (builds/pushes the dashboard if its source changed)
+# Prepare a docker-nito update locally, without committing
 ./nito-build.sh --update --notes "..."
-
-# Prepare and copy the package to umbrel-dev
-./nito-build.sh --localtest
 
 # Prepare, validate, commit only this app, and push
 ./nito-build.sh --publish --notes "..."
 ```
-
-Pushing the dashboard image requires being logged in to GHCR: `docker login ghcr.io -u saltedlolly` (a GitHub PAT with `write:packages`/`read:packages` as the password).
 
 ## Credits
 
 - **Nito**: [NitoNetwork/Nito-core](https://github.com/NitoNetwork/Nito-core)
 - **Node image**: Nito-Tools
 - **Packaging and dashboard**: Olly Stedall (saltedlolly)
+- **Country lookups**: [IP Geolocation by DB-IP](https://db-ip.com) (CC BY 4.0)
+- **World map**: [world-atlas](https://github.com/topojson/world-atlas) (Natural Earth, public domain)
 
 ## Support
 

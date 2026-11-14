@@ -4,6 +4,9 @@ services:
       # The format here is: <app-id>_<docker-service-name>_1
       APP_HOST: saltedlolly-nito_dashboard_1
       APP_PORT: 3000
+      # The dashboard only shows information (no settings or controls, and no
+      # peer addresses), so it doesn't need Umbrel's login
+      PROXY_AUTH_ADD: "false"
 
   # The compiled Nito node itself - see Nito-Tools/docker-nito for why it's
   # built from source and why it's a separate image from the dashboard
@@ -65,7 +68,9 @@ services:
       - NITO_RPC_HOST=nito
       - NITO_RPC_USER=${APP_SALTEDLOLLY_NITO_RPC_USER}
       - NITO_RPC_PASSWORD=${APP_SALTEDLOLLY_NITO_RPC_PASSWORD}
-    # node:22-slim has neither wget nor curl installed - use Node's own
+      # Shown in the dashboard's footer; set by nito-build.sh on each release
+      - APP_VERSION=v3.0.1.4
+    # node:24-slim has neither wget nor curl installed - use Node's own
     # built-in http client instead (caught by actually running this
     # healthcheck, not by inspection: it silently never became healthy).
     healthcheck:
