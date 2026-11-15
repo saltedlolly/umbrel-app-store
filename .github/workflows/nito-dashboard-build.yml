@@ -12,7 +12,7 @@ permissions:
   packages: write
 
 concurrency:
-  group: nito-dashboard-build
+  group: nito-release   # shared with nito-auto-release.yml, so they never push at once
   cancel-in-progress: false
 
 jobs:

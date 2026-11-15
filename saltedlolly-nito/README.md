@@ -69,14 +69,23 @@ Given upstream's own release binaries have no independent build attestation (no 
 
 ## Release tooling
 
-`nito-build.sh` pins two images, building neither: `Nito-Tools/docker-nito` (built by that repo's own CI) and this app's dashboard, `ghcr.io/saltedlolly/nito-dashboard`. The dashboard is built by this repo's `nito-dashboard-build.yml` workflow whenever `docker-containers/nito-dashboard/` changes on `master`; the workflow then runs `nito-build.sh --publish` with the new image's tag and digest. The release notes come from a `Release-Notes:` trailer on the commit that triggered the build.
+`nito-build.sh` pins two images, building neither: `Nito-Tools/docker-nito` (built by that repo's own CI) and this app's dashboard, `ghcr.io/saltedlolly/nito-dashboard`.
+
+**Versions:** the first three numbers always match the Nito Core version the node runs. The first release for a new Nito Core version is the bare version (`v4.0.0`); every later release adds `.1`, `.2` and so on (`v4.0.0.1`), whether it brings a new docker-nito build or a dashboard change.
+
+**Node image:** docker-nito publishes numbered builds (`v4.0.0-1`, `v4.0.0-2`, ...), each with a GitHub Release saying what changed. The build number goes up when the image is rebuilt with the same Nito Core version, including monthly Debian updates. The app pins the exact build (`docker-nito:v4.0.0-2@sha256:...`), and its release notes name the build and link to its release.
+
+**Automatic releases:** `nito-auto-release.yml` runs daily at 06:00 UTC. When docker-nito has a newer build that's at least 2 days old and published for amd64 and arm64, it starts it on regtest as a quick check, then runs `nito-build.sh --publish --nito-build <build>`. To publish a build early: Actions, "Nito - Auto Release", Run workflow, with `force_version` set to the build (for example `v4.0.0-3`).
+
+**Dashboard releases:** `nito-dashboard-build.yml` builds the dashboard whenever `docker-containers/nito-dashboard/` changes on `master`, then runs `nito-build.sh --publish` with the new image's tag and digest. The release notes come from a `Release-Notes:` trailer on the commit that triggered the build. Both workflows share one queue, so they never publish at the same time.
 
 ```bash
-# Read-only check for a newer docker-nito
+# Read-only check for a newer docker-nito build
 ./nito-build.sh --check
 
-# Prepare a docker-nito update locally, without committing
+# Prepare an update locally, without committing (newest build, or a given one)
 ./nito-build.sh --update --notes "..."
+./nito-build.sh --update --nito-build v4.0.0-3 --notes "..."
 
 # Prepare, validate, commit only this app, and push
 ./nito-build.sh --publish --notes "..."

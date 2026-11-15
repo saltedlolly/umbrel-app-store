@@ -1,0 +1,192 @@
+name: Nito - Auto Release
+
+# Publishes a new Nito app release when Nito-Tools/docker-nito publishes a new
+# build (v4.0.0-2, v4.0.0-3, ... or the first build of a new Nito Core
+# version), once it's 2 days old, like the other auto-releases in this store.
+# docker-nito's own updates are reviewed there (a PR Olly merges), so this
+# side publishes directly (user decision 2026-11-15; until then it only
+# opened a PR).
+#
+# App version (see nito-build.sh): the Nito Core version, bare for the first
+# release of a new Nito Core version (v4.0.0), then .1, .2, ... for every
+# later release, whether a new docker-nito build or a dashboard change.
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # every day 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: check upstream and log the plan only (no update/commit)'
+        type: boolean
+        default: false
+      force_version:
+        description: 'Optional: publish this docker-nito build now, skipping the 2-day buffer (e.g. v4.0.0-3)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nito-release   # shared with nito-dashboard-build.yml, so they never push at once
+  cancel-in-progress: false
+
+jobs:
+  check-upstream:
+    name: Check docker-nito for an eligible build (2-day buffer)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      has_update: ${{ steps.compare.outputs.has_update }}
+      eligible_build: ${{ steps.latest.outputs.eligible_build }}
+      new_core: ${{ steps.compare.outputs.new_core }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            saltedlolly-nito/docker-compose.yml
+            .github/scripts/upstream-image-ready.sh
+          sparse-checkout-cone-mode: false
+
+      - name: Find the newest docker-nito build that has cleared the 2-day buffer
+        id: latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORCE_VERSION: ${{ github.event.inputs.force_version }}
+        run: |
+          set -euo pipefail
+          cutoff="$(date -u -d '2 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+          releases="$(curl -sf \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/Nito-Tools/docker-nito/releases?per_page=50")"
+
+          # Newest by version number (Nito Core, then build), not by date
+          build="$(echo "$releases" | jq -r --arg cutoff "$cutoff" '
+            [ .[] | select(.draft==false and .prerelease==false and .published_at <= $cutoff
+                           and (.tag_name | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]+$"))) | .tag_name ]
+            | .[]' | sort -V | tail -1)"
+
+          if [[ -n "${FORCE_VERSION}" ]]; then
+            build="${FORCE_VERSION}"
+            echo "::notice::Overriding with force_version input: $build"
+          fi
+
+          if [[ -z "$build" ]]; then
+            echo "::notice::No docker-nito build has cleared the 2-day buffer yet"
+            echo "eligible_build=" >> "$GITHUB_OUTPUT"
+          else
+            if ! [[ "$build" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$ ]]; then
+              echo "::error::Unexpected docker-nito build tag: '$build'"
+              exit 1
+            fi
+            echo "eligible_build=$build" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Get the currently pinned build
+        id: current
+        run: |
+          set -euo pipefail
+          current="$(grep -oE 'ghcr\.io/nito-tools/docker-nito:v[0-9]+\.[0-9]+\.[0-9]+(-[0-9]+)?' \
+            saltedlolly-nito/docker-compose.yml | head -1 | cut -d: -f2)"
+          if [[ -z "$current" ]]; then
+            echo "::error::Could not find the docker-nito pin in docker-compose.yml"
+            exit 1
+          fi
+          echo "current_build=$current" >> "$GITHUB_OUTPUT"
+
+      - name: Compare
+        id: compare
+        run: |
+          set -euo pipefail
+          eligible="${{ steps.latest.outputs.eligible_build }}"
+          current="${{ steps.current.outputs.current_build }}"
+          # An old bare pin (v3.0.1) counts as build 0 of that version.
+          # sort -V (not just !=) so an eligible build OLDER than the pin
+          # (e.g. one published by hand past the buffer) is never a downgrade.
+          current_cmp="$current"; [[ "$current_cmp" == *-* ]] || current_cmp="${current_cmp}-0"
+          newest="$(printf '%s\n%s\n' "$current_cmp" "$eligible" | sort -V | tail -1)"
+          if [[ -z "$eligible" || "$eligible" == "$current" || "$newest" != "$eligible" ]]; then
+            echo "has_update=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No update to publish. pinned=$current eligible=${eligible:-none}"
+          elif ! bash .github/scripts/upstream-image-ready.sh "ghcr.io/nito-tools/docker-nito:${eligible}"; then
+            echo "has_update=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_update=true" >> "$GITHUB_OUTPUT"
+            if [[ "${eligible%-*}" != "${current%-*}" ]]; then
+              echo "new_core=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "new_core=false" >> "$GITHUB_OUTPUT"
+            fi
+            echo "::notice::Publishing update. pinned=$current -> eligible=$eligible"
+          fi
+
+  release:
+    name: Smoke-test and publish new version
+    needs: check-upstream
+    if: needs.check-upstream.outputs.has_update == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      APP_DIR: saltedlolly-nito
+      ELIGIBLE_BUILD: ${{ needs.check-upstream.outputs.eligible_build }}
+      NEW_CORE: ${{ needs.check-upstream.outputs.new_core }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: true   # required for nito-build.sh's `git push`
+
+      - name: Configure git identity for automated commits
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      # ---------- OPTIONAL SAFETY NET ----------
+      # Starts the image on regtest and waits for its RPC, the same command
+      # the app's healthcheck uses
+      - name: "[Optional] Smoke-test the docker-nito image"
+        run: |
+          set -euo pipefail
+          docker run -d --name nito-smoke \
+            -e NITO_RPC_USER=smoke -e NITO_RPC_PASSWORD=smoketest12345 -e NITO_NETWORK=regtest \
+            "ghcr.io/nito-tools/docker-nito:${ELIGIBLE_BUILD}"
+          ok=false
+          for i in $(seq 1 30); do
+            docker exec nito-smoke nito-cli -regtest -rpcport=8825 -rpcuser=smoke -rpcpassword=smoketest12345 getnetworkinfo >/dev/null 2>&1 && { ok=true; break; }
+            sleep 2
+          done
+          docker logs nito-smoke || true
+          docker rm -f nito-smoke || true
+          [[ "$ok" == "true" ]] || { echo "::error::docker-nito image failed smoke test"; exit 1; }
+      # ---------- END OPTIONAL SAFETY NET ----------
+
+      - name: Dry run summary (no update/commit)
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          echo "DRY RUN: would publish docker-nito ${ELIGIBLE_BUILD} (new Nito Core: ${NEW_CORE})"
+
+      # nito-build.sh adds "Node image: docker-nito <build> (<link>)" to the
+      # notes, and the Nito Core release notes when the Nito Core version changes
+      - name: Pin the build, bump the version and publish (nito-build.sh)
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          set -euo pipefail
+          if [[ "$NEW_CORE" == "true" ]]; then
+            notes="Automated update to Nito Core ${ELIGIBLE_BUILD%-*}. Its release notes are below."
+          else
+            notes="Automated update: the node image was rebuilt, Nito Core is unchanged."
+          fi
+          ./nito-build.sh --publish --nito-build "${ELIGIBLE_BUILD}" --notes "$notes"
+
+      - name: Log published app version
+        if: github.event.inputs.dry_run != 'true'
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          echo "::notice::Published app version: $(grep '^version:' umbrel-app.yml)"
