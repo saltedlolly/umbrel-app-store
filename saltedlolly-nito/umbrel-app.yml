@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-nito
 category: blockchain
 name: Nito
-version: "v3.0.1.5"
+version: "v3.0.1.6"
 tagline: A fair-launch, SHA-256 proof-of-work blockchain built for 200-year longevity
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -29,6 +29,10 @@ description: >-
 
   All node data (chain state) is stored under this app's persistent data directory and survives restarts and updates. Uninstalling this app deletes it - back up first if you want to keep it.
 releaseNotes: >-
+  ## v3.0.1.6
+
+  - New charts on the dashboard: the network's hashrate, which pools found the last day's blocks, your node's upload and download, and which Nito versions your peers run. Charts now have 1 hour to 30 day time ranges, the time between blocks shows a moving average against the 1 minute target, and the mempool and traffic history is kept for 30 days. A "Did you know?" card at the bottom shows a new fact about Nito every minute, from NitoFacts.
+
   ## v3.0.1.5
 
   - A new look for the dashboard: watch new blocks arrive as they're found, with charts, a map of the countries your peers are in, light and dark themes, Nito branding, and a reminder to open port 8820 on your router so other nodes can connect to yours. The dashboard no longer asks for your Umbrel login.
