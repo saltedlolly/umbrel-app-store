@@ -13,7 +13,7 @@ services:
   # below (that image is meant to be generically useful outside Umbrel
   # too, so it doesn't carry any Umbrel-specific dashboard code).
   nito:
-    image: ghcr.io/nito-tools/docker-nito:v4.0.0@sha256:0ccbce73031c3316f77630853d2e493434877f65b7e529bca0f141be9e318066
+    image: ghcr.io/nito-tools/docker-nito:v4.0.0-2@sha256:0ccbce73031c3316f77630853d2e493434877f65b7e529bca0f141be9e318066
     container_name: saltedlolly-nito_nito_1
     hostname: saltedlolly-nito_nito_1
     init: true
