@@ -200,7 +200,7 @@ One login for the apps you share from your Umbrel, powered by [Authentik](https:
 
 | Name          | Port         | Local Address                                            | Umbrel SSO    |
 |---------------| ------------ | --------------------------------------------------------- | ------------- |
-| Admin interface | `9800`     | [https://umbrel.local:9800](https://umbrel.local:9800/)    | ✅            |
+| Admin interface | `9800`     | [https://umbrel.local:9800](https://umbrel.local:9800/)    |               |
 
 ---
 
@@ -237,7 +237,7 @@ On its own, CrowdSec doesn't protect anything - it needs a "bouncer" wired into 
 
 | Name              | Port         | Local Address                                            | Umbrel SSO    |
 |-------------------| ------------ | --------------------------------------------------------- | ------------- |
-| CrowdSec Dashboard| `5190`       | [https://umbrel.local:5190](https://umbrel.local:5190/)    | ✅            |
+| CrowdSec Dashboard| `5190`       | [https://umbrel.local:5190](https://umbrel.local:5190/)    |               |
 
 ---
 
