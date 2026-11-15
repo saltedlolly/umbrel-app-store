@@ -5,9 +5,6 @@ name: Nito
 version: "v4.0.0.1"
 tagline: A fair-launch, SHA-256 proof-of-work blockchain built for 200-year longevity
 description: >-
-  ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
-
-
   Nito is a decentralized, SHA-256 proof-of-work blockchain built around fairness and longevity: no premine, no ICO, no VC allocation - just open, permissionless mining from block one. This app runs a full Nito node with the standard nito-cli/JSON-RPC interface, alongside a dashboard that shows new blocks as they're found, sync progress, charts of recent blocks, and a map of the countries your peers are in.
 
 
