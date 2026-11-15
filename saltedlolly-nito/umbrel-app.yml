@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-nito
 category: blockchain
 name: Nito
-version: "v3.0.1.6"
+version: "v4.0.0"
 tagline: A fair-launch, SHA-256 proof-of-work blockchain built for 200-year longevity
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -27,68 +27,60 @@ description: >-
   Help the network: forward port 8820 (TCP) on your router to your Umbrel, so other nodes can connect to yours. The dashboard reminds you if nobody has connected in, and the README explains how: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-nito#help-the-network-open-port-8820
 
 
-  All node data (chain state) is stored under this app's persistent data directory and survives restarts and updates. Uninstalling this app deletes it - back up first if you want to keep it.
+  All node data (chain state) is stored under this app's persistent data directory and survives restarts and updates. Uninstalling this app deletes it. The blockchain isn't included in Umbrel backups, because the node can download it again: after a restore it resyncs from the network.
 releaseNotes: >-
-  ## v3.0.1.6
+  ## v4.0.0
 
-  - New charts on the dashboard: the network's hashrate, which pools found the last day's blocks, your node's upload and download, and which Nito versions your peers run. Charts now have 1 hour to 30 day time ranges, the time between blocks shows a moving average against the 1 minute target, and the mempool and traffic history is kept for 30 days. A "Did you know?" card at the bottom shows a new fact about Nito every minute, from NitoFacts.
+  - Nito Core v4.0.0, a required upgrade: every Nito node must run it before block 1,165,432, around the end of December 2026. It adds optional Orchard private transactions.
 
-  ## v3.0.1.5
+  - The first time the node starts on v4 it builds its new Orchard index, which takes a while and uses some extra disk space.
 
-  - A new look for the dashboard: watch new blocks arrive as they're found, with charts, a map of the countries your peers are in, light and dark themes, Nito branding, and a reminder to open port 8820 on your router so other nodes can connect to yours. The dashboard no longer asks for your Umbrel login.
+  - Once your node has started on v4 it can't go back to v3.
 
-  ## v3.0.1.4
+  - The blockchain is no longer included in Umbrel backups, because your node can download it again. After a restore it resyncs from the network.
 
-  - Fix docker-nito's entrypoint crash-looping on a fresh Umbrel install: nito.conf couldn't be written because the container started directly as UID 1000, but Umbrel's bind-mounted data directory is created root-owned. The image now starts as root, fixes ownership, then drops privileges before running nitod.
+  - Built with docker-nito v4.0.0-2: https://github.com/Nito-Tools/docker-nito/releases/tag/v4.0.0-2
 
 
   --- NitoNetwork/Nito-core upstream release notes (auto-updated) ---
 
 
-  NitoNetwork/Nito-core v3.0.1
+  NitoNetwork/Nito-core v4.0.0
 
-    Nito Core v3.0.1 - Maintenance Update
+    # Nito Core 4.0.0
 
-    Non-mandatory update. No consensus changes, no hard fork. All nodes will continue to work on v3.0.0
+    Nito Core 4.0.0 introduces opt-in Orchard private transactions with direct Bech32x addresses while preserving Nito's transparent transaction, block, SHA-256 mining and pool behavior.
 
-    ---
+    Upgrade requirement
 
-    What's New in v3.0.1
+    Node, pool, explorer and indexer operators must upgrade their backing Nito daemon before mainnet block **1,165,432**. After activation, Orchard-capable peers require protocol `70017` or later and the `NITO_PRIVATE` service.
 
-    🔒 Checkpoint Fix & Updates
-    - Added 5 new checkpoints: 700,000 / 725,000 / 750,000 / 775,000 / 790,000
-    - Updated `defaultAssumeValid` to block 790,000 (faster initial sync)
-    - Updated `chainTxData` with current chain statistics
+    Back up every wallet and stop the existing node cleanly before upgrading. Existing v3 Berkeley DB and SQLite wallet files remain supported, but reopening v4-updated wallet or chain data with v3 is not a supported rollback procedure.
 
+    Major additions
 
-    📝 Other
-    - Updated MAX_MONEY to match actual total supply (1,284,565,890 NITO)
-    - Updated README with improved build instructions
+    - Orchard private transactions and explicit `nito1x...` Bech32x receive addresses.
+    - Transparent-to-private, private-to-transparent and private-to-private transfers.
+    - Native v4 recovery phrases covering deterministic transparent and Orchard authority.
+    - Guided `nito-cli -interactive` workflows for sensitive wallet, recovery, signing and backup operations.
+    - Orchard indexing and recovery support, including operation on explicitly configured pruned nodes.
+    - Incoming transparent transaction details with resolved input addresses in Qt.
+    - Official packages for Linux x86_64, Linux aarch64, Windows win64 and macOS arm64.
 
-    **Source Code:** https://github.com/NitoNetwork/Nito-core/tree/v3.0.1
+    Documentation
 
-    ---
+    - [Complete release notes](https://github.com/NitoNetwork/Nito-core/blob/6eaeea13dd1f2ed761b42ad9f1696b727b4c85aa/doc/release-notes.md)
+    - [Quick start](https://github.com/NitoNetwork/Nito-core/blob/v4.0.0/doc/nito/quick-start.md)
+    - [Wallet backup and recovery](https://github.com/NitoNetwork/Nito-core/blob/v4.0.0/doc/nito/wallet-backup-restore.md)
+    - [Wallet creation and V3 migration](https://github.com/NitoNetwork/Nito-core/blob/v4.0.0/doc/managing-wallets.md)
 
-    Upgrade Instructions
+    Verification and provenance
 
-    1. Stop your node: `nito-cli stop`
-    2. Download and extract the new version
-    3. Start your node: `nitod` or `nito-qt`
-    4. Verify: `nito-cli getnetworkinfo | grep subversion` → `/Nito:3.0.1/`
+    Verify downloads against the attached `SHA256SUMS` file before installation. The `v4.0.0` tag is an annotated SSH-signed tag verified by GitHub and targets commit `e3ff5e42b980c792ee5ab790610772a7d9ee8f8a`.
 
-    No wallet backup required — this update does not affect wallet data.
+    This release was built from commit `e3ff5e42b980c792ee5ab790610772a7d9ee8f8a` by [GitHub Actions run 43697543547](https://github.com/NitoNetwork/Nito-core/actions/runs/43697543547).
 
-    ---
-
-    Verify Downloads (SHA256)
-
-    ```
-    d12942540664e6968e7e6969084932813303680cf2382f3586c87eb62ed70235 nito-3.0.1-x86_64-linux-gnu.tar.gz
-    2f7d81d2aeba5c551cc297b7c2d287204495f3f2850669ed51db20f3e712b0c7 nito-3.0.1-aarch64-linux-gnu.tar.gz
-    ff585792bd6a835d082c192c4800522c0eb48702d2d7a600975079eb2e5dba0f nito-3.0.1-win64.zip
-    5b693deff8d7350d8a521c03426e801feb917c3512d989fee4f707a9f0d6be14 nito-3.0.1-win64-setup.exe
-
-    … (truncated) Full release notes: https://github.com/NitoNetwork/Nito-core/releases/tag/v3.0.1
+    GitHub automatically provides source-code archives generated from the `v4.0.0` tag. The attached checksum index covers the six downloadable platform packages and is explicitly **unsigned**.
 
 
   See the full release history: https://github.com/NitoNetwork/Nito-core/releases
@@ -105,6 +97,20 @@ path: ""
 
 defaultUsername: ""
 defaultPassword: ""
+# The blockchain can be downloaded again, so it's left out of Umbrel backups
+# (same as Umbrel's Bitcoin app). Kept: nito.conf, peers.dat, banlist.json,
+# settings.json, mempool.dat and the dashboard's history, all small. Paths
+# are relative to the app's folder; mainnet is data/nito itself.
+backupIgnore:
+  - data/nito/blocks
+  - data/nito/chainstate
+  - data/nito/indexes
+  - data/nito/debug.log
+  - data/nito/testnet3/blocks
+  - data/nito/testnet3/chainstate
+  - data/nito/testnet3/indexes
+  - data/nito/testnet3/debug.log
+  - data/nito/regtest
 
 icon: https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-nito/icon.png
 submitter: saltedlolly

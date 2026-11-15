@@ -52,7 +52,8 @@ The RPC port (`8825`) is never published to the host - only the `dashboard` cont
 
 ## Persistence
 
-- `${APP_DATA_DIR}/data/nito` → `/data` - the node's chain data. This is an opaque, content-addressed database, not recognizable/browsable files, so it lives in `APP_DATA_DIR` (covered by Backup while installed) rather than the Home folder - **deleted if you uninstall the app**, even though you'd care about not losing it. Take a Backup first if that matters to you.
+- `${APP_DATA_DIR}/data/nito` → `/data` - the node's chain data. This is an opaque, content-addressed database, not recognizable/browsable files, so it lives in `APP_DATA_DIR` rather than the Home folder, and it's **deleted if you uninstall the app**. The blockchain itself (`blocks`, `chainstate`, `indexes` and the log) is **not included in Umbrel backups**, because the node can download it again: after a restore it resyncs from the network. The small settings and peer files are backed up. The node has no wallet, so there's nothing else to back up.
+- `${APP_DATA_DIR}/data/dashboard` → `/data` in the dashboard - its saved mempool and traffic history (under 2 MB), included in backups.
 
 ## No Lightning support
 
