@@ -6,95 +6,87 @@
 </a>
 Nito for Umbrel</h1>
 
-A self-hosted [Nito](https://nito.network/) node - a fair-launch, SHA-256 proof-of-work blockchain with a 200-year emission schedule, built as a direct Bitcoin Core fork. Includes an original dashboard: new blocks sliding in as they're found, sync progress, charts of recent blocks and the mempool, and a map of the countries your peers are in.
+Run your own [Nito](https://nito.network/) node on your Umbrel, with a dashboard that shows what's happening on the network as it happens.
 
-This package was built from scratch, compiling the node from source rather than trusting upstream's unattested pre-built binaries - see [Background](#background) below for why, and for what was found reviewing the project's history along the way.
+Nito is a SHA-256 proof-of-work blockchain built on Bitcoin Core, with one-minute blocks and coins issued over 200 years. It launched fairly in August 2024, with no premine. Running a node means your Umbrel keeps its own full copy of the blockchain, checks every block for itself, and passes blocks and transactions on to other nodes, which makes the network stronger.
 
-## Architecture
+The node has no wallet. It's for following and supporting the network, not for holding coins.
 
-Two containers, deliberately split:
+## Getting started
 
-- **`nito`** ([Nito-Tools/docker-nito](https://github.com/Nito-Tools/docker-nito)) - the compiled node itself (`nitod`/`nito-cli`, built from [NitoNetwork/Nito-core](https://github.com/NitoNetwork/Nito-core)'s source, no wallet/GUI/dashboard). This image is generically useful to anyone wanting to run Nito via Docker, not just Umbrel users.
-- **`dashboard`** (`docker-containers/nito-dashboard/` in this repo) - an original Node/TypeScript + React dashboard, connecting to the `nito` container's RPC over the internal Docker network. Umbrel-specific, so it lives with the Umbrel packaging rather than the generic node image.
+1. Add the saltedlolly Community App Store to your Umbrel ([how](https://github.com/saltedlolly/umbrel-app-store#-how-to-access-the-app-store-on-your-umbrel)).
+2. Install **Nito**.
+3. Open it. The node starts downloading and checking the blockchain from the beginning. The dashboard shows how far it has got and roughly how long is left. Depending on your Umbrel and your connection, this takes from a few minutes to an hour or so.
+4. Optional, but it helps the network: [open port 8820](#help-the-network-open-port-8820) on your router.
+
+The blockchain takes about 700 MB today and grows slowly.
 
 ## The dashboard
 
-- **Latest blocks:** the newest blocks as a chain, with each new one sliding in when it's found (about once a minute), and a timer since the last one. While the node is catching up, a progress ring shows how far it has got and roughly how long is left.
-- **At a glance:** block height, peers (in and out), mempool, chain size, uptime, node version and network (mainnet, testnet, regtest or signet).
-- **Charts:** time between the last 60 blocks against the 1 minute target, transactions per block, and the mempool over the last 2 hours (kept in memory, so it starts again when the app restarts).
-- **Peer map:** the countries your peers are in. The lookup uses [DB-IP](https://db-ip.com)'s free country database, built into the image and used offline: peer addresses are never sent anywhere. Peers on Tor, I2P or private addresses are counted as "not located".
-- **Time ranges:** the block charts, hashrate and traffic each have a 1H / 24H / 7D / 30D picker (hashrate starts at 24H). Time between blocks shows a moving average against the 1-minute target.
-- **Network hashrate:** the hashrate of the whole Nito network, worked out by the dashboard from the block headers your node holds.
-- **Who found the blocks:** which pools and miners found the last 1,440 blocks (about a day), by the pool name in each block, or the address it paid when there's no name.
-- **Your node's traffic:** your node's upload and download speed, and the totals since it started. Most of the upload goes to the nodes that connect to yours.
-- **History:** block charts and hashrate come straight from the chain, so every range is there from the start. The mempool and traffic only exist in the moment, so the dashboard records them every minute, whether or not the page is open, and keeps 30 days in its data folder.
-- **Peer versions:** which versions of Nito your peers run.
-- **NitoFacts:** a "Did you know?" fact about Nito under the panels, changing every 60 seconds. The facts come from [nitofacts.nito.tools](https://nitofacts.nito.tools), fetched by the dashboard on your Umbrel every few hours (your browser doesn't contact the site).
+The dashboard opens without Umbrel's login, because it only shows information: it has no settings or controls, and it never shows your peers' addresses.
+
+- **Latest blocks:** the newest blocks as a chain, with each new one sliding in when it's found, about once a minute, and a timer since the last one.
+- **At a glance:** block height, how many nodes you're connected to (in and out), transactions waiting, chain size, uptime, node version and network.
+- **Time between blocks:** how long each block took against the one-minute target, with a moving average line so you can see how closely the network sticks to it.
+- **Transactions per block** and the **mempool** (transactions waiting to go into a block).
+- **Connected peers:** a world map of the countries the nodes connected to yours are in, and which versions of Nito they run.
+- **Network hashrate:** how much mining power the whole network has.
+- **Who found the blocks:** which pools and miners found the last day's blocks.
+- **Your node's traffic:** how fast your node is uploading and downloading, and the totals since it started.
+- **Time ranges:** most charts can show the last hour, 24 hours, 7 days or 30 days.
+- **Did you know?** A fact about Nito at the bottom, changing every minute, from [NitoFacts](https://nitofacts.nito.tools).
 - Light and dark themes, with a picker at the top right.
+
+## The Orchard upgrade (Nito Core 4)
+
+Nito Core 4.0.0 adds **Orchard**, optional private transfers. A fully private transfer hides who sent it, who received it and how much, while every node can still check it follows the rules. Private funds use a new kind of address, called Bech32x, starting with `nito1x`. Ordinary transfers, mining and block rewards carry on as before. [Learn more on nito.network](https://nito.network/en/network/#orchard).
+
+It's a hard fork: it switches on at block **1,165,432**, around the end of December 2026, and every node must run Nito Core 4 or later by then. This app already does, so there's nothing for you to do. Until it switches on, the dashboard shows a countdown, the expected date and how many of your peers are ready. Afterwards, it shows that it happened for a month.
+
+The first time the node starts on version 4, it builds a new index, which takes a while and uses a little extra disk space. Once it has started on version 4, it can't go back to version 3.
 
 ## Help the network: open port 8820
 
-Your node connects out to other nodes on its own, but other nodes can only connect **in** to it if port `8820` (TCP) is forwarded to your Umbrel on your router. Nodes that accept incoming connections make the Nito network stronger. The dashboard tells you when nobody has connected in after 30 minutes, and shows a tick once someone has.
+Your node connects out to other nodes on its own, but other nodes can only connect **in** to it if port `8820` (TCP) is forwarded to your Umbrel on your router. Nodes that accept incoming connections make the Nito network stronger. The dashboard tells you if nobody has connected in after 30 minutes, and shows a tick once someone has.
 
 1. Give your Umbrel a fixed local address on your router (often called a *DHCP reservation*), so the rule keeps pointing at it.
 2. In your router's settings, find *Port forwarding* and forward TCP port `8820` to that address, port `8820`.
 
-Every router is different; search for your router's model and "port forwarding" for exact steps. Only do this if you're comfortable with your Umbrel accepting connections from the internet on this port: only the Nito node listens on it.
+Every router is different: search for your router's model and "port forwarding" for exact steps. Only do this if you're comfortable with your Umbrel accepting connections from the internet on this port. Only the Nito node listens on it.
 
-## Ports
+## Your data and backups
 
-| Purpose | Port | Exposure |
-| --- | ---: | --- |
-| Dashboard | `3000` | `app_proxy`, without Umbrel's login (`PROXY_AUTH_ADD: "false"`): the page only shows information, with no controls and no peer addresses |
-| Swarm (P2P) | `8820` (tcp+udp) | Published directly (forward TCP `8820` on your router to accept incoming peers) |
+- The blockchain is stored in the app's own folder. It survives restarts and updates, and it's deleted if you uninstall the app.
+- The blockchain is **not included in Umbrel backups**, because your node can download it again. After restoring a backup, the node simply catches up from the network.
+- The node's small settings files and the dashboard's chart history are backed up. The node has no wallet, so there's nothing else to keep safe.
 
-The RPC port (`8825`) is never published to the host - only the `dashboard` container can reach it, over the internal Docker network, scoped to this Umbrel's own app subnet (`NITO_RPC_ALLOW_IP=${NETWORK_IP}/16`, Umbrel's documented mechanism for exactly this) and gated by generated credentials either way.
+## Privacy
 
-## Persistence
+- **Peer countries** are looked up in a database built into the app ([DB-IP](https://db-ip.com)'s free country list), so peer addresses never leave your Umbrel.
+- **NitoFacts** are fetched by your Umbrel from nitofacts.nito.tools every few hours. Your browser doesn't contact the site.
+- **Update notices:** the dashboard checks this app store on GitHub for a newer version of the app.
+- Everything else on the dashboard comes straight from your own node.
 
-- `${APP_DATA_DIR}/data/nito` → `/data` - the node's chain data. This is an opaque, content-addressed database, not recognizable/browsable files, so it lives in `APP_DATA_DIR` rather than the Home folder, and it's **deleted if you uninstall the app**. The blockchain itself (`blocks`, `chainstate`, `indexes` and the log) is **not included in Umbrel backups**, because the node can download it again: after a restore it resyncs from the network. The small settings and peer files are backed up. The node has no wallet, so there's nothing else to back up.
-- `${APP_DATA_DIR}/data/dashboard` → `/data` in the dashboard - its saved mempool and traffic history (under 2 MB), included in backups.
+Like any node, yours connects to other Nito nodes on the internet, so they can see your Umbrel's internet address.
 
-## Background
+## Updates
 
-Nito is a direct fork of Bitcoin Core (confirmed via leftover mechanical find/replace artifacts in its docs, an unmodified RPC/CLI/config surface, and identical consensus-parameter code). Reviewing its commit history while building this package surfaced a real, if non-malicious, quality issue worth documenting here rather than in the app's own description (which is about what the software does today, not its history):
+New versions arrive through Umbrel's normal app updates. The first three numbers of the version always match the Nito Core version the node runs. Later releases add a fourth number, for example v4.0.0.1, for dashboard improvements or a rebuilt node image.
 
-A missing-braces bug in the original `GetBlockSubsidy` code meant every `if` block's `return` statement after the first was unreachable dead code - the coin minted a flat, non-decaying 512 NITO per block for its entire first year (genesis to September 2025), rather than the halving-style schedule the code intended. This was fixed in a hard fork (v2.1.0) described in the release notes only as "a consensus change to the block subsidy schedule," with no disclosure of the actual severity. The chain wasn't reset, so the resulting over-issuance is permanent. No evidence of a deliberate backdoor or fund-redirection mechanism was found anywhere in the code reviewed - this reads as a genuine coding mistake by a small, thinly-resourced team, not a scam.
+## How the node is built
 
-Given upstream's own release binaries have no independent build attestation (no CI builds the Linux/ARM64 binaries it publishes; they're uploaded manually, with no reproducible-build signing chain), this package compiles `nitod` from source instead of trusting them - see [docker-nito](https://github.com/Nito-Tools/docker-nito) for how.
+The node isn't downloaded as a ready-made program. It's compiled from Nito Core's published source code by [docker-nito](https://github.com/Nito-Tools/docker-nito), so what runs on your Umbrel can be traced back to that source. Nito's own pre-built downloads have no independent proof of how they were built. docker-nito images are rebuilt each month when there are security updates, and each new build reaches this app automatically after two days.
 
-## Release tooling
-
-`nito-build.sh` pins two images, building neither: `Nito-Tools/docker-nito` (built by that repo's own CI) and this app's dashboard, `ghcr.io/saltedlolly/nito-dashboard`.
-
-**Versions:** the first three numbers always match the Nito Core version the node runs. The first release for a new Nito Core version is the bare version (`v4.0.0`); every later release adds `.1`, `.2` and so on (`v4.0.0.1`), whether it brings a new docker-nito build or a dashboard change.
-
-**Node image:** docker-nito publishes numbered builds (`v4.0.0-1`, `v4.0.0-2`, ...), each with a GitHub Release saying what changed. The build number goes up when the image is rebuilt with the same Nito Core version, including monthly Debian updates. The app pins the exact build (`docker-nito:v4.0.0-2@sha256:...`), and its release notes name the build and link to its release.
-
-**Automatic releases:** `nito-auto-release.yml` runs daily at 06:00 UTC. When docker-nito has a newer build that's at least 2 days old and published for amd64 and arm64, it starts it on regtest as a quick check, then runs `nito-build.sh --publish --nito-build <build>`. To publish a build early: Actions, "Nito - Auto Release", Run workflow, with `force_version` set to the build (for example `v4.0.0-3`).
-
-**Dashboard releases:** `nito-dashboard-build.yml` builds the dashboard whenever `docker-containers/nito-dashboard/` changes on `master`, then runs `nito-build.sh --publish` with the new image's tag and digest. The release notes come from a `Release-Notes:` trailer on the commit that triggered the build. Both workflows share one queue, so they never publish at the same time.
-
-```bash
-# Read-only check for a newer docker-nito build
-./nito-build.sh --check
-
-# Prepare an update locally, without committing (newest build, or a given one)
-./nito-build.sh --update --notes "..."
-./nito-build.sh --update --nito-build v4.0.0-3 --notes "..."
-
-# Prepare, validate, commit only this app, and push
-./nito-build.sh --publish --notes "..."
-```
+Nito is a close copy of Bitcoin Core. While reviewing its history for this app, one notable issue turned up: in Nito's first year a coding mistake meant every block paid a flat 512 NITO instead of the intended schedule. It was fixed by a hard fork in version 2.1.0 (September 2025), and the extra coins issued in that year remain. Nothing suggesting a backdoor or anything deliberate was found.
 
 ## Credits
 
 - **Nito**: [NitoNetwork/Nito-core](https://github.com/NitoNetwork/Nito-core)
-- **Node image**: Nito-Tools
+- **Node image**: [Nito-Tools/docker-nito](https://github.com/Nito-Tools/docker-nito)
 - **Packaging and dashboard**: Olly Stedall (saltedlolly)
 - **Country lookups**: [IP Geolocation by DB-IP](https://db-ip.com) (CC BY 4.0)
 - **World map**: [world-atlas](https://github.com/topojson/world-atlas) (Natural Earth, public domain)
 
 ## Support
 
-For issues specific to this Umbrel packaging, open an issue at [saltedlolly/umbrel-app-store](https://github.com/saltedlolly/umbrel-app-store/issues).
+For problems with this Umbrel app, open an issue at [saltedlolly/umbrel-app-store](https://github.com/saltedlolly/umbrel-app-store/issues).
