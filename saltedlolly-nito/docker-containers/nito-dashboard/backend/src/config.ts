@@ -15,7 +15,7 @@ export const config = {
   // DB-IP's free country database, downloaded when the image is built
   geoDatabase: process.env.GEO_DATABASE ?? "/app/geo/dbip-country-lite.mmdb",
   // Mempool and traffic history, saved so it survives restarts
-  historyFile: process.env.HISTORY_FILE ?? "/data/history.json",
+  historyFile: process.env.HISTORY_FILE ?? "/data/history.jsonl",
   // "Did you know..." facts for the card under the panels
   factsUrl: process.env.NITO_FACTS_URL ?? "https://nitofacts.nito.tools",
   storeManifestUrl:

@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { rpcCall } from "./rpc.js";
 import { config } from "./config.js";
@@ -9,11 +9,17 @@ import type { Range } from "./headers.js";
 // not the page is open: the mempool and the node's network traffic (kept for
 // 30 days and saved to a file, so they survive restarts and updates), and
 // sync progress for the time-left estimate (10 minutes, memory only).
+//
+// The file has one sample per line. New samples are added to the end every
+// 5 minutes (about 200 bytes), and once a day it's rewritten without the
+// ones older than 30 days, so it never grows past about 1.7 MB and the disk
+// sees about 60 KB of writes a day.
 
 const SAMPLE_MS = 30_000;
 const KEEP_EVERY_MS = 60_000; // one saved sample a minute
 const KEEP_MS = 30 * 24 * 60 * 60_000;
 const SAVE_MS = 5 * 60_000;
+const COMPACT_MS = 24 * 60 * 60_000;
 const SYNC_WINDOW_MS = 10 * 60_000;
 
 // Bar or point size per range
@@ -39,36 +45,74 @@ interface SyncSample {
 }
 
 let samples: Sample[] = [];
+let unsaved: Sample[] = [];
+let fileLines = 0;
 const sync: SyncSample[] = [];
 let lastKept = 0;
 let latest: Sample | null = null;
 let saveWarned = false;
 
+function valid(s: unknown): s is Sample {
+  return Array.isArray(s) && s.length === 5 && s.every((v) => typeof v === "number" && Number.isFinite(v));
+}
+
 async function load() {
   try {
-    const data = JSON.parse(await readFile(config.historyFile, "utf8")) as { version: number; samples: Sample[] };
-    if (data.version === 1 && Array.isArray(data.samples)) {
-      const cutoff = Date.now() - KEEP_MS;
-      samples = data.samples.filter((s) => Array.isArray(s) && s.length === 5 && s[0] >= cutoff);
-      lastKept = samples[samples.length - 1]?.[0] ?? 0;
-      console.log(`Loaded ${samples.length} history samples`);
+    const text = await readFile(config.historyFile, "utf8");
+    const cutoff = Date.now() - KEEP_MS;
+    const lines = text.split("\n").filter(Boolean);
+    fileLines = lines.length;
+    for (const line of lines) {
+      try {
+        const s = JSON.parse(line) as unknown;
+        // A line cut short by a power cut is skipped
+        if (valid(s) && s[0] >= cutoff) samples.push(s);
+      } catch {
+        /* skip */
+      }
     }
+    samples.sort((a, b) => a[0] - b[0]);
+    lastKept = samples[samples.length - 1]?.[0] ?? 0;
+    console.log(`Loaded ${samples.length} history samples`);
   } catch {
     // First start, or nothing saved yet
   }
+  // Drop old or damaged lines straight away if there are any
+  if (fileLines > samples.length) await compact();
 }
 
+function warnOnce(err: unknown) {
+  if (!saveWarned) {
+    console.warn(`Can't save history to ${config.historyFile} (${(err as Error).message}); keeping it in memory only`);
+    saveWarned = true;
+  }
+}
+
+// Add the samples taken since the last save to the end of the file
 async function save() {
+  if (!unsaved.length) return;
+  const batch = unsaved;
+  unsaved = [];
   try {
     await mkdir(dirname(config.historyFile), { recursive: true });
-    const tmp = `${config.historyFile}.tmp`;
-    await writeFile(tmp, JSON.stringify({ version: 1, samples }));
-    await rename(tmp, config.historyFile);
+    await appendFile(config.historyFile, batch.map((s) => JSON.stringify(s)).join("\n") + "\n");
+    fileLines += batch.length;
   } catch (err) {
-    if (!saveWarned) {
-      console.warn(`Can't save history to ${config.historyFile} (${(err as Error).message}); keeping it in memory only`);
-      saveWarned = true;
-    }
+    warnOnce(err);
+  }
+}
+
+// Rewrite the file with only the last 30 days
+async function compact() {
+  try {
+    await save();
+    await mkdir(dirname(config.historyFile), { recursive: true });
+    const tmp = `${config.historyFile}.tmp`;
+    await writeFile(tmp, samples.map((s) => JSON.stringify(s)).join("\n") + (samples.length ? "\n" : ""));
+    await rename(tmp, config.historyFile);
+    fileLines = samples.length;
+  } catch (err) {
+    warnOnce(err);
   }
 }
 
@@ -83,6 +127,7 @@ async function sample() {
     latest = [time, mempool.size, mempool.bytes, totals.totalbytessent, totals.totalbytesrecv];
     if (time - lastKept >= KEEP_EVERY_MS - 5000) {
       samples.push(latest);
+      unsaved.push(latest);
       lastKept = time;
       while (samples.length && samples[0][0] < time - KEEP_MS) samples.shift();
     }
@@ -98,6 +143,7 @@ export async function startSampling() {
   sample();
   setInterval(sample, SAMPLE_MS).unref();
   setInterval(save, SAVE_MS).unref();
+  setInterval(compact, COMPACT_MS).unref();
   for (const signal of ["SIGTERM", "SIGINT"] as const) {
     process.once(signal, () => {
       save().finally(() => process.exit(0));
