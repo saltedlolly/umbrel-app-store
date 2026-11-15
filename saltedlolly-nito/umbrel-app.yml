@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-nito
 category: blockchain
 name: Nito
-version: "v4.0.0.1"
+version: "v4.0.0.2"
 tagline: A fair-launch, SHA-256 proof-of-work blockchain built for 200-year longevity
 description: >-
   Nito is a decentralized, SHA-256 proof-of-work blockchain built around fairness and longevity: no premine, no ICO, no VC allocation - just open, permissionless mining from block one. This app runs a full Nito node with the standard nito-cli/JSON-RPC interface, alongside a dashboard that shows new blocks as they're found, sync progress, charts of recent blocks, and a map of the countries your peers are in.
@@ -26,6 +26,10 @@ description: >-
 
   All node data (chain state) is stored under this app's persistent data directory and survives restarts and updates. Uninstalling this app deletes it. The blockchain isn't included in Umbrel backups, because the node can download it again: after a restore it resyncs from the network.
 releaseNotes: >-
+  ## v4.0.0.2
+
+  - The node no longer keeps transaction indexes it doesn't need, which frees about 700 MB of disk. The dashboard now keeps its chart history through restarts and updates on installs updated from an earlier version. Node image: docker-nito v4.0.0-3 (https://github.com/Nito-Tools/docker-nito/releases/tag/v4.0.0-3).
+
   ## v4.0.0.1
 
   - The dashboard has a new panel for the Orchard upgrade: what it adds, a countdown to block 1,165,432 with the expected date, how many of your peers are ready, and links to learn more. It stays for a month after the upgrade happens.
