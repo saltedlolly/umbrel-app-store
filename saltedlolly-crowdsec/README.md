@@ -77,26 +77,6 @@ All engine state (config, ban/alert database, hub collections) lives under `${AP
 
 ⚠️ Uninstalling this app deletes all of the above, including your ban history and dashboard account.
 
-## Release tooling
-
-`crowdsec-build.sh` checks both upstream projects (the `crowdsec` engine and `crowdsec-web-ui`) independently, pins digests, updates package metadata, and can deploy to `umbrel-dev` or publish a scoped commit.
-
-```bash
-# Update files locally, no commit/push
-./crowdsec-build.sh
-
-# Force an app version bump even without an upstream change
-./crowdsec-build.sh --bump
-
-# Prepare and copy the package to umbrel-dev
-./crowdsec-build.sh --localtest
-
-# Prepare, commit, and push
-./crowdsec-build.sh --publish --notes "..."
-```
-
-Use `--crowdsec-version <X.Y.Z>` / `--webui-version <tag>` to pin a specific upstream release of either component (mainly for CI).
-
 ## Credits
 
 - **CrowdSec**: [crowdsecurity/crowdsec](https://github.com/crowdsecurity/crowdsec)

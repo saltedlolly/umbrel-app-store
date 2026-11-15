@@ -46,24 +46,6 @@ Unlike every other app in this store, this one runs with `network_mode: host` ra
 - `${APP_DATA_DIR}/data/config` - menu configuration. Self-populates with netboot.xyz's default menus on first start. Deleted if you uninstall the app.
 - `Home/netboot.xyz` - locally-mirrored and custom boot images. Survives uninstalling the app, backed up along with the rest of your Home folder.
 
-## Release tooling
-
-`netbootxyz-build.sh` checks the upstream image's own tags (via Docker Hub's API - this project's GitHub releases don't map cleanly to its published image tags), pins the digest, updates package metadata, validates, and can deploy to `umbrel-dev` or publish a scoped commit.
-
-```bash
-# Read-only release and image check
-./netbootxyz-build.sh --check
-
-# Prepare the latest stable release locally
-./netbootxyz-build.sh --update --notes "Update netboot.xyz"
-
-# Prepare and copy the package to umbrel-dev
-./netbootxyz-build.sh --localtest
-
-# Prepare, validate, commit only this app, and push
-./netbootxyz-build.sh --publish --notes "Update netboot.xyz"
-```
-
 ## Credits
 
 - **netboot.xyz**: [netbootxyz/docker-netbootxyz](https://github.com/netbootxyz/docker-netbootxyz)

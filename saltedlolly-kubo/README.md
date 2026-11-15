@@ -42,24 +42,6 @@ An existing Kubo package in a different developer's Umbrel Community App Store w
 
 This package doesn't attempt to solve that (see the file above for why), and is upfront about the limitation in its own description rather than repeating a setup that looked plausible but never worked.
 
-## Release tooling
-
-`kubo-build.sh` checks the upstream GitHub releases, pins the digest, updates package metadata, validates (including that the API port is never published), and can deploy to `umbrel-dev` or publish a scoped commit.
-
-```bash
-# Read-only release and image check
-./kubo-build.sh --check
-
-# Prepare the latest stable release locally
-./kubo-build.sh --update --notes "Update Kubo"
-
-# Prepare and copy the package to umbrel-dev
-./kubo-build.sh --localtest
-
-# Prepare, validate, commit only this app, and push
-./kubo-build.sh --publish --notes "Update Kubo"
-```
-
 ## Credits
 
 - **Kubo**: [ipfs/kubo](https://github.com/ipfs/kubo)

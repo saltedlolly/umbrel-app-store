@@ -140,26 +140,6 @@ With the [Authentik app](../saltedlolly-authentik) from this store installed, NP
 
 The launcher's Authentik card shows whether Authentik is detected, its public address (found from your proxy hosts; **Open Authentik** uses it), and the sites NPMplus checks with Authentik, with a warning if they can't reach it. Apps that sign in with OIDC aren't listed there: they talk to Authentik directly.
 
-## Release tooling
-
-`npmplus-build.sh` checks upstream releases, verifies multi-architecture image support, pins the manifest digest, updates package metadata, validates the package, deploys it to `umbrel-dev`, and optionally publishes a scoped Git commit.
-
-```bash
-# Read-only release and image check
-./npmplus-build.sh --check
-
-# Prepare the latest stable release locally
-./npmplus-build.sh --update --notes "Update NPMplus"
-
-# Prepare and copy the package to umbrel-dev
-./npmplus-build.sh --localtest --notes "Test NPMplus update"
-
-# Prepare, validate, commit only this app, and push
-./npmplus-build.sh --publish --notes "Update NPMplus"
-```
-
-Use `--version <release-tag>` to package a specific immutable NPMplus release and `--host <host-or-ip>` to override the default `umbrel-dev` address.
-
 ## Test checklist
 
 - Install through the Umbrel App Store UI.

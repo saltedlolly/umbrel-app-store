@@ -28,26 +28,6 @@ The sidecar's concurrency is capped at `MAX_CONCURRENT_CHROME_PROCESSES=2` (upst
 
 - `${APP_DATA_DIR}/data` → `/datastore` - all watches, settings, and page-snapshot history, including any notification webhook URLs/credentials you configure. Deleted if you uninstall the app; covered by Umbrel's per-app Backup tool while installed.
 
-## Release tooling
-
-`changedetection-build.sh` independently tracks **two** upstream images - changedetection.io itself (drives the app's own version) and the bundled sockpuppetbrowser sidecar (tracked separately since it releases far less often, per this store's convention of auto-tracking every image in a package, not just the primary one). A changedetection.io bump resets the manifest version's trailing patch digit to `.0` (e.g. `0.60.6.0`); a sidecar-only bump increments it instead (e.g. `0.60.6.1`), so the manifest version always changes when either image does.
-
-```bash
-# Read-only release check for both images
-./changedetection-build.sh --check
-
-# Prepare the latest stable releases locally
-./changedetection-build.sh --update --notes "Update changedetection.io"
-
-# Prepare and copy the package to umbrel-dev
-./changedetection-build.sh --localtest
-
-# Prepare, validate, commit only this app, and push
-./changedetection-build.sh --publish --notes "Update changedetection.io"
-```
-
-Pin an exact version of either image with `--cdio-version <tag>` / `--spb-version <tag>` - used by CI to publish only a release that has cleared its adoption buffer.
-
 ## Credits
 
 - **changedetection.io**: [dgtlmoon/changedetection.io](https://github.com/dgtlmoon/changedetection.io)

@@ -172,21 +172,6 @@ Before every Authentik version change, it also backs up Authentik's database to 
 
 Data lives in `~/umbrel/app-data/saltedlolly-authentik/data/`: `postgres/` (database), `data/` (uploaded files), `custom-templates/`, `certs/`, `backups/`, `upgrade/`.
 
-## Release tooling
-
-```bash
-# Print the next eligible Authentik version (never skips a release family)
-./authentik-build.sh --next-version --min-age-days 2
-
-# Move to the next Authentik version, commit and push
-./authentik-build.sh --publish --notes "Update to Authentik 2026.11.0"
-
-# Local packaging fix on the same Authentik version
-./authentik-build.sh --bump --notes "Fix something" --publish
-```
-
-When moving to a new release family, the script adds the previous family's last release to `hooks/pre-start` as a stepping stone.
-
 ## Credits
 
 [Authentik](https://github.com/goauthentik/authentik) by Authentik Security Inc. This package is maintained by [@saltedlolly](https://github.com/saltedlolly).
