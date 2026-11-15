@@ -77,8 +77,6 @@ New versions arrive through Umbrel's normal app updates. The first three numbers
 
 The node isn't downloaded as a ready-made program. It's compiled from Nito Core's published source code by [docker-nito](https://github.com/Nito-Tools/docker-nito), so what runs on your Umbrel can be traced back to that source. Nito's own pre-built downloads have no independent proof of how they were built. docker-nito images are rebuilt each month when there are security updates, and each new build reaches this app automatically after two days.
 
-Nito is a close copy of Bitcoin Core. While reviewing its history for this app, one notable issue turned up: in Nito's first year a coding mistake meant every block paid a flat 512 NITO instead of the intended schedule. It was fixed by a hard fork in version 2.1.0 (September 2025), and the extra coins issued in that year remain. Nothing suggesting a backdoor or anything deliberate was found.
-
 ## Credits
 
 - **Nito**: [NitoNetwork/Nito-core](https://github.com/NitoNetwork/Nito-core)
