@@ -11,6 +11,7 @@ import { getMining, startMiningWatch } from "./mining.js";
 import { getPeers } from "./peers.js";
 import { getVersion } from "./version.js";
 import { getFacts } from "./facts.js";
+import { getHardFork } from "./hardfork.js";
 
 // ?range=1h|24h|7d|30d, falling back to the given default
 function rangeOf(req: Request, fallback: Range, allowed: readonly Range[] = RANGES): Range {
@@ -57,6 +58,7 @@ async function main() {
   app.get("/api/peers", route(getPeers));
   app.get("/api/version", route(getVersion));
   app.get("/api/facts", route(getFacts));
+  app.get("/api/hardfork", route(getHardFork));
   app.get("/api/mining", route(getMining));
   app.get("/api/traffic", route((req) => trafficHistory(rangeOf(req, "24h"))));
 

@@ -52,7 +52,14 @@ export function poolTag(coinbaseHex: string): string | null {
 }
 
 async function minerOf(block: RawBlock): Promise<{ miner: string; named: boolean }> {
-  const tx = await rpcCall<RawTx>("getrawtransaction", [block.tx[0], true, block.hash]);
+  let tx: RawTx;
+  try {
+    tx = await rpcCall<RawTx>("getrawtransaction", [block.tx[0], true, block.hash]);
+  } catch {
+    // The genesis block's reward can't be looked up (only reached on a
+    // chain shorter than the window, like regtest)
+    return { miner: "Unknown", named: false };
+  }
   const tag = tx.vin[0]?.coinbase ? poolTag(tx.vin[0].coinbase) : null;
   if (tag) return { miner: tag, named: true };
   const payout = tx.vout.find((out) => out.value > 0 && out.scriptPubKey.address);

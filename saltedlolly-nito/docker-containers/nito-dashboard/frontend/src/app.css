@@ -690,6 +690,191 @@ h2 {
   min-width: 0;
 }
 
+/* Orchard hard fork */
+
+.fork {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 1.5rem 2rem;
+  margin-bottom: 1rem;
+  border-color: color-mix(in srgb, var(--gold) 40%, var(--border));
+  background:
+    radial-gradient(circle at 100% 0%, var(--gold-soft), transparent 55%),
+    var(--surface);
+}
+
+.fork-live {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background:
+    radial-gradient(circle at 100% 0%, var(--accent-soft), transparent 55%),
+    var(--surface);
+}
+
+.fork-chip {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gold);
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  white-space: nowrap;
+}
+
+.fork-live .fork-chip {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.fork-title {
+  margin: 0.35rem 0 0.5rem;
+  font-size: 1.3rem;
+}
+
+.fork-text {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.fork-text code {
+  font-size: 0.9em;
+  color: var(--text);
+}
+
+.fork-ready {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+}
+
+.fork-tick {
+  color: var(--good);
+  font-weight: 700;
+  margin-right: 0.2rem;
+}
+
+.fork-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.6rem;
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--faint);
+}
+
+.fork-side {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.fork-countdown {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.fork-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.6rem 0.25rem;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.fork-num {
+  font-size: 1.9rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.fork-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--faint);
+}
+
+.fork-eta {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.fork-eta strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.fork-note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--faint);
+}
+
+.fork-peers {
+  margin-top: 0.35rem;
+}
+
+.fork-peers-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.fork-peers-head strong {
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.fork-bar {
+  height: 8px;
+  margin: 0.35rem 0;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.fork-bar span {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+  border-radius: 0 4px 4px 0;
+}
+
+.fork-live .fork-bar span {
+  background: var(--accent);
+}
+
+.fork-done {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.fork-done-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--faint);
+}
+
+.fork-done strong {
+  font-size: 1.6rem;
+}
+
+@media (max-width: 900px) {
+  .fork {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* NitoFacts */
 
 .facts {

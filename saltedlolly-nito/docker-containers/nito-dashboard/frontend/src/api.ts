@@ -89,6 +89,19 @@ export interface Fact {
   url: string | null;
 }
 
+export interface HardFork {
+  show: boolean;
+  activationHeight?: number;
+  height?: number;
+  syncing?: boolean;
+  activated?: boolean;
+  activatedAt?: number | null;
+  remaining?: number;
+  averageSeconds?: number | null;
+  estimatedAt?: number | null;
+  peers?: { total: number; ready: number };
+}
+
 export interface VersionInfo {
   version: string;
   latestVersion: string | null;
@@ -110,6 +123,7 @@ export const api = {
   peers: () => getJson<Peers>("/api/peers"),
   version: () => getJson<VersionInfo>("/api/version"),
   facts: () => getJson<Fact[]>("/api/facts"),
+  hardfork: () => getJson<HardFork>("/api/hardfork"),
   mining: () => getJson<Mining>("/api/mining"),
   traffic: (range: Range) => getJson<Traffic>(`/api/traffic?range=${range}`),
 };

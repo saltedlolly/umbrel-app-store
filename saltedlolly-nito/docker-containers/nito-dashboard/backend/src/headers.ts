@@ -158,3 +158,14 @@ export function hashrateChart(range: Exclude<Range, "1h">) {
   }
   return { range, ready, points };
 }
+
+// Average seconds per block over the last `blocks` blocks, or null until the
+// headers are loaded
+export function averageBlockSeconds(blocks = 1440): number | null {
+  if (!ready || !headers.length) return null;
+  const tip = base + headers.length - 1;
+  const last = at(tip);
+  const first = at(tip - blocks);
+  if (!last || !first) return null;
+  return (last.time - first.time) / blocks;
+}

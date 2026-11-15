@@ -10,6 +10,7 @@ import { BlockCharts } from "./components/BlockCharts.js";
 import { PeerMap } from "./components/PeerMap.js";
 import { MiningPanel } from "./components/MiningPanel.js";
 import { TrafficPanel } from "./components/TrafficPanel.js";
+import { HardForkPanel } from "./components/HardForkPanel.js";
 import { NitoFacts } from "./components/NitoFacts.js";
 import { Footer } from "./components/Footer.js";
 import "./app.css";
@@ -21,6 +22,7 @@ export function App() {
   const peers = usePoll(api.peers, 30_000);
   const version = usePoll(api.version, 5 * 60_000);
   const facts = usePoll(api.facts, 60 * 60_000);
+  const fork = usePoll(api.hardfork, 30_000);
   const mining = usePoll(api.mining, 60_000);
 
   const s = status.data;
@@ -40,6 +42,8 @@ export function App() {
         {s?.syncing ? <SyncRing status={s} /> : <ChainStrip blocks={blocks.data ?? []} />}
 
         <StatCards status={s} />
+
+        <HardForkPanel fork={fork.data} />
 
         <div className="panels">
           <BlockCharts />
