@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-nito
 category: blockchain
 name: Nito
-version: "v4.0.0"
+version: "v4.0.0.1"
 tagline: A fair-launch, SHA-256 proof-of-work blockchain built for 200-year longevity
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -29,6 +29,10 @@ description: >-
 
   All node data (chain state) is stored under this app's persistent data directory and survives restarts and updates. Uninstalling this app deletes it. The blockchain isn't included in Umbrel backups, because the node can download it again: after a restore it resyncs from the network.
 releaseNotes: >-
+  ## v4.0.0.1
+
+  - The dashboard has a new panel for the Orchard upgrade: what it adds, a countdown to block 1,165,432 with the expected date, how many of your peers are ready, and links to learn more. It stays for a month after the upgrade happens.
+
   ## v4.0.0
 
   - Nito Core v4.0.0, a required upgrade: every Nito node must run it before block 1,165,432, around the end of December 2026. It adds optional Orchard private transactions.

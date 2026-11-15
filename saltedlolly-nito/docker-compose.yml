@@ -56,7 +56,7 @@ services:
   # derived from getumbrel/umbrel-bitcoin's code (PolyForm Noncommercial
   # licensed); inspired by its general approach but sharing none of it.
   dashboard:
-    image: ghcr.io/saltedlolly/nito-dashboard:ea4f5ba@sha256:0f46fcaffee3005b039ce9ea16b3028fa49c33d5dbf273257d04ddb67eb8cefb
+    image: ghcr.io/saltedlolly/nito-dashboard:e3ba225@sha256:03a8999879b31dc5783960dab2a60d8419f53d99447d85d91ae1873826b7afcf
     container_name: saltedlolly-nito_dashboard_1
     hostname: saltedlolly-nito_dashboard_1
     init: true
@@ -69,7 +69,7 @@ services:
       - NITO_RPC_USER=${APP_SALTEDLOLLY_NITO_RPC_USER}
       - NITO_RPC_PASSWORD=${APP_SALTEDLOLLY_NITO_RPC_PASSWORD}
       # Shown in the dashboard's footer; set by nito-build.sh on each release
-      - APP_VERSION=v4.0.0
+      - APP_VERSION=v4.0.0.1
     volumes:
       # The dashboard's own saved history (mempool and network traffic for
       # the last 30 days), so the charts survive restarts and updates
