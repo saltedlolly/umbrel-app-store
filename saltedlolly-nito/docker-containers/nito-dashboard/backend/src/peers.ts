@@ -1,6 +1,7 @@
 import maxmind, { type CountryResponse, type Reader } from "maxmind";
 import { rpcCall } from "./rpc.js";
 import { config } from "./config.js";
+import { nodeVersion } from "./widgets.js";
 
 // Connected peers by country, looked up offline in DB-IP's free country
 // database. Only countries and counts leave this file: never peer addresses.
@@ -9,6 +10,7 @@ interface PeerInfo {
   addr: string;
   inbound: boolean;
   network?: string;
+  subver?: string;
 }
 
 export interface PeerCountry {
@@ -22,6 +24,18 @@ export interface PeerSummary {
   outbound: number;
   countries: PeerCountry[];
   notLocated: number;
+  versions: { version: string; peers: number }[];
+}
+
+// Newest version first; anything that isn't a version number goes last
+function compareVersions(a: string, b: string): number {
+  const pa = a.split(".").map(Number);
+  const pb = b.split(".").map(Number);
+  if (pa.some(isNaN) || pb.some(isNaN)) return pa.some(isNaN) === pb.some(isNaN) ? a.localeCompare(b) : pa.some(isNaN) ? 1 : -1;
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    if ((pa[i] ?? 0) !== (pb[i] ?? 0)) return (pb[i] ?? 0) - (pa[i] ?? 0);
+  }
+  return 0;
 }
 
 const CACHE_MS = 30_000;
@@ -52,10 +66,13 @@ export async function getPeers(): Promise<PeerSummary> {
   if (cached && Date.now() - cached.at < CACHE_MS) return cached.value;
   const [peers, lookup] = await Promise.all([rpcCall<PeerInfo[]>("getpeerinfo"), geo()]);
   const countries = new Map<string, number>();
+  const versions = new Map<string, number>();
   let inbound = 0;
   let notLocated = 0;
   for (const peer of peers) {
     if (peer.inbound) inbound++;
+    const version = peer.subver ? nodeVersion(peer.subver) || "Unknown" : "Unknown";
+    versions.set(version, (versions.get(version) ?? 0) + 1);
     let code: string | undefined;
     if (lookup && (!peer.network || peer.network === "ipv4" || peer.network === "ipv6")) {
       try {
@@ -75,6 +92,9 @@ export async function getPeers(): Promise<PeerSummary> {
       .map(([code, count]) => ({ code, peers: count }))
       .sort((a, b) => b.peers - a.peers || a.code.localeCompare(b.code)),
     notLocated,
+    versions: [...versions.entries()]
+      .map(([version, count]) => ({ version, peers: count }))
+      .sort((a, b) => compareVersions(a.version, b.version)),
   };
   cached = { at: Date.now(), value };
   return value;

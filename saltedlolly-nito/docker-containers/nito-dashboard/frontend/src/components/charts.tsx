@@ -127,19 +127,23 @@ export interface Point {
 
 interface LineChartProps {
   points: Point[];
+  // An optional second line in the same unit (same x values), drawn in gold
+  second?: number[];
   height?: number;
   format: (value: number) => string;
   label: string;
+  // "accent" draws the main line in blue instead of purple
+  tone?: "accent";
 }
 
 // A line with a soft area under it, and a crosshair on hover
-export function LineChart({ points, height = 120, format, label }: LineChartProps) {
+export function LineChart({ points, second, height = 120, format, label, tone }: LineChartProps) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
   const plotW = Math.max(0, width - PAD.left - PAD.right);
   const plotH = height - PAD.top - PAD.bottom;
   // Counts: whole-number ticks, at least 0, 1, 2
-  const max = Math.max(2, Math.ceil(niceMax(Math.max(...points.map((p) => p.y), 1) * 1.1) / 2) * 2);
+  const max = Math.max(2, Math.ceil(niceMax(Math.max(...points.map((p) => p.y), ...(second ?? []), 1) * 1.1) / 2) * 2);
   const minX = points[0]?.x ?? 0;
   const spanX = Math.max(1, (points[points.length - 1]?.x ?? 1) - minX);
   const sx = (x: number) => PAD.left + ((x - minX) / spanX) * plotW;
@@ -147,6 +151,9 @@ export function LineChart({ points, height = 120, format, label }: LineChartProp
   const line = points.map((p, i) => `${i ? "L" : "M"}${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join("");
   const area = points.length
     ? `${line}L${sx(points[points.length - 1].x)},${PAD.top + plotH}L${sx(minX)},${PAD.top + plotH}Z`
+    : "";
+  const line2 = second
+    ? points.map((p, i) => `${i ? "L" : "M"}${sx(p.x).toFixed(1)},${sy(second[i] ?? 0).toFixed(1)}`).join("")
     : "";
   const hovered = hover !== null ? points[hover] : null;
 
@@ -163,6 +170,7 @@ export function LineChart({ points, height = 120, format, label }: LineChartProp
     <div className="chart" ref={ref}>
       {width > 0 && (
         <svg
+          className={tone ? `tone-${tone}` : undefined}
           width={width}
           height={height}
           role="img"
@@ -181,9 +189,11 @@ export function LineChart({ points, height = 120, format, label }: LineChartProp
           ))}
           <path className="area" d={area} />
           <path className="line" d={line} />
-          {hovered && (
+          {line2 && <path className="line line-2" d={line2} />}
+          {hovered && hover !== null && (
             <g>
               <line className="crosshair" x1={sx(hovered.x)} x2={sx(hovered.x)} y1={PAD.top} y2={PAD.top + plotH} />
+              {second && <circle className="dot dot-2" cx={sx(hovered.x)} cy={sy(second[hover] ?? 0)} r={4.5} />}
               <circle className="dot" cx={sx(hovered.x)} cy={sy(hovered.y)} r={4.5} />
             </g>
           )}
@@ -194,5 +204,32 @@ export function LineChart({ points, height = 120, format, label }: LineChartProp
         width={width}
       />
     </div>
+  );
+}
+
+export interface ListBar {
+  key: string;
+  label: ReactNode;
+  value: number;
+  detail: string;
+  title?: string;
+  muted?: boolean;
+}
+
+// Labelled horizontal bars, for shares of a whole (miners, peer versions)
+export function BarList({ rows, label }: { rows: ListBar[]; label: string }) {
+  const max = Math.max(1, ...rows.map((r) => r.value));
+  return (
+    <ul className="bar-list" aria-label={label}>
+      {rows.map((row) => (
+        <li key={row.key} title={row.title} className={row.muted ? "bar-list-muted" : undefined}>
+          <span className="bar-list-label">{row.label}</span>
+          <span className="bar-list-track" aria-hidden="true">
+            <span className="bar-list-fill" style={{ width: `${(row.value / max) * 100}%` }} />
+          </span>
+          <span className="bar-list-value">{row.detail}</span>
+        </li>
+      ))}
+    </ul>
   );
 }

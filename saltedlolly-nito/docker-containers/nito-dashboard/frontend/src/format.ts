@@ -60,3 +60,20 @@ export const NETWORK_LABELS: Record<string, string> = {
 export function networkLabel(network: string): string {
   return NETWORK_LABELS[network] ?? network;
 }
+
+// Hashes per second: "393.4 TH/s"
+export function formatHashrate(value: number): string {
+  const units = ["H/s", "kH/s", "MH/s", "GH/s", "TH/s", "PH/s", "EH/s"];
+  let v = value;
+  let unit = 0;
+  while (v >= 1000 && unit < units.length - 1) {
+    v /= 1000;
+    unit++;
+  }
+  return `${+v.toFixed(v >= 100 ? 0 : 1)} ${units[unit]}`;
+}
+
+// "nito1q5704v…u4p00c4"
+export function shortAddress(address: string): string {
+  return address.length > 20 ? `${address.slice(0, 11)}…${address.slice(-7)}` : address;
+}

@@ -8,6 +8,8 @@ import { SyncRing } from "./components/SyncRing.js";
 import { PortNotice } from "./components/PortNotice.js";
 import { BlockCharts } from "./components/BlockCharts.js";
 import { PeerMap } from "./components/PeerMap.js";
+import { MiningPanel } from "./components/MiningPanel.js";
+import { TrafficPanel } from "./components/TrafficPanel.js";
 import { NitoFacts } from "./components/NitoFacts.js";
 import { Footer } from "./components/Footer.js";
 import "./app.css";
@@ -20,6 +22,8 @@ export function App() {
   const peers = usePoll(api.peers, 30_000);
   const version = usePoll(api.version, 5 * 60_000);
   const facts = usePoll(api.facts, 60 * 60_000);
+  const mining = usePoll(api.mining, 60_000);
+  const traffic = usePoll(api.traffic, 60_000);
 
   const s = status.data;
   return (
@@ -42,6 +46,11 @@ export function App() {
         <div className="panels">
           <BlockCharts blocks={blocks.data ?? []} mempool={mempool.data} />
           <PeerMap peers={peers.data} />
+        </div>
+
+        <div className="panels">
+          <MiningPanel mining={mining.data} />
+          <TrafficPanel traffic={traffic.data} peers={peers.data} />
         </div>
 
         <NitoFacts facts={facts.data} />

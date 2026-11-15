@@ -5,7 +5,8 @@ import { config } from "./config.js";
 import { waitForRpcReady } from "./rpc.js";
 import { getStatsWidget, getStatus, getSyncWidget, getUptimeWidget } from "./widgets.js";
 import { recentBlocks, startBlockWatch } from "./blocks.js";
-import { mempoolHistory, startSampling } from "./history.js";
+import { mempoolHistory, startSampling, trafficHistory } from "./history.js";
+import { getMining, startMiningWatch } from "./mining.js";
 import { getPeers } from "./peers.js";
 import { getVersion } from "./version.js";
 import { getFacts } from "./facts.js";
@@ -29,6 +30,7 @@ async function main() {
 
   startBlockWatch();
   startSampling();
+  startMiningWatch();
 
   const app = express();
 
@@ -42,6 +44,8 @@ async function main() {
   app.get("/api/peers", route(getPeers));
   app.get("/api/version", route(getVersion));
   app.get("/api/facts", route(getFacts));
+  app.get("/api/mining", route(getMining));
+  app.get("/api/traffic", route(trafficHistory));
 
   app.use(express.static(join(__dirname, "..", "public")));
 

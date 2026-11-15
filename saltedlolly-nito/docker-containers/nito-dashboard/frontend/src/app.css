@@ -681,7 +681,8 @@ h2 {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1rem;
-  align-items: start;
+  /* Side-by-side panels match the taller one */
+  align-items: stretch;
 }
 
 .panel {
@@ -713,6 +714,7 @@ h2 {
 
 .fact {
   margin: 0;
+  overflow-wrap: anywhere;
   color: var(--text);
   line-height: 1.55;
   animation: fact-in 0.4s ease;
@@ -808,6 +810,105 @@ h2 {
 
 .area {
   fill: color-mix(in srgb, var(--purple) 14%, transparent);
+}
+
+.tone-accent .line,
+.line-key {
+  stroke: var(--accent);
+  border-color: var(--accent);
+}
+
+.tone-accent .area {
+  fill: var(--accent-soft);
+}
+
+.tone-accent .dot {
+  fill: var(--accent);
+}
+
+.line-2,
+.line-key-2 {
+  stroke: var(--gold) !important;
+  border-color: var(--gold) !important;
+}
+
+.dot-2 {
+  fill: var(--gold) !important;
+}
+
+.line-key {
+  display: inline-block;
+  width: 14px;
+  vertical-align: middle;
+  border-top: 2px solid var(--accent);
+  margin-right: 0.15rem;
+}
+
+.panels + .panels {
+  margin-top: 1rem;
+}
+
+.traffic-totals {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.traffic-totals strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Labelled share bars (miners, peer versions) */
+
+.bar-list {
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.bar-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) 3rem;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.bar-list-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.bar-list-track {
+  height: 8px;
+}
+
+.bar-list-fill {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: 0 4px 4px 0;
+  background: var(--accent);
+}
+
+.bar-list-muted .bar-list-fill {
+  background: var(--faint);
+}
+
+.bar-list-muted .bar-list-label {
+  color: var(--muted);
+}
+
+.bar-list-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
 }
 
 .crosshair {
@@ -1069,6 +1170,11 @@ h2 {
 }
 
 @media (max-width: 640px) {
+  .bar-list li {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 38%) 2.75rem;
+    gap: 0.5rem;
+  }
+
   main {
     padding: 1rem 1rem 1.5rem;
   }
