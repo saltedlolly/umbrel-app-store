@@ -36,12 +36,11 @@ The dashboard opens without Umbrel's login, because it only shows information: i
 - **Who found the blocks:** which pools and miners found the last day's blocks.
 - **Your node's traffic:** how fast your node is uploading and downloading, and the totals since it started.
 - **Time ranges:** most charts can show the last hour, 24 hours, 7 days or 30 days.
-- **Did you know?** A fact about Nito at the bottom, changing every minute, from [NitoFacts](https://nitofacts.nito.tools).
 - Light and dark themes, with a picker at the top right.
 
 ![Charts of the time between blocks, transactions per block and the mempool, beside a world map of connected peers](gallery/2.jpg)
 
-![The network hashrate, who found the blocks, your node's traffic, the versions of Nito your peers run and a NitoFact](gallery/3.jpg)
+![The network hashrate, who found the blocks, your node's traffic and the versions of Nito your peers run](gallery/3.jpg)
 
 ## Help the network: open port 8820
 
@@ -61,7 +60,6 @@ Every router is different: search for your router's model and "port forwarding" 
 ## Privacy
 
 - **Peer countries** are looked up in a database built into the app ([DB-IP](https://db-ip.com)'s free country list), so peer addresses never leave your Umbrel.
-- **NitoFacts** are fetched by your Umbrel from nitofacts.nito.tools every few hours. Your browser doesn't contact the site.
 - **Update notices:** the dashboard checks this app store on GitHub for a newer version of the app.
 - Everything else on the dashboard comes straight from your own node.
 
