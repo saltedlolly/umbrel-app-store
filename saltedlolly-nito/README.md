@@ -23,6 +23,7 @@ Two containers, deliberately split:
 - **At a glance:** block height, peers (in and out), mempool, chain size, uptime, node version and network (mainnet, testnet, regtest or signet).
 - **Charts:** time between the last 60 blocks against the 1 minute target, transactions per block, and the mempool over the last 2 hours (kept in memory, so it starts again when the app restarts).
 - **Peer map:** the countries your peers are in. The lookup uses [DB-IP](https://db-ip.com)'s free country database, built into the image and used offline: peer addresses are never sent anywhere. Peers on Tor, I2P or private addresses are counted as "not located".
+- **NitoFacts:** a "Did you know?" fact about Nito under the panels, changing every 60 seconds. The facts come from [nitofacts.nito.tools](https://nitofacts.nito.tools), fetched by the dashboard on your Umbrel every few hours (your browser doesn't contact the site).
 - Light and dark themes, with a picker at the top right.
 
 ## Help the network: open port 8820

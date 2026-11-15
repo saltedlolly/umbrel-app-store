@@ -14,6 +14,8 @@ export const config = {
   appVersion: process.env.APP_VERSION ?? "unknown",
   // DB-IP's free country database, downloaded when the image is built
   geoDatabase: process.env.GEO_DATABASE ?? "/app/geo/dbip-country-lite.mmdb",
+  // "Did you know..." facts for the card under the panels
+  factsUrl: process.env.NITO_FACTS_URL ?? "https://nitofacts.nito.tools",
   storeManifestUrl:
     process.env.STORE_MANIFEST_URL ??
     "https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-nito/umbrel-app.yml",

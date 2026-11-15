@@ -689,6 +689,41 @@ h2 {
   min-width: 0;
 }
 
+/* NitoFacts */
+
+.facts {
+  margin-top: 1rem;
+}
+
+.facts-head {
+  align-items: center;
+}
+
+.facts-nav {
+  display: flex;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+.facts-nav .button-outline {
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.2rem 0.55rem;
+}
+
+.fact {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.55;
+  animation: fact-in 0.4s ease;
+}
+
+@keyframes fact-in {
+  from {
+    opacity: 0;
+  }
+}
+
 .charts {
   display: flex;
   flex-direction: column;
@@ -1115,7 +1150,8 @@ h2 {
 @media (prefers-reduced-motion: reduce) {
   .block-fresh .block-face,
   .block-next,
-  .peer-pulse {
+  .peer-pulse,
+  .fact {
     animation: none;
   }
 }

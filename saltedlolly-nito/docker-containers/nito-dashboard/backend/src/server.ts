@@ -8,6 +8,7 @@ import { recentBlocks, startBlockWatch } from "./blocks.js";
 import { mempoolHistory, startSampling } from "./history.js";
 import { getPeers } from "./peers.js";
 import { getVersion } from "./version.js";
+import { getFacts } from "./facts.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -40,6 +41,7 @@ async function main() {
   app.get("/api/mempool-history", route(mempoolHistory));
   app.get("/api/peers", route(getPeers));
   app.get("/api/version", route(getVersion));
+  app.get("/api/facts", route(getFacts));
 
   app.use(express.static(join(__dirname, "..", "public")));
 

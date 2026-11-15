@@ -39,6 +39,12 @@ export interface Peers {
   notLocated: number;
 }
 
+export interface Fact {
+  number: number;
+  content: string;
+  url: string | null;
+}
+
 export interface VersionInfo {
   version: string;
   latestVersion: string | null;
@@ -57,4 +63,5 @@ export const api = {
   mempool: () => getJson<MempoolSample[]>("/api/mempool-history"),
   peers: () => getJson<Peers>("/api/peers"),
   version: () => getJson<VersionInfo>("/api/version"),
+  facts: () => getJson<Fact[]>("/api/facts"),
 };
