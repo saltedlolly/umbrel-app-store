@@ -37,14 +37,6 @@ The dashboard opens without Umbrel's login, because it only shows information: i
 - **Did you know?** A fact about Nito at the bottom, changing every minute, from [NitoFacts](https://nitofacts.nito.tools).
 - Light and dark themes, with a picker at the top right.
 
-## The Orchard upgrade (Nito Core 4)
-
-Nito Core 4.0.0 adds **Orchard**, optional private transfers. A fully private transfer hides who sent it, who received it and how much, while every node can still check it follows the rules. Private funds use a new kind of address, called Bech32x, starting with `nito1x`. Ordinary transfers, mining and block rewards carry on as before. [Learn more on nito.network](https://nito.network/en/network/#orchard).
-
-It's a hard fork: it switches on at block **1,165,432**, around the end of December 2026, and every node must run Nito Core 4 or later by then. This app already does, so there's nothing for you to do. Until it switches on, the dashboard shows a countdown, the expected date and how many of your peers are ready. Afterwards, it shows that it happened for a month.
-
-The first time the node starts on version 4, it builds a new index, which takes a while and uses a little extra disk space. Once it has started on version 4, it can't go back to version 3.
-
 ## Help the network: open port 8820
 
 Your node connects out to other nodes on its own, but other nodes can only connect **in** to it if port `8820` (TCP) is forwarded to your Umbrel on your router. Nodes that accept incoming connections make the Nito network stronger. The dashboard tells you if nobody has connected in after 30 minutes, and shows a tick once someone has.

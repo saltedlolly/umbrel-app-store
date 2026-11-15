@@ -273,7 +273,7 @@ This app uses host networking (no Umbrel SSO, no app proxy) rather than the usua
 
 Run your own [Nito](https://nito.network/) node on your Umbrel. Nito is a SHA-256 proof-of-work blockchain built on Bitcoin Core, with one-minute blocks and coins issued over 200 years. Your node keeps its own copy of the blockchain, checks every block for itself and helps the network by passing blocks on to other nodes. It has no wallet.
 
-The dashboard shows new blocks as they arrive, the time between blocks against the one-minute target, the network's hashrate, which pools are finding blocks, a map of the countries your peers are in, your node's traffic, and a countdown to the Orchard upgrade (optional private transfers, switching on at block 1,165,432). Open port 8820 on your router to let other nodes connect to yours. See the [app's own README](https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-nito/README.md) for more.
+The dashboard shows new blocks as they arrive, the time between blocks against the one-minute target, the network's hashrate, which pools are finding blocks, a map of the countries your peers are in and your node's traffic. Open port 8820 on your router to let other nodes connect to yours. See the [app's own README](https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-nito/README.md) for more.
 
 | Name          | Port         | Local Address                                            | Umbrel SSO    |
 |---------------| ------------ | --------------------------------------------------------- | ------------- |

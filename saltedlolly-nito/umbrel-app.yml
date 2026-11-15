@@ -93,7 +93,10 @@ repo: https://github.com/NitoNetwork/Nito-core
 support: https://github.com/saltedlolly/umbrel-app-store/issues
 
 port: 3000
-gallery: []
+gallery:
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-nito/gallery/1.jpg
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-nito/gallery/2.jpg
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-nito/gallery/3.jpg
 path: ""
 
 defaultUsername: ""
