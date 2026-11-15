@@ -101,6 +101,9 @@ path: ""
 
 defaultUsername: ""
 defaultPassword: ""
+# Makes sure the dashboard can save its history (see hooks/pre-start)
+hooks:
+  pre-start: hooks/pre-start
 # The blockchain can be downloaded again, so it's left out of Umbrel backups
 # (same as Umbrel's Bitcoin app). Kept: nito.conf, peers.dat, banlist.json,
 # settings.json, mempool.dat and the dashboard's history, all small. Paths

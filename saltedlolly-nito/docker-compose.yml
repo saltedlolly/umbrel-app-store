@@ -28,6 +28,13 @@ services:
       # Bitcoin/Lightning apps already handle their own inter-app RPC
       # reachability, but this narrows the network surface further.
       - NITO_RPC_ALLOW_IP=${NETWORK_IP}/16
+      # No indexes: this node supports the network and has no wallet, and the
+      # dashboard passes the block hash to getrawtransaction, so it needs none
+      # of them. Saves about 700 MB (mostly transparenthistoryindex). Setting
+      # one to 0 also makes docker-nito delete its old index folder (v4.0.0-3+).
+      - NITO_TXINDEX=0
+      - NITO_TRANSPARENTHISTORYINDEX=0
+      - NITO_ORCHARDINDEX=0
     # The swarm (P2P) port is published directly - app_proxy is HTTP-only
     # and doesn't apply to the p2p protocol. This is how the node finds
     # and accepts peers; normal and expected to be reachable, same trust

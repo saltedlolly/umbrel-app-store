@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+#
+# Pre-start hook for Nito (runs on the Umbrel as root, before the app's
+# containers start)
+#
+# Makes sure the dashboard's history folder exists and belongs to the app's
+# user (1000), which the dashboard runs as. Umbrel copies data/dashboard on a
+# new install, but not when an existing install updates, and then Docker
+# creates it as root and the dashboard can't save its history (it carries on
+# in memory and logs "keeping it in memory only").
+#
+# umbrelOS starts the app whatever this hook returns, so a failure is logged
+# and the hook runs again at the next start.
+#
+set -uo pipefail
+
+readonly HISTORY_DIR="${APP_DATA_DIR}/data/dashboard"
+
+log() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] [PRE-START] $*"
+}
+
+if mkdir -p "$HISTORY_DIR" && chown -R 1000:1000 "$HISTORY_DIR"; then
+    log "INFO: $HISTORY_DIR is ready for the dashboard"
+else
+    log "ERROR: could not prepare $HISTORY_DIR; the dashboard will keep its history in memory only" >&2
+fi
+
+exit 0
