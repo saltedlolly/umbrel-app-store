@@ -1,8 +1,12 @@
-import type { Mining } from "../api.js";
+import { useCallback } from "react";
+import { api, type Mining } from "../api.js";
+import { usePoll, useRange } from "../hooks.js";
+import { RangePicker, rangeName } from "./RangePicker.js";
 import { formatHashrate, formatNumber, shortAddress } from "../format.js";
 import { BarList, LineChart, type ListBar } from "./charts.js";
 
-const dayTime = new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "2-digit", minute: "2-digit" });
+const dayTime = new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+const HASH_RANGES = ["24h", "7d", "30d"] as const;
 const TOP_MINERS = 5;
 
 function percent(part: number, whole: number): string {
@@ -10,20 +14,26 @@ function percent(part: number, whole: number): string {
   return p >= 10 || p === 0 ? `${Math.round(p)}%` : `${p.toFixed(1)}%`;
 }
 
-function Hashrate({ mining }: { mining: Mining | null }) {
-  const points = mining?.hashrate ?? [];
+function Hashrate() {
+  const [range, setRange] = useRange("hashrate", HASH_RANGES, "7d");
+  const fetcher = useCallback(() => api.hashrate(range), [range]);
+  const { data } = usePoll(fetcher, 60_000);
+  const chart = data?.range === range ? data : null;
+  const points = chart?.points ?? [];
   const latest = points[points.length - 1];
   return (
     <div className="chart-block">
       <div className="chart-head">
         <h2>Network hashrate</h2>
-        <span className="chart-sub">
-          last 7 days{latest ? ` · now ${formatHashrate(latest.hashrate)}` : ""}
-        </span>
+        <RangePicker value={range} options={HASH_RANGES} onChange={setRange} label="Time range for the hashrate" />
       </div>
+      <p className="chart-sub chart-sub-line">
+        {rangeName(range)}
+        {latest ? ` · now ${formatHashrate(latest.hashrate)}` : ""}
+      </p>
       {points.length >= 3 ? (
         <LineChart
-          label="The Nito network's hashrate over the last 7 days"
+          label={`The Nito network's hashrate, ${rangeName(range)}`}
           tone="accent"
           height={140}
           points={points.map((p) => ({
@@ -42,7 +52,7 @@ function Hashrate({ mining }: { mining: Mining | null }) {
         />
       ) : (
         <p className="chart-empty">
-          {mining ? "Worked out once your node has caught up…" : "Loading…"}
+          {chart && !chart.ready ? "Worked out once your node has caught up…" : "Loading…"}
         </p>
       )}
     </div>
@@ -102,7 +112,7 @@ function Miners({ mining }: { mining: Mining | null }) {
 export function MiningPanel({ mining }: { mining: Mining | null }) {
   return (
     <section className="panel charts" aria-label="Mining">
-      <Hashrate mining={mining} />
+      <Hashrate />
       <Miners mining={mining} />
     </section>
   );

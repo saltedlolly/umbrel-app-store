@@ -1,4 +1,5 @@
 import express, { type Request, type Response } from "express";
+import { RANGES, blockChart, hashrateChart, startHeaderWatch, type Range } from "./headers.js";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { config } from "./config.js";
@@ -11,12 +12,18 @@ import { getPeers } from "./peers.js";
 import { getVersion } from "./version.js";
 import { getFacts } from "./facts.js";
 
+// ?range=1h|24h|7d|30d, falling back to the given default
+function rangeOf(req: Request, fallback: Range, allowed: readonly Range[] = RANGES): Range {
+  const value = String(req.query.range ?? "");
+  return (allowed as string[]).includes(value) ? (value as Range) : fallback;
+}
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-function route(handler: () => unknown | Promise<unknown>) {
-  return async (_req: Request, res: Response) => {
+function route(handler: (req: Request) => unknown | Promise<unknown>) {
+  return async (req: Request, res: Response) => {
     try {
-      res.set("Cache-Control", "no-store").json(await handler());
+      res.set("Cache-Control", "no-store").json(await handler(req));
     } catch (err) {
       res.status(503).json({ error: (err as Error).message });
     }
@@ -29,7 +36,8 @@ async function main() {
   console.log("nito RPC ready");
 
   startBlockWatch();
-  startSampling();
+  await startSampling();
+  startHeaderWatch();
   startMiningWatch();
 
   const app = express();
@@ -40,12 +48,17 @@ async function main() {
 
   app.get("/api/status", route(getStatus));
   app.get("/api/blocks", route(recentBlocks));
-  app.get("/api/mempool-history", route(mempoolHistory));
+  app.get("/api/mempool-history", route((req) => mempoolHistory(rangeOf(req, "1h"))));
+  app.get("/api/block-chart", route((req) => blockChart(rangeOf(req, "1h"))));
+  app.get(
+    "/api/hashrate",
+    route((req) => hashrateChart(rangeOf(req, "7d", ["24h", "7d", "30d"]) as Exclude<Range, "1h">)),
+  );
   app.get("/api/peers", route(getPeers));
   app.get("/api/version", route(getVersion));
   app.get("/api/facts", route(getFacts));
   app.get("/api/mining", route(getMining));
-  app.get("/api/traffic", route(trafficHistory));
+  app.get("/api/traffic", route((req) => trafficHistory(rangeOf(req, "24h"))));
 
   app.use(express.static(join(__dirname, "..", "public")));
 

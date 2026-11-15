@@ -48,23 +48,37 @@ interface BarChartProps {
   height?: number;
   format: (value: number) => string;
   target?: number;
+  // A moving average drawn over the bars (null where there isn't one yet)
+  line?: (number | null)[];
   label: string;
   // Whole numbers only (counts): the axis then never shows fractions
   integer?: boolean;
 }
 
-export function BarChart({ bars, height = 150, format, target, label, integer }: BarChartProps) {
+export function BarChart({ bars, height = 150, format, target, line, label, integer }: BarChartProps) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
   const plotW = Math.max(0, width - PAD.left - PAD.right);
   const plotH = height - PAD.top - PAD.bottom;
-  let max = niceMax(Math.max(...bars.map((b) => b.value), target ?? 0) * 1.05);
+  let max = niceMax(Math.max(...bars.map((b) => b.value), ...(line ?? []).map((v) => v ?? 0), target ?? 0) * 1.05);
   if (integer) max = Math.max(2, Math.ceil(max / 2) * 2);
   const y = (v: number) => PAD.top + plotH - (v / max) * plotH;
   const slot = bars.length ? plotW / bars.length : 0;
   const gap = slot > 6 ? 2 : 1;
   const ticks = [0, max / 2, max];
   const hovered = hover !== null ? bars[hover] : null;
+  let linePath = "";
+  if (line) {
+    let pen = false;
+    line.forEach((v, i) => {
+      if (v === null) {
+        pen = false;
+        return;
+      }
+      linePath += `${pen ? "L" : "M"}${(PAD.left + i * slot + slot / 2).toFixed(1)},${y(v).toFixed(1)}`;
+      pen = true;
+    });
+  }
 
   return (
     <div className="chart" ref={ref}>
@@ -92,6 +106,7 @@ export function BarChart({ bars, height = 150, format, target, label, integer }:
           {target !== undefined && (
             <line className="target" x1={PAD.left} x2={width - PAD.right} y1={y(target)} y2={y(target)} />
           )}
+          {linePath && <path className="avg-line" d={linePath} />}
           {/* Hit areas: the full column, wider than the bar */}
           {bars.map((bar, i) => (
             <rect

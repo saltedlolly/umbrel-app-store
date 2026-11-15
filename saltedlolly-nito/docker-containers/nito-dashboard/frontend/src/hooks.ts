@@ -78,3 +78,16 @@ export function writeStorage(key: string, value: string) {
     // Private window or blocked storage: the choice just isn't remembered
   }
 }
+
+// A time range choice, remembered in this browser per chart
+export function useRange<T extends string>(key: string, allowed: readonly T[], fallback: T) {
+  const [range, setRange] = useState<T>(() => {
+    const saved = readStorage(`nito-range-${key}`);
+    return saved && (allowed as readonly string[]).includes(saved) ? (saved as T) : fallback;
+  });
+  const choose = (value: T) => {
+    setRange(value);
+    writeStorage(`nito-range-${key}`, value);
+  };
+  return [range, choose] as const;
+}

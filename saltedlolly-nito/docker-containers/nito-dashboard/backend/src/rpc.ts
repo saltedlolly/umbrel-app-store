@@ -37,6 +37,33 @@ export async function rpcCall<T>(method: string, params: unknown[] = []): Promis
   return body.result;
 }
 
+// Several calls in one request (JSON-RPC batch), results in the same order.
+// Used for reading many block headers at once.
+export async function rpcBatch<T>(calls: { method: string; params?: unknown[] }[]): Promise<T[]> {
+  if (!calls.length) return [];
+  const first = nextId;
+  nextId += calls.length;
+  const response = await fetch(`http://${config.rpcHost}:${config.rpcPort}/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Basic ${Buffer.from(`${config.rpcUser}:${config.rpcPassword}`).toString("base64")}`,
+    },
+    body: JSON.stringify(
+      calls.map((call, i) => ({ jsonrpc: "1.0", id: first + i, method: call.method, params: call.params ?? [] })),
+    ),
+  });
+  if (!response.ok) throw new RpcError(`RPC HTTP ${response.status} calling a batch of ${calls[0].method}`);
+  const body = (await response.json()) as { id: number; result: T; error: { message: string; code: number } | null }[];
+  const byId = new Map(body.map((item) => [item.id, item]));
+  return calls.map((call, i) => {
+    const item = byId.get(first + i);
+    if (!item) throw new RpcError(`No answer for ${call.method} in a batch`);
+    if (item.error) throw new RpcError(item.error.message, item.error.code);
+    return item.result;
+  });
+}
+
 export async function waitForRpcReady(timeoutMs = 120_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {

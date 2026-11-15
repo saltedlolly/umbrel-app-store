@@ -70,6 +70,10 @@ services:
       - NITO_RPC_PASSWORD=${APP_SALTEDLOLLY_NITO_RPC_PASSWORD}
       # Shown in the dashboard's footer; set by nito-build.sh on each release
       - APP_VERSION=v3.0.1.5
+    volumes:
+      # The dashboard's own saved history (mempool and network traffic for
+      # the last 30 days), so the charts survive restarts and updates
+      - ${APP_DATA_DIR}/data/dashboard:/data
     # node:24-slim has neither wget nor curl installed - use Node's own
     # built-in http client instead (caught by actually running this
     # healthcheck, not by inspection: it silently never became healthy).

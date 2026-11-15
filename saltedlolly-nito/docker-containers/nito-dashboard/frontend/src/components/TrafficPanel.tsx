@@ -1,29 +1,40 @@
-import type { Peers, Traffic } from "../api.js";
+import { useCallback } from "react";
+import { api, type Peers, type Range } from "../api.js";
+import { usePoll, useRange } from "../hooks.js";
+import { RangePicker, rangeName } from "./RangePicker.js";
 import { formatBytes } from "../format.js";
 import { BarList, LineChart } from "./charts.js";
 
-const timeFormat = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" });
+const clock = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" });
+const dayClock = new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+const RANGES = ["1h", "24h", "7d", "30d"] as const;
+const when = (range: Range, ms: number) => (range === "1h" || range === "24h" ? clock : dayClock).format(ms);
 
 const rate = (bytesPerSecond: number) => `${formatBytes(bytesPerSecond)}/s`;
 
 // The node's upload and download speed over the last 24 hours (most of the
 // upload is blocks and transactions sent to the peers that connect in), and
 // the Nito versions those peers run
-export function TrafficPanel({ traffic, peers }: { traffic: Traffic | null; peers: Peers | null }) {
+export function TrafficPanel({ peers }: { peers: Peers | null }) {
+  const [range, setRange] = useRange("traffic", RANGES, "24h");
+  const fetcher = useCallback(() => api.traffic(range), [range]);
+  const { data } = usePoll(fetcher, 60_000);
+  const traffic = data?.range === range ? data : null;
   const points = traffic?.points ?? [];
   return (
     <section className="panel charts" aria-label="Your node's traffic and peers">
       <div className="chart-block">
         <div className="chart-head">
           <h2>Your node's traffic</h2>
-          <span className="chart-sub">
-            last 24 hours · <span className="line-key" aria-hidden="true" /> upload ·{" "}
-            <span className="line-key line-key-2" aria-hidden="true" /> download
-          </span>
+          <RangePicker value={range} options={RANGES} onChange={setRange} label="Time range for the traffic chart" />
         </div>
+        <p className="chart-sub chart-sub-line">
+          {rangeName(range)} · <span className="line-key" aria-hidden="true" /> upload ·{" "}
+          <span className="line-key line-key-2" aria-hidden="true" /> download
+        </p>
         {points.length >= 3 ? (
           <LineChart
-            label="Upload and download speed over the last 24 hours"
+            label={`Upload and download speed, ${rangeName(range)}`}
             tone="accent"
             height={160}
             points={points.map((p) => ({
@@ -31,7 +42,7 @@ export function TrafficPanel({ traffic, peers }: { traffic: Traffic | null; peer
               y: p.sent,
               tip: (
                 <>
-                  <strong>{timeFormat.format(p.time)}</strong>
+                  <strong>{when(range, p.time)}</strong>
                   <span>
                     Up {rate(p.sent)} · down {rate(p.received)}
                   </span>
@@ -42,7 +53,7 @@ export function TrafficPanel({ traffic, peers }: { traffic: Traffic | null; peer
             format={rate}
           />
         ) : (
-          <p className="chart-empty">Collecting… this chart fills in over the next half hour.</p>
+          <p className="chart-empty">{traffic ? "Building up: the dashboard records this every minute and keeps 30 days." : "Loading…"}</p>
         )}
         {traffic && traffic.totalSent !== null && traffic.totalReceived !== null && (
           <p className="traffic-totals">

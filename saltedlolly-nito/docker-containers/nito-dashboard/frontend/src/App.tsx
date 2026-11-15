@@ -18,12 +18,10 @@ export function App() {
   const [theme, setTheme] = useTheme();
   const status = usePoll(api.status, 5000);
   const blocks = usePoll(api.blocks, 5000);
-  const mempool = usePoll(api.mempool, 30_000);
   const peers = usePoll(api.peers, 30_000);
   const version = usePoll(api.version, 5 * 60_000);
   const facts = usePoll(api.facts, 60 * 60_000);
   const mining = usePoll(api.mining, 60_000);
-  const traffic = usePoll(api.traffic, 60_000);
 
   const s = status.data;
   return (
@@ -44,13 +42,13 @@ export function App() {
         <StatCards status={s} />
 
         <div className="panels">
-          <BlockCharts blocks={blocks.data ?? []} mempool={mempool.data} />
+          <BlockCharts />
           <PeerMap peers={peers.data} />
         </div>
 
         <div className="panels">
           <MiningPanel mining={mining.data} />
-          <TrafficPanel traffic={traffic.data} peers={peers.data} />
+          <TrafficPanel peers={peers.data} />
         </div>
 
         <NitoFacts facts={facts.data} />

@@ -45,10 +45,39 @@ export interface Mining {
   fromHeight: number | null;
   toHeight: number | null;
   miners: { miner: string; named: boolean; blocks: number }[];
-  hashrate: { height: number; time: number; hashrate: number }[];
+}
+
+export type Range = "1h" | "24h" | "7d" | "30d";
+
+export interface BlockChartData {
+  range: Range;
+  ready: boolean;
+  blocksPerBar: number;
+  averageLabel: string;
+  overall: number | null;
+  buckets: {
+    toHeight: number;
+    blocks: number;
+    time: number;
+    seconds: number;
+    transactions: number;
+    average: number | null;
+  }[];
+}
+
+export interface HashrateData {
+  range: Range;
+  ready: boolean;
+  points: { height: number; time: number; hashrate: number }[];
+}
+
+export interface MempoolData {
+  range: Range;
+  points: MempoolSample[];
 }
 
 export interface Traffic {
+  range: Range;
   points: { time: number; sent: number; received: number }[];
   totalSent: number | null;
   totalReceived: number | null;
@@ -75,10 +104,12 @@ async function getJson<T>(path: string): Promise<T> {
 export const api = {
   status: () => getJson<Status>("/api/status"),
   blocks: () => getJson<Block[]>("/api/blocks"),
-  mempool: () => getJson<MempoolSample[]>("/api/mempool-history"),
+  mempool: (range: Range) => getJson<MempoolData>(`/api/mempool-history?range=${range}`),
+  blockChart: (range: Range) => getJson<BlockChartData>(`/api/block-chart?range=${range}`),
+  hashrate: (range: Range) => getJson<HashrateData>(`/api/hashrate?range=${range}`),
   peers: () => getJson<Peers>("/api/peers"),
   version: () => getJson<VersionInfo>("/api/version"),
   facts: () => getJson<Fact[]>("/api/facts"),
   mining: () => getJson<Mining>("/api/mining"),
-  traffic: () => getJson<Traffic>("/api/traffic"),
+  traffic: (range: Range) => getJson<Traffic>(`/api/traffic?range=${range}`),
 };

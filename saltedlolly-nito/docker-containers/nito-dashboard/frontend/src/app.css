@@ -844,6 +844,69 @@ h2 {
   margin-right: 0.15rem;
 }
 
+/* Time range picker and the moving average */
+
+.chart-head .range-picker {
+  margin-left: auto;
+}
+
+.range-picker {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+.range-picker button {
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+}
+
+.range-picker button:hover {
+  color: var(--text);
+}
+
+.range-picker button.active {
+  color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.chart-sub-line {
+  margin: -0.25rem 0 0.5rem;
+}
+
+.chart-sub-line strong {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.avg-line {
+  fill: none;
+  stroke: var(--purple);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.avg-key {
+  display: inline-block;
+  width: 14px;
+  vertical-align: middle;
+  border-top: 2px solid var(--purple);
+  margin-right: 0.15rem;
+}
+
 .panels + .panels {
   margin-top: 1rem;
 }

@@ -1,13 +1,10 @@
 import { rpcCall } from "./rpc.js";
 
-// Who found the blocks of the last 24 hours, and the network's hashrate over
-// the last 7 days. Both are worked out from the chain itself, so they're
-// complete as soon as the node is synced. Nothing is worked out while the
-// node is still catching up.
+// Who found the blocks of the last 24 hours, worked out from the chain itself,
+// so it's complete as soon as the node is synced. Nothing is worked out while
+// the node is still catching up.
 
 const MINER_WINDOW = 1440; // blocks: about 24 hours at one a minute
-const HASH_STEP = 60; // blocks between hashrate points: about an hour
-const HASH_POINTS = 168; // 7 days
 const REFRESH_MS = 60_000;
 
 interface MinedBlock {
@@ -36,15 +33,7 @@ export interface MinerShare {
   blocks: number;
 }
 
-export interface HashratePoint {
-  height: number;
-  time: number;
-  hashrate: number;
-}
-
 let mined: MinedBlock[] = []; // oldest first
-const hashrate = new Map<number, HashratePoint>();
-let latestPoint: HashratePoint | null = null;
 let running = false;
 
 // The pool's name from the coinbase input, if it has one: the longest run of
@@ -87,27 +76,6 @@ async function refreshMiners(tipHash: string) {
   mined = (joinAt >= 0 ? mined.slice(0, joinAt + 1).concat(fresh) : fresh).slice(-MINER_WINDOW);
 }
 
-async function point(height: number): Promise<HashratePoint> {
-  const hash = await rpcCall<string>("getblockhash", [height]);
-  const [header, rate] = await Promise.all([
-    rpcCall<{ time: number }>("getblockheader", [hash]),
-    rpcCall<number>("getnetworkhashps", [HASH_STEP, height]),
-  ]);
-  return { height, time: header.time, hashrate: rate };
-}
-
-async function refreshHashrate(tip: number) {
-  const last = Math.floor(tip / HASH_STEP) * HASH_STEP;
-  const first = last - (HASH_POINTS - 1) * HASH_STEP;
-  for (const height of hashrate.keys()) if (height < first) hashrate.delete(height);
-  // Points a few hours back are settled; the newest two can still change
-  // if a block near the tip is replaced
-  for (let height = Math.max(HASH_STEP, first); height <= last; height += HASH_STEP) {
-    if (!hashrate.has(height) || height > last - 2 * HASH_STEP) hashrate.set(height, await point(height));
-  }
-  latestPoint = tip > last ? await point(tip) : null;
-}
-
 async function refresh() {
   if (running) return;
   running = true;
@@ -115,9 +83,8 @@ async function refresh() {
     const info = await rpcCall<{ blocks: number; bestblockhash: string; initialblockdownload: boolean }>(
       "getblockchaininfo",
     );
-    if (info.initialblockdownload || info.blocks < HASH_STEP) return;
+    if (info.initialblockdownload) return;
     await refreshMiners(info.bestblockhash);
-    await refreshHashrate(info.blocks);
   } catch {
     // The node is busy or restarting: try again next time
   } finally {
@@ -137,13 +104,10 @@ export function getMining() {
     share.blocks++;
     counts.set(block.miner, share);
   }
-  const points = [...hashrate.values()].sort((a, b) => a.height - b.height);
-  if (latestPoint) points.push(latestPoint);
   return {
     blocks: mined.length,
     fromHeight: mined[0]?.height ?? null,
     toHeight: mined[mined.length - 1]?.height ?? null,
     miners: [...counts.values()].sort((a, b) => b.blocks - a.blocks || a.miner.localeCompare(b.miner)),
-    hashrate: points,
   };
 }
