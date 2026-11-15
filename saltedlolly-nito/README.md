@@ -8,6 +8,8 @@ Nito for Umbrel</h1>
 
 Run your own [Nito](https://nito.network/) node on your Umbrel, with a dashboard that shows what's happening on the network as it happens.
 
+![The Nito dashboard on an Umbrel, showing the latest blocks and the node at a glance](gallery/1.jpg)
+
 Nito is a SHA-256 proof-of-work blockchain built on Bitcoin Core, with one-minute blocks and coins issued over 200 years. It launched fairly in August 2024, with no premine. Running a node means your Umbrel keeps its own full copy of the blockchain, checks every block for itself, and passes blocks and transactions on to other nodes, which makes the network stronger.
 
 The node has no wallet. It's for following and supporting the network, not for holding coins.
@@ -36,6 +38,10 @@ The dashboard opens without Umbrel's login, because it only shows information: i
 - **Time ranges:** most charts can show the last hour, 24 hours, 7 days or 30 days.
 - **Did you know?** A fact about Nito at the bottom, changing every minute, from [NitoFacts](https://nitofacts.nito.tools).
 - Light and dark themes, with a picker at the top right.
+
+![Charts of the time between blocks, transactions per block and the mempool, beside a world map of connected peers](gallery/2.jpg)
+
+![The network hashrate, who found the blocks, your node's traffic, the versions of Nito your peers run and a NitoFact](gallery/3.jpg)
 
 ## Help the network: open port 8820
 
