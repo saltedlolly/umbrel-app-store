@@ -5,7 +5,7 @@ services:
       APP_PORT: 8080
 
   launcher:
-    image: ghcr.io/saltedlolly/npmplus-launcher@sha256:98628af6a3fca48aeed435f863513fdf7df4be051711ab8d480c0eb76a847996
+    image: ghcr.io/saltedlolly/npmplus-launcher@sha256:1a4cff6a5d5c0b656f630fc7906d6c43109b1537e8fca9d5d546fb8b22843913
     init: true
     restart: on-failure
     security_opt:
@@ -30,7 +30,7 @@ services:
       - ${APP_SALTEDLOLLY_NPM_PLUS_DATA_DIR}/nginx/logs:/data/logs:ro
 
   npmplus:
-    image: ghcr.io/saltedlolly/npmplus-wrapper@sha256:08e54b76334d4885af09c776e7ec129687d2059ee0424964d34a4e0853bfa0c3
+    image: ghcr.io/saltedlolly/npmplus-wrapper@sha256:e5dc52133f258fe74de886ff4d607ace7a8d563f76c6673447c7ee8b963aa7ad
     restart: on-failure
     stop_grace_period: 30s
     cap_drop:

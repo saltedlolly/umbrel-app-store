@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-npm-plus
 category: networking
 name: NPMplus
-version: "2026-10-22-r1.2"
+version: "2026-10-22-r1.3"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
@@ -38,6 +38,10 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
+  ## 2026-10-22-r1.3
+
+  - The Quick Setup Guide is now at the top of the launcher and shows which router port forwards are working. Once everything works it shrinks to a thin bar, and it warns you if visits from the internet stop. The CrowdSec checkbox now shows your saved setting: before, stopping CrowdSec unticked it, and saving then switched CrowdSec off.
+
   ## 2026-10-22-r1.2
 
   - NPMplus now connects to CrowdSec and Authentik even when they start after it, for example after a reboot, or when you install CrowdSec later. Before, CrowdSec protection could stay off until NPMplus was restarted.
