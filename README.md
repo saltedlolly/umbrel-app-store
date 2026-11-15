@@ -273,8 +273,6 @@ This app uses host networking (no Umbrel SSO, no app proxy) rather than the usua
 
 A self-hosted [Nito](https://nito.network/) node - a fair-launch, SHA-256 proof-of-work blockchain built around fairness and longevity: no premine, no ICO, no VC allocation, a 200-year emission schedule with a hard cap, and Taproot/Schnorr active since genesis. Includes an original dashboard showing block height, sync progress, peers, and mempool activity. Built from scratch, compiling the node from source rather than trusting upstream's unattested pre-built binaries - see the [app's own README](https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-nito/README.md) for why, and for what was found reviewing the project's history along the way.
 
-There is no Lightning Network support for Nito, and none is possible - Bitcoin's own Lightning implementations are tied to Bitcoin's specific chain and cannot connect to a different network like this one.
-
 | Name          | Port         | Local Address                                            | Umbrel SSO    |
 |---------------| ------------ | --------------------------------------------------------- | ------------- |
 | Dashboard     | `3000`       | [https://umbrel.local:3000](https://umbrel.local:3000/)    | ✅            |

@@ -55,10 +55,6 @@ The RPC port (`8825`) is never published to the host - only the `dashboard` cont
 - `${APP_DATA_DIR}/data/nito` → `/data` - the node's chain data. This is an opaque, content-addressed database, not recognizable/browsable files, so it lives in `APP_DATA_DIR` rather than the Home folder, and it's **deleted if you uninstall the app**. The blockchain itself (`blocks`, `chainstate`, `indexes` and the log) is **not included in Umbrel backups**, because the node can download it again: after a restore it resyncs from the network. The small settings and peer files are backed up. The node has no wallet, so there's nothing else to back up.
 - `${APP_DATA_DIR}/data/dashboard` → `/data` in the dashboard - its saved mempool and traffic history (under 2 MB), included in backups.
 
-## No Lightning support
-
-Bitcoin's Lightning Network implementations (LND, Core Lightning) are cryptographically pinned to Bitcoin's own chain and cannot connect to a different blockchain's node, even one that's RPC-compatible. No equivalent Lightning fork exists for Nito. This is a permanent limitation of the chain, not a gap in this package.
-
 ## Background
 
 Nito is a direct fork of Bitcoin Core (confirmed via leftover mechanical find/replace artifacts in its docs, an unmodified RPC/CLI/config surface, and identical consensus-parameter code). Reviewing its commit history while building this package surfaced a real, if non-malicious, quality issue worth documenting here rather than in the app's own description (which is about what the software does today, not its history):
