@@ -44,7 +44,7 @@ services:
   # start on real Umbrel hardware - its startup error names SYS_ADMIN
   # specifically if that turns out to be the cause.
   sockpuppetbrowser:
-    image: docker.io/dgtlmoon/sockpuppetbrowser:0.0.4@sha256:6368967fb8172956febf843b9ca7be223f55314661f62636c93d89c6bf7f0fdb
+    image: docker.io/dgtlmoon/sockpuppetbrowser:0.0.5@sha256:71fed9b1de8de865a8f30c61e6d8d129de183bf34f8cc545dc7ae499198ec935
     container_name: saltedlolly-changedetection_sockpuppetbrowser_1
     hostname: sockpuppetbrowser
     init: true
