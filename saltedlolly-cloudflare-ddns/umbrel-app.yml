@@ -37,7 +37,9 @@ submission: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlo
 repo: https://github.com/saltedlolly/umbrel-app-store/tree/master/saltedlolly-cloudflare-ddns
 support: https://github.com/saltedlolly/umbrel-app-store/issues
 gallery:
-  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/gallery/1.png
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/gallery/1.jpg
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/gallery/2.jpg
+  - https://raw.githubusercontent.com/saltedlolly/umbrel-app-store/master/saltedlolly-cloudflare-ddns/gallery/3.jpg
 releaseNotes: >-
   ## v1.18.0
 
