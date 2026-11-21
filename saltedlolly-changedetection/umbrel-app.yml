@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-changedetection
 category: automation
 name: changedetection.io
-version: "0.70.3.2"
+version: "0.70.4"
 tagline: Monitor any website for changes and get notified
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not work correctly yet. Check back soon.
@@ -23,47 +23,43 @@ description: >-
 
   All watches, settings, and page-snapshot history are stored under this app's persistent data directory and survive restarts and updates. Uninstalling this app deletes them - back up first if you want to keep your watch list.
 releaseNotes: >-
-  ## 0.70.3.2
+  ## 0.70.4
 
-  - Update bundled sockpuppetbrowser sidecar to 0.0.5.
-
-  ## 0.70.3.1
-
-  - Update bundled sockpuppetbrowser sidecar to 0.0.4.
-
-  ## 0.70.3
-
-  - Update changedetection.io to upstream release 0.70.3.
+  - Update changedetection.io to upstream release 0.70.4.
 
 
   --- dgtlmoon/changedetection.io upstream release notes (auto-updated) ---
 
 
-  dgtlmoon/changedetection.io 0.70.3
+  dgtlmoon/changedetection.io 0.70.4
 
     What's Changed
-    * Update pytest requirement from ~=9.1 to ~=9.2 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4692
-    * Update python-engineio requirement from <5,>=4.14.0 to >=4.15.1,<5 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4693
-    * Update flask-socketio requirement from <6,>=5.7.0 to >=5.7.2,<6 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4689
-    * Update pydantic requirement from <3.0,>=2.14.1 to >=2.14.2,<3.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4690
-    * Update ruff requirement from >=0.17.2 to >=0.17.3 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4691
-    * Update jsonpath-ng requirement from ~=1.14.0 to ~=1.16.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4703
-    * Update python-socketio requirement from <6,>=5.17.0 to >=5.18.1,<6 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4701
-    * Update selenium requirement from ~=4.51.0 to ~=4.52.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4702
-    * MCP OAuth - ChatGPT can sign in: private_key_jwt client authentication (RFC 7523) by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4707
-    * LLM - Don't log a misleading "refused" warning for local LLM endpoints by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4708
-    * Update authlib requirement from <2.0,>=1.9.4 to >=1.9.5,<2.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4706
-    * Update pydantic requirement from <3.0,>=2.14.2 to >=2.14.3,<3.0 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4704
-    * Update ruff requirement from >=0.17.3 to >=0.17.4 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4710
-    * Mark a restock watch as viewed when its watch list chart is opened by @atipapp in https://github.com/dgtlmoon/changedetection.io/pull/4698
-    * Plugins - one core watch_last_viewed_updated hook for every "watch was viewed" path by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4711
-    * Plugin hooks for changing the request and per-watch plugin settings by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4712
-    * Apprise notifications 2.2.0 - Update requirements.txt by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4713
+    * Third-party licences - update docs/THIRD-PARTY-LICENSES.md by @github-actions[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4714
+    * fix: keep jinja2 blocks intact when splitting tags from imported URLs (#1516) by @ebarkhordar in https://github.com/dgtlmoon/changedetection.io/pull/4259
+    * Update regex requirement from >=2026.9.29 to >=2026.11.9 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4725
+    * Update jq requirement from ~=1.3 to ~=1.13 by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4724
+    * Bump docker/login-action from 4.7.0 to 4.8.0 in the all group by @dependabot[bot] in https://github.com/dgtlmoon/changedetection.io/pull/4723
+    * Notifications - post:// get:// etc, ?user= and ?pass= are sent as query parameters again (#4726) by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4727
+    * CI - Test server name should not depend on external DNS (random selenium-tests failures) by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4729
+    * i18n: Use `ngettext` to deduplicate singular/plural `msgid`s by @skkzsh in https://github.com/dgtlmoon/changedetection.io/pull/4483
+    * UI - Watch list - add a 'Healthy' status filter (inverse of 'With errors') by @officialasishkumar in https://github.com/dgtlmoon/changedetection.io/pull/4718
+    * i18n: Add ja translations for Restock & Price Detection help text by @skkzsh in https://github.com/dgtlmoon/changedetection.io/pull/4694
+    * Fetchers - Optional HAR network recording per watch via HAR_UUID_RECORD (#4539) by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4732
+    * Worker - Check start time is truncated to the second, not rounded up by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4734
+    * MCP - get_network_log (HAR), and recheck_watches can record the network requests / use another proxy for one check by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4735
+    * MCP - get_network_log request=<n> also returns the headers and body in the structured result by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4736
+    * Puppeteer fetcher - Favicon falls back to the copy the browser fetched for itself by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4737
+    * Puppeteer fetcher - A page that navigates on from its load event is not an EmptyReply by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4740
+    * Logs - Keep notification URL passwords and the browser token out of the log output by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4741
+    * CI - Pin upgrade-path-test to ubuntu-24.04 (lxml 5.4.0 source build fails on ubuntu-26.04 with Python 3.14) by @dgtlmoon in https://github.com/dgtlmoon/changedetection.io/pull/4752
+    * Restock detection - Add Czech out-of-stock phrases by @BKPepe in https://github.com/dgtlmoon/changedetection.io/pull/4754
 
     New Contributors
-    * @atipapp made their first contribution in https://github.com/dgtlmoon/changedetection.io/pull/4698
+    * @github-actions[bot] made their first contribution in https://github.com/dgtlmoon/changedetection.io/pull/4714
+    * @officialasishkumar made their first contribution in https://github.com/dgtlmoon/changedetection.io/pull/4718
+    * @BKPepe made their first contribution in https://github.com/dgtlmoon/changedetection.io/pull/4754
 
-    **Full Changelog**: https://github.com/dgtlmoon/changedetection.io/compare/0.70.2...0.70.3
+    **Full Changelog**: https://github.com/dgtlmoon/changedetection.io/compare/0.70.3...0.70.4
 
 
   See the full release history: https://github.com/dgtlmoon/changedetection.io/releases
