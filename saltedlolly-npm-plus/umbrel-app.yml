@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-npm-plus
 category: networking
 name: NPMplus
-version: "2026-10-22-r1.3"
+version: "2026-11-18-r1"
 tagline: Publish your services with a modern, security-focused reverse proxy
 description: >-
   ⚠️ UNDER CONSTRUCTION: this app is still being tested and may not install or work correctly yet. Check back soon.
@@ -38,40 +38,28 @@ description: >-
 
   ⚠️ Uninstalling this app deletes its persistent app data. Back it up before uninstalling or migrating an existing installation.
 releaseNotes: >-
-  ## 2026-10-22-r1.3
+  ## 2026-11-18-r1
 
-  - The Quick Setup Guide is now at the top of the launcher and shows which router port forwards are working. Once everything works it shrinks to a thin bar, and it warns you if visits from the internet stop. The CrowdSec checkbox now shows your saved setting: before, stopping CrowdSec unticked it, and saving then switched CrowdSec off.
-
-  ## 2026-10-22-r1.2
-
-  - NPMplus now connects to CrowdSec and Authentik even when they start after it, for example after a reboot, or when you install CrowdSec later. Before, CrowdSec protection could stay off until NPMplus was restarted.
-
-  ## 2026-10-22-r1.1
-
-  - Removes an old app_proxy container left behind by earlier umbrelOS versions. It held the app's port, so umbrelOS logged a "Failed to listen on loopback port 5180" error every minute
-
-  ## 2026-10-22-r1
-
-  - Automated update: bump bundled zoeyvid/npmplus to 2026-10-22-r1
+  - Automated update: bump bundled zoeyvid/npmplus to 2026-11-18-r1
 
 
   --- zoeyvid/npmplus upstream release notes (auto-updated) ---
 
 
-  zoeyvid/npmplus 2026-10-22-r1
+  zoeyvid/npmplus 2026-11-18-r1
 
     What Changed since the last release
-    * this is the same as 2026-10-21-r1, but with an updated dependency of nodejs to fix a CVE of them
+    * update nginx to fix todays published CVEs
 
     Image tags:
-    * `docker.io/zoeyvid/npmplus:2026-10-22-r1` (fixed to this release)
-    * `ghcr.io/zoeyvid/npmplus:2026-10-22-r1` (fixed to this release)
+    * `docker.io/zoeyvid/npmplus:2026-11-18-r1` (fixed to this release)
+    * `ghcr.io/zoeyvid/npmplus:2026-11-18-r1` (fixed to this release)
     * `docker.io/zoeyvid/npmplus:latest` (latest stable)
     * `ghcr.io/zoeyvid/npmplus:latest` (latest stable)
     * `docker.io/zoeyvid/npmplus:beta` (latest beta/stable)
     * `ghcr.io/zoeyvid/npmplus:beta` (latest beta/stable)
 
-    **Full Changelog**: https://github.com/ZoeyVid/NPMplus/compare/2026-10-21-r1...2026-10-22-r1
+    **Full Changelog**: https://github.com/ZoeyVid/NPMplus/compare/2026-10-22-r1...2026-11-18-r1
 
 
   See the full release history: https://github.com/zoeyvid/npmplus/releases
