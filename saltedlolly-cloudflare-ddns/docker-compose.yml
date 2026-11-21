@@ -6,7 +6,7 @@ services:
       APP_PORT: 3000
 
   ui:
-    image: ghcr.io/saltedlolly/cloudflare-ddns-ui@sha256:e298f0342f78d06d776bc1d2c2ade925aafe9a88b56aebb3ead90aa07bae3071
+    image: ghcr.io/saltedlolly/cloudflare-ddns-ui@sha256:b1377a80921fdfdaf6afbae69d46c1aaf0bacb5822269c535a8458f934ecc25e
     container_name: saltedlolly-cloudflare-ddns_ui_1
     hostname: saltedlolly-cloudflare-ddns_ui_1
     init: true
@@ -23,7 +23,7 @@ services:
       retries: 5
 
   cloudflare-ddns:
-    image: ghcr.io/saltedlolly/cloudflare-ddns@sha256:9dbf0fce189beeb0cb67cc177dd5e4a09d432d751c55d7a36d3e6f50f0dccd08
+    image: ghcr.io/saltedlolly/cloudflare-ddns@sha256:86bccce11557219f8069cefa135106cf3e7d2e29c39b731ee868b61a3de0f9a9
     container_name: saltedlolly-cloudflare-ddns_cloudflare-ddns_1
     hostname: saltedlolly-cloudflare-ddns_cloudflare-ddns_1
     network_mode: host
