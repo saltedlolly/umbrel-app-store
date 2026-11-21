@@ -6,7 +6,7 @@ manifestVersion: 1
 id: saltedlolly-nostr-backup-relay
 category: social
 name: Nostr Backup Relay
-version: "v1.2.1.3"
+version: "v1.2.1.4"
 tagline: Back up the Nostr activity of all your accounts to your own private relay
 description: >-
   Nostr Backup Relay is a private Nostr relay on your Umbrel that backs up everything you post, from as many Nostr accounts as you like. Back up your personal account and a project account side by side. It started from Umbrel's official Nostr Relay app and adds a lot to it. It is not made or supported by Umbrel.
@@ -26,6 +26,10 @@ description: >-
 
   Powered by nostr-rs-relay, the same relay engine and version as the official app. Umbrel's code is used under the PolyForm Noncommercial License 1.0.0. Setup help and details: https://github.com/saltedlolly/umbrel-app-store/blob/master/saltedlolly-nostr-backup-relay/README.md
 releaseNotes: >-
+  ## v1.2.1.4
+
+  - Security updates for the dashboard.
+
   ## v1.2.1.3
 
   - New Zap button at the bottom of the page. The app is free; if you want to say thanks, you can send a tip in sats by scanning the QR code or opening your Lightning wallet.
