@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-nito
 category: blockchain
 name: Nito
-version: "v4.0.0.4"
+version: "v4.0.0.5"
 tagline: A fair-launch, SHA-256 proof-of-work blockchain built for 200-year longevity
 description: >-
   Nito is a decentralized, SHA-256 proof-of-work blockchain built around fairness and longevity: no premine, no ICO, no VC allocation - just open, permissionless mining from block one. This app runs a full Nito node with the standard nito-cli/JSON-RPC interface, alongside a dashboard that shows new blocks as they're found, sync progress, charts of recent blocks, and a map of the countries your peers are in.
@@ -26,6 +26,10 @@ description: >-
 
   All node data (chain state) is stored under this app's persistent data directory and survives restarts and updates. Uninstalling this app deletes it. The blockchain isn't included in Umbrel backups, because the node can download it again: after a restore it resyncs from the network.
 releaseNotes: >-
+  ## v4.0.0.5
+
+  - Update the dashboard
+
   ## v4.0.0.4
 
   - Security updates for the dashboard.
