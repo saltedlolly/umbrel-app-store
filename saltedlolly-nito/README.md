@@ -71,12 +71,12 @@ New versions arrive through Umbrel's normal app updates. The first three numbers
 
 ## How the node is built
 
-The node isn't downloaded as a ready-made program. It's compiled from Nito Core's published source code by [docker-nito](https://github.com/Nito-Tools/docker-nito), so what runs on your Umbrel can be traced back to that source. Nito's own pre-built downloads have no independent proof of how they were built. docker-nito images are rebuilt each month when there are security updates, and each new build reaches this app automatically after two days.
+The node runs Nito Core's official release programs, packaged by [nito-docker](https://github.com/Nito-Tools/nito-docker), so your Umbrel runs exactly what other Nito nodes run. Before a new version is used, nito-docker checks that the download is signed with Nito Core's release key, matches its published checksums, and was built by Nito Core's own GitHub release workflow rather than uploaded by hand. nito-docker images are rebuilt each month when there are security updates, and each new build reaches this app automatically after two days.
 
 ## Credits
 
 - **Nito**: [NitoNetwork/Nito-core](https://github.com/NitoNetwork/Nito-core)
-- **Node image**: [Nito-Tools/docker-nito](https://github.com/Nito-Tools/docker-nito)
+- **Node image**: [Nito-Tools/nito-docker](https://github.com/Nito-Tools/nito-docker)
 - **Packaging and dashboard**: Olly Stedall (saltedlolly)
 - **Country lookups**: [IP Geolocation by DB-IP](https://db-ip.com) (CC BY 4.0)
 - **World map**: [world-atlas](https://github.com/topojson/world-atlas) (Natural Earth, public domain)

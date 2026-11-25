@@ -4,8 +4,8 @@ set -euo pipefail
 # Two independently-tracked images, both built externally (this script
 # only ever pins, never builds):
 #
-# - Nito-Tools/docker-nito (the compiled node): built and published by its
-#   own repo's CI. Resolved and pinned here the same "pin an
+# - Nito-Tools/nito-docker (the node, from Nito Core's verified release
+#   binaries): built and published by its own repo's CI. Resolved and pinned here the same "pin an
 #   externally-built image" way changedetection-build.sh / kubo-build.sh
 #   pin their own upstream images.
 #
@@ -20,17 +20,22 @@ set -euo pipefail
 #   already-resolved version into their own build scripts rather than
 #   having the script re-discover it.
 #
-# docker-nito publishes numbered builds: v4.0.0-1, v4.0.0-2, ... The number
+# nito-docker publishes numbered builds: v4.0.0-1, v4.0.0-2, ... The number
 # goes up when the image is rebuilt with the same Nito Core version (fixes,
 # monthly Debian updates) and restarts at 1 for a new Nito Core version.
 # Each build has a GitHub Release of the same name. This script pins the
-# exact build (docker-nito:v4.0.0-2@sha256:...).
+# exact build (nito-docker:v4.1.0-1@sha256:...).
+#
+# The repo and image used to be called docker-nito. Its builds up to
+# v4.0.0-3 stay at ghcr.io/nito-tools/docker-nito; new ones are only
+# published as ghcr.io/nito-tools/nito-docker. An old docker-nito pin is
+# read as usual and moves to the new name with the next new build.
 #
 # Manifest version (user decision 2026-11-15): the first three numbers
 # always match the Nito Core version, with .x appended for every later
 # release, whatever caused it:
 #   new Nito Core version            -> v4.0.0 (bare)
-#   new docker-nito build, same core -> v4.0.0.1, v4.0.0.2, ...
+#   new nito-docker build, same core -> v4.0.0.1, v4.0.0.2, ...
 #   dashboard change or --patch      -> next .x as well
 # Unlike the other apps, the version never tracks the upstream image's own
 # tag (v4.0.0-2); the build number goes in the release notes instead.
@@ -47,9 +52,10 @@ COMPOSE_FILE="$APP_ROOT/docker-compose.yml"
 MANIFEST_FILE="$APP_ROOT/umbrel-app.yml"
 
 NITO_CORE_RELEASES_API="https://api.github.com/repos/NitoNetwork/Nito-core/releases"
-NITO_IMAGE="ghcr.io/nito-tools/docker-nito"
-DOCKER_NITO_RELEASES_API="https://api.github.com/repos/Nito-Tools/docker-nito/releases"
-DOCKER_NITO_RELEASE_URL="https://github.com/Nito-Tools/docker-nito/releases/tag"
+NITO_IMAGE="ghcr.io/nito-tools/nito-docker"
+LEGACY_NITO_IMAGE="ghcr.io/nito-tools/docker-nito"   # builds up to v4.0.0-3
+NITO_DOCKER_RELEASES_API="https://api.github.com/repos/Nito-Tools/nito-docker/releases"
+NITO_DOCKER_RELEASE_URL="https://github.com/Nito-Tools/nito-docker/releases/tag"
 DASHBOARD_IMAGE="ghcr.io/saltedlolly/nito-dashboard"
 
 # Everything in umbrel-app.yml's releaseNotes field ABOVE this marker is
@@ -73,18 +79,18 @@ usage() {
 Usage: $(basename "$0") [OPTIONS]
 
 Modes (choose one; default is --check):
-  --check                 Check for a newer docker-nito release without editing files
+  --check                 Check for a newer nito-docker release without editing files
   --update                Pin as needed and update the local package
   --localtest              Update, validate, and copy the package to umbrel-dev
   --publish                Update, validate, commit only this app, and push
 
 Options:
-  --nito-build <tag>         Pin this docker-nito build, for example v4.0.0-2 (used by CI)
-  --nito-version <tag>       Pin the newest docker-nito build of this Nito Core version, e.g. v4.0.0
+  --nito-build <tag>         Pin this nito-docker build, for example v4.1.0-1 (used by CI)
+  --nito-version <tag>       Pin the newest nito-docker build of this Nito Core version, e.g. v4.1.0
   --dashboard-tag <tag>      Pin nito-dashboard to this tag (used by CI - see nito-dashboard-build.yml)
   --dashboard-digest <sha>   The matching digest for --dashboard-tag (sha256:...)
   --patch                    Bump the trailing patch number for a local-only fix (neither
-                             docker-nito nor the dashboard has changed)
+                             nito-docker nor the dashboard has changed)
   --notes <text>             Release notes used in umbrel-app.yml and the release commit
   --host <host-or-ip>        umbrel-dev host for --localtest (default: $UMBREL_DEV_HOST)
   -h, --help                 Show this help
@@ -113,11 +119,11 @@ core_of() {
   printf '%s\n' "${1%-*}"
 }
 
-# The newest published docker-nito build, optionally for one Nito Core
+# The newest published nito-docker build, optionally for one Nito Core
 # version only. Ordered by version number (Nito Core, then build), not date.
-resolve_latest_docker_nito_build() {
+resolve_latest_nito_docker_build() {
   local core="${1:-}"
-  curl -sf "$DOCKER_NITO_RELEASES_API?per_page=50" | python3 -c "
+  curl -sf "$NITO_DOCKER_RELEASES_API?per_page=50" | python3 -c "
 import json, re, sys
 core = sys.argv[1]
 data = json.load(sys.stdin)
@@ -131,12 +137,12 @@ for r in data:
         continue
     builds.append((tuple(int(x) for x in m.groups()), r['tag_name']))
 if not builds:
-    sys.exit('No docker-nito build found' + (' for ' + core if core else ''))
+    sys.exit('No nito-docker build found' + (' for ' + core if core else ''))
 print(max(builds)[1])
 " "$core"
 }
 
-# The build a docker-nito image says it is (OCI label), to catch a tag that
+# The build a nito-docker image says it is (OCI label), to catch a tag that
 # points somewhere unexpected
 image_build_label() {
   local ref="$1"
@@ -163,22 +169,24 @@ inspect_image_digest() {
   printf '%s\n' "$digest"
 }
 
+# Optional 4th argument: the image name the pin has now, when it differs
+# (the move from docker-nito to nito-docker)
 update_compose_image() {
-  local image="$1" tag="$2" digest="$3"
-  python3 - "$COMPOSE_FILE" "$image" "$tag" "$digest" <<'PY'
+  local image="$1" tag="$2" digest="$3" from_image="${4:-$1}"
+  python3 - "$COMPOSE_FILE" "$image" "$tag" "$digest" "$from_image" <<'PY'
 from pathlib import Path
 import re
 import sys
 
 compose_path = Path(sys.argv[1])
-image, tag, digest = sys.argv[2], sys.argv[3], sys.argv[4]
+image, tag, digest, from_image = sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
 
 compose = compose_path.read_text()
 # Matches either a real pin (tag@sha256:...) or the initial PENDING placeholder.
-regex = re.compile(re.escape(f"image: {image}:") + r"(?:[^@\s]+@sha256:[a-f0-9]{64}|PENDING@sha256:PENDING)")
+regex = re.compile(re.escape(f"image: {from_image}:") + r"(?:[^@\s]+@sha256:[a-f0-9]{64}|PENDING@sha256:PENDING)")
 compose, count = regex.subn(f"image: {image}:{tag}@{digest}", compose, count=1)
 if count != 1:
-    raise SystemExit(f"Could not update the {image} image reference in docker-compose.yml")
+    raise SystemExit(f"Could not update the {from_image} image reference in docker-compose.yml")
 compose_path.write_text(compose)
 PY
 }
@@ -517,23 +525,27 @@ fi
 require_command curl; require_command python3; require_command docker
 
 CURRENT_MANIFEST_VERSION="$(current_manifest_version)"
-CURRENT_NITO_TAG="$(current_pinned_tag "$NITO_IMAGE")"
+# The pin may still use the old image name (docker-nito)
+CURRENT_NITO_IMAGE="$NITO_IMAGE"
+grep -qF "image: $NITO_IMAGE:" "$COMPOSE_FILE" || CURRENT_NITO_IMAGE="$LEGACY_NITO_IMAGE"
+CURRENT_NITO_TAG="$(current_pinned_tag "$CURRENT_NITO_IMAGE")"
+[[ -n "$CURRENT_NITO_TAG" ]] || fail "Could not find the $NITO_IMAGE pin in docker-compose.yml"
 CURRENT_NITO_CORE="$(core_of "$CURRENT_NITO_TAG")"
 
 if [[ -n "$REQUESTED_NITO_BUILD" ]]; then
   TARGET_NITO_TAG="$REQUESTED_NITO_BUILD"
 elif [[ -n "$REQUESTED_NITO_VERSION" ]]; then
-  TARGET_NITO_TAG="$(resolve_latest_docker_nito_build "$REQUESTED_NITO_VERSION")"
+  TARGET_NITO_TAG="$(resolve_latest_nito_docker_build "$REQUESTED_NITO_VERSION")"
 elif [[ -n "$DASHBOARD_TAG" ]]; then
   # A dashboard-only CI call (nito-dashboard-build.yml) never moves the
-  # docker-nito pin: new builds go through nito-auto-release.yml and its
+  # nito-docker pin: new builds go through nito-auto-release.yml and its
   # 2-day buffer.
   TARGET_NITO_TAG="$CURRENT_NITO_TAG"
 else
-  TARGET_NITO_TAG="$(resolve_latest_docker_nito_build)"
+  TARGET_NITO_TAG="$(resolve_latest_nito_docker_build)"
 fi
 if [[ "$TARGET_NITO_TAG" != "$CURRENT_NITO_TAG" || -n "$REQUESTED_NITO_BUILD$REQUESTED_NITO_VERSION" ]]; then
-  [[ "$TARGET_NITO_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$ ]] || fail "Unsupported docker-nito build tag: $TARGET_NITO_TAG (expected vX.Y.Z-N)"
+  [[ "$TARGET_NITO_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$ ]] || fail "Unsupported nito-docker build tag: $TARGET_NITO_TAG (expected vX.Y.Z-N)"
 fi
 TARGET_NITO_CORE="$(core_of "$TARGET_NITO_TAG")"
 NITO_CHANGED="false"; [[ "$TARGET_NITO_CORE" != "$CURRENT_NITO_CORE" ]] && NITO_CHANGED="true"
@@ -541,13 +553,17 @@ NITO_CHANGED="false"; [[ "$TARGET_NITO_CORE" != "$CURRENT_NITO_CORE" ]] && NITO_
 # Always resolve the digest, even for the same tag: a build tag never moves,
 # but an old bare pin (v3.0.1) could. Only a different image counts as an
 # update; the same image under its build tag just renames the pin.
-NITO_DIGEST="$(inspect_image_digest "$NITO_IMAGE" "$TARGET_NITO_TAG")"
-CURRENT_NITO_DIGEST="$(current_pinned_digest "$NITO_IMAGE")"
+# The current build stays where it is; any other build comes from the new
+# image name, where all new builds are published.
+TARGET_NITO_IMAGE="$NITO_IMAGE"
+[[ "$TARGET_NITO_TAG" == "$CURRENT_NITO_TAG" ]] && TARGET_NITO_IMAGE="$CURRENT_NITO_IMAGE"
+NITO_DIGEST="$(inspect_image_digest "$TARGET_NITO_IMAGE" "$TARGET_NITO_TAG")"
+CURRENT_NITO_DIGEST="$(current_pinned_digest "$CURRENT_NITO_IMAGE")"
 NITO_PIN_CHANGED="false"; [[ "$NITO_DIGEST" != "$CURRENT_NITO_DIGEST" ]] && NITO_PIN_CHANGED="true"
 NITO_TAG_RENAMED="false"; [[ "$NITO_PIN_CHANGED" == "false" && "$TARGET_NITO_TAG" != "$CURRENT_NITO_TAG" ]] && NITO_TAG_RENAMED="true"
 if [[ "$NITO_PIN_CHANGED" == "true" && "$TARGET_NITO_TAG" == *-* ]]; then
-  label="$(image_build_label "$NITO_IMAGE@$NITO_DIGEST")"
-  [[ -z "$label" || "$label" == "$TARGET_NITO_TAG" ]] || fail "$NITO_IMAGE:$TARGET_NITO_TAG says it is build $label"
+  label="$(image_build_label "$TARGET_NITO_IMAGE@$NITO_DIGEST")"
+  [[ -z "$label" || "$label" == "$TARGET_NITO_TAG" ]] || fail "$TARGET_NITO_IMAGE:$TARGET_NITO_TAG says it is build $label"
 fi
 
 # Dashboard changes are only ever known because nito-dashboard-build.yml
@@ -572,8 +588,8 @@ fi
 
 echo
 echo "Current manifest version:   $CURRENT_MANIFEST_VERSION"
-echo "Current docker-nito build:  $CURRENT_NITO_TAG (Nito Core $CURRENT_NITO_CORE)"
-echo "Target docker-nito build:   $TARGET_NITO_TAG (new Nito Core: $NITO_CHANGED, new image: $NITO_PIN_CHANGED, tag renamed: $NITO_TAG_RENAMED)"
+echo "Current nito-docker build:  $CURRENT_NITO_TAG (Nito Core $CURRENT_NITO_CORE, $CURRENT_NITO_IMAGE)"
+echo "Target nito-docker build:   $TARGET_NITO_TAG (new Nito Core: $NITO_CHANGED, new image: $NITO_PIN_CHANGED, tag renamed: $NITO_TAG_RENAMED)"
 echo "Dashboard pin requested:    ${DASHBOARD_TAG:-none} (changed: $DASHBOARD_CHANGED)"
 echo "Resulting manifest version: $TARGET_MANIFEST_VERSION"
 echo
@@ -588,8 +604,8 @@ if [[ "$MODE" == "check" ]]; then
 fi
 
 if [[ "$NITO_TAG_RENAMED" == "true" ]]; then
-  update_compose_image "$NITO_IMAGE" "$TARGET_NITO_TAG" "$NITO_DIGEST"
-  echo "Renamed the docker-nito pin to $TARGET_NITO_TAG (same image)."
+  update_compose_image "$TARGET_NITO_IMAGE" "$TARGET_NITO_TAG" "$NITO_DIGEST" "$CURRENT_NITO_IMAGE"
+  echo "Renamed the nito-docker pin to $TARGET_NITO_TAG (same image)."
 fi
 
 if [[ "$NITO_CHANGED" == "false" && "$NITO_PIN_CHANGED" == "false" && "$DASHBOARD_CHANGED" == "false" && "$FORCE_PATCH" != "true" ]]; then
@@ -598,7 +614,7 @@ if [[ "$NITO_CHANGED" == "false" && "$NITO_PIN_CHANGED" == "false" && "$DASHBOAR
 fi
 
 if [[ "$NITO_CHANGED" == "true" || "$NITO_PIN_CHANGED" == "true" ]]; then
-  update_compose_image "$NITO_IMAGE" "$TARGET_NITO_TAG" "$NITO_DIGEST"
+  update_compose_image "$TARGET_NITO_IMAGE" "$TARGET_NITO_TAG" "$NITO_DIGEST" "$CURRENT_NITO_IMAGE"
 fi
 
 if [[ "$DASHBOARD_CHANGED" == "true" ]]; then
@@ -617,10 +633,10 @@ if [[ -z "$RELEASE_NOTES" ]]; then
   fi
 fi
 
-# Name the docker-nito build and link its release (which lists what changed)
+# Name the nito-docker build and link its release (which lists what changed)
 # whenever the node image changes, unless the notes already do
 if [[ "$NITO_PIN_CHANGED" == "true" && "$TARGET_NITO_TAG" == *-* && "$RELEASE_NOTES" != *"$TARGET_NITO_TAG"* ]]; then
-  RELEASE_NOTES="$RELEASE_NOTES Node image: docker-nito $TARGET_NITO_TAG ($DOCKER_NITO_RELEASE_URL/$TARGET_NITO_TAG)."
+  RELEASE_NOTES="$RELEASE_NOTES Node image: nito-docker $TARGET_NITO_TAG ($NITO_DOCKER_RELEASE_URL/$TARGET_NITO_TAG)."
 fi
 
 if [[ "$NITO_CHANGED" == "true" ]]; then export NOTES_MODE=reset; else export NOTES_MODE=prepend; fi

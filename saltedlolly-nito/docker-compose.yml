@@ -8,8 +8,8 @@ services:
       # peer addresses), so it doesn't need Umbrel's login
       PROXY_AUTH_ADD: "false"
 
-  # The compiled Nito node itself - see Nito-Tools/docker-nito for why it's
-  # built from source and why it's a separate image from the dashboard
+  # The Nito node itself (Nito Core's verified release binaries) - see
+  # Nito-Tools/nito-docker. It's a separate image from the dashboard
   # below (that image is meant to be generically useful outside Umbrel
   # too, so it doesn't carry any Umbrel-specific dashboard code).
   nito:
@@ -31,7 +31,7 @@ services:
       # No indexes: this node supports the network and has no wallet, and the
       # dashboard passes the block hash to getrawtransaction, so it needs none
       # of them. Saves about 700 MB (mostly transparenthistoryindex). Setting
-      # one to 0 also makes docker-nito delete its old index folder (v4.0.0-3+).
+      # one to 0 also makes nito-docker delete its old index folder (v4.0.0-3+).
       - NITO_TXINDEX=0
       - NITO_TRANSPARENTHISTORYINDEX=0
       - NITO_ORCHARDINDEX=0

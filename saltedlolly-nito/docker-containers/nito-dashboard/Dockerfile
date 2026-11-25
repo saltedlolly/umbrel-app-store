@@ -4,7 +4,7 @@
 # (latest blocks, sync progress, peers and where they are, mempool, charts) -
 # connects to a separately-running node's RPC over the network rather than
 # bundling the node itself. See saltedlolly-nito's docker-compose.yml for how
-# this is wired to Nito-Tools/docker-nito.
+# this is wired to Nito-Tools/nito-docker.
 #
 # Not derived from getumbrel/umbrel-bitcoin's code (PolyForm Noncommercial
 # licensed) - inspired by its general approach (poll standard Bitcoin Core
