@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-kubo
 category: files
 name: Kubo IPFS
-version: "v0.43.1.9"
+version: "v0.43.2"
 tagline: Run a full IPFS node with the official WebUI for peers, pins, and files
 description: >-
   Kubo is the reference implementation of IPFS (InterPlanetary File System) - a peer-to-peer network for storing and sharing content-addressed data. This app runs a full Kubo node with its official web interface for managing peers, pinning and browsing content, and monitoring bandwidth and repository usage.
@@ -19,77 +19,58 @@ description: >-
 
   The peer-to-peer (swarm) port is published normally so this node can find and be found by other IPFS peers. The public Gateway (port 8395) is also exposed, so anyone who reaches it can fetch content through this node - a deliberate tradeoff for being able to actually use IPFS links, not an oversight.
 releaseNotes: >-
-  ## v0.43.1.9
+  ## v0.43.2
 
-  - Kubo IPFS is out of testing: the under construction notice is removed. The README now documents the Gateway on port 8395.
-
-  ## v0.43.1.8
-
-  - The app is now called Kubo IPFS on the Umbrel dashboard
-
-  ## v0.43.1.7
-
-  - Fix the WebUI CORS error for real: replace the container-init.d bind-mount approach (which doesn't reliably sync on an app update) with an inline entrypoint override in docker-compose.yml itself. Also expose the public Gateway on port 8395, matching github.com/dennysubke/dennys-umbrel-app-store's Kubo package, so IPFS links actually work.
-
-  ## v0.43.1.4
-
-  - Fix the WebUI showing "Could not connect to the Kubo RPC": Kubo's API refuses browser requests whose Origin header isn't explicitly allow-listed, which affects any deployment where the API isn't reached via localhost. Adds a container-init.d script (Kubo's own official hook) that sets Access-Control-Allow-Origin on every container start.
-
-  ## v0.43.1.2
-
-  - Fix the WebUI link on the Umbrel home screen (was pointing at the bare API port, which returns 404 at /)
-
-  ## v0.43.1.0
-
-  - Restore v0.43.1 after an auto-release workflow bug incorrectly downgraded this app to v0.43.0 (fixed in this same push - see .github/workflows/kubo-auto-release.yml)
+  - Automated update: bump Kubo to v0.43.2
 
 
   --- ipfs/kubo upstream release notes (auto-updated) ---
 
 
-  ipfs/kubo v0.43.1
+  ipfs/kubo v0.43.2
 
-    <a href="https://ipshipyard.com/"><img align="right" src="https://github.com/user-attachments/assets/39ed3504-bb71-47f6-9bf8-cb9a1698f272" /></a>
+    This is a bugfix release.
 
-    > [!NOTE]
-    > This release was brought to you by the [Shipyard](https://ipshipyard.com/) team.
+    🚒 Nodes no longer stop accepting inbound connections
 
-    > [!IMPORTANT]
-    > v0.43 is the last Kubo by the Shipyard. Our IPFS work [ends on September 30, 2026](https://ipshipyard.com/blog/2026-the-end-of-ipfs-at-shipyard/). Bring your support and transition questions to the [community forum](https://discuss.ipfs.tech/).
+    **Problem:** A node that accepts inbound connections could stop taking new peers after it had run for a while.
 
-    [<img align="right" width="256px" src="https://github.com/user-attachments/assets/b1e9f70a-a22e-406d-bc5b-e2c337c14400" />](https://github.com/user-attachments/assets/b1e9f70a-a22e-406d-bc5b-e2c337c14400)
+    **Reason:** If an inbound connection closed after its security handshake but before libp2p passed it to the node, the [resource manager](https://github.com/ipfs/kubo/blob/master/docs/libp2p-resource-management.md) kept the connection and file descriptor reservations for it. No socket stayed open, but these reservations added up until they filled `System.ConnsInbound`. From then on the node refused every new inbound connection, even when only a few connections were live. AutoNAT also started to report the node's addresses as unreachable, because the dial-backs were refused too. On busy public nodes this leaked thousands of reservations per day, and the default limit filled within hours to days. A restart cleared the reservations, but they built up again.
 
-    - [🔦 Highlights](#-highlights)
-      - [🔇 Empty `Bootstrap` list disables all bootstrap dialing](#-empty-bootstrap-list-disables-all-bootstrap-dialing)
-      - [🗄️ Improved datastore profiles and docs](#-improved-datastore-profiles-and-docs)
-      - [🗂️ Setting the flatfs shard depth is less error-prone](#-setting-the-flatfs-shard-depth-is-less-error-prone)
-      - [📁 `ipfs ls` can print readable sizes and sort by size](#-ipfs-ls-can-print-readable-sizes-and-sort-by-size)
-      - [📌 Files on FUSE mounts keep their inode number](#-files-on-fuse-mounts-keep-their-inode-number)
-      - [🧹 FUSE mounts keep what you write after a rename](#-fuse-mounts-keep-what-you-write-after-a-rename)
-      - [🔐 `ipfs key export` writes are owner-only](#-ipfs-key-export-writes-are-owner-only)
-      - [🛑 `ipfs shutdown` exits a daemon started with `--enable-gc`](#-ipfs-shutdown-exits-a-daemon-started-with---enable-gc)
-      - [🔗 Gateway `Ipfs-Uri` header replaces `X-Ipfs-Path` (IPIP-548)](#-gateway-ipfs-uri-header-replaces-x-ipfs-path-ipip-548)
-      - [🔄 Bitswap sees peers connected before it starts](#-bitswap-sees-peers-connected-before-it-starts)
-      - [🤫 No more background pings to HTTP providers](#-no-more-background-pings-to-http-providers)
-      - [🔕 Telemetry is off by default](#-telemetry-is-off-by-default)
-      - [🌐 Future-proofing browser retrieval: WebTransport fix for Safari 26](#-future-proofing-browser-retrieval-webtransport-fix-for-safari-26)
-      - [💾 Provider record writes are batched again](#-provider-record-writes-are-batched-again)
-      - [🔒 Hardened CID profiles, new low-level knob](#-hardened-cid-profiles-new-low-level-knob)
-      - [📦️ Dependency updates](#-dependency-updates)
-    - [📝 Changelog](#-changelog)
-    - [👨‍👩‍👧‍👦 Contributors](#-contributors)
+    **Fix:** [go-libp2p v0.52.0](https://github.com/libp2p/go-libp2p/releases/tag/v0.52.0) fixes the leak ([libp2p/go-libp2p#3564](https://github.com/libp2p/go-libp2p/issues/3564)).
 
-    This is mostly a bugfix release. It also carries a few small, opt-in configuration options and profiles that landed since v0.43.0.
+    If you raised `System.ConnsInbound` in `libp2p-resource-limit-overrides.json` or scheduled restarts to work around this, you can remove those changes after you upgrade.
 
-    🔦 Highlights
+    📦️ Dependency updates
 
-    🔇 Empty `Bootstrap` list disables all bootstrap dialing
+    - update `go-libp2p` to [0.52.0](https://github.com/libp2p/go-libp2p/releases/tag/0.52.0)
 
-    Setting `Bootstrap` to `[]` now stops the node from dialing bootstrap peers of any kind, including the backup peers it saved from earlier runs. Until now, a node that had once run with the default bootstrappers kept dialing those saved peers every 30 seconds, even with an empty list and `Routing.Type=none`.
+    📝 Changelog
 
-    The result is a node that connects only to peers you chose: [`Peering.Peers`](https://github.com/ipfs/kubo/blob/master/docs/config.md#peeringpeers), `ipfs swarm connect`, and peers found on the local network through [mDNS](https://github.com/ipfs/kubo/blob/master/docs/config.md#discoverymdnsenabled). For no outbound traffic at all, also set [`Routing.Type`](https://github.com/ipfs/kubo/blob/master/docs/config.md#routingtype) to `none` and disable [`AutoConf`](https://github.com/ipfs/kubo/blob/master/docs/config.md#autoconfenabled).
+    <details><summary>Full Changelog</summary>
 
-    … (truncated) Full release notes: https://github.com/ipfs/kubo/releases/tag/v0.43.1
+    - github.com/ipfs/kubo:
+      - test(migrations): wait for migration before temp file check
+      - test(mfs): use random content in timeout test
+      - fix: v0.43.2 changelog highlights
+      - Merge branch 'release' into release-v0.43.2
+      - chore: update v0.43.2 changelog and contributors
+      - chore: bump version to v0.43.2
+    - github.com/libp2p/go-libp2p (v0.49.0 -> v0.52.0):
+      - Release v0.52.0 ([libp2p/go-libp2p#3579](https://github.com/libp2p/go-libp2p/pull/3579))
+      - fix(upgrader): release scope of conns closed before Accept ([libp2p/go-libp2p#3568](https://github.com/libp2p/go-libp2p/pull/3568))
+      - Release v0.51.0
+      - chore: fix missing links error
+      - Release v0.50.0
+      - fix(http/auth): reject oversized opaque (#3540) ([libp2p/go-libp2p#3540](https://github.com/libp2p/go-libp2p/pull/3540))
+      - chore: upgrade quic-go to v0.62.0 and webtransport-go to v0.13.0 (#3541) ([libp2p/go-libp2p#3541](https://github.com/libp2p/go-libp2p/pull/3541))
+      - refactor: require go1.26 and apply go modernizers (#3536) ([libp2p/go-libp2p#3536](https://github.com/libp2p/go-libp2p/pull/3536))
+      - fix(holepunch): initialize timeout before registering notifiee (#3529) ([libp2p/go-libp2p#3529](https://github.com/libp2p/go-libp2p/pull/3529))
+      - test(basichost): add a stress test for reachability logic (#3533) ([libp2p/go-libp2p#3533](https://github.com/libp2p/go-libp2p/pull/3533))
+
+    </details>
+
+    … (truncated) Full release notes: https://github.com/ipfs/kubo/releases/tag/v0.43.2
 
 
   See the full release history: https://github.com/ipfs/kubo/releases
