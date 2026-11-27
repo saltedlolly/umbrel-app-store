@@ -2,7 +2,7 @@ manifestVersion: 1
 id: saltedlolly-nito
 category: blockchain
 name: Nito
-version: "v4.0.0.5"
+version: "v4.1.0"
 tagline: A fair-launch, SHA-256 proof-of-work blockchain built for 200-year longevity
 description: >-
   Nito is a decentralized, SHA-256 proof-of-work blockchain built around fairness and longevity: no premine, no ICO, no VC allocation - just open, permissionless mining from block one. This app runs a full Nito node with the standard nito-cli/JSON-RPC interface, alongside a dashboard that shows new blocks as they're found, sync progress, charts of recent blocks, and a map of the countries your peers are in.
@@ -26,78 +26,58 @@ description: >-
 
   All node data (chain state) is stored under this app's persistent data directory and survives restarts and updates. Uninstalling this app deletes it. The blockchain isn't included in Umbrel backups, because the node can download it again: after a restore it resyncs from the network.
 releaseNotes: >-
-  ## v4.0.0.5
+  ## v4.1.0
 
-  - Update the dashboard
-
-  ## v4.0.0.4
-
-  - Security updates for the dashboard.
-
-  ## v4.0.0.3
-
-  - The "Did you know?" NitoFacts card is removed from the dashboard for now.
-
-  ## v4.0.0.2
-
-  - The node no longer keeps transaction indexes it doesn't need, which frees about 700 MB of disk. The dashboard now keeps its chart history through restarts and updates on installs updated from an earlier version. Node image: docker-nito v4.0.0-3 (https://github.com/Nito-Tools/docker-nito/releases/tag/v4.0.0-3).
-
-  ## v4.0.0.1
-
-  - The dashboard has a new panel for the Orchard upgrade: what it adds, a countdown to block 1,165,432 with the expected date, how many of your peers are ready, and links to learn more. It stays for a month after the upgrade happens.
-
-  ## v4.0.0
-
-  - Nito Core v4.0.0, a required upgrade: every Nito node must run it before block 1,165,432, around the end of December 2026. It adds optional Orchard private transactions.
-
-  - The first time the node starts on v4 it builds its new Orchard index, which takes a while and uses some extra disk space.
-
-  - Once your node has started on v4 it can't go back to v3.
-
-  - The blockchain is no longer included in Umbrel backups, because your node can download it again. After a restore it resyncs from the network.
-
-  - Built with docker-nito v4.0.0-2: https://github.com/Nito-Tools/docker-nito/releases/tag/v4.0.0-2
+  - Automated update to Nito Core v4.1.0. Its release notes are below. Node image: nito-docker v4.1.0-1 (https://github.com/Nito-Tools/nito-docker/releases/tag/v4.1.0-1).
 
 
   --- NitoNetwork/Nito-core upstream release notes (auto-updated) ---
 
 
-  NitoNetwork/Nito-core v4.0.0
+  NitoNetwork/Nito-core v4.1.0
 
-    # Nito Core 4.0.0
+    # Nito Core 4.1.0
 
-    Nito Core 4.0.0 introduces opt-in Orchard private transactions with direct Bech32x addresses while preserving Nito's transparent transaction, block, SHA-256 mining and pool behavior.
+    Nito Core 4.1.0 brings light and dark desktop themes, easier testnet
+    discovery, and independent verification of official downloads.
 
-    Upgrade requirement
+    Changes since 4.0.1
 
-    Node, pool, explorer and indexer operators must upgrade their backing Nito daemon before mainnet block **1,165,432**. After activation, Orchard-capable peers require protocol `70017` or later and the `NITO_PRIVATE` service.
+    - **Desktop wallet.** Qt follows the system's light or dark appearance by
+      default. Start with `-guitheme=light` or `-guitheme=dark` to choose a fixed
+      theme. Mainnet keeps the official Nito logo and blue accent. Testnet,
+      signet and regtest have distinct colors, icons and badges.
+    - **Interface fixes.** The console tabs align with their panel, the sync
+      overlay follows the selected theme, and the palette improves contrast for
+      text and disabled controls. The wallet overview links to the repository and
+      releases. Thanks to [Olly](https://github.com/saltedlolly) for the
+      [Qt contribution](https://github.com/NitoNetwork/Nito-core/pull/14).
+    - **Peer discovery.** Mainnet adds a community DNS seed. Testnet uses three DNS seeds and also supports bootstrap through fixed peers. The testnet genesis and P2P port remain the same. Thanks to Olly for the [community seeds](https://github.com/NitoNetwork/Nito-core/pull/10).
 
-    Back up every wallet and stop the existing node cleanly before upgrading. Existing v3 Berkeley DB and SQLite wallet files remain supported, but reopening v4-updated wallet or chain data with v3 is not a supported rollback procedure.
+      Mainnet DNS seed
 
-    Major additions
+      ```text
+      seed.nito.tools
+      ```
 
-    - Orchard private transactions and explicit `nito1x...` Bech32x receive addresses.
-    - Transparent-to-private, private-to-transparent and private-to-private transfers.
-    - Native v4 recovery phrases covering deterministic transparent and Orchard authority.
-    - Guided `nito-cli -interactive` workflows for sensitive wallet, recovery, signing and backup operations.
-    - Orchard indexing and recovery support, including operation on explicitly configured pruned nodes.
-    - Incoming transparent transaction details with resolved input addresses in Qt.
-    - Official packages for Linux x86_64, Linux aarch64, Windows win64 and macOS arm64.
+      Testnet DNS seeds
 
-    Documentation
+      ```text
+      t1.testnet.nito.network
+      t2.testnet.nito.network
+      testnetseed.nito.tools
+      ```
 
-    - [Complete release notes](https://github.com/NitoNetwork/Nito-core/blob/6eaeea13dd1f2ed761b42ad9f1696b727b4c85aa/doc/release-notes.md)
-    - [Quick start](https://github.com/NitoNetwork/Nito-core/blob/v4.0.0/doc/nito/quick-start.md)
-    - [Wallet backup and recovery](https://github.com/NitoNetwork/Nito-core/blob/v4.0.0/doc/nito/wallet-backup-restore.md)
-    - [Wallet creation and V3 migration](https://github.com/NitoNetwork/Nito-core/blob/v4.0.0/doc/managing-wallets.md)
+      The testnet P2P port is 8840.
+    - **Official logos.** The
+      [transparent PNG kit](https://github.com/NitoNetwork/Nito-core/tree/v4.1.0/share/branding)
+      provides eight sizes for pools, exchanges and explorers. The repository
+      README links to it.
+    - **Release verification.** Official packages come from a build of the
+      signed annotated tag. GitHub/Sigstore attestations bind each package and
+      the checksum index to the release workflow and source commit. A separate
 
-    Verification and provenance
-
-    Verify downloads against the attached `SHA256SUMS` file before installation. The `v4.0.0` tag is an annotated SSH-signed tag verified by GitHub and targets commit `e3ff5e42b980c792ee5ab790610772a7d9ee8f8a`.
-
-    This release was built from commit `e3ff5e42b980c792ee5ab790610772a7d9ee8f8a` by [GitHub Actions run 43697543547](https://github.com/NitoNetwork/Nito-core/actions/runs/43697543547).
-
-    GitHub automatically provides source-code archives generated from the `v4.0.0` tag. The attached checksum index covers the six downloadable platform packages and is explicitly **unsigned**.
+    … (truncated) Full release notes: https://github.com/NitoNetwork/Nito-core/releases/tag/v4.1.0
 
 
   See the full release history: https://github.com/NitoNetwork/Nito-core/releases

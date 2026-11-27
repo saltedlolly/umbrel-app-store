@@ -13,7 +13,7 @@ services:
   # below (that image is meant to be generically useful outside Umbrel
   # too, so it doesn't carry any Umbrel-specific dashboard code).
   nito:
-    image: ghcr.io/nito-tools/docker-nito:v4.0.0-3@sha256:87bb6dbcce520b30c615c8f2d9734736a17938eebbb54f1786aeb4c48aefbaae
+    image: ghcr.io/nito-tools/nito-docker:v4.1.0-1@sha256:d98042fef4e1f7572eb12a02586b48ef46efbb0d44ad8dfd53075bb603d6d4f9
     container_name: saltedlolly-nito_nito_1
     hostname: saltedlolly-nito_nito_1
     init: true
@@ -76,7 +76,7 @@ services:
       - NITO_RPC_USER=${APP_SALTEDLOLLY_NITO_RPC_USER}
       - NITO_RPC_PASSWORD=${APP_SALTEDLOLLY_NITO_RPC_PASSWORD}
       # Shown in the dashboard's footer; set by nito-build.sh on each release
-      - APP_VERSION=v4.0.0.5
+      - APP_VERSION=v4.1.0
     volumes:
       # The dashboard's own saved history (mempool and network traffic for
       # the last 30 days), so the charts survive restarts and updates
